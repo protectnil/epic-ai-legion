@@ -36,24 +36,42 @@ Append-only logs are not audit trails. Epic AI® writes every agent action to a 
 
 ---
 
+## Prerequisites
+
+- **Node.js** >= 20.0.0 ([nodejs.org](https://nodejs.org))
+- **Ollama** — local LLM runtime ([ollama.com](https://ollama.com))
+  ```bash
+  # macOS
+  brew install ollama
+  ollama serve
+  ollama pull qwen2.5:7b
+  ```
+
+> **Apple M5 / macOS 26.x:** Ollama versions 0.13+ have a known Metal shader compatibility issue with the M5 chip's neural accelerator (`MTLLibraryErrorDomain Code=3`). No models will run until Ollama ships a fix. Track progress at [ollama/ollama#14432](https://github.com/ollama/ollama/issues/14432). Apple M1–M4 Macs are unaffected — Ollama runs without issues on all prior Apple Silicon generations.
+
 ## Quick Start
+
+**1. Install**
 
 ```bash
 npm install @epicai/core
-npx epic-ai setup
 ```
+
+**2. Set your project to ES modules** (required for top-level `await`):
+
+```bash
+npm pkg set type=module
+```
+
+**3. Create `index.ts` and paste:**
 
 ```typescript
 import { EpicAI } from '@epicai/core';
 
 const agent = await EpicAI.create({
-  orchestrator: { provider: 'ollama', model: 'mistral:7b' },
-  generator:    { provider: 'openai', model: 'gpt-4.1', apiKey: process.env.OPENAI_API_KEY },
+  orchestrator: { provider: 'ollama', model: 'qwen2.5:7b' },
   federation: {
-    servers: [
-      { name: 'vault',  transport: 'stdio',           command: 'mcp-vault' },
-      { name: 'splunk', transport: 'streamable-http',  url: 'https://splunk.local/mcp' },
-    ],
+    servers: [],
   },
   autonomy: {
     tiers: {
@@ -76,6 +94,14 @@ const result = await agent.run('What threats were detected in the last 24 hours?
 console.log(result.response);
 await agent.stop();
 ```
+
+**4. Run:**
+
+```bash
+npx tsx index.ts
+```
+
+> **No OpenAI key required.** The example above runs entirely on Ollama — your local SLM handles both tool routing and response synthesis. To add a cloud LLM for higher-quality responses, add a `generator` field with your API key. See the [Developer Guide](DEVELOPER_GUIDE.md) for details.
 
 ---
 
