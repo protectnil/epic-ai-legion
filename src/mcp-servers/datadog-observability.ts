@@ -1,10 +1,4 @@
-/**
- * Datadog Observability MCP Server
- * Datadog API v1/v2 observability — metrics, monitors, logs, and dashboards.
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Datadog Observability MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 export class DatadogObservabilityMCPServer {
@@ -121,19 +115,40 @@ export class DatadogObservabilityMCPServer {
           properties: {
             filter_shared: {
               type: 'boolean',
-              description: 'When true, only return shared dashboards',
+              description: 'When true, only return shared custom created or cloned dashboards',
             },
             filter_deleted: {
               type: 'boolean',
-              description: 'When true, include soft-deleted dashboards',
+              description: 'When true, return only soft-deleted dashboards (incompatible with filter_shared)',
             },
             count: {
               type: 'number',
-              description: 'Number of dashboards to return per page (default: 100)',
+              description: 'Maximum number of dashboards to return per page (default: 100)',
             },
             start: {
               type: 'number',
-              description: 'Pagination offset',
+              description: 'Offset to use as the beginning of the returned response',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_incidents',
+        description: 'List incidents in Datadog (requires Incident Management)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page_size: {
+              type: 'number',
+              description: 'Number of incidents per page (max 100, default: 10)',
+            },
+            page_offset: {
+              type: 'number',
+              description: 'Offset to use as the beginning of the returned page (default: 0)',
+            },
+            include: {
+              type: 'string',
+              description: 'Comma-separated related object types to include in the response (e.g., "users")',
             },
           },
         },
@@ -175,6 +190,12 @@ export class DatadogObservabilityMCPServer {
             args.filter_deleted as boolean | undefined,
             args.count as number | undefined,
             args.start as number | undefined
+          );
+        case 'list_incidents':
+          return await this.listIncidents(
+            args.page_size as number | undefined,
+            args.page_offset as number | undefined,
+            args.include as string | undefined
           );
         default:
           return {
@@ -296,11 +317,35 @@ export class DatadogObservabilityMCPServer {
     const params = new URLSearchParams();
     if (filterShared !== undefined) params.append('filter[shared]', String(filterShared));
     if (filterDeleted !== undefined) params.append('filter[deleted]', String(filterDeleted));
-    params.append('count', String(count || 100));
+    if (count !== undefined) params.append('count', String(count));
     if (start !== undefined) params.append('start', String(start));
 
     const response = await fetch(
       `${this.baseUrl}/api/v1/dashboard?${params}`,
+      { method: 'GET', headers: this.headers }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Datadog API error: ${response.status} ${response.statusText}`);
+    }
+
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Datadog returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  }
+
+  private async listIncidents(
+    pageSize?: number,
+    pageOffset?: number,
+    include?: string
+  ): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (pageSize !== undefined) params.append('page[size]', String(pageSize));
+    if (pageOffset !== undefined) params.append('page[offset]', String(pageOffset));
+    if (include) params.append('include', include);
+
+    const response = await fetch(
+      `${this.baseUrl}/api/v2/incidents?${params}`,
       { method: 'GET', headers: this.headers }
     );
 

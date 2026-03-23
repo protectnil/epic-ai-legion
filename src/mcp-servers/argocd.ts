@@ -1,7 +1,4 @@
-/**
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Argo CD MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -64,8 +61,41 @@ export class ArgoCDMCPServer {
         },
       },
       {
-        name: 'get_application_health',
-        description: 'Get health and sync status of an ArgoCD application',
+        name: 'list_projects',
+        description: 'List all ArgoCD AppProjects',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'list_clusters',
+        description: 'List all clusters registered in ArgoCD',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'get_application_logs',
+        description: 'Fetch container logs for a pod managed by an ArgoCD application',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'Application name' },
+            namespace: { type: 'string', description: 'Namespace of the pod' },
+            pod_name: { type: 'string', description: 'Name of the pod' },
+            container: { type: 'string', description: 'Container name within the pod' },
+            tail_lines: { type: 'number', description: 'Number of tail lines to return' },
+          },
+          required: ['name'],
+        },
+      },
+      {
+        name: 'get_application_resources',
+        description: 'List managed Kubernetes resources for an ArgoCD application',
         inputSchema: {
           type: 'object',
           properties: {
@@ -118,8 +148,25 @@ export class ArgoCDMCPServer {
           url = `${this.baseUrl}/repositories?${params}`;
           break;
         }
-        case 'get_application_health': {
-          url = `${this.baseUrl}/applications/${args.name}?fields=status.health,status.sync,status.operationState`;
+        case 'list_projects': {
+          url = `${this.baseUrl}/projects`;
+          break;
+        }
+        case 'list_clusters': {
+          url = `${this.baseUrl}/clusters`;
+          break;
+        }
+        case 'get_application_logs': {
+          const params = new URLSearchParams();
+          if (args.namespace) params.set('namespace', String(args.namespace));
+          if (args.pod_name) params.set('podName', String(args.pod_name));
+          if (args.container) params.set('container', String(args.container));
+          if (args.tail_lines) params.set('tailLines', String(args.tail_lines));
+          url = `${this.baseUrl}/applications/${args.name}/logs?${params}`;
+          break;
+        }
+        case 'get_application_resources': {
+          url = `${this.baseUrl}/applications/${args.name}/managed-resources`;
           break;
         }
         default:

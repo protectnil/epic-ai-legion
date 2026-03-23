@@ -1,10 +1,4 @@
-/**
- * CrowdStrike Falcon MCP Server
- * Provides access to CrowdStrike Falcon REST API endpoints for threat detection and host management
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** CrowdStrike Falcon MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -150,6 +144,48 @@ export class CrowdStrikeMCPServer {
             },
           },
           required: ['host_id'],
+        },
+      },
+      {
+        name: 'search_incidents',
+        description:
+          'Search for incidents (Automated Leads) using the Alerts API v2. The legacy /incidents API was decommissioned March 9 2026; this tool queries /alerts/queries/alerts/v2 which is the current replacement for incident-level SOC workflows.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            filter: {
+              type: 'string',
+              description: 'FQL filter expression (e.g. "severity:>=\'High\'+status:\'new\'")',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of alert IDs to return (default: 50)',
+            },
+            sort: {
+              type: 'string',
+              description: 'Sort expression (e.g. "created_timestamp|desc")',
+            },
+            after: {
+              type: 'string',
+              description: 'Pagination token returned from a previous response',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_incident',
+        description:
+          'Get full details for one or more incidents (Automated Leads) by composite alert ID using the Alerts API v2. The legacy /incidents API was decommissioned March 9 2026; this tool posts to /alerts/entities/alerts/v2.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            composite_ids: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'One or more composite alert IDs returned by search_incidents',
+            },
+          },
+          required: ['composite_ids'],
         },
       },
     ];
@@ -311,6 +347,67 @@ export class CrowdStrikeMCPServer {
           if (!response.ok) {
             return {
               content: [{ type: 'text', text: `Failed to quarantine host: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`CrowdStrike returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'search_incidents': {
+          const limit = (args.limit as number) || 50;
+          const filter = args.filter as string | undefined;
+          const sort = args.sort as string | undefined;
+          const after = args.after as string | undefined;
+
+          let url = `${this.baseUrl}/alerts/queries/alerts/v2?limit=${limit}`;
+          if (filter) url += `&filter=${encodeURIComponent(filter)}`;
+          if (sort) url += `&sort=${encodeURIComponent(sort)}`;
+          if (after) url += `&after=${encodeURIComponent(after)}`;
+
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to search incidents: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`CrowdStrike returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'get_incident': {
+          const compositeIds = args.composite_ids as string[];
+          if (!compositeIds || compositeIds.length === 0) {
+            return {
+              content: [{ type: 'text', text: 'composite_ids is required and must be non-empty' }],
+              isError: true,
+            };
+          }
+
+          const response = await fetch(`${this.baseUrl}/alerts/entities/alerts/v2`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ composite_ids: compositeIds }),
+          });
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to get incident details: ${response.statusText}` }],
               isError: true,
             };
           }

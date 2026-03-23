@@ -1,8 +1,4 @@
-/**
- * @epicai/core — Datadog Security MCP Server
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Datadog Security MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 export class DatadogSecurityMCPServer {
@@ -30,21 +26,29 @@ export class DatadogSecurityMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            filter: {
+            filter_query: {
               type: 'string',
-              description: 'Filter expression (e.g., "status:high severity:critical")',
+              description: 'Filter query expression (e.g., "status:high severity:critical")',
             },
-            page: {
+            filter_from: {
               type: 'number',
-              description: 'Page number for pagination',
+              description: 'Start timestamp in milliseconds (Unix epoch)',
             },
-            page_size: {
+            filter_to: {
               type: 'number',
-              description: 'Number of results per page (default: 50)',
+              description: 'End timestamp in milliseconds (Unix epoch)',
+            },
+            page_limit: {
+              type: 'number',
+              description: 'Number of signals to return per page (default: 50, max: 1000)',
+            },
+            page_cursor: {
+              type: 'string',
+              description: 'Cursor for pagination returned from a previous response',
             },
             sort: {
               type: 'string',
-              description: 'Sort order (default: "-timestamp")',
+              description: 'Sort order: "timestamp" (ascending) or "-timestamp" (descending, default)',
             },
           },
         },
@@ -64,69 +68,63 @@ export class DatadogSecurityMCPServer {
         },
       },
       {
-        name: 'search_logs',
-        description: 'Search logs in Datadog with query',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            query: {
-              type: 'string',
-              description: 'Log query string (e.g., "@severity:ERROR @service:api")',
-            },
-            from: {
-              type: 'number',
-              description: 'Start timestamp in milliseconds',
-            },
-            to: {
-              type: 'number',
-              description: 'End timestamp in milliseconds',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum logs to return (default: 100)',
-            },
-          },
-          required: ['query'],
-        },
-      },
-      {
         name: 'list_monitors',
-        description: 'List security monitors configured in Datadog',
+        description: 'List monitors configured in Datadog, optionally filtered by tags or name',
         inputSchema: {
           type: 'object',
           properties: {
-            monitor_type: {
+            monitor_tags: {
               type: 'string',
-              description: 'Filter by monitor type (e.g., "security")',
+              description: 'Comma-separated list of monitor tags to filter by (e.g., "env:prod,team:security"). Tags must be assigned to the monitor via the API tags field.',
+            },
+            name: {
+              type: 'string',
+              description: 'Filter monitors whose name contains this string (case-insensitive substring match)',
             },
             page: {
               type: 'number',
-              description: 'Page number for pagination',
+              description: 'Page number for pagination (0-indexed, default: 0)',
+            },
+            page_size: {
+              type: 'number',
+              description: 'Number of monitors to return per page (default: 100)',
             },
           },
         },
       },
       {
         name: 'get_cloud_security_findings',
-        description: 'Retrieve cloud security findings and compliance issues',
+        description: 'Retrieve cloud security posture findings and compliance issues (misconfigurations and identity risks)',
         inputSchema: {
           type: 'object',
           properties: {
-            resource_type: {
+            filter_tags: {
               type: 'string',
-              description: 'Filter by resource type (e.g., "aws", "azure", "gcp")',
+              description: 'Filter findings by tag (repeatable; e.g., "cloud_provider:aws")',
             },
-            severity: {
+            filter_status: {
               type: 'string',
-              description: 'Filter by severity (critical, high, medium, low)',
+              description: 'Filter by finding status. Allowed values: critical, high, medium, low, info',
             },
-            status: {
+            filter_evaluation: {
               type: 'string',
-              description: 'Filter by status (open, resolved)',
+              description: 'Filter by evaluation result: pass or fail',
             },
-            limit: {
+            filter_resource_type: {
+              type: 'string',
+              description: 'Filter by resource type (e.g., "aws_s3_bucket")',
+            },
+            filter_vulnerability_type: {
+              type: 'string',
+              description: 'Filter by vulnerability type. Allowed values: misconfiguration, attack_path, identity_risk, api_security',
+            },
+            page_limit: {
               type: 'number',
-              description: 'Maximum findings to return',
+              description: 'Maximum findings to return (default: 100, max: 1000)',
+            },
+            page_cursor: {
+              type: 'string',
+              description: 'Cursor for pagination returned from a previous response',
             },
           },
         },
@@ -142,31 +140,31 @@ export class DatadogSecurityMCPServer {
       switch (name) {
         case 'list_security_signals':
           return await this.listSecuritySignals(
-            args.filter as string | undefined,
-            args.page as number | undefined,
-            args.page_size as number | undefined,
+            args.filter_query as string | undefined,
+            args.filter_from as number | undefined,
+            args.filter_to as number | undefined,
+            args.page_limit as number | undefined,
+            args.page_cursor as string | undefined,
             args.sort as string | undefined
           );
         case 'get_signal':
           return await this.getSignal(args.signal_id as string);
-        case 'search_logs':
-          return await this.searchLogs(
-            args.query as string,
-            args.from as number | undefined,
-            args.to as number | undefined,
-            args.limit as number | undefined
-          );
         case 'list_monitors':
           return await this.listMonitors(
-            args.monitor_type as string | undefined,
-            args.page as number | undefined
+            args.monitor_tags as string | undefined,
+            args.name as string | undefined,
+            args.page as number | undefined,
+            args.page_size as number | undefined
           );
         case 'get_cloud_security_findings':
           return await this.getCloudSecurityFindings(
-            args.resource_type as string | undefined,
-            args.severity as string | undefined,
-            args.status as string | undefined,
-            args.limit as number | undefined
+            args.filter_tags as string | undefined,
+            args.filter_status as string | undefined,
+            args.filter_evaluation as string | undefined,
+            args.filter_resource_type as string | undefined,
+            args.filter_vulnerability_type as string | undefined,
+            args.page_limit as number | undefined,
+            args.page_cursor as string | undefined
           );
         default:
           return {
@@ -183,19 +181,26 @@ export class DatadogSecurityMCPServer {
   }
 
   private async listSecuritySignals(
-    filter?: string,
-    page?: number,
-    pageSize?: number,
+    filterQuery?: string,
+    filterFrom?: number,
+    filterTo?: number,
+    pageLimit?: number,
+    pageCursor?: string,
     sort?: string
   ): Promise<ToolResult> {
+    const now = Date.now();
     const params = new URLSearchParams();
 
-    if (filter) {
-      params.append('filter', filter);
+    if (filterQuery) {
+      params.append('filter[query]', filterQuery);
     }
-    params.append('page', String(page || 0));
-    params.append('page_size', String(pageSize || 50));
-    params.append('sort', sort || '-timestamp');
+    params.append('filter[from]', String(filterFrom ?? now - 24 * 60 * 60 * 1000));
+    params.append('filter[to]', String(filterTo ?? now));
+    params.append('page[limit]', String(pageLimit ?? 50));
+    if (pageCursor) {
+      params.append('page[cursor]', pageCursor);
+    }
+    params.append('sort', sort ?? '-timestamp');
 
     const response = await fetch(
       `${this.baseUrl}/api/v2/security_monitoring/signals?${params}`,
@@ -236,57 +241,23 @@ export class DatadogSecurityMCPServer {
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
   }
 
-  private async searchLogs(
-    query: string,
-    from?: number,
-    to?: number,
-    limit?: number
-  ): Promise<ToolResult> {
-    const now = Date.now();
-    const requestBody = {
-      filter: {
-        from: from || now - 24 * 60 * 60 * 1000,
-        to: to || now,
-        query,
-      },
-      options: {
-        timezone: 'UTC',
-      },
-      page: {
-        limit: limit || 100,
-      },
-    };
-
-    const response = await fetch(
-      `${this.baseUrl}/api/v2/logs/events/search`,
-      {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(requestBody),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Datadog API error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Datadog returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-  }
-
   private async listMonitors(
-    monitorType?: string,
-    page?: number
+    monitorTags?: string,
+    name?: string,
+    page?: number,
+    pageSize?: number
   ): Promise<ToolResult> {
     const params = new URLSearchParams();
 
-    if (monitorType) {
-      params.append('type', monitorType);
+    // Valid GET /api/v1/monitor query params: monitor_tags, name, page, page_size, group_states
+    if (monitorTags) {
+      params.append('monitor_tags', monitorTags);
     }
-    params.append('page', String(page || 0));
+    if (name) {
+      params.append('name', name);
+    }
+    params.append('page', String(page ?? 0));
+    params.append('page_size', String(pageSize ?? 100));
 
     const response = await fetch(
       `${this.baseUrl}/api/v1/monitor?${params}`,
@@ -308,23 +279,36 @@ export class DatadogSecurityMCPServer {
   }
 
   private async getCloudSecurityFindings(
-    resourceType?: string,
-    severity?: string,
-    status?: string,
-    limit?: number
+    filterTags?: string,
+    filterStatus?: string,
+    filterEvaluation?: string,
+    filterResourceType?: string,
+    filterVulnerabilityType?: string,
+    pageLimit?: number,
+    pageCursor?: string
   ): Promise<ToolResult> {
     const params = new URLSearchParams();
 
-    if (resourceType) {
-      params.append('resource_type', resourceType);
+    // Valid GET /api/v2/security_monitoring/findings query params use bracket notation
+    if (filterTags) {
+      params.append('filter[tags]', filterTags);
     }
-    if (severity) {
-      params.append('severity', severity);
+    if (filterStatus) {
+      params.append('filter[status]', filterStatus);
     }
-    if (status) {
-      params.append('status', status);
+    if (filterEvaluation) {
+      params.append('filter[evaluation]', filterEvaluation);
     }
-    params.append('limit', String(limit || 100));
+    if (filterResourceType) {
+      params.append('filter[resource_type]', filterResourceType);
+    }
+    if (filterVulnerabilityType) {
+      params.append('filter[vulnerability_type]', filterVulnerabilityType);
+    }
+    params.append('page[limit]', String(pageLimit ?? 100));
+    if (pageCursor) {
+      params.append('page[cursor]', pageCursor);
+    }
 
     const response = await fetch(
       `${this.baseUrl}/api/v2/security_monitoring/findings?${params}`,

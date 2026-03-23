@@ -1,9 +1,4 @@
-/** Anthropic API MCP Server
- * Anthropic Claude model and message management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Anthropic Claude API MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -25,11 +20,11 @@ export class AnthropicMCPServer {
     return [
       {
         name: 'create_message',
-        description: 'Create a message using the Anthropic Messages API',
+        description: 'Create a message using the Anthropic Messages API (POST /v1/messages)',
         inputSchema: {
           type: 'object',
           properties: {
-            model: { type: 'string', description: 'Model ID (e.g. claude-opus-4-5)' },
+            model: { type: 'string', description: 'Model ID (e.g. claude-opus-4-6)' },
             messages: { type: 'array', description: 'Array of message objects' },
             max_tokens: { type: 'number', description: 'Maximum tokens to generate' },
             system: { type: 'string', description: 'System prompt' },
@@ -39,7 +34,7 @@ export class AnthropicMCPServer {
       },
       {
         name: 'list_models',
-        description: 'List available Anthropic models',
+        description: 'List available Anthropic models (GET /v1/models)',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -48,7 +43,7 @@ export class AnthropicMCPServer {
       },
       {
         name: 'count_tokens',
-        description: 'Count tokens for a given prompt without creating a message',
+        description: 'Count tokens for a given prompt without creating a message (POST /v1/messages/count_tokens)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -60,26 +55,51 @@ export class AnthropicMCPServer {
         },
       },
       {
-        name: 'get_usage',
-        description: 'Get API usage for a specific date',
+        name: 'create_message_batch',
+        description: 'Create a message batch for async processing of multiple requests (POST /v1/messages/batches)',
         inputSchema: {
           type: 'object',
           properties: {
-            date: { type: 'string', description: 'Date in YYYY-MM-DD format' },
+            requests: {
+              type: 'array',
+              description: 'Array of batch request objects, each with a custom_id and params (model, messages, max_tokens, etc.)',
+            },
           },
-          required: ['date'],
+          required: ['requests'],
         },
       },
       {
         name: 'list_message_batches',
-        description: 'List message batches',
+        description: 'List message batches (GET /v1/messages/batches)',
         inputSchema: {
           type: 'object',
           properties: {
-            before_id: { type: 'string', description: 'Cursor for pagination' },
-            limit: { type: 'number', description: 'Number of batches to return' },
+            before_id: { type: 'string', description: 'Cursor for pagination — return batches before this ID' },
+            limit: { type: 'number', description: 'Number of batches to return (1–100)' },
           },
           required: [],
+        },
+      },
+      {
+        name: 'get_message_batch',
+        description: 'Retrieve a single message batch by ID (GET /v1/messages/batches/{batch_id})',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            batch_id: { type: 'string', description: 'ID of the message batch to retrieve' },
+          },
+          required: ['batch_id'],
+        },
+      },
+      {
+        name: 'cancel_message_batch',
+        description: 'Cancel an in-progress message batch (DELETE /v1/messages/batches/{batch_id})',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            batch_id: { type: 'string', description: 'ID of the message batch to cancel' },
+          },
+          required: ['batch_id'],
         },
       },
     ];
@@ -125,15 +145,31 @@ export class AnthropicMCPServer {
           });
           break;
         }
-        case 'get_usage': {
-          response = await fetch(`${this.baseUrl}/usage?date=${args.date}`, { headers });
+        case 'create_message_batch': {
+          response = await fetch(`${this.baseUrl}/messages/batches`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ requests: args.requests }),
+          });
           break;
         }
         case 'list_message_batches': {
           const params = new URLSearchParams();
           if (args.before_id !== undefined) params.set('before_id', String(args.before_id));
           if (args.limit !== undefined) params.set('limit', String(args.limit));
-          response = await fetch(`${this.baseUrl}/messages/batches?${params}`, { headers });
+          const qs = params.toString();
+          response = await fetch(`${this.baseUrl}/messages/batches${qs ? `?${qs}` : ''}`, { headers });
+          break;
+        }
+        case 'get_message_batch': {
+          response = await fetch(`${this.baseUrl}/messages/batches/${String(args.batch_id)}`, { headers });
+          break;
+        }
+        case 'cancel_message_batch': {
+          response = await fetch(`${this.baseUrl}/messages/batches/${String(args.batch_id)}`, {
+            method: 'DELETE',
+            headers,
+          });
           break;
         }
         default:
