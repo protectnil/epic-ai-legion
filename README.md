@@ -9,7 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-blue.svg)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
 
-**Epic AI®** is an open-source TypeScript SDK for building Intelligent Virtual Assistants (IVAs) that federate across multiple Model Context Protocol (MCP) servers. A local small language model (SLM) handles all tool selection, routing, and governance — keeping tool schemas, server topology, and intermediate results off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis.
+**Epic AI® IVA Core** is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. An open-source TypeScript SDK that federates across multiple Model Context Protocol (MCP) servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis.
 
 113 pre-built adapters span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations — all under Apache 2.0.
 

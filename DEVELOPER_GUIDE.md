@@ -5,7 +5,7 @@
 **License:** Apache 2.0
 **Runtime:** Node.js >= 20.0.0, TypeScript 5.3+
 
-Epic AI® IVA Core is an Intelligent Virtual Assistant (IVA) platform that federates across multiple MCP servers. A local small language model (SLM) handles all tool selection, routing, and governance — keeping tool schemas, server topology, and intermediate results off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis. 113 pre-built adapters span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. This guide covers every layer of the SDK.
+Epic AI® IVA Core is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. The SDK federates across multiple MCP servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis. 113 pre-built adapters span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. This guide covers every layer of the SDK.
 
 ---
 
