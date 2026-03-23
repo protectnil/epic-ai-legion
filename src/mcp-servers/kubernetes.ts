@@ -1,7 +1,4 @@
-/**
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Kubernetes MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -74,6 +71,46 @@ export class KubernetesMCPServer {
           required: [],
         },
       },
+      {
+        name: 'get_pod_logs',
+        description: 'Retrieve logs from a pod container; essential for debugging running or crashed workloads',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            namespace: { type: 'string', description: 'Pod namespace', default: 'default' },
+            name: { type: 'string', description: 'Pod name' },
+            container: { type: 'string', description: 'Container name (required for multi-container pods)' },
+            tail_lines: { type: 'number', description: 'Number of lines from the end of the log to return' },
+            previous: { type: 'boolean', description: 'Return logs from a previously terminated container instance' },
+            since_seconds: { type: 'number', description: 'Return logs newer than this many seconds' },
+          },
+          required: ['name'],
+        },
+      },
+      {
+        name: 'list_nodes',
+        description: 'List all nodes in the Kubernetes cluster with status and capacity information',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            label_selector: { type: 'string', description: 'Label selector filter' },
+            field_selector: { type: 'string', description: 'Field selector filter' },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'list_events',
+        description: 'List Kubernetes events for incident response; scope to a namespace or cluster-wide',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            namespace: { type: 'string', description: 'Namespace to list events in; omit for cluster-wide events' },
+            field_selector: { type: 'string', description: 'Field selector filter (e.g. involvedObject.name=my-pod)' },
+          },
+          required: [],
+        },
+      },
     ];
   }
 
@@ -120,6 +157,34 @@ export class KubernetesMCPServer {
           url = `${this.baseUrl}/api/v1/namespaces?${params}`;
           break;
         }
+        case 'get_pod_logs': {
+          const ns = args.namespace ?? 'default';
+          const params = new URLSearchParams();
+          if (args.container) params.set('container', String(args.container));
+          if (args.tail_lines != null) params.set('tailLines', String(args.tail_lines));
+          if (args.previous) params.set('previous', 'true');
+          if (args.since_seconds != null) params.set('sinceSeconds', String(args.since_seconds));
+          url = `${this.baseUrl}/api/v1/namespaces/${ns}/pods/${args.name}/log?${params}`;
+          headers['Accept'] = 'text/plain, application/json';
+          break;
+        }
+        case 'list_nodes': {
+          const params = new URLSearchParams();
+          if (args.label_selector) params.set('labelSelector', String(args.label_selector));
+          if (args.field_selector) params.set('fieldSelector', String(args.field_selector));
+          url = `${this.baseUrl}/api/v1/nodes?${params}`;
+          break;
+        }
+        case 'list_events': {
+          const params = new URLSearchParams();
+          if (args.field_selector) params.set('fieldSelector', String(args.field_selector));
+          if (args.namespace) {
+            url = `${this.baseUrl}/api/v1/namespaces/${args.namespace}/events?${params}`;
+          } else {
+            url = `${this.baseUrl}/api/v1/events?${params}`;
+          }
+          break;
+        }
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -128,13 +193,18 @@ export class KubernetesMCPServer {
 
       let data: unknown;
       try {
-        data = await response.json();
+        const contentType = response.headers.get('content-type') ?? '';
+        if (contentType.includes('text/plain')) {
+          data = await response.text();
+        } else {
+          data = await response.json();
+        }
       } catch {
         data = { status: response.status, statusText: response.statusText };
       }
 
       return {
-        content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+        content: [{ type: 'text', text: typeof data === 'string' ? data : JSON.stringify(data, null, 2) }],
         isError: !response.ok,
       };
     } catch (err) {

@@ -1,10 +1,4 @@
-/**
- * SentinelOne MCP Server
- * Provides access to SentinelOne REST API endpoints for threat management and agent control
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** SentinelOne MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -115,7 +109,7 @@ export class SentinelOneMCPServer {
             },
             action: {
               type: 'string',
-              description: 'Action to perform (kill, quarantine, remediate, rollback)',
+              description: 'Action to perform (kill, quarantine, un-quarantine, remediate, rollback-remediation)',
             },
           },
           required: ['threat_id', 'action'],
@@ -269,12 +263,14 @@ export class SentinelOneMCPServer {
             };
           }
 
+          // SentinelOne v2.1 uses a bulk endpoint: POST /web/api/v2.1/threats/mitigate/{action}
+          // with a filter body containing threat IDs — NOT a per-threat URL path.
           const response = await fetch(
-            `${this.baseUrl}/web/api/v2.1/threats/${encodeURIComponent(threatId)}/mitigate`,
+            `${this.baseUrl}/web/api/v2.1/threats/mitigate/${encodeURIComponent(action)}`,
             {
               method: 'POST',
               headers,
-              body: JSON.stringify({ action }),
+              body: JSON.stringify({ filter: { ids: [threatId] } }),
             }
           );
 

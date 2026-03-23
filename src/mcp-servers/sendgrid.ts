@@ -1,10 +1,4 @@
-/**
- * SendGrid MCP Server
- * Adapter for SendGrid v3 API — transactional email, templates, and delivery stats
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** SendGrid MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -137,6 +131,13 @@ export class SendGridMCPServer {
             body: JSON.stringify(body),
           });
           const text = await response.text();
+          if (!response.ok) {
+            const errorBody = text ? JSON.parse(text) : { status: response.status, statusText: response.statusText };
+            return {
+              content: [{ type: 'text', text: JSON.stringify(errorBody, null, 2) }],
+              isError: true,
+            };
+          }
           const data = text ? JSON.parse(text) : { status: response.status, message: 'Accepted' };
           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
         }

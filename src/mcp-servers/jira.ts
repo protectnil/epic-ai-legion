@@ -1,7 +1,4 @@
-/**
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Atlassian Jira MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -53,6 +50,45 @@ export class JiraMCPServer {
             priority: { type: 'string', description: 'Priority (e.g. High, Medium, Low)' },
           },
           required: ['project_key', 'summary', 'issue_type'],
+        },
+      },
+      {
+        name: 'update_issue',
+        description: 'Update fields on an existing Jira issue (summary, description, priority, assignee, etc.)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            issue_key: { type: 'string', description: 'The issue key (e.g. PROJ-123)' },
+            summary: { type: 'string', description: 'New summary text' },
+            description: { type: 'string', description: 'New description text' },
+            priority: { type: 'string', description: 'New priority name (e.g. High, Medium, Low)' },
+            assignee_account_id: { type: 'string', description: 'Atlassian account ID of the assignee' },
+          },
+          required: ['issue_key'],
+        },
+      },
+      {
+        name: 'transition_issue',
+        description: 'Transition a Jira issue to a new status using a workflow transition ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            issue_key: { type: 'string', description: 'The issue key (e.g. PROJ-123)' },
+            transition_id: { type: 'string', description: 'The numeric transition ID (obtain via GET /rest/api/3/issue/{key}/transitions)' },
+          },
+          required: ['issue_key', 'transition_id'],
+        },
+      },
+      {
+        name: 'add_comment',
+        description: 'Add a comment to a Jira issue',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            issue_key: { type: 'string', description: 'The issue key (e.g. PROJ-123)' },
+            body: { type: 'string', description: 'Plain-text comment body' },
+          },
+          required: ['issue_key', 'body'],
         },
       },
       {
@@ -114,6 +150,37 @@ export class JiraMCPServer {
               issuetype: { name: args.issue_type },
               ...(args.description ? { description: { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: args.description }] }] } } : {}),
               ...(args.priority ? { priority: { name: args.priority } } : {}),
+            },
+          };
+          break;
+        }
+        case 'update_issue': {
+          url = `${this.baseUrl}/issue/${args.issue_key}`;
+          method = 'PUT';
+          const updateFields: Record<string, unknown> = {};
+          if (args.summary !== undefined) updateFields.summary = args.summary;
+          if (args.description !== undefined) {
+            updateFields.description = { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: args.description }] }] };
+          }
+          if (args.priority !== undefined) updateFields.priority = { name: args.priority };
+          if (args.assignee_account_id !== undefined) updateFields.assignee = { accountId: args.assignee_account_id };
+          body = { fields: updateFields };
+          break;
+        }
+        case 'transition_issue': {
+          url = `${this.baseUrl}/issue/${args.issue_key}/transitions`;
+          method = 'POST';
+          body = { transition: { id: String(args.transition_id) } };
+          break;
+        }
+        case 'add_comment': {
+          url = `${this.baseUrl}/issue/${args.issue_key}/comment`;
+          method = 'POST';
+          body = {
+            body: {
+              type: 'doc',
+              version: 1,
+              content: [{ type: 'paragraph', content: [{ type: 'text', text: String(args.body) }] }],
             },
           };
           break;

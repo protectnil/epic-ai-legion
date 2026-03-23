@@ -1,10 +1,4 @@
-/**
- * Slack MCP Server
- * Provides access to Slack Web API for channel, message, and user management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Slack MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -103,7 +97,7 @@ export class SlackMCPServer {
       },
       {
         name: 'search_messages',
-        description: 'Search messages across the workspace',
+        description: 'Search messages across the workspace. Requires a user token with the search:read scope — bot tokens do not have this permission and will return an error.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -139,6 +133,91 @@ export class SlackMCPServer {
             },
           },
           required: ['user'],
+        },
+      },
+      {
+        name: 'add_reaction',
+        description: 'Add an emoji reaction to a message',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            channel: {
+              type: 'string',
+              description: 'Channel ID where the message was posted',
+            },
+            timestamp: {
+              type: 'string',
+              description: 'Timestamp of the message to react to (the ts field from a message)',
+            },
+            name: {
+              type: 'string',
+              description: 'Emoji name without colons (e.g. thumbsup, white_check_mark)',
+            },
+          },
+          required: ['channel', 'timestamp', 'name'],
+        },
+      },
+      {
+        name: 'get_thread_replies',
+        description: 'Retrieve all replies in a message thread. Bot tokens can only access DM and MPDM threads; a user token is required for public and private channel threads.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            channel: {
+              type: 'string',
+              description: 'Channel ID that contains the thread',
+            },
+            ts: {
+              type: 'string',
+              description: 'Timestamp of the parent (root) message of the thread',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of replies to return (max 999, default: 20)',
+            },
+            oldest: {
+              type: 'string',
+              description: 'Only return messages after this Unix timestamp',
+            },
+            latest: {
+              type: 'string',
+              description: 'Only return messages before this Unix timestamp',
+            },
+            inclusive: {
+              type: 'boolean',
+              description: 'Include messages with oldest or latest timestamps (default: false)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['channel', 'ts'],
+        },
+      },
+      {
+        name: 'list_users',
+        description: 'List all users in the workspace',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of users to return (max 999, default: 100)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+            include_locale: {
+              type: 'boolean',
+              description: 'Include locale information for each user (default: false)',
+            },
+            team_id: {
+              type: 'string',
+              description: 'Team ID to scope results when using an org-level token',
+            },
+          },
         },
       },
     ];
@@ -285,6 +364,89 @@ export class SlackMCPServer {
           if (!response.ok) {
             return {
               content: [{ type: 'text', text: `Failed to get user info: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`Slack returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'add_reaction': {
+          const channel = args.channel as string;
+          const timestamp = args.timestamp as string;
+          const name = args.name as string;
+
+          if (!channel || !timestamp || !name) {
+            return {
+              content: [{ type: 'text', text: 'channel, timestamp, and name are required' }],
+              isError: true,
+            };
+          }
+
+          const response = await fetch(`${this.baseUrl}/reactions.add`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ channel, timestamp, name }),
+          });
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to add reaction: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`Slack returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'get_thread_replies': {
+          const channel = args.channel as string;
+          const ts = args.ts as string;
+
+          if (!channel || !ts) {
+            return {
+              content: [{ type: 'text', text: 'channel and ts are required' }],
+              isError: true,
+            };
+          }
+
+          const limit = (args.limit as number) || 20;
+          let url = `${this.baseUrl}/conversations.replies?channel=${encodeURIComponent(channel)}&ts=${encodeURIComponent(ts)}&limit=${limit}`;
+          if (args.oldest) url += `&oldest=${encodeURIComponent(args.oldest as string)}`;
+          if (args.latest) url += `&latest=${encodeURIComponent(args.latest as string)}`;
+          if (typeof args.inclusive === 'boolean') url += `&inclusive=${args.inclusive ? '1' : '0'}`;
+          if (args.cursor) url += `&cursor=${encodeURIComponent(args.cursor as string)}`;
+
+          const response = await fetch(url, { method: 'GET', headers });
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to get thread replies: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`Slack returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'list_users': {
+          const limit = (args.limit as number) || 100;
+          let url = `${this.baseUrl}/users.list?limit=${limit}`;
+          if (args.cursor) url += `&cursor=${encodeURIComponent(args.cursor as string)}`;
+          if (typeof args.include_locale === 'boolean') url += `&include_locale=${args.include_locale}`;
+          if (args.team_id) url += `&team_id=${encodeURIComponent(args.team_id as string)}`;
+
+          const response = await fetch(url, { method: 'GET', headers });
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to list users: ${response.statusText}` }],
               isError: true,
             };
           }

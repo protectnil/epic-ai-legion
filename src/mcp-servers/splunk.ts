@@ -1,8 +1,4 @@
-/**
- * @epicai/core — Splunk MCP Server
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Splunk MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 export class SplunkMCPServer {
@@ -49,7 +45,7 @@ export class SplunkMCPServer {
       },
       {
         name: 'list_alerts',
-        description: 'List all configured alerts in Splunk',
+        description: 'List fired alert instances from Splunk',
         inputSchema: {
           type: 'object',
           properties: {
@@ -80,6 +76,17 @@ export class SplunkMCPServer {
           },
         },
       },
+      {
+        name: 'get_indexes',
+        description: 'List all configured Splunk indexes',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            count: { type: 'number', description: 'Maximum indexes to return (default: 100)' },
+            summarize: { type: 'boolean', description: 'Return summarized fields only (default: false)' },
+          },
+        },
+      },
     ];
   }
 
@@ -96,6 +103,8 @@ export class SplunkMCPServer {
           return await this.getNotableEvents(args.search_query as string | undefined, args.count as number | undefined);
         case 'list_saved_searches':
           return await this.listSavedSearches(args.count as number | undefined, args.app as string | undefined);
+        case 'get_indexes':
+          return await this.getIndexes(args.count as number | undefined, args.summarize as boolean | undefined);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -143,7 +152,7 @@ export class SplunkMCPServer {
     const params = new URLSearchParams({ output_mode: 'json', count: String(count || 100) });
     if (owner) params.append('owner', owner);
 
-    const response = await fetch(`${this.baseUrl}/services/alerts/alert_actions?${params}`, {
+    const response = await fetch(`${this.baseUrl}/services/alerts/fired_alerts?${params}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -188,6 +197,22 @@ export class SplunkMCPServer {
     if (app) params.append('app', app);
 
     const response = await fetch(`${this.baseUrl}/services/saved/searches?${params}`, {
+      method: 'GET',
+      headers: this.headers,
+    });
+
+    if (!response.ok) throw new Error(`Splunk API error: ${response.status} ${response.statusText}`);
+
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Splunk returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  }
+
+  private async getIndexes(count?: number, summarize?: boolean): Promise<ToolResult> {
+    const params = new URLSearchParams({ output_mode: 'json', count: String(count || 100) });
+    if (summarize) params.append('summarize', 'true');
+
+    const response = await fetch(`${this.baseUrl}/services/data/indexes?${params}`, {
       method: 'GET',
       headers: this.headers,
     });
