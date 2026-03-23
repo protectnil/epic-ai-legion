@@ -1,9 +1,11 @@
-/**
- * @epicai/core — IBM QRadar MCP Server
+/** IBM QRadar MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 import { ToolDefinition, ToolResult } from './types.js';
+
+const POLL_INTERVAL_MS = 2000;
+const POLL_TIMEOUT_MS = 120_000;
 
 export class QRadarMCPServer {
   private readonly baseUrl: string;
@@ -46,7 +48,7 @@ export class QRadarMCPServer {
       },
       {
         name: 'search_events',
-        description: 'Search events in QRadar using AQL query',
+        description: 'Search events in QRadar using AQL query (async: creates search, polls until complete, returns results)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -199,28 +201,87 @@ export class QRadarMCPServer {
   }
 
   private async searchEvents(query: string): Promise<ToolResult> {
-    const requestBody = { query_expression: query };
-
-    const response = await fetch(
+    // Step 1: Create async search
+    const createResponse = await fetch(
       `${this.baseUrl}/ariel/searches`,
       {
         method: 'POST',
         headers: this.headers,
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ query_expression: query }),
       }
     );
 
-    if (!response.ok) {
-      throw new Error(`QRadar API error: ${response.status} ${response.statusText}`);
+    if (!createResponse.ok) {
+      throw new Error(`QRadar search create error: ${createResponse.status} ${createResponse.statusText}`);
     }
 
-    let data: unknown;
+    let createData: { search_id?: string; status?: string };
     try {
-      data = await response.json();
+      createData = await createResponse.json() as { search_id?: string; status?: string };
     } catch {
-      throw new Error(`QRadar returned non-JSON response (HTTP ${response.status})`);
+      throw new Error(`QRadar returned non-JSON response on search create (HTTP ${createResponse.status})`);
     }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+
+    const searchId = createData.search_id;
+    if (!searchId) {
+      throw new Error('QRadar did not return a search_id');
+    }
+
+    // Step 2: Poll until status is COMPLETED, CANCELED, or ERROR
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
+    let status = createData.status ?? 'WAIT';
+
+    while (status !== 'COMPLETED' && status !== 'CANCELED' && status !== 'ERROR') {
+      if (Date.now() > deadline) {
+        throw new Error(`QRadar search ${searchId} did not complete within ${POLL_TIMEOUT_MS / 1000}s`);
+      }
+
+      await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+
+      const statusResponse = await fetch(
+        `${this.baseUrl}/ariel/searches/${encodeURIComponent(searchId)}`,
+        { method: 'GET', headers: this.headers }
+      );
+
+      if (!statusResponse.ok) {
+        throw new Error(`QRadar search status error: ${statusResponse.status} ${statusResponse.statusText}`);
+      }
+
+      let statusData: { status?: string };
+      try {
+        statusData = await statusResponse.json() as { status?: string };
+      } catch {
+        throw new Error(`QRadar returned non-JSON response on status poll (HTTP ${statusResponse.status})`);
+      }
+
+      status = statusData.status ?? status;
+    }
+
+    if (status === 'CANCELED') {
+      throw new Error(`QRadar search ${searchId} was canceled`);
+    }
+    if (status === 'ERROR') {
+      throw new Error(`QRadar search ${searchId} completed with ERROR status`);
+    }
+
+    // Step 3: Retrieve results
+    const resultsResponse = await fetch(
+      `${this.baseUrl}/ariel/searches/${encodeURIComponent(searchId)}/results`,
+      { method: 'GET', headers: this.headers }
+    );
+
+    if (!resultsResponse.ok) {
+      throw new Error(`QRadar search results error: ${resultsResponse.status} ${resultsResponse.statusText}`);
+    }
+
+    let results: unknown;
+    try {
+      results = await resultsResponse.json();
+    } catch {
+      throw new Error(`QRadar returned non-JSON response on results fetch (HTTP ${resultsResponse.status})`);
+    }
+
+    return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }], isError: false };
   }
 
   private async getFlows(

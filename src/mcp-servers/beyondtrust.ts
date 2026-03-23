@@ -1,7 +1,5 @@
 /**
- * BeyondTrust MCP Server
- * Provides access to BeyondTrust REST API endpoints for privileged access management and password management
- 
+ * BeyondTrust Password Safe MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -10,15 +8,21 @@ import { ToolDefinition, ToolResult } from './types.js';
 
 interface BeyondTrustConfig {
   apiKey: string;
+  username: string;
+  password: string;
   baseUrl: string;
 }
 
 export class BeyondTrustMCPServer {
   private readonly apiKey: string;
+  private readonly username: string;
+  private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: BeyondTrustConfig) {
     this.apiKey = config.apiKey;
+    this.username = config.username;
+    this.password = config.password;
     this.baseUrl = config.baseUrl;
   }
 
@@ -138,192 +142,173 @@ export class BeyondTrustMCPServer {
     ];
   }
 
+  private psAuthHeader(): string {
+    return `PS-Auth key=${this.apiKey}; runas=${this.username}; pwd=[${this.password}];`;
+  }
+
+  private async signIn(): Promise<{ sessionId: string } | ToolResult> {
+    const response = await fetch(`${this.baseUrl}/Auth/SignAppIn`, {
+      method: 'POST',
+      headers: {
+        Authorization: this.psAuthHeader(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(null),
+    });
+
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `PS-Auth sign-in failed: ${response.status} ${response.statusText}` }],
+        isError: true,
+      };
+    }
+
+    const setCookie = response.headers.get('set-cookie') ?? '';
+    const match = setCookie.match(/ASP\.NET_SessionId=([^;]+)/);
+    if (!match) {
+      return {
+        content: [{ type: 'text', text: 'PS-Auth sign-in succeeded but ASP.NET_SessionId cookie not found in response' }],
+        isError: true,
+      };
+    }
+
+    return { sessionId: match[1] };
+  }
+
+  private async signOut(sessionId: string): Promise<void> {
+    await fetch(`${this.baseUrl}/Auth/Signout`, {
+      method: 'POST',
+      headers: {
+        Authorization: this.psAuthHeader(),
+        'Content-Type': 'application/json',
+        Cookie: `ASP.NET_SessionId=${sessionId}`,
+      },
+      body: JSON.stringify(null),
+    });
+  }
+
+  private makeHeaders(sessionId: string): Record<string, string> {
+    return {
+      Authorization: this.psAuthHeader(),
+      'Content-Type': 'application/json',
+      Cookie: `ASP.NET_SessionId=${sessionId}`,
+    };
+  }
+
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      switch (name) {
-        case 'list_sessions': {
-          const status = args.status as string | undefined;
-          const userId = args.user_id as string | undefined;
-          const startDate = args.start_date as string | undefined;
-          const endDate = args.end_date as string | undefined;
-          const limit = (args.limit as number) || 100;
-          const offset = (args.offset as number) || 0;
+      const signInResult = await this.signIn();
+      if ('isError' in signInResult && signInResult.isError) {
+        return signInResult as ToolResult;
+      }
+      const { sessionId } = signInResult as { sessionId: string };
 
-          let url = `${this.baseUrl}/sessions?limit=${limit}&offset=${offset}`;
-          if (status) {
-            url += `&status=${encodeURIComponent(status)}`;
-          }
-          if (userId) {
-            url += `&userId=${encodeURIComponent(userId)}`;
-          }
-          if (startDate) {
-            url += `&startDate=${encodeURIComponent(startDate)}`;
-          }
-          if (endDate) {
-            url += `&endDate=${encodeURIComponent(endDate)}`;
-          }
+      try {
+        switch (name) {
+          case 'list_sessions': {
+            const status = args.status as string | undefined;
+            const userId = args.user_id as string | undefined;
+            const startDate = args.start_date as string | undefined;
+            const endDate = args.end_date as string | undefined;
+            const limit = (args.limit as number) || 100;
+            const offset = (args.offset as number) || 0;
 
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'X-API-KEY': this.apiKey,
-              'Content-Type': 'application/json',
-            },
-          });
+            let url = `${this.baseUrl}/sessions?limit=${limit}&offset=${offset}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (userId) url += `&userId=${encodeURIComponent(userId)}`;
+            if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+            if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
 
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list sessions: ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_session': {
-          const sessionId = args.session_id as string;
-          if (!sessionId) {
-            return {
-              content: [{ type: 'text', text: 'session_id is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(
-            `${this.baseUrl}/sessions/${encodeURIComponent(sessionId)}`,
-            {
-              method: 'GET',
-              headers: {
-                'X-API-KEY': this.apiKey,
-                'Content-Type': 'application/json',
-              },
+            const response = await fetch(url, { method: 'GET', headers: this.makeHeaders(sessionId) });
+            if (!response.ok) {
+              return { content: [{ type: 'text', text: `Failed to list sessions: ${response.statusText}` }], isError: true };
             }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get session: ${response.statusText}` }],
-              isError: true,
-            };
+            let data: unknown;
+            try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
           }
 
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_credentials': {
-          const credentialType = args.credential_type as string | undefined;
-          const search = args.search as string | undefined;
-          const limit = (args.limit as number) || 100;
-          const offset = (args.offset as number) || 0;
-
-          let url = `${this.baseUrl}/credentials?limit=${limit}&offset=${offset}`;
-          if (credentialType) {
-            url += `&type=${encodeURIComponent(credentialType)}`;
-          }
-          if (search) {
-            url += `&search=${encodeURIComponent(search)}`;
-          }
-
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'X-API-KEY': this.apiKey,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list credentials: ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_managed_account': {
-          const accountId = args.account_id as string;
-          if (!accountId) {
-            return {
-              content: [{ type: 'text', text: 'account_id is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(
-            `${this.baseUrl}/accounts/${encodeURIComponent(accountId)}`,
-            {
-              method: 'GET',
-              headers: {
-                'X-API-KEY': this.apiKey,
-                'Content-Type': 'application/json',
-              },
+          case 'get_session': {
+            const sessionId2 = args.session_id as string;
+            if (!sessionId2) {
+              return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
             }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get account: ${response.statusText}` }],
-              isError: true,
-            };
+            const response = await fetch(
+              `${this.baseUrl}/sessions/${encodeURIComponent(sessionId2)}`,
+              { method: 'GET', headers: this.makeHeaders(sessionId) }
+            );
+            if (!response.ok) {
+              return { content: [{ type: 'text', text: `Failed to get session: ${response.statusText}` }], isError: true };
+            }
+            let data: unknown;
+            try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
           }
 
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+          case 'list_credentials': {
+            const credentialType = args.credential_type as string | undefined;
+            const search = args.search as string | undefined;
+            const limit = (args.limit as number) || 100;
+            const offset = (args.offset as number) || 0;
+
+            let url = `${this.baseUrl}/credentials?limit=${limit}&offset=${offset}`;
+            if (credentialType) url += `&type=${encodeURIComponent(credentialType)}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            const response = await fetch(url, { method: 'GET', headers: this.makeHeaders(sessionId) });
+            if (!response.ok) {
+              return { content: [{ type: 'text', text: `Failed to list credentials: ${response.statusText}` }], isError: true };
+            }
+            let data: unknown;
+            try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+          }
+
+          case 'get_managed_account': {
+            const accountId = args.account_id as string;
+            if (!accountId) {
+              return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
+            }
+            const response = await fetch(
+              `${this.baseUrl}/accounts/${encodeURIComponent(accountId)}`,
+              { method: 'GET', headers: this.makeHeaders(sessionId) }
+            );
+            if (!response.ok) {
+              return { content: [{ type: 'text', text: `Failed to get account: ${response.statusText}` }], isError: true };
+            }
+            let data: unknown;
+            try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+          }
+
+          case 'list_policies': {
+            const policyType = args.policy_type as string | undefined;
+            const status = args.status as string | undefined;
+            const limit = (args.limit as number) || 100;
+            const offset = (args.offset as number) || 0;
+
+            let url = `${this.baseUrl}/policies?limit=${limit}&offset=${offset}`;
+            if (policyType) url += `&type=${encodeURIComponent(policyType)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+
+            const response = await fetch(url, { method: 'GET', headers: this.makeHeaders(sessionId) });
+            if (!response.ok) {
+              return { content: [{ type: 'text', text: `Failed to list policies: ${response.statusText}` }], isError: true };
+            }
+            let data: unknown;
+            try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
         }
-
-        case 'list_policies': {
-          const policyType = args.policy_type as string | undefined;
-          const status = args.status as string | undefined;
-          const limit = (args.limit as number) || 100;
-          const offset = (args.offset as number) || 0;
-
-          let url = `${this.baseUrl}/policies?limit=${limit}&offset=${offset}`;
-          if (policyType) {
-            url += `&type=${encodeURIComponent(policyType)}`;
-          }
-          if (status) {
-            url += `&status=${encodeURIComponent(status)}`;
-          }
-
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'X-API-KEY': this.apiKey,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list policies: ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`BeyondTrust returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        default:
-          return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-            isError: true,
-          };
+      } finally {
+        await this.signOut(sessionId);
       }
     } catch (error) {
       return {
-        content: [{ type: 'text', text: String(`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`) }],
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }

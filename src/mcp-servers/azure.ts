@@ -1,13 +1,18 @@
 /**
- * Azure MCP Server
- * Adapter for Azure Resource Manager REST API using OAuth2 Bearer token
- *
+ * Microsoft Azure MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface AzureConfig {
+  /**
+   * Azure AD OAuth2 Bearer token for management.azure.com.
+   * Azure tokens expire after approximately 1 hour. This adapter does not
+   * implement token refresh. The caller is responsible for obtaining a fresh
+   * token (e.g. via client credentials flow or az account get-access-token)
+   * and re-instantiating the server before the token expires.
+   */
   accessToken: string;
   subscriptionId?: string;
 }
@@ -65,12 +70,12 @@ export class AzureMCPServer {
       },
       {
         name: 'get_resource',
-        description: 'Get details of a specific Azure resource by its full resource ID',
+        description: 'Get details of a specific Azure resource by its full resource ID. Each Azure resource provider (e.g. Microsoft.Compute, Microsoft.Storage, Microsoft.Web) uses a different API version. Provide the api_version parameter matching the resource type — for example "2023-07-01" for Microsoft.Compute/virtualMachines or "2023-01-01" for Microsoft.Storage/storageAccounts. If omitted, a generic fallback version is used which may not be supported by all providers.',
         inputSchema: {
           type: 'object',
           properties: {
-            resourceId: { type: 'string', description: 'Full Azure resource ID path' },
-            apiVersion: { type: 'string', description: 'API version for the resource provider' },
+            resourceId: { type: 'string', description: 'Full Azure resource ID path (e.g. /subscriptions/{subId}/resourceGroups/{rg}/providers/{provider}/{type}/{name})' },
+            apiVersion: { type: 'string', description: 'API version for the resource provider (e.g. "2023-07-01"). Strongly recommended — different resource types require different versions.' },
           },
           required: ['resourceId'],
         },

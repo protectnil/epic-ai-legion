@@ -1,6 +1,5 @@
-/** Zendesk MCP Server
- * Provides access to Zendesk Support tickets, searches, and users via the Zendesk REST API
- *
+/**
+ * Zendesk MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -96,6 +95,67 @@ export class ZendeskMCPServer {
             },
           },
           required: ['subject', 'body'],
+        },
+      },
+      {
+        name: 'update_ticket',
+        description: 'Update an existing Zendesk ticket (status, priority, assignee, tags, etc.) via PUT /api/v2/tickets/{id}',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            ticket_id: {
+              type: 'number',
+              description: 'The numeric Zendesk ticket ID to update',
+            },
+            status: {
+              type: 'string',
+              description: 'New ticket status: new, open, pending, hold, solved, closed',
+            },
+            priority: {
+              type: 'string',
+              description: 'New ticket priority: low, normal, high, urgent',
+            },
+            assignee_id: {
+              type: 'number',
+              description: 'ID of the agent to assign the ticket to',
+            },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Replace the ticket tag list with these tags',
+            },
+            subject: {
+              type: 'string',
+              description: 'Updated ticket subject',
+            },
+          },
+          required: ['ticket_id'],
+        },
+      },
+      {
+        name: 'add_comment',
+        description: 'Add a public or private comment to an existing Zendesk ticket via PUT /api/v2/tickets/{id}',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            ticket_id: {
+              type: 'number',
+              description: 'The numeric Zendesk ticket ID to comment on',
+            },
+            body: {
+              type: 'string',
+              description: 'The comment body text',
+            },
+            public: {
+              type: 'boolean',
+              description: 'Whether the comment is public (true) or internal/private (false). Defaults to true.',
+            },
+            author_id: {
+              type: 'number',
+              description: 'ID of the agent authoring the comment (optional, defaults to authenticated user)',
+            },
+          },
+          required: ['ticket_id', 'body'],
         },
       },
       {
@@ -200,6 +260,55 @@ export class ZendeskMCPServer {
           );
           if (!response.ok) {
             return { content: [{ type: 'text', text: `Failed to create ticket: ${response.statusText}` }], isError: true };
+          }
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`Zendesk returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'update_ticket': {
+          const ticketId = args.ticket_id as number;
+          if (ticketId === undefined || ticketId === null) {
+            return { content: [{ type: 'text', text: 'ticket_id is required' }], isError: true };
+          }
+          const ticket: Record<string, unknown> = {};
+          if (args.status !== undefined) ticket.status = args.status;
+          if (args.priority !== undefined) ticket.priority = args.priority;
+          if (args.assignee_id !== undefined) ticket.assignee_id = args.assignee_id;
+          if (args.tags !== undefined) ticket.tags = args.tags;
+          if (args.subject !== undefined) ticket.subject = args.subject;
+          const response = await fetch(
+            `${this.baseUrl}/tickets/${ticketId}`,
+            { method: 'PUT', headers, body: JSON.stringify({ ticket }) }
+          );
+          if (!response.ok) {
+            return { content: [{ type: 'text', text: `Failed to update ticket: ${response.statusText}` }], isError: true };
+          }
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`Zendesk returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'add_comment': {
+          const ticketId = args.ticket_id as number;
+          const body = args.body as string;
+          if (ticketId === undefined || ticketId === null) {
+            return { content: [{ type: 'text', text: 'ticket_id is required' }], isError: true };
+          }
+          if (!body) {
+            return { content: [{ type: 'text', text: 'body is required' }], isError: true };
+          }
+          const comment: Record<string, unknown> = {
+            body,
+            public: args.public !== undefined ? args.public : true,
+          };
+          if (args.author_id !== undefined) comment.author_id = args.author_id;
+          const response = await fetch(
+            `${this.baseUrl}/tickets/${ticketId}`,
+            { method: 'PUT', headers, body: JSON.stringify({ ticket: { comment } }) }
+          );
+          if (!response.ok) {
+            return { content: [{ type: 'text', text: `Failed to add comment: ${response.statusText}` }], isError: true };
           }
           let data: unknown;
           try { data = await response.json(); } catch { throw new Error(`Zendesk returned non-JSON response (HTTP ${response.status})`); }

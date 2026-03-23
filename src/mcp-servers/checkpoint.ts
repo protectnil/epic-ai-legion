@@ -1,3 +1,9 @@
+/**
+ * Check Point MCP Adapter
+ * Built on the Epic AI® Intelligence Platform
+ * Copyright 2026 protectNIL Inc. Apache-2.0
+ */
+
 import { ToolDefinition, ToolResult } from './types.js';
 
 export class CheckPointMCPServer {
@@ -40,7 +46,7 @@ export class CheckPointMCPServer {
       },
       {
         name: 'show_gateways',
-        description: 'List all configured gateways',
+        description: 'List all configured gateways and servers',
         inputSchema: {
           type: 'object',
           properties: {
@@ -136,10 +142,7 @@ export class CheckPointMCPServer {
   /**
    * Check Point uses password-based session auth (ROPC-equivalent).
    * This is required by the Check Point Management API — no alternative token endpoint exists.
-   
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+   */
   private async withReauth<T>(fn: () => Promise<T>): Promise<T> {
     try {
       return await fn();
@@ -227,7 +230,7 @@ export class CheckPointMCPServer {
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
 
-    const url = `${this.baseUrl}/show-gateways`;
+    const url = `${this.baseUrl}/show-gateways-and-servers`;
     const body = JSON.stringify({ limit, offset });
 
     const response = await fetch(url, {

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Cybereason MCP Server
+ * Cybereason MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -20,7 +20,7 @@ interface CybereasonConfig {
 export class CybereasonMCPServer {
   private readonly baseUrl: string;
   private readonly username: string;
-  private password: string | null;
+  private readonly password: string;
   private readonly headers: Record<string, string>;
   private sessionCookie: string | null = null;
   private sessionExpiry: number = 0;
@@ -139,20 +139,21 @@ export class CybereasonMCPServer {
   }
 
   private async authenticate(): Promise<void> {
-    if (!this.password) {
-      throw new Error('Cannot re-authenticate: password has been cleared');
-    }
-
     const loginUrl = `${this.baseUrl}/login.html`;
-    const loginBody = {
+
+    // Cybereason requires application/x-www-form-urlencoded for authentication.
+    const formBody = new URLSearchParams({
       username: this.username,
       password: this.password,
-    };
+    }).toString();
 
     const response = await fetch(loginUrl, {
       method: 'POST',
-      headers: this.headers,
-      body: JSON.stringify(loginBody),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: formBody,
     });
 
     if (!response.ok) {
@@ -167,9 +168,6 @@ export class CybereasonMCPServer {
     this.sessionCookie = setCookieHeader.split(';')[0];
     this.sessionExpiry = Date.now() + this.sessionTtlMs;
     this.headers['Cookie'] = this.sessionCookie;
-
-    // Clear plaintext password from memory after successful authentication
-    this.password = null;
   }
 
   private async fetchWithReauth(url: string, options: RequestInit): Promise<Response> {

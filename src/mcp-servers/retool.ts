@@ -1,6 +1,4 @@
-/** Retool MCP Server
- * Retool app and workflow management
- *
+/** Retool MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -135,6 +133,14 @@ export class RetoolMCPServer {
           };
       }
 
+      if (!response.ok) {
+        let errBody: unknown;
+        try { errBody = await response.json(); } catch { errBody = await response.text(); }
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ error: `HTTP ${response.status} ${response.statusText}`, detail: errBody }, null, 2) }],
+          isError: true,
+        };
+      }
       let data: unknown;
       try {
         data = await response.json();

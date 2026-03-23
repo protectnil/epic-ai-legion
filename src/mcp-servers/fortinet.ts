@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Fortinet MCP Server
+ * Fortinet FortiGate MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -13,6 +13,7 @@ export class FortinetMCPServer {
   constructor(config: { baseUrl: string; apiKey: string }) {
     this.baseUrl = config.baseUrl;
     this.apiKey = config.apiKey;
+    // FortiOS v7.4.5+ requires token in Authorization header, not URL param
     this.headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -49,13 +50,21 @@ export class FortinetMCPServer {
       },
       {
         name: 'get_threats',
-        description: 'Retrieve threat information and statistics',
+        description: 'Retrieve IPS/intrusion prevention threat events from the local disk log',
         inputSchema: {
           type: 'object',
           properties: {
-            type: {
+            vdom: {
               type: 'string',
-              description: 'Threat type filter (e.g., "virus", "malware")',
+              description: 'Virtual domain name (default: root)',
+            },
+            severity: {
+              type: 'string',
+              description: 'Filter by severity level (emergency, alert, critical, error, warning, notice, information, debug)',
+            },
+            rows: {
+              type: 'number',
+              description: 'Maximum number of events to return (default: 50)',
             },
           },
         },
@@ -147,7 +156,7 @@ export class FortinetMCPServer {
     const limit = (args.limit as number) || 100;
     const start = (args.start as number) || 0;
 
-    let url = `${this.baseUrl}/cmdb/firewall/policy?vdom=${encodeURIComponent(vdom)}&limit=${limit}&start=${start}`;
+    let url = `${this.baseUrl}/api/v2/cmdb/firewall/policy?vdom=${encodeURIComponent(vdom)}&limit=${limit}&start=${start}`;
 
     if (filter) {
       url += `&filter=${encodeURIComponent(filter)}`;
@@ -172,12 +181,16 @@ export class FortinetMCPServer {
   }
 
   private async getThreats(args: Record<string, unknown>): Promise<ToolResult> {
-    const type = args.type as string | undefined;
+    const vdom = (args.vdom as string) || 'root';
+    const severity = args.severity as string | undefined;
+    const rows = (args.rows as number) || 50;
 
-    let url = `${this.baseUrl}/monitor/system/security-rating`;
+    // FortiOS log API: GET /api/v2/log/disk/utm retrieves on-device UTM security event logs.
+    // The subtype filter selects IPS/intrusion prevention events specifically.
+    let url = `${this.baseUrl}/api/v2/log/disk/utm?vdom=${encodeURIComponent(vdom)}&rows=${rows}&filter=subtype==ips`;
 
-    if (type) {
-      url += `?filter=${encodeURIComponent(`type=${type}`)}`;
+    if (severity) {
+      url += `&filter=level==${encodeURIComponent(severity)}`;
     }
 
     const response = await fetch(url, {
@@ -202,10 +215,10 @@ export class FortinetMCPServer {
     const vdom = (args.vdom as string) || 'root';
     const status = args.status as string | undefined;
 
-    let url = `${this.baseUrl}/cmdb/vpn/ipsec/phase1?vdom=${encodeURIComponent(vdom)}`;
+    let url = `${this.baseUrl}/api/v2/cmdb/vpn.ipsec/phase1?vdom=${encodeURIComponent(vdom)}`;
 
     if (status) {
-      url += `&filter=status%3D${encodeURIComponent(status)}`;
+      url += `&filter=status==${encodeURIComponent(status)}`;
     }
 
     const response = await fetch(url, {
@@ -229,7 +242,7 @@ export class FortinetMCPServer {
   private async getSystemStatus(args: Record<string, unknown>): Promise<ToolResult> {
     const vdom = (args.vdom as string) || 'root';
 
-    const url = `${this.baseUrl}/monitor/system/status?vdom=${encodeURIComponent(vdom)}`;
+    const url = `${this.baseUrl}/api/v2/monitor/system/status?vdom=${encodeURIComponent(vdom)}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -254,7 +267,7 @@ export class FortinetMCPServer {
     const filter = args.filter as string | undefined;
     const limit = (args.limit as number) || 100;
 
-    let url = `${this.baseUrl}/cmdb/firewall/address?vdom=${encodeURIComponent(vdom)}&limit=${limit}`;
+    let url = `${this.baseUrl}/api/v2/cmdb/firewall/address?vdom=${encodeURIComponent(vdom)}&limit=${limit}`;
 
     if (filter) {
       url += `&filter=${encodeURIComponent(filter)}`;

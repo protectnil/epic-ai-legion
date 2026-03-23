@@ -1,4 +1,5 @@
 /**
+ * Atlassian Confluence MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -57,6 +58,34 @@ export class ConfluenceMCPServer {
         },
       },
       {
+        name: 'update_page',
+        description: 'Update an existing Confluence page. The version_number must be the current page version incremented by 1.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page_id: { type: 'string', description: 'The page ID to update' },
+            title: { type: 'string', description: 'New page title' },
+            body: { type: 'string', description: 'New page body content in storage format' },
+            version_number: { type: 'number', description: 'Next version number (current version + 1)' },
+            status: { type: 'string', description: 'Page status (current or draft)', default: 'current' },
+            version_message: { type: 'string', description: 'Optional message describing this version' },
+          },
+          required: ['page_id', 'title', 'body', 'version_number'],
+        },
+      },
+      {
+        name: 'add_comment',
+        description: 'Add a footer comment to a Confluence page',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page_id: { type: 'string', description: 'The page ID to comment on' },
+            body: { type: 'string', description: 'Comment body content in storage format' },
+          },
+          required: ['page_id', 'body'],
+        },
+      },
+      {
         name: 'search_content',
         description: 'Search Confluence content using CQL',
         inputSchema: {
@@ -112,6 +141,36 @@ export class ConfluenceMCPServer {
             status: args.status ?? 'current',
             title: args.title,
             ...(args.parent_id ? { parentId: args.parent_id } : {}),
+            body: {
+              representation: 'storage',
+              value: args.body,
+            },
+          };
+          break;
+        }
+        case 'update_page': {
+          url = `${this.baseUrl}/pages/${args.page_id}`;
+          method = 'PUT';
+          body = {
+            id: args.page_id,
+            status: args.status ?? 'current',
+            title: args.title,
+            body: {
+              representation: 'storage',
+              value: args.body,
+            },
+            version: {
+              number: args.version_number,
+              ...(args.version_message ? { message: args.version_message } : {}),
+            },
+          };
+          break;
+        }
+        case 'add_comment': {
+          url = `${this.baseUrl}/footer-comments`;
+          method = 'POST';
+          body = {
+            pageId: args.page_id,
             body: {
               representation: 'storage',
               value: args.body,

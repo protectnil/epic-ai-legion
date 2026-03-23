@@ -1,7 +1,5 @@
 /**
- * AWS MCP Server
- * Adapter for AWS REST APIs using Signature V4 authentication
- *
+ * Amazon Web Services MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -139,7 +137,7 @@ export class AWSMCPServer {
       },
       {
         name: 'get_cloudwatch_metrics',
-        description: 'List CloudWatch metrics for a given namespace and metric name',
+        description: 'List CloudWatch metric metadata (names, namespaces, dimensions) for a given namespace and metric name. Returns metric descriptors only — not data values or statistics. Use GetMetricData or GetMetricStatistics separately to retrieve actual data points.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -170,8 +168,11 @@ export class AWSMCPServer {
     try {
       switch (name) {
         case 'list_s3_buckets': {
-          const url = `https://s3.${this.config.region}.amazonaws.com/`;
-          const headers = signRequest('GET', url, 's3', this.config);
+          // ListBuckets requires the global endpoint s3.amazonaws.com.
+          // SigV4 for the global S3 endpoint uses us-east-1 in the credential scope.
+          const url = 'https://s3.amazonaws.com/';
+          const globalConfig: AWSConfig = { ...this.config, region: 'us-east-1' };
+          const headers = signRequest('GET', url, 's3', globalConfig);
           const response = await fetch(url, { headers });
           const text = await response.text();
           return {
@@ -247,15 +248,41 @@ export class AWSMCPServer {
           };
           if (args.pathPrefix) queryParams['PathPrefix'] = String(args.pathPrefix);
           if (args.maxItems) queryParams['MaxItems'] = String(args.maxItems);
+          // IAM is a global service; always sign with us-east-1.
+          const iamConfig: AWSConfig = { ...this.config, region: 'us-east-1' };
           const url = 'https://iam.amazonaws.com/';
           const qs = Object.keys(queryParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`).join('&');
           const fullUrl = `${url}?${qs}`;
-          const headers = signRequest('GET', fullUrl, 'iam', this.config, '', queryParams);
+          const headers = signRequest('GET', fullUrl, 'iam', iamConfig, '', queryParams);
           const response = await fetch(fullUrl, { headers });
           const text = await response.text();
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: JSON.stringify({ status: response.status, body: text }, null, 2) }],
+              isError: true,
+            };
+          }
+          // IAM returns XML. Extract <member> elements from <ListUsersResult>.
+          const users: Record<string, string>[] = [];
+          const memberRegex = /<member>([\s\S]*?)<\/member>/g;
+          const fieldRegex = /<(\w+)>([^<]*)<\/\1>/g;
+          let memberMatch: RegExpExecArray | null;
+          while ((memberMatch = memberRegex.exec(text)) !== null) {
+            const user: Record<string, string> = {};
+            let fieldMatch: RegExpExecArray | null;
+            while ((fieldMatch = fieldRegex.exec(memberMatch[1])) !== null) {
+              user[fieldMatch[1]] = fieldMatch[2];
+            }
+            users.push(user);
+          }
+          const isTruncated = /<IsTruncated>true<\/IsTruncated>/.test(text);
+          const markerMatch = /<Marker>([^<]*)<\/Marker>/.exec(text);
           return {
-            content: [{ type: 'text', text: JSON.stringify({ status: response.status, body: text }, null, 2) }],
-            isError: !response.ok,
+            content: [{
+              type: 'text',
+              text: JSON.stringify({ users, isTruncated, nextMarker: markerMatch ? markerMatch[1] : null }, null, 2),
+            }],
+            isError: false,
           };
         }
 

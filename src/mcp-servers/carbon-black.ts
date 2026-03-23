@@ -1,7 +1,5 @@
 /**
- * VMware Carbon Black Cloud MCP Server
- * Provides access to Carbon Black Cloud REST API endpoints for alert and process management
- 
+ * VMware Carbon Black Cloud MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -11,16 +9,19 @@ import { ToolDefinition, ToolResult } from './types.js';
 interface CarbonBlackConfig {
   apiKey: string;
   connectorId: string;
+  orgKey: string;
   baseUrl?: string;
 }
 
 export class CarbonBlackMCPServer {
   private readonly authToken: string;
   private readonly baseUrl: string;
+  private readonly orgKey: string;
 
   constructor(config: CarbonBlackConfig) {
     this.authToken = `${config.apiKey}/${config.connectorId}`;
     this.baseUrl = config.baseUrl || 'https://defense.conferdeploy.net';
+    this.orgKey = config.orgKey;
   }
 
   get tools(): ToolDefinition[] {
@@ -66,7 +67,7 @@ export class CarbonBlackMCPServer {
       },
       {
         name: 'search_processes',
-        description: 'Search for processes across managed endpoints',
+        description: 'Search for processes across managed endpoints (async: submits job, polls for results)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -74,17 +75,21 @@ export class CarbonBlackMCPServer {
               type: 'string',
               description: 'Process search query (process name, path, hash)',
             },
-            limit: {
+            rows: {
               type: 'number',
-              description: 'Maximum number of results to return (default: 50)',
+              description: 'Number of results to return (default: 50, max: 100)',
+            },
+            start: {
+              type: 'number',
+              description: 'Starting row for pagination (default: 0)',
             },
             start_time: {
-              type: 'number',
-              description: 'Start timestamp for process search',
+              type: 'string',
+              description: 'ISO 8601 start timestamp for process search',
             },
             end_time: {
-              type: 'number',
-              description: 'End timestamp for process search',
+              type: 'string',
+              description: 'ISO 8601 end timestamp for process search',
             },
           },
           required: ['query'],
@@ -95,16 +100,7 @@ export class CarbonBlackMCPServer {
         description: 'List configured watchlists for threat detection',
         inputSchema: {
           type: 'object',
-          properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of watchlists to return (default: 50)',
-            },
-            offset: {
-              type: 'number',
-              description: 'Offset for pagination',
-            },
-          },
+          properties: {},
         },
       },
       {
@@ -142,18 +138,30 @@ export class CarbonBlackMCPServer {
           const severity = args.severity as string | undefined;
           const status = args.status as string | undefined;
 
-          let url = `${this.baseUrl}/api/v7/alerts?limit=${limit}&offset=${offset}`;
+          // POST _search for v7 alerts API
+          const requestBody: Record<string, unknown> = {
+            rows: limit,
+            start: offset,
+          };
+          const criteria: Record<string, unknown> = {};
           if (severity) {
-            url += `&severity=${encodeURIComponent(severity)}`;
+            criteria['severity'] = [severity.toUpperCase()];
           }
           if (status) {
-            url += `&status=${encodeURIComponent(status)}`;
+            criteria['workflow_status'] = [status.toUpperCase()];
+          }
+          if (Object.keys(criteria).length > 0) {
+            requestBody['criteria'] = criteria;
           }
 
-          const response = await fetch(url, {
-            method: 'GET',
-            headers,
-          });
+          const response = await fetch(
+            `${this.baseUrl}/api/alerts/v7/orgs/${encodeURIComponent(this.orgKey)}/alerts/_search`,
+            {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(requestBody),
+            }
+          );
 
           if (!response.ok) {
             return {
@@ -180,10 +188,13 @@ export class CarbonBlackMCPServer {
             };
           }
 
-          const response = await fetch(`${this.baseUrl}/api/v7/alerts/${encodeURIComponent(alertId)}`, {
-            method: 'GET',
-            headers,
-          });
+          const response = await fetch(
+            `${this.baseUrl}/api/alerts/v7/orgs/${encodeURIComponent(this.orgKey)}/alerts/${encodeURIComponent(alertId)}`,
+            {
+              method: 'GET',
+              headers,
+            }
+          );
 
           if (!response.ok) {
             return {
@@ -203,9 +214,10 @@ export class CarbonBlackMCPServer {
 
         case 'search_processes': {
           const query = args.query as string;
-          const limit = (args.limit as number) || 50;
-          const startTime = args.start_time as number | undefined;
-          const endTime = args.end_time as number | undefined;
+          const rows = (args.rows as number) || 50;
+          const start = (args.start as number) || 0;
+          const startTime = args.start_time as string | undefined;
+          const endTime = args.end_time as string | undefined;
 
           if (!query) {
             return {
@@ -214,43 +226,86 @@ export class CarbonBlackMCPServer {
             };
           }
 
-          const requestBody: Record<string, unknown> = { query, limit };
-
-          if (startTime !== undefined) {
-            requestBody.start_time = startTime;
+          // Step 1: Submit async search job
+          const requestBody: Record<string, unknown> = { query, rows, start };
+          if (startTime !== undefined || endTime !== undefined) {
+            const timeRange: Record<string, string> = {};
+            if (startTime) timeRange['start'] = startTime;
+            if (endTime) timeRange['end'] = endTime;
+            requestBody['time_range'] = timeRange;
           }
-          if (endTime !== undefined) {
-            requestBody.end_time = endTime;
-          }
 
-          const response = await fetch(`${this.baseUrl}/api/v7/processes/search`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(requestBody),
-          });
+          const submitResponse = await fetch(
+            `${this.baseUrl}/api/investigate/v2/orgs/${encodeURIComponent(this.orgKey)}/processes/search_jobs`,
+            {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(requestBody),
+            }
+          );
 
-          if (!response.ok) {
+          if (!submitResponse.ok) {
             return {
-              content: [{ type: 'text', text: `Failed to search processes: ${response.statusText}` }],
+              content: [{ type: 'text', text: `Failed to submit process search: ${submitResponse.statusText}` }],
               isError: true,
             };
           }
 
-          let data: unknown;
+          let submitData: { job_id?: string };
           try {
-            data = await response.json();
+            submitData = await submitResponse.json() as { job_id?: string };
           } catch {
-            throw new Error(`Carbon Black returned non-JSON response (HTTP ${response.status})`);
+            throw new Error(`Carbon Black returned non-JSON response (HTTP ${submitResponse.status})`);
           }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+
+          const jobId = submitData.job_id;
+          if (!jobId) {
+            return {
+              content: [{ type: 'text', text: 'Process search job did not return a job_id' }],
+              isError: true,
+            };
+          }
+
+          // Step 2: Poll for results (contacted == completed)
+          const deadline = Date.now() + 180_000; // 3-minute max per API spec
+          const resultsUrl = `${this.baseUrl}/api/investigate/v2/orgs/${encodeURIComponent(this.orgKey)}/processes/search_jobs/${encodeURIComponent(jobId)}/results?start=${start}&rows=${rows}`;
+
+          while (Date.now() < deadline) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            const resultsResponse = await fetch(resultsUrl, { method: 'GET', headers });
+
+            if (!resultsResponse.ok) {
+              return {
+                content: [{ type: 'text', text: `Failed to retrieve process search results: ${resultsResponse.statusText}` }],
+                isError: true,
+              };
+            }
+
+            let resultsData: { contacted?: number; completed?: number };
+            try {
+              resultsData = await resultsResponse.json() as { contacted?: number; completed?: number };
+            } catch {
+              throw new Error(`Carbon Black returned non-JSON response (HTTP ${resultsResponse.status})`);
+            }
+
+            const contacted = resultsData.contacted ?? 0;
+            const completed = resultsData.completed ?? 0;
+            // Job is done when contacted == completed (allow off-by-one per API docs)
+            if (contacted > 0 && Math.abs(contacted - completed) <= 1) {
+              return { content: [{ type: 'text', text: JSON.stringify(resultsData, null, 2) }], isError: false };
+            }
+          }
+
+          return {
+            content: [{ type: 'text', text: `Process search job ${jobId} timed out after 3 minutes` }],
+            isError: true,
+          };
         }
 
         case 'list_watchlists': {
-          const limit = (args.limit as number) || 50;
-          const offset = (args.offset as number) || 0;
-
           const response = await fetch(
-            `${this.baseUrl}/api/v7/watchlists?limit=${limit}&offset=${offset}`,
+            `${this.baseUrl}/threathunter/watchlistmgr/v3/orgs/${encodeURIComponent(this.orgKey)}/watchlists`,
             {
               method: 'GET',
               headers,
@@ -285,11 +340,14 @@ export class CarbonBlackMCPServer {
           }
 
           const response = await fetch(
-            `${this.baseUrl}/api/v7/devices/${encodeURIComponent(deviceId)}/live-response/session`,
+            `${this.baseUrl}/appservices/v6/orgs/${encodeURIComponent(this.orgKey)}/liveresponse/sessions`,
             {
               method: 'POST',
               headers,
-              body: JSON.stringify({ session_timeout: sessionTimeout }),
+              body: JSON.stringify({
+                device_id: deviceId,
+                session_timeout: sessionTimeout,
+              }),
             }
           );
 
@@ -317,7 +375,7 @@ export class CarbonBlackMCPServer {
       }
     } catch (error) {
       return {
-        content: [{ type: 'text', text: String(`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`) }],
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }

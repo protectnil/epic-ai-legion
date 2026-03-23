@@ -1,5 +1,4 @@
-/**
- * @epicai/core — Rapid7 MCP Server
+/** Rapid7 InsightVM MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -42,7 +41,7 @@ export class Rapid7MCPServer {
           properties: {
             limit: { type: 'number', description: 'Maximum number of vulnerabilities to return' },
             offset: { type: 'number', description: 'Number of vulnerabilities to skip' },
-            sort: { type: 'string', description: 'Field to sort by' },
+            sort: { type: 'string', description: 'Sort field and direction (e.g., "severity,DESC")' },
           },
         },
       },
@@ -80,15 +79,27 @@ export class Rapid7MCPServer {
         },
       },
       {
-        name: 'get_remediation',
-        description: 'Get remediation advice for a vulnerability',
+        name: 'get_vulnerability_solutions',
+        description: 'Get remediation solutions for a specific vulnerability (GET /vulnerabilities/{id}/solutions)',
         inputSchema: {
           type: 'object',
           properties: {
             vulnId: { type: 'string', description: 'Vulnerability ID' },
-            assetId: { type: 'string', description: 'Asset ID' },
           },
           required: ['vulnId'],
+        },
+      },
+      {
+        name: 'get_asset_vulnerabilities',
+        description: 'Get vulnerabilities found on a specific asset (GET /assets/{id}/vulnerabilities)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            assetId: { type: 'string', description: 'Asset ID' },
+            limit: { type: 'number', description: 'Maximum number of vulnerabilities to return' },
+            offset: { type: 'number', description: 'Number of vulnerabilities to skip' },
+          },
+          required: ['assetId'],
         },
       },
     ];
@@ -105,8 +116,10 @@ export class Rapid7MCPServer {
           return await this.listAssets(args);
         case 'list_scans':
           return await this.listScans(args);
-        case 'get_remediation':
-          return await this.getRemediation(args);
+        case 'get_vulnerability_solutions':
+          return await this.getVulnerabilitySolutions(args);
+        case 'get_asset_vulnerabilities':
+          return await this.getAssetVulnerabilities(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -124,11 +137,11 @@ export class Rapid7MCPServer {
   private async listVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
-    const sort = (args.sort as string) || 'severity';
+    const sort = (args.sort as string) || 'severity,DESC';
 
     const url = new URL(`${this.baseUrl}/vulnerabilities`);
-    url.searchParams.append('limit', limit.toString());
-    url.searchParams.append('offset', offset.toString());
+    url.searchParams.append('size', limit.toString());
+    url.searchParams.append('page', Math.floor(offset / limit).toString());
     url.searchParams.append('sort', sort);
 
     const response = await fetch(url.toString(), { headers: this.headers });
@@ -179,8 +192,8 @@ export class Rapid7MCPServer {
     const offset = (args.offset as number) || 0;
 
     const url = new URL(`${this.baseUrl}/assets`);
-    url.searchParams.append('limit', limit.toString());
-    url.searchParams.append('offset', offset.toString());
+    url.searchParams.append('size', limit.toString());
+    url.searchParams.append('page', Math.floor(offset / limit).toString());
 
     const response = await fetch(url.toString(), { headers: this.headers });
 
@@ -205,8 +218,8 @@ export class Rapid7MCPServer {
     const offset = (args.offset as number) || 0;
 
     const url = new URL(`${this.baseUrl}/scans`);
-    url.searchParams.append('limit', limit.toString());
-    url.searchParams.append('offset', offset.toString());
+    url.searchParams.append('size', limit.toString());
+    url.searchParams.append('page', Math.floor(offset / limit).toString());
 
     const response = await fetch(url.toString(), { headers: this.headers });
 
@@ -226,19 +239,47 @@ export class Rapid7MCPServer {
     };
   }
 
-  private async getRemediation(args: Record<string, unknown>): Promise<ToolResult> {
+  private async getVulnerabilitySolutions(args: Record<string, unknown>): Promise<ToolResult> {
     const vulnId = args.vulnId as string;
-    const assetId = args.assetId as string;
 
     if (!vulnId) {
       throw new Error('vulnId is required');
     }
 
-    // Use URLSearchParams for query parameter construction — no raw concatenation of user input
-    const url = new URL(`${this.baseUrl}/vulnerabilities/${encodeURIComponent(vulnId)}/remediation`);
-    if (assetId) {
-      url.searchParams.append('asset_id', assetId);
+    // InsightVM API v3: GET /vulnerabilities/{id}/solutions
+    const url = new URL(`${this.baseUrl}/vulnerabilities/${encodeURIComponent(vulnId)}/solutions`);
+
+    const response = await fetch(url.toString(), { headers: this.headers });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`Non-JSON response (HTTP ${response.status})`);
+    }
+    return {
+      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      isError: false,
+    };
+  }
+
+  private async getAssetVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
+    const assetId = args.assetId as string;
+    const limit = (args.limit as number) || 50;
+    const offset = (args.offset as number) || 0;
+
+    if (!assetId) {
+      throw new Error('assetId is required');
+    }
+
+    // InsightVM API v3: GET /assets/{id}/vulnerabilities
+    const url = new URL(`${this.baseUrl}/assets/${encodeURIComponent(assetId)}/vulnerabilities`);
+    url.searchParams.append('size', limit.toString());
+    url.searchParams.append('page', Math.floor(offset / limit).toString());
 
     const response = await fetch(url.toString(), { headers: this.headers });
 

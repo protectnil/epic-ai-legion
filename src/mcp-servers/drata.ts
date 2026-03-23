@@ -1,9 +1,5 @@
 /**
- * Drata MCP Server Wrapper
- * Integrates Drata REST API for compliance automation and evidence management
- * Base URL: https://public-api.drata.com
- * Auth: Bearer token
- 
+ * Drata GRC MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -20,7 +16,7 @@ export class DrataMCPServer {
   private readonly headers: Record<string, string>;
 
   constructor(config: DrataConfig) {
-    this.baseUrl = config.baseUrl || 'https://public-api.drata.com';
+    this.baseUrl = config.baseUrl || 'https://public-api.drata.com/v1';
     this.headers = {
       'Authorization': `Bearer ${config.apiKey}`,
       'Content-Type': 'application/json',
@@ -96,13 +92,13 @@ export class DrataMCPServer {
       },
       {
         name: 'get_compliance_status',
-        description: 'Get overall compliance status and metrics',
+        description: 'Get overall compliance status by fetching controls and summarizing counts by status. Optionally filter by framework.',
         inputSchema: {
           type: 'object',
           properties: {
             framework: {
               type: 'string',
-              description: 'Get compliance status for specific framework (SOC2, ISO27001, etc)',
+              description: 'Summarize compliance status for a specific framework (SOC2, ISO27001, etc)',
             },
           },
         },
@@ -242,13 +238,17 @@ export class DrataMCPServer {
   }
 
   private async getComplianceStatus(args: Record<string, unknown>): Promise<ToolResult> {
+    // The Drata v1 API has no standalone /compliance-status endpoint.
+    // Aggregate a status summary from /controls instead.
     const params = new URLSearchParams();
+    params.append('limit', '500');
+    params.append('offset', '0');
     if (args.framework) params.append('framework', String(args.framework));
 
-    const query = params.toString();
-    const url = `${this.baseUrl}/compliance-status${query ? `?${query}` : ''}`;
-
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await fetch(
+      `${this.baseUrl}/controls?${params.toString()}`,
+      { method: 'GET', headers: this.headers }
+    );
 
     if (!response.ok) {
       throw new Error(`Drata API error: ${response.status} ${response.statusText}`);
@@ -260,8 +260,24 @@ export class DrataMCPServer {
     } catch {
       throw new Error(`Non-JSON response (HTTP ${response.status})`);
     }
+
+    // Build a status summary from the controls list
+    const controls = (data as { data?: Array<{ status?: string }> }).data ?? (Array.isArray(data) ? data as Array<{ status?: string }> : []);
+    const summary: Record<string, number> = {};
+    for (const control of controls) {
+      const status = (control.status as string) ?? 'unknown';
+      summary[status] = (summary[status] ?? 0) + 1;
+    }
+
+    const result = {
+      framework: args.framework ?? 'all',
+      total: controls.length,
+      summary,
+      controls: data,
+    };
+
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
       isError: false,
     };
   }

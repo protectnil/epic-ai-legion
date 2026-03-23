@@ -1,10 +1,4 @@
-/**
- * Orca Security REST API MCP Server Wrapper
- * Provides tools for alert and asset management via Orca Security
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Orca Security MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 

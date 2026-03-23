@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Tenable MCP Server
+ * Tenable MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -30,30 +30,30 @@ export class TenableMCPServer {
     return [
       {
         name: 'list_vulnerabilities',
-        description: 'List vulnerabilities from Tenable Vulnerability Management',
+        description: 'List vulnerabilities from Tenable Vulnerability Management workbench (up to 5,000)',
         inputSchema: {
           type: 'object',
           properties: {
             limit: { type: 'number', description: 'Maximum number of vulnerabilities to return' },
             offset: { type: 'number', description: 'Number of vulnerabilities to skip' },
-            sortBy: { type: 'string', description: 'Field to sort by' },
+            sortBy: { type: 'string', description: 'Field to sort by (e.g. "severity")' },
           },
         },
       },
       {
         name: 'get_vulnerability',
-        description: 'Get details of a specific vulnerability',
+        description: 'Get details of a specific vulnerability plugin from the Tenable workbench',
         inputSchema: {
           type: 'object',
           properties: {
-            vulnId: { type: 'string', description: 'Vulnerability ID' },
+            pluginId: { type: 'number', description: 'Vulnerability plugin ID' },
           },
-          required: ['vulnId'],
+          required: ['pluginId'],
         },
       },
       {
         name: 'list_assets',
-        description: 'List assets in Tenable Vulnerability Management',
+        description: 'List assets in Tenable Vulnerability Management workbench (up to 5,000)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -64,24 +64,23 @@ export class TenableMCPServer {
       },
       {
         name: 'run_scan',
-        description: 'Run a vulnerability scan',
+        description: 'Launch an existing Tenable scan by scan ID',
         inputSchema: {
           type: 'object',
           properties: {
-            scanId: { type: 'string', description: 'Scan template ID' },
-            targets: { type: 'array', items: { type: 'string' }, description: 'List of target IPs/hostnames' },
-            scanName: { type: 'string', description: 'Name for this scan run' },
+            scanId: { type: 'string', description: 'ID of the scan to launch' },
+            altTargets: { type: 'array', items: { type: 'string' }, description: 'Optional list of target IPs/hostnames to override scan targets' },
           },
-          required: ['scanId', 'targets'],
+          required: ['scanId'],
         },
       },
       {
-        name: 'get_compliance_status',
-        description: 'Get compliance status',
+        name: 'get_asset_vulnerabilities',
+        description: 'List vulnerabilities associated with a specific asset',
         inputSchema: {
           type: 'object',
           properties: {
-            assetId: { type: 'string', description: 'Asset ID' },
+            assetId: { type: 'string', description: 'Asset UUID' },
           },
           required: ['assetId'],
         },
@@ -100,17 +99,17 @@ export class TenableMCPServer {
           return await this.listAssets(args);
         case 'run_scan':
           return await this.runScan(args);
-        case 'get_compliance_status':
-          return await this.getComplianceStatus(args);
+        case 'get_asset_vulnerabilities':
+          return await this.getAssetVulnerabilities(args);
         default:
           return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+            content: [{ type: 'text' as const, text: `Unknown tool: ${name}` }],
             isError: true,
           };
       }
     } catch (error) {
       return {
-        content: [{ type: 'text', text: `Error calling ${name}: ${error instanceof Error ? error.message : String(error)}` }],
+        content: [{ type: 'text' as const, text: `Error calling ${name}: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }
@@ -121,7 +120,7 @@ export class TenableMCPServer {
     const offset = (args.offset as number) || 0;
     const sortBy = (args.sortBy as string) || 'severity';
 
-    const url = new URL(`${this.baseUrl}/vuln-api/vulnerabilities`);
+    const url = new URL(`${this.baseUrl}/workbenches/vulnerabilities`);
     url.searchParams.append('limit', limit.toString());
     url.searchParams.append('offset', offset.toString());
     url.searchParams.append('sort', sortBy);
@@ -138,19 +137,18 @@ export class TenableMCPServer {
       throw new Error(`Non-JSON response (HTTP ${response.status})`);
     }
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       isError: false,
     };
   }
 
   private async getVulnerability(args: Record<string, unknown>): Promise<ToolResult> {
-    const vulnId = args.vulnId as string;
-    if (!vulnId) {
-      throw new Error('vulnId is required');
+    const pluginId = args.pluginId as number;
+    if (!pluginId) {
+      throw new Error('pluginId is required');
     }
 
-    // encodeURIComponent applied to all path segment values
-    const url = `${this.baseUrl}/vuln-api/vulnerabilities/${encodeURIComponent(vulnId)}`;
+    const url = `${this.baseUrl}/workbenches/vulnerabilities/${encodeURIComponent(String(pluginId))}/info`;
     const response = await fetch(url, { headers: this.headers });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -163,7 +161,7 @@ export class TenableMCPServer {
       throw new Error(`Non-JSON response (HTTP ${response.status})`);
     }
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       isError: false,
     };
   }
@@ -172,7 +170,7 @@ export class TenableMCPServer {
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
 
-    const url = new URL(`${this.baseUrl}/asset-api/assets`);
+    const url = new URL(`${this.baseUrl}/workbenches/assets`);
     url.searchParams.append('limit', limit.toString());
     url.searchParams.append('offset', offset.toString());
 
@@ -188,31 +186,27 @@ export class TenableMCPServer {
       throw new Error(`Non-JSON response (HTTP ${response.status})`);
     }
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       isError: false,
     };
   }
 
   private async runScan(args: Record<string, unknown>): Promise<ToolResult> {
     const scanId = args.scanId as string;
-    const targets = args.targets as string[];
-    const scanName = args.scanName as string;
-
-    if (!scanId || !targets || targets.length === 0) {
-      throw new Error('scanId and targets are required');
+    if (!scanId) {
+      throw new Error('scanId is required');
     }
 
-    const body = {
-      scan_id: scanId,
-      targets: targets,
-      scan_name: scanName || `Scan-${Date.now()}`,
-    };
+    const altTargets = args.altTargets as string[] | undefined;
+    const body = altTargets && altTargets.length > 0
+      ? { alt_targets: altTargets }
+      : undefined;
 
-    const url = `${this.baseUrl}/scans`;
+    const url = `${this.baseUrl}/scans/${encodeURIComponent(scanId)}/launch`;
     const response = await fetch(url, {
       method: 'POST',
       headers: this.headers,
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
@@ -226,19 +220,18 @@ export class TenableMCPServer {
       throw new Error(`Non-JSON response (HTTP ${response.status})`);
     }
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       isError: false,
     };
   }
 
-  private async getComplianceStatus(args: Record<string, unknown>): Promise<ToolResult> {
+  private async getAssetVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
     const assetId = args.assetId as string;
     if (!assetId) {
       throw new Error('assetId is required');
     }
 
-    // encodeURIComponent applied to all path segment values
-    const url = `${this.baseUrl}/asset-api/assets/${encodeURIComponent(assetId)}/compliance`;
+    const url = `${this.baseUrl}/workbenches/assets/${encodeURIComponent(assetId)}/vulnerabilities`;
     const response = await fetch(url, { headers: this.headers });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -251,7 +244,7 @@ export class TenableMCPServer {
       throw new Error(`Non-JSON response (HTTP ${response.status})`);
     }
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
       isError: false,
     };
   }

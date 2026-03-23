@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Sumo Logic MCP Server
+ * Sumo Logic MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -54,8 +54,22 @@ export class SumoLogicMCPServer {
         },
       },
       {
+        name: 'get_search_job_status',
+        description: 'Poll the status of an existing Sumo Logic search job. Call this after create_search_job and before get_search_results to confirm the job has completed (state = "DONE GATHERING RESULTS").',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            search_id: {
+              type: 'string',
+              description: 'The search job ID returned by create_search_job',
+            },
+          },
+          required: ['search_id'],
+        },
+      },
+      {
         name: 'get_search_results',
-        description: 'Retrieve results from a search job',
+        description: 'Retrieve results from a completed search job. Only call after get_search_job_status returns state "DONE GATHERING RESULTS".',
         inputSchema: {
           type: 'object',
           properties: {
@@ -147,6 +161,8 @@ export class SumoLogicMCPServer {
             args.to as number,
             args.timezone as string | undefined
           );
+        case 'get_search_job_status':
+          return await this.getSearchJobStatus(args.search_id as string);
         case 'get_search_results':
           return await this.getSearchResults(
             args.search_id as string,
@@ -221,6 +237,33 @@ export class SumoLogicMCPServer {
     };
   }
 
+  private async getSearchJobStatus(searchId: string): Promise<ToolResult> {
+    const response = await fetch(
+      `${this.baseUrl}/v1/search/jobs/${encodeURIComponent(searchId)}`,
+      {
+        method: 'GET',
+        headers: this.headers,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Sumo Logic API error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`Non-JSON response (HTTP ${response.status})`);
+    }
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+      isError: false,
+    };
+  }
+
   private async getSearchResults(
     searchId: string,
     offset?: number,
@@ -231,7 +274,7 @@ export class SumoLogicMCPServer {
     params.append('limit', String(limit || 100));
 
     const response = await fetch(
-      `${this.baseUrl}/v1/search/jobs/${searchId}/messages?${params}`,
+      `${this.baseUrl}/v1/search/jobs/${encodeURIComponent(searchId)}/messages?${params}`,
       {
         method: 'GET',
         headers: this.headers,
@@ -299,7 +342,7 @@ export class SumoLogicMCPServer {
     collectorId: string
   ): Promise<ToolResult> {
     const response = await fetch(
-      `${this.baseUrl}/v1/collectors/${collectorId}`,
+      `${this.baseUrl}/v1/collectors/${encodeURIComponent(collectorId)}`,
       {
         method: 'GET',
         headers: this.headers,

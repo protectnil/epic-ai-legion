@@ -1,4 +1,5 @@
 /**
+ * Asana MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -82,6 +83,33 @@ export class AsanaMCPServer {
           required: ['workspace_id'],
         },
       },
+      {
+        name: 'update_task',
+        description: 'Update an existing Asana task by GID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            task_id: { type: 'string', description: 'The task GID' },
+            name: { type: 'string', description: 'New task name' },
+            notes: { type: 'string', description: 'New task description' },
+            assignee: { type: 'string', description: 'New assignee GID or email' },
+            due_on: { type: 'string', description: 'New due date (YYYY-MM-DD)' },
+            completed: { type: 'boolean', description: 'Mark task as completed or not' },
+          },
+          required: ['task_id'],
+        },
+      },
+      {
+        name: 'delete_task',
+        description: 'Delete an Asana task by GID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            task_id: { type: 'string', description: 'The task GID' },
+          },
+          required: ['task_id'],
+        },
+      },
     ];
   }
 
@@ -139,6 +167,23 @@ export class AsanaMCPServer {
             params.set('projects.any', (args.projects as string[]).join(','));
           }
           url = `${this.baseUrl}/workspaces/${args.workspace_id}/tasks/search?${params}`;
+          break;
+        }
+        case 'update_task': {
+          url = `${this.baseUrl}/tasks/${args.task_id}`;
+          method = 'PUT';
+          const updateData: Record<string, unknown> = {};
+          if (args.name !== undefined) updateData.name = args.name;
+          if (args.notes !== undefined) updateData.notes = args.notes;
+          if (args.assignee !== undefined) updateData.assignee = args.assignee;
+          if (args.due_on !== undefined) updateData.due_on = args.due_on;
+          if (args.completed !== undefined) updateData.completed = args.completed;
+          body = { data: updateData };
+          break;
+        }
+        case 'delete_task': {
+          url = `${this.baseUrl}/tasks/${args.task_id}`;
+          method = 'DELETE';
           break;
         }
         default:

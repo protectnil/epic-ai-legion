@@ -1,6 +1,4 @@
-/** Salesforce MCP Server
- * Provides access to Salesforce CRM data via the Salesforce REST API v59.0
- *
+/** Salesforce MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -19,7 +17,7 @@ export class SalesforceMCPServer {
 
   constructor(config: SalesforceConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl || `https://${config.instance}.salesforce.com/services/data/v59.0`;
+    this.baseUrl = config.baseUrl || `https://${config.instance}.salesforce.com/services/data/v66.0`;
   }
 
   get tools(): ToolDefinition[] {
@@ -100,6 +98,24 @@ export class SalesforceMCPServer {
             },
           },
           required: ['sobject', 'record_id', 'fields'],
+        },
+      },
+      {
+        name: 'delete_record',
+        description: 'Delete a Salesforce record by sObject type and record ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            sobject: {
+              type: 'string',
+              description: 'The Salesforce sObject type (e.g. Account, Contact, Opportunity)',
+            },
+            record_id: {
+              type: 'string',
+              description: 'The 15 or 18-character Salesforce record ID to delete',
+            },
+          },
+          required: ['sobject', 'record_id'],
         },
       },
       {
@@ -190,6 +206,22 @@ export class SalesforceMCPServer {
           );
           if (!response.ok) {
             return { content: [{ type: 'text', text: `Failed to update record: ${response.statusText}` }], isError: true };
+          }
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, record_id: recordId }, null, 2) }], isError: false };
+        }
+
+        case 'delete_record': {
+          const sobject = args.sobject as string;
+          const recordId = args.record_id as string;
+          if (!sobject || !recordId) {
+            return { content: [{ type: 'text', text: 'sobject and record_id are required' }], isError: true };
+          }
+          const response = await fetch(
+            `${this.baseUrl}/sobjects/${encodeURIComponent(sobject)}/${encodeURIComponent(recordId)}`,
+            { method: 'DELETE', headers }
+          );
+          if (!response.ok) {
+            return { content: [{ type: 'text', text: `Failed to delete record: ${response.statusText}` }], isError: true };
           }
           return { content: [{ type: 'text', text: JSON.stringify({ success: true, record_id: recordId }, null, 2) }], isError: false };
         }
