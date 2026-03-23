@@ -1,7 +1,7 @@
 # Epic AI® IVA Core
-## Local SLM orchestrates. Cloud LLM responds. Your data never leaves.
+## The Intelligent Virtual Assistant that replaces dashboards and manual analysis.
 
-> **Zero LLM Context MCP Orchestrator — 113 enterprise adapters, tiered autonomy governance, tamper-evident audit trails. Connect your AI to everything.**
+> **Local SLM orchestrates. Cloud LLM responds. Your data never leaves. 113 enterprise adapters, tiered autonomy governance, tamper-evident audit trails. Connect your AI to everything.**
 
 [![npm version](https://img.shields.io/npm/v/@epicai/core.svg?style=flat)](https://www.npmjs.com/package/@epicai/core)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
