@@ -1,9 +1,5 @@
 /**
- * Darktrace MCP Server Wrapper
- * Integrates Darktrace REST API for AI-driven threat detection and response
- * Base URL: https://{instance}.darktrace.com
- * Auth: HMAC signature (public_token + private_token + date-based HMAC-SHA1)
- 
+ * Darktrace MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -33,42 +29,42 @@ export class DarktraceMCPServer {
   get tools(): ToolDefinition[] {
     return [
       {
-        name: 'list_alerts',
-        description: 'List security alerts and breaches from Darktrace',
+        name: 'list_model_breaches',
+        description: 'List model breaches (security alerts) from Darktrace',
         inputSchema: {
           type: 'object',
           properties: {
             limit: {
               type: 'number',
-              description: 'Maximum number of alerts to return',
+              description: 'Maximum number of model breaches to return',
             },
             offset: {
               type: 'number',
-              description: 'Number of alerts to skip',
+              description: 'Number of model breaches to skip',
             },
-            severity: {
-              type: 'string',
-              description: 'Filter by severity (critical, high, medium, low)',
+            minscore: {
+              type: 'number',
+              description: 'Minimum breach score threshold (0 to 1)',
             },
-            status: {
-              type: 'string',
-              description: 'Filter by status (acknowledged, unacknowledged, resolved)',
+            acknowledged: {
+              type: 'boolean',
+              description: 'Filter by acknowledged status',
             },
           },
         },
       },
       {
-        name: 'get_alert',
-        description: 'Get details of a specific alert by ID',
+        name: 'get_model_breach',
+        description: 'Get details of a specific model breach by pbid',
         inputSchema: {
           type: 'object',
           properties: {
-            alertId: {
-              type: 'string',
-              description: 'The alert ID',
+            pbid: {
+              type: 'number',
+              description: 'The model breach ID (pbid)',
             },
           },
-          required: ['alertId'],
+          required: ['pbid'],
         },
       },
       {
@@ -85,9 +81,9 @@ export class DarktraceMCPServer {
               type: 'number',
               description: 'Number of devices to skip',
             },
-            status: {
+            query: {
               type: 'string',
-              description: 'Filter by device status (active, inactive, suspicious)',
+              description: 'Filter devices by hostname, IP, or label',
             },
           },
         },
@@ -106,9 +102,9 @@ export class DarktraceMCPServer {
               type: 'number',
               description: 'Number of breaches to skip',
             },
-            deviceId: {
-              type: 'string',
-              description: 'Filter by device ID',
+            did: {
+              type: 'number',
+              description: 'Filter by Darktrace device ID',
             },
           },
         },
@@ -127,9 +123,13 @@ export class DarktraceMCPServer {
               type: 'number',
               description: 'Number of incidents to skip',
             },
-            timespan: {
+            starttime: {
               type: 'number',
-              description: 'Timespan in hours to query (default: 24)',
+              description: 'Start time in milliseconds since epoch',
+            },
+            endtime: {
+              type: 'number',
+              description: 'End time in milliseconds since epoch',
             },
           },
         },
@@ -140,10 +140,10 @@ export class DarktraceMCPServer {
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'list_alerts':
-          return await this.listAlerts(args);
-        case 'get_alert':
-          return await this.getAlert(args);
+        case 'list_model_breaches':
+          return await this.listModelBreaches(args);
+        case 'get_model_breach':
+          return await this.getModelBreach(args);
         case 'list_devices':
           return await this.listDevices(args);
         case 'get_model_breaches':
@@ -193,17 +193,17 @@ export class DarktraceMCPServer {
     };
   }
 
-  private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
+  private async listModelBreaches(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = args.limit || 50;
     const offset = args.offset || 0;
 
     const params = new URLSearchParams();
     params.append('limit', String(limit));
     params.append('offset', String(offset));
-    if (args.severity) params.append('severity', String(args.severity));
-    if (args.status) params.append('status', String(args.status));
+    if (args.minscore !== undefined) params.append('minscore', String(args.minscore));
+    if (args.acknowledged !== undefined) params.append('acknowledged', String(args.acknowledged));
 
-    const endpoint = `/api/v3/alerts?${params.toString()}`;
+    const endpoint = `/modelbreaches?${params.toString()}`;
 
     const response = await fetch(
       `${this.baseUrl}${endpoint}`,
@@ -222,13 +222,13 @@ export class DarktraceMCPServer {
     };
   }
 
-  private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
-    const { alertId } = args;
-    if (!alertId) {
-      throw new Error('alertId is required');
+  private async getModelBreach(args: Record<string, unknown>): Promise<ToolResult> {
+    const { pbid } = args;
+    if (pbid === undefined || pbid === null) {
+      throw new Error('pbid is required');
     }
 
-    const endpoint = `/api/v3/alerts/${encodeURIComponent(String(alertId))}`;
+    const endpoint = `/modelbreaches/${encodeURIComponent(String(pbid))}`;
 
     const response = await fetch(
       `${this.baseUrl}${endpoint}`,
@@ -254,9 +254,9 @@ export class DarktraceMCPServer {
     const params = new URLSearchParams();
     params.append('limit', String(limit));
     params.append('offset', String(offset));
-    if (args.status) params.append('status', String(args.status));
+    if (args.query) params.append('query', String(args.query));
 
-    const endpoint = `/api/v3/devices?${params.toString()}`;
+    const endpoint = `/devices?${params.toString()}`;
 
     const response = await fetch(
       `${this.baseUrl}${endpoint}`,
@@ -282,9 +282,9 @@ export class DarktraceMCPServer {
     const params = new URLSearchParams();
     params.append('limit', String(limit));
     params.append('offset', String(offset));
-    if (args.deviceId) params.append('deviceId', String(args.deviceId));
+    if (args.did !== undefined) params.append('did', String(args.did));
 
-    const endpoint = `/api/v3/breaches?${params.toString()}`;
+    const endpoint = `/modelbreaches?${params.toString()}`;
 
     const response = await fetch(
       `${this.baseUrl}${endpoint}`,
@@ -306,14 +306,14 @@ export class DarktraceMCPServer {
   private async getAIAnalystIncidents(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = args.limit || 50;
     const offset = args.offset || 0;
-    const timespan = args.timespan || 24;
 
     const params = new URLSearchParams();
     params.append('limit', String(limit));
     params.append('offset', String(offset));
-    params.append('timespan', String(timespan));
+    if (args.starttime !== undefined) params.append('starttime', String(args.starttime));
+    if (args.endtime !== undefined) params.append('endtime', String(args.endtime));
 
-    const endpoint = `/api/v3/incidents?${params.toString()}`;
+    const endpoint = `/aianalyst/incidents?${params.toString()}`;
 
     const response = await fetch(
       `${this.baseUrl}${endpoint}`,

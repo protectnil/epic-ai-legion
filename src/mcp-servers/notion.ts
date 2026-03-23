@@ -1,4 +1,5 @@
 /**
+ * Notion MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -7,7 +8,7 @@ import { ToolDefinition, ToolResult } from './types.js';
 
 export class NotionMCPServer {
   private baseUrl = 'https://api.notion.com/v1';
-  private notionVersion = '2022-06-28';
+  private notionVersion = '2026-03-11';
 
   constructor(private config: { api_key: string }) {}
 
@@ -36,6 +37,19 @@ export class NotionMCPServer {
             page_id: { type: 'string', description: 'The page ID' },
           },
           required: ['page_id'],
+        },
+      },
+      {
+        name: 'get_block_children',
+        description: 'Get the block children of a Notion page or block (retrieves actual page content)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            block_id: { type: 'string', description: 'The page ID or block ID whose children to retrieve' },
+            page_size: { type: 'number', description: 'Number of results to return', default: 100 },
+            start_cursor: { type: 'string', description: 'Pagination cursor' },
+          },
+          required: ['block_id'],
         },
       },
       {
@@ -110,7 +124,18 @@ export class NotionMCPServer {
           url = `${this.baseUrl}/pages/${args.page_id}`;
           break;
         }
+        case 'get_block_children': {
+          url = `${this.baseUrl}/blocks/${args.block_id}/children`;
+          const params = new URLSearchParams();
+          params.set('page_size', String(args.page_size ?? 100));
+          if (args.start_cursor) params.set('start_cursor', String(args.start_cursor));
+          url = `${url}?${params.toString()}`;
+          break;
+        }
         case 'create_page': {
+          if (!args.parent_page_id && !args.parent_database_id) {
+            throw new Error('create_page requires either parent_page_id or parent_database_id');
+          }
           url = `${this.baseUrl}/pages`;
           method = 'POST';
           const parent = args.parent_database_id

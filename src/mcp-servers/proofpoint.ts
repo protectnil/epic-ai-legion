@@ -1,8 +1,5 @@
 /**
- * Proofpoint Threat Protection REST API MCP Server Wrapper
- * REST API: https://tap-api-v2.proofpoint.com
- * Auth: Basic authentication (service_principal:secret)
- 
+ * Proofpoint TAP MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -67,7 +64,7 @@ export class ProofpointMCPServer {
             sinceSeconds: {
               type: 'number',
               description:
-                'Return clicks after this time (seconds since epoch)',
+                'Time window in seconds back from now (e.g. 3600 = last hour). The API subtracts this duration from the current server time to determine the start of the retrieval window.',
             },
             limit: {
               type: 'number',
@@ -85,7 +82,7 @@ export class ProofpointMCPServer {
           properties: {
             sinceSeconds: {
               type: 'number',
-              description: 'Return messages after this time (seconds since epoch)',
+              description: 'Time window in seconds back from now (e.g. 3600 = last hour). The API subtracts this duration from the current server time to determine the start of the retrieval window.',
             },
             limit: {
               type: 'number',
@@ -129,7 +126,7 @@ export class ProofpointMCPServer {
             },
             sinceSeconds: {
               type: 'number',
-              description: 'Return events after this time (seconds since epoch)',
+              description: 'Time window in seconds back from now (e.g. 3600 = last hour). The API subtracts this duration from the current server time to determine the start of the retrieval window.',
             },
             limit: {
               type: 'number',
@@ -194,12 +191,9 @@ export class ProofpointMCPServer {
           break;
         }
 
-        case 'get_threat_detail': {
-          const params = new URLSearchParams();
-          params.append('id', String(args.threat_id));
-          result = await this.request(`/v2/threat?${params.toString()}`);
+        case 'get_threat_detail':
+          result = await this.request(`/v2/threat/summary/${encodeURIComponent(String(args.threat_id))}`);
           break;
-        }
 
         default:
           return {

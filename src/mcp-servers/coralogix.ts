@@ -1,15 +1,41 @@
 /**
- * Coralogix MCP Server
- * Coralogix API adapter for log querying, alerts, dashboards, and archive search
- *
+ * Coralogix MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
+/**
+ * Coralogix region identifiers mapped to their REST API base URLs.
+ * Source: https://coralogix.com/docs/integrations/coralogix-endpoints/
+ *
+ * Region  Coralogix Domain       AWS Region                  API Base URL
+ * ------  ---------------------  --------------------------  ----------------------------------
+ * us1     us1.coralogix.com      us-east-2  (Ohio)           https://api.coralogix.us
+ * us2     us2.coralogix.com      us-west-2  (Oregon)         https://api.cx498.coralogix.com
+ * eu1     eu1.coralogix.com      eu-west-1  (Ireland)        https://api.coralogix.com
+ * eu2     eu2.coralogix.com      eu-north-1 (Stockholm)      https://api.eu2.coralogix.com
+ * ap1     ap1.coralogix.com      ap-south-1 (Mumbai)         https://api.coralogix.in
+ * ap2     ap2.coralogix.com      ap-southeast-1 (Singapore)  https://api.coralogixsg.com
+ * ap3     ap3.coralogix.com      ap-southeast-3 (Jakarta)    https://api.ap3.coralogix.com
+ */
+const REGION_BASE_URLS: Record<string, string> = {
+  us1: 'https://api.coralogix.us',
+  us2: 'https://api.cx498.coralogix.com',
+  eu1: 'https://api.coralogix.com',
+  eu2: 'https://api.eu2.coralogix.com',
+  ap1: 'https://api.coralogix.in',
+  ap2: 'https://api.coralogixsg.com',
+  ap3: 'https://api.ap3.coralogix.com',
+};
+
+type CoralogixRegion = 'us1' | 'us2' | 'eu1' | 'eu2' | 'ap1' | 'ap2' | 'ap3';
+
 interface CoralogixConfig {
   apiKey: string;
+  /** Coralogix region. Defaults to 'us1' (US East, Ohio). */
+  region?: CoralogixRegion;
 }
 
 export class CoralogixMCPServer {
@@ -18,7 +44,14 @@ export class CoralogixMCPServer {
 
   constructor(config: CoralogixConfig) {
     this.config = config;
-    this.baseUrl = 'https://api.coralogix.com';
+    const region = config.region ?? 'us1';
+    const resolved = REGION_BASE_URLS[region];
+    if (!resolved) {
+      throw new Error(
+        `Unknown Coralogix region: "${region}". Valid regions: ${Object.keys(REGION_BASE_URLS).join(', ')}`
+      );
+    }
+    this.baseUrl = resolved;
   }
 
   private headers(): Record<string, string> {

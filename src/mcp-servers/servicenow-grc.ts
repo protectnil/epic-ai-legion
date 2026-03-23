@@ -1,9 +1,5 @@
 /**
- * ServiceNow GRC MCP Server Wrapper
- * Integrates ServiceNow GRC REST API for risk, compliance, and policy management
- * Base URL: https://{instance}.service-now.com/api/now
- * Auth: Basic auth or OAuth2 bearer token
- 
+ * ServiceNow GRC MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -183,7 +179,7 @@ export class ServiceNowGRCMCPServer {
     }
 
     const response = await fetch(
-      `${this.baseUrl}/table/u_risk?${params.toString()}`,
+      `${this.baseUrl}/table/sn_risk_risk?${params.toString()}`,
       { method: 'GET', headers: this.headers }
     );
 
@@ -210,7 +206,7 @@ export class ServiceNowGRCMCPServer {
     }
 
     const response = await fetch(
-      `${this.baseUrl}/table/u_risk/${encodeURIComponent(String(riskId))}`,
+      `${this.baseUrl}/table/sn_risk_risk/${encodeURIComponent(String(riskId))}`,
       { method: 'GET', headers: this.headers }
     );
 
@@ -240,7 +236,7 @@ export class ServiceNowGRCMCPServer {
     }
 
     const response = await fetch(
-      `${this.baseUrl}/table/u_compliance_task?${params.toString()}`,
+      `${this.baseUrl}/table/sn_compliance_task?${params.toString()}`,
       { method: 'GET', headers: this.headers }
     );
 
@@ -270,7 +266,7 @@ export class ServiceNowGRCMCPServer {
     }
 
     const response = await fetch(
-      `${this.baseUrl}/table/u_audit_item?${params.toString()}`,
+      `${this.baseUrl}/table/sn_audit_finding?${params.toString()}`,
       { method: 'GET', headers: this.headers }
     );
 
@@ -297,7 +293,7 @@ export class ServiceNowGRCMCPServer {
     }
 
     const response = await fetch(
-      `${this.baseUrl}/table/u_policy/${encodeURIComponent(String(policyId))}`,
+      `${this.baseUrl}/table/sn_compliance_policy/${encodeURIComponent(String(policyId))}`,
       { method: 'GET', headers: this.headers }
     );
 

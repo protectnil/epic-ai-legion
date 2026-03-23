@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Microsoft Sentinel MCP Server
+ * Microsoft Sentinel MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -14,6 +14,7 @@ function escapeOData(value: string): string {
 
 export class SentinelMCPServer {
   private readonly baseUrl: string;
+  private readonly queryUrl: string;
   private readonly headers: Record<string, string>;
 
   constructor(config: {
@@ -36,6 +37,10 @@ export class SentinelMCPServer {
       `https://management.azure.com/subscriptions/${config.subscriptionId}/` +
       `resourceGroups/${config.resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/${config.workspaceName}`;
 
+    // Log Analytics query endpoint (separate from ARM SecurityInsights)
+    this.queryUrl =
+      `https://api.loganalytics.azure.com/v1/workspaces/${encodeURIComponent(config.workspaceName)}/query`;
+
     this.headers = {
       Authorization: `Bearer ${config.bearerToken}`,
       'Content-Type': 'application/json',
@@ -44,7 +49,7 @@ export class SentinelMCPServer {
 
   private withApiVersion(url: string): string {
     const sep = url.includes('?') ? '&' : '?';
-    return `${url}${sep}api-version=2022-07-01-preview`;
+    return `${url}${sep}api-version=2024-09-01`;
   }
 
   get tools(): ToolDefinition[] {
@@ -220,7 +225,7 @@ export class SentinelMCPServer {
     const requestBody = { query, timespan: timespan || 'PT24H' };
 
     const response = await fetch(
-      this.withApiVersion(`${this.baseUrl}/api/query`),
+      this.queryUrl,
       { method: 'POST', headers: this.headers, body: JSON.stringify(requestBody) }
     );
 

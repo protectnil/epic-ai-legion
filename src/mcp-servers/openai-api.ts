@@ -1,6 +1,5 @@
-/** OpenAI API MCP Server
- * OpenAI model and completion management
- *
+/**
+ * OpenAI API MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -60,13 +59,16 @@ export class OpenAIMCPServer {
       },
       {
         name: 'get_usage',
-        description: 'Get API usage statistics',
+        description: 'Get organization completions usage statistics via the OpenAI Usage API',
         inputSchema: {
           type: 'object',
           properties: {
-            date: { type: 'string', description: 'Date in YYYY-MM-DD format' },
+            start_time: { type: 'number', description: 'Start time as a Unix timestamp (seconds)' },
+            end_time: { type: 'number', description: 'End time as a Unix timestamp (seconds). Defaults to now.' },
+            bucket_width: { type: 'string', description: 'Aggregation bucket width. Currently only "1d" is supported.' },
+            limit: { type: 'number', description: 'Number of buckets to return (max 180).' },
           },
-          required: ['date'],
+          required: ['start_time'],
         },
       },
       {
@@ -118,7 +120,12 @@ export class OpenAIMCPServer {
           break;
         }
         case 'get_usage': {
-          response = await fetch(`${this.baseUrl}/usage?date=${args.date}`, { headers });
+          const params = new URLSearchParams();
+          params.set('start_time', String(args.start_time));
+          if (args.end_time !== undefined) params.set('end_time', String(args.end_time));
+          if (args.bucket_width !== undefined) params.set('bucket_width', String(args.bucket_width));
+          if (args.limit !== undefined) params.set('limit', String(args.limit));
+          response = await fetch(`${this.baseUrl}/organization/usage/completions?${params}`, { headers });
           break;
         }
         case 'list_files': {

@@ -1,6 +1,5 @@
-/** Redis MCP Server
- * Redis key-value store operations via Upstash REST API
- *
+/**
+ * Redis (Upstash REST API) MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -62,14 +61,16 @@ export class RedisMCPServer {
         },
       },
       {
-        name: 'keys',
-        description: 'Find all keys matching a pattern',
+        name: 'scan',
+        description: 'Incrementally iterate keys matching a pattern using SCAN (non-blocking)',
         inputSchema: {
           type: 'object',
           properties: {
-            pattern: { type: 'string', description: 'Glob-style pattern (e.g. user:*)' },
+            cursor: { type: 'number', description: 'Cursor position; start at 0' },
+            match: { type: 'string', description: 'Glob-style pattern (e.g. user:*)' },
+            count: { type: 'number', description: 'Hint for number of elements to return per call' },
           },
-          required: ['pattern'],
+          required: ['cursor'],
         },
       },
       {
@@ -79,6 +80,56 @@ export class RedisMCPServer {
           type: 'object',
           properties: {
             key: { type: 'string', description: 'Hash key' },
+          },
+          required: ['key'],
+        },
+      },
+      {
+        name: 'hset',
+        description: 'Set one or more fields on a hash',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            key: { type: 'string', description: 'Hash key' },
+            fields: {
+              type: 'object',
+              description: 'Field-value pairs to set',
+              additionalProperties: { type: 'string' },
+            },
+          },
+          required: ['key', 'fields'],
+        },
+      },
+      {
+        name: 'exists',
+        description: 'Check whether one or more keys exist',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            keys: { type: 'array', description: 'Keys to check', items: { type: 'string' } },
+          },
+          required: ['keys'],
+        },
+      },
+      {
+        name: 'expire',
+        description: 'Set a timeout (TTL) on a key in seconds',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            key: { type: 'string', description: 'Key to set TTL on' },
+            seconds: { type: 'number', description: 'Time-to-live in seconds' },
+          },
+          required: ['key', 'seconds'],
+        },
+      },
+      {
+        name: 'ttl',
+        description: 'Get the remaining time-to-live for a key in seconds',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            key: { type: 'string', description: 'Key to check TTL for' },
           },
           required: ['key'],
         },
@@ -112,12 +163,34 @@ export class RedisMCPServer {
           command = ['DEL', ...(args.keys as string[])];
           break;
         }
-        case 'keys': {
-          command = ['KEYS', args.pattern];
+        case 'scan': {
+          command = ['SCAN', args.cursor ?? 0];
+          if (args.match) command.push('MATCH', args.match);
+          if (args.count) command.push('COUNT', args.count);
           break;
         }
         case 'hgetall': {
           command = ['HGETALL', args.key];
+          break;
+        }
+        case 'hset': {
+          const fields = args.fields as Record<string, string>;
+          command = ['HSET', args.key];
+          for (const [field, value] of Object.entries(fields)) {
+            command.push(field, value);
+          }
+          break;
+        }
+        case 'exists': {
+          command = ['EXISTS', ...(args.keys as string[])];
+          break;
+        }
+        case 'expire': {
+          command = ['EXPIRE', args.key, args.seconds];
+          break;
+        }
+        case 'ttl': {
+          command = ['TTL', args.key];
           break;
         }
         default:

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Qualys MCP Server
+ * Qualys VMDR MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -35,8 +35,11 @@ export class QualysMCPServer {
     const credentials = btoa(`${config.username}:${config.password}`);
     this.headers = {
       'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      // Qualys requires this header on all API requests.
+      'X-Requested-With': 'epicai-mcp-adapter',
+      'Content-Type': 'application/x-www-form-urlencoded',
+      // Qualys API returns XML by default; Accept is set accordingly.
+      'Accept': 'application/xml',
     };
   }
 
@@ -44,60 +47,62 @@ export class QualysMCPServer {
     return [
       {
         name: 'list_vulnerabilities',
-        description: 'List vulnerabilities from Qualys',
+        description: 'List host vulnerability detections from Qualys VMDR (host detection list)',
         inputSchema: {
           type: 'object',
           properties: {
-            limit: { type: 'number', description: 'Maximum number of vulnerabilities to return' },
-            offset: { type: 'number', description: 'Number of vulnerabilities to skip' },
-            severity: { type: 'string', description: 'Filter by severity (critical, high, medium, low)' },
+            ips: { type: 'string', description: 'Comma-separated list of IPs or CIDR ranges to filter by' },
+            severities: { type: 'string', description: 'Comma-separated severity levels to filter by (1-5)' },
+            truncation_limit: { type: 'number', description: 'Maximum number of host records to return (default 1000)' },
           },
         },
       },
       {
         name: 'launch_scan',
-        description: 'Launch a vulnerability scan in Qualys',
+        description: 'Launch a VM vulnerability scan in Qualys',
         inputSchema: {
           type: 'object',
           properties: {
-            scanName: { type: 'string', description: 'Name for the scan' },
-            targets: { type: 'array', items: { type: 'string' }, description: 'List of IPs/hostnames to scan' },
-            optionProfileId: { type: 'string', description: 'Option profile ID for scan settings' },
+            scanName: { type: 'string', description: 'Title for the scan (scan_title parameter)' },
+            targets: { type: 'array', items: { type: 'string' }, description: 'List of IPs/CIDR ranges to scan' },
+            optionId: { type: 'string', description: 'Numeric option profile ID (option_id parameter)' },
+            optionTitle: { type: 'string', description: 'Option profile title (option_title); used if optionId is not provided' },
+            scannerName: { type: 'string', description: 'Scanner appliance name (iscanner_name)' },
           },
           required: ['scanName', 'targets'],
         },
       },
       {
         name: 'get_scan_results',
-        description: 'Get results of a specific scan',
+        description: 'Fetch the results of a completed VM scan by its scan reference',
         inputSchema: {
           type: 'object',
           properties: {
-            scanId: { type: 'string', description: 'Scan ID' },
+            scanRef: { type: 'string', description: 'Scan reference in the form scan/NNNNNNNNNN.NNNNN' },
           },
-          required: ['scanId'],
+          required: ['scanRef'],
         },
       },
       {
         name: 'list_web_apps',
-        description: 'List web applications in Qualys',
+        description: 'Search and list web applications in the Qualys WAS module',
         inputSchema: {
           type: 'object',
           properties: {
             limit: { type: 'number', description: 'Maximum number of web apps to return' },
-            offset: { type: 'number', description: 'Number of web apps to skip' },
+            nameFilter: { type: 'string', description: 'Filter web apps by name (substring match)' },
           },
         },
       },
       {
         name: 'get_compliance_posture',
-        description: 'Get compliance posture information',
+        description: 'Download vulnerability data from the Qualys KnowledgeBase',
         inputSchema: {
           type: 'object',
           properties: {
-            complianceType: { type: 'string', description: 'Compliance framework (e.g., pci-dss, hipaa, sox)' },
+            details: { type: 'string', enum: ['Basic', 'All', 'None'], description: 'Level of detail to include (Basic, All, or None)' },
+            lastModifiedAfter: { type: 'string', description: 'Filter to vulnerabilities modified after this date (YYYY-MM-DD)' },
           },
-          required: ['complianceType'],
         },
       },
     ];
@@ -130,142 +135,186 @@ export class QualysMCPServer {
     }
   }
 
+  // POST /api/2.0/fo/asset/host/vm/detection/?action=list
+  // Returns XML. Basic auth + X-Requested-With required.
   private async listVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
-    const limit = (args.limit as number) || 50;
-    const offset = (args.offset as number) || 0;
-    const severity = args.severity as string;
-
-    const url = new URL(`${this.baseUrl}/vulnerabilities`);
-    url.searchParams.append('limit', limit.toString());
-    url.searchParams.append('offset', offset.toString());
-    if (severity) {
-      url.searchParams.append('severity', severity);
+    const params = new URLSearchParams({ action: 'list' });
+    if (args.ips) {
+      params.append('ips', args.ips as string);
+    }
+    if (args.severities) {
+      params.append('severities', args.severities as string);
+    }
+    if (args.truncation_limit) {
+      params.append('truncation_limit', String(args.truncation_limit));
     }
 
-    const response = await fetch(url.toString(), { headers: this.headers });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Non-JSON response (HTTP ${response.status})`);
-    }
-    return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-      isError: false,
-    };
-  }
-
-  private async launchScan(args: Record<string, unknown>): Promise<ToolResult> {
-    const scanName = args.scanName as string;
-    const targets = args.targets as string[];
-    const optionProfileId = args.optionProfileId as string;
-
-    if (!scanName || !targets || targets.length === 0) {
-      throw new Error('scanName and targets are required');
-    }
-
-    const body = {
-      scan_name: scanName,
-      targets: targets.join(','),
-      ...(optionProfileId && { option_profile_id: optionProfileId }),
-    };
-
-    const url = `${this.baseUrl}/scans`;
+    const url = `${this.baseUrl}/api/2.0/fo/asset/host/vm/detection/`;
     const response = await fetch(url, {
       method: 'POST',
       headers: this.headers,
-      body: JSON.stringify(body),
+      body: params.toString(),
     });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Non-JSON response (HTTP ${response.status})`);
-    }
+    const text = await response.text();
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text', text }],
       isError: false,
     };
   }
 
-  private async getScanResults(args: Record<string, unknown>): Promise<ToolResult> {
-    const scanId = args.scanId as string;
-    if (!scanId) {
-      throw new Error('scanId is required');
+  // POST /api/2.0/fo/scan/?action=launch
+  // Form-encoded body. Returns XML with scan reference.
+  private async launchScan(args: Record<string, unknown>): Promise<ToolResult> {
+    const scanName = args.scanName as string;
+    const targets = args.targets as string[];
+    const optionId = args.optionId as string | undefined;
+    const optionTitle = args.optionTitle as string | undefined;
+    const scannerName = args.scannerName as string | undefined;
+
+    if (!scanName || !targets || targets.length === 0) {
+      throw new Error('scanName and targets are required');
     }
 
-    const url = `${this.baseUrl}/scans/${encodeURIComponent(scanId)}/results`;
-    const response = await fetch(url, { headers: this.headers });
+    const params = new URLSearchParams({
+      action: 'launch',
+      scan_title: scanName,
+      ip: targets.join(','),
+    });
+    if (optionId) {
+      params.append('option_id', optionId);
+    } else if (optionTitle) {
+      params.append('option_title', optionTitle);
+    }
+    if (scannerName) {
+      params.append('iscanner_name', scannerName);
+    }
+
+    const url = `${this.baseUrl}/api/2.0/fo/scan/`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers,
+      body: params.toString(),
+    });
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Non-JSON response (HTTP ${response.status})`);
-    }
+    const text = await response.text();
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text', text }],
       isError: false,
     };
   }
 
+  // POST /api/2.0/fo/scan/?action=fetch
+  // Fetches scan results by scan reference (e.g. scan/1358285558.36992).
+  private async getScanResults(args: Record<string, unknown>): Promise<ToolResult> {
+    const scanRef = args.scanRef as string;
+    if (!scanRef) {
+      throw new Error('scanRef is required (e.g. scan/1358285558.36992)');
+    }
+
+    const params = new URLSearchParams({
+      action: 'fetch',
+      scan_ref: scanRef,
+    });
+
+    const url = `${this.baseUrl}/api/2.0/fo/scan/`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers,
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const text = await response.text();
+    return {
+      content: [{ type: 'text', text }],
+      isError: false,
+    };
+  }
+
+  // POST /qps/rest/3.0/search/was/webapp
+  // Qualys WAS API — returns XML ServiceResponse. Uses a ServiceRequest XML body.
   private async listWebApps(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) || 50;
-    const offset = (args.offset as number) || 0;
+    const nameFilter = args.nameFilter as string | undefined;
 
-    const url = new URL(`${this.baseUrl}/web_applications`);
-    url.searchParams.append('limit', limit.toString());
-    url.searchParams.append('offset', offset.toString());
+    let filterXml = '';
+    if (nameFilter) {
+      filterXml = `
+    <filters>
+      <Criteria field="name" operator="CONTAINS">${nameFilter}</Criteria>
+    </filters>`;
+    }
 
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const serviceRequest = `<?xml version="1.0" encoding="UTF-8"?>
+<ServiceRequest>
+  <preferences>
+    <limitResults>${limit}</limitResults>
+  </preferences>${filterXml}
+</ServiceRequest>`;
+
+    const wasHeaders = {
+      ...this.headers,
+      'Content-Type': 'application/xml',
+    };
+
+    const url = `${this.baseUrl}/qps/rest/3.0/search/was/webapp`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: wasHeaders,
+      body: serviceRequest,
+    });
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Non-JSON response (HTTP ${response.status})`);
-    }
+    const text = await response.text();
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text', text }],
       isError: false,
     };
   }
 
+  // POST /api/2.0/fo/knowledge_base/vuln/?action=list
+  // Downloads vulnerability data from the Qualys KnowledgeBase. Returns XML.
   private async getCompliancePosture(args: Record<string, unknown>): Promise<ToolResult> {
-    const complianceType = args.complianceType as string;
-    if (!complianceType) {
-      throw new Error('complianceType is required');
+    const details = (args.details as string) || 'Basic';
+    const lastModifiedAfter = args.lastModifiedAfter as string | undefined;
+
+    const params = new URLSearchParams({
+      action: 'list',
+      details,
+    });
+    if (lastModifiedAfter) {
+      params.append('last_modified_by_service_after', lastModifiedAfter);
     }
 
-    const url = `${this.baseUrl}/compliance/posture/${encodeURIComponent(complianceType)}`;
-    const response = await fetch(url, { headers: this.headers });
+    const url = `${this.baseUrl}/api/2.0/fo/knowledge_base/vuln/`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers,
+      body: params.toString(),
+    });
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Non-JSON response (HTTP ${response.status})`);
-    }
+    const text = await response.text();
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text', text }],
       isError: false,
     };
   }

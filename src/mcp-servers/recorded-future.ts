@@ -1,7 +1,5 @@
 /**
- * Recorded Future REST API MCP Server Wrapper
- * Provides tools for threat intelligence and risk scoring via Recorded Future
- 
+ * Recorded Future Intelligence MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -173,14 +171,15 @@ export class RecordedFutureMCPServer {
     headers: Record<string, string>,
     args: Record<string, unknown>
   ): Promise<ToolResult> {
+    // Connect API uses entity-type-specific search paths: /v2/{type}/search
+    const indicatorType = (args.indicatorType as string) || 'ip';
     const params = new URLSearchParams({
-      query: args.query as string,
+      freetext: args.query as string,
     });
 
-    if (args.indicatorType) params.append('indicatorType', args.indicatorType as string);
     if (args.limit) params.append('limit', (args.limit as number).toString());
 
-    const response = await fetch(`${this.baseUrl}/indicators/search?${params.toString()}`, {
+    const response = await fetch(`${this.baseUrl}/${indicatorType}/search?${params.toString()}`, {
       method: 'GET',
       headers,
     });
@@ -201,11 +200,12 @@ export class RecordedFutureMCPServer {
     headers: Record<string, string>,
     args: Record<string, unknown>
   ): Promise<ToolResult> {
+    // Connect API entity lookup: /v2/{type}/{entity}
     const indicatorType = args.indicatorType as string;
     const indicator = encodeURIComponent(args.indicator as string);
 
     const response = await fetch(
-      `${this.baseUrl}/indicators/${indicatorType}/${indicator}`,
+      `${this.baseUrl}/${indicatorType}/${indicator}`,
       {
         method: 'GET',
         headers,
@@ -228,6 +228,7 @@ export class RecordedFutureMCPServer {
     headers: Record<string, string>,
     args: Record<string, unknown>
   ): Promise<ToolResult> {
+    // Alert API: GET /v2/alerts
     const params = new URLSearchParams();
 
     if (args.limit) params.append('limit', (args.limit as number).toString());
@@ -255,11 +256,12 @@ export class RecordedFutureMCPServer {
     headers: Record<string, string>,
     args: Record<string, unknown>
   ): Promise<ToolResult> {
+    // Risk score is included in the entity lookup response: GET /v2/{type}/{entity}
     const indicatorType = args.indicatorType as string;
     const indicator = encodeURIComponent(args.indicator as string);
 
     const response = await fetch(
-      `${this.baseUrl}/indicators/${indicatorType}/${indicator}/risk`,
+      `${this.baseUrl}/${indicatorType}/${indicator}`,
       {
         method: 'GET',
         headers,
@@ -282,16 +284,18 @@ export class RecordedFutureMCPServer {
     headers: Record<string, string>,
     args: Record<string, unknown>
   ): Promise<ToolResult> {
-    const params = new URLSearchParams({
-      query: args.query as string,
-    });
+    // Threat API threat actor search: POST /v2/threatactor/search
+    const body: Record<string, unknown> = {
+      freetext: args.query as string,
+    };
 
-    if (args.limit) params.append('limit', (args.limit as number).toString());
-    if (args.sortBy) params.append('sortBy', args.sortBy as string);
+    if (args.limit) body['limit'] = args.limit as number;
+    if (args.sortBy) body['orderby'] = args.sortBy as string;
 
-    const response = await fetch(`${this.baseUrl}/threat-actors/search?${params.toString()}`, {
-      method: 'GET',
+    const response = await fetch(`${this.baseUrl}/threatactor/search`, {
+      method: 'POST',
       headers,
+      body: JSON.stringify(body),
     });
 
     let data: unknown;

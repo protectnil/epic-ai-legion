@@ -1,6 +1,5 @@
-/** Snowflake MCP Server
- * Snowflake Data Cloud query and metadata operations
- *
+/**
+ * Snowflake MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -14,6 +13,35 @@ interface SnowflakeConfig {
   database?: string;
   schema?: string;
   role?: string;
+}
+
+/**
+ * Sanitize a LIKE pattern: allow alphanumerics, underscores, hyphens, dots,
+ * and the SQL wildcard characters % and _. All other characters are stripped.
+ * This prevents injection via the LIKE clause in SHOW commands.
+ */
+function sanitizeLike(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[^A-Za-z0-9_%.\-]/g, '');
+}
+
+/**
+ * Sanitize a Snowflake object identifier (database, schema, table name).
+ * Snowflake unquoted identifiers are alphanumeric + underscore. Strip everything
+ * else so the value is safe to embed inside double-quoted SQL identifiers.
+ */
+function sanitizeIdentifier(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[^A-Za-z0-9_]/g, '');
+}
+
+/**
+ * Sanitize a Snowflake statement handle, which is a UUID.
+ * Allow only hex digits and hyphens.
+ */
+function sanitizeHandle(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[^A-Fa-f0-9\-]/g, '');
 }
 
 export class SnowflakeMCPServer {
@@ -120,13 +148,15 @@ export class SnowflakeMCPServer {
           break;
         }
         case 'get_statement_status': {
-          url = `${this.baseUrl}/statements/${args.statementHandle}`;
+          const handle = sanitizeHandle(args.statementHandle);
+          url = `${this.baseUrl}/statements/${handle}`;
           method = 'GET';
           break;
         }
         case 'list_databases': {
-          const statement = args.like
-            ? `SHOW DATABASES LIKE '${args.like}'`
+          const like = sanitizeLike(args.like);
+          const statement = like
+            ? `SHOW DATABASES LIKE '${like}'`
             : 'SHOW DATABASES';
           url = `${this.baseUrl}/statements`;
           method = 'POST';
@@ -134,21 +164,26 @@ export class SnowflakeMCPServer {
           break;
         }
         case 'list_schemas': {
-          const statement = args.like
-            ? `SHOW SCHEMAS LIKE '${args.like}' IN DATABASE "${args.database}"`
-            : `SHOW SCHEMAS IN DATABASE "${args.database}"`;
+          const like = sanitizeLike(args.like);
+          const db = sanitizeIdentifier(args.database);
+          const statement = like
+            ? `SHOW SCHEMAS LIKE '${like}' IN DATABASE "${db}"`
+            : `SHOW SCHEMAS IN DATABASE "${db}"`;
           url = `${this.baseUrl}/statements`;
           method = 'POST';
-          body = { statement, timeout: 30, database: args.database };
+          body = { statement, timeout: 30, database: db };
           break;
         }
         case 'list_tables': {
-          const statement = args.like
-            ? `SHOW TABLES LIKE '${args.like}' IN SCHEMA "${args.database}"."${args.schema}"`
-            : `SHOW TABLES IN SCHEMA "${args.database}"."${args.schema}"`;
+          const like = sanitizeLike(args.like);
+          const db = sanitizeIdentifier(args.database);
+          const sc = sanitizeIdentifier(args.schema);
+          const statement = like
+            ? `SHOW TABLES LIKE '${like}' IN SCHEMA "${db}"."${sc}"`
+            : `SHOW TABLES IN SCHEMA "${db}"."${sc}"`;
           url = `${this.baseUrl}/statements`;
           method = 'POST';
-          body = { statement, timeout: 30, database: args.database, schema: args.schema };
+          body = { statement, timeout: 30, database: db, schema: sc };
           break;
         }
         default:
