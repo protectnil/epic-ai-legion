@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Product renamed to Epic AI® IVA Core** — title, README, Developer Guide, package.json description, and footer all reflect IVA Core branding to align with U.S. Trademark Reg. No. 7,748,019
 - **113 enterprise adapters** (was 40 cybersecurity-only) — expanded from 10 (ISC)² security domains to 7 operational categories: Security, DevOps & Infrastructure, Observability, Productivity & Collaboration, AI/ML Platforms, Business Operations, and Content & Social
-- Adapter section reorganized by operational category with full vendor tables across all 7 domains
+- Adapter section reorganized by operational category with full vendor tables across all categories
 - README "Why Epic AI®" section reordered — token efficiency, data sovereignty, and SLM latency now lead; governance and compliance follow
 - README subtitle: "Local SLM orchestrates. Cloud LLM responds. Your data never leaves."
 - Developer Guide intro broadened from "IVA framework for cybersecurity" to platform-level positioning across all adapter domains

@@ -517,7 +517,7 @@ The trust layer includes `AuthMiddleware` for request authentication, `AccessPol
 | Field           | Type                                                | Description                              |
 |-----------------|-----------------------------------------------------|------------------------------------------|
 | `provider`      | `'auto' \| 'ollama' \| 'vllm' \| 'apple-foundation' \| 'custom'` | Orchestrator runtime          |
-| `model`         | `string`                                            | Model name (e.g., `'mistral:7b'`)        |
+| `model`         | `string`                                            | Model name (e.g., `'mistral-small-3'`)        |
 | `baseUrl`       | `string`                                            | Base URL for Ollama or vLLM endpoints    |
 | `maxIterations` | `number`                                            | Max orchestrator loop iterations         |
 | `llm`           | `LLMFunction`                                       | Bring-your-own LLM function (custom)     |
