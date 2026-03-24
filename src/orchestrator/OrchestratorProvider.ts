@@ -253,7 +253,7 @@ function createVLLMLLM(config: OrchestratorConfig): LLMFunction {
 
       log.debug('raw response', { data: data as unknown as Record<string, unknown> });
 
-      const toolCalls = (choice?.message?.tool_calls ?? []).map((tc: OpenAIToolCall) => {
+      let toolCalls = (choice?.message?.tool_calls ?? []).map((tc: OpenAIToolCall) => {
         let parsedArgs: Record<string, unknown> = {};
         if (typeof tc.function.arguments === 'string') {
           try {
@@ -268,7 +268,21 @@ function createVLLMLLM(config: OrchestratorConfig): LLMFunction {
         return { id: tc.id, name: tc.function.name, arguments: parsedArgs };
       });
 
-      const finishReason = choice?.finish_reason === 'tool_calls' ? 'tool_calls' as const : 'stop' as const;
+      // Fallback: if llama.cpp failed to parse multi-tool output, the tool calls
+      // may be embedded in the content as text. Try to extract them.
+      if (toolCalls.length === 0 && toolCount > 0 && choice?.message?.content) {
+        const extracted = extractToolCallsFromContent(choice.message.content, params.tools ?? []);
+        if (extracted.length > 0) {
+          log.info('recovered tool calls from content (llama.cpp multi-tool parse fallback)', {
+            recovered: extracted.length,
+            names: extracted.map(tc => tc.name),
+          });
+          toolCalls = extracted;
+        }
+      }
+
+      const finishReason = toolCalls.length > 0 ? 'tool_calls' as const :
+        (choice?.finish_reason === 'tool_calls' ? 'tool_calls' as const : 'stop' as const);
 
       log.info('response', {
         model: config.model,
@@ -338,4 +352,64 @@ interface OpenAICompatResponse {
     completion_tokens?: number;
     total_tokens?: number;
   };
+}
+
+/**
+ * Fallback parser for multi-tool calls that llama.cpp fails to parse.
+ * When llama.cpp encounters multiple tool calls (e.g. separated by ; or
+ * in Llama 3.1's native format), it may fail at the parser level and
+ * put the raw tool-call text into the content field instead.
+ *
+ * This function attempts to extract tool calls from that text content
+ * by looking for function call patterns that match known tool names.
+ */
+function extractToolCallsFromContent(
+  content: string,
+  tools: LLMToolDefinition[],
+): { id: string; name: string; arguments: Record<string, unknown> }[] {
+  const toolNames = new Set(tools.map(t => t.name));
+  const results: { id: string; name: string; arguments: Record<string, unknown> }[] = [];
+
+  // Pattern 1: JSON objects with "name" and "arguments"/"parameters" fields
+  // Matches: {"name":"search_threats","arguments":{"query":"critical"}}
+  const jsonPattern = /\{[^{}]*"name"\s*:\s*"([^"]+)"[^{}]*(?:"arguments"|"parameters")\s*:\s*(\{[^}]*\})[^}]*\}/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = jsonPattern.exec(content)) !== null) {
+    const name = match[1];
+    if (!toolNames.has(name)) continue;
+
+    let args: Record<string, unknown> = {};
+    try {
+      args = JSON.parse(match[2]) as Record<string, unknown>;
+    } catch {
+      // Try to be lenient with malformed JSON
+      args = {};
+    }
+
+    results.push({ id: `fallback_${results.length}`, name, arguments: args });
+  }
+
+  if (results.length > 0) return results;
+
+  // Pattern 2: function-call-like syntax in content
+  // Matches: search_threats({"query": "critical"}) or search_threats(query="critical")
+  for (const toolName of toolNames) {
+    const funcPattern = new RegExp(
+      toolName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\(\\s*(\\{[^)]*\\})\\s*\\)',
+      'g',
+    );
+
+    while ((match = funcPattern.exec(content)) !== null) {
+      let args: Record<string, unknown> = {};
+      try {
+        args = JSON.parse(match[1]) as Record<string, unknown>;
+      } catch {
+        args = {};
+      }
+      results.push({ id: `fallback_${results.length}`, name: toolName, arguments: args });
+    }
+  }
+
+  return results;
 }

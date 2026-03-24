@@ -1,6 +1,6 @@
 {
   "name": "@epicai/core",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Epic AI® IVA Core — the Intelligent Virtual Assistant that replaces dashboards and manual analysis. 472 enterprise adapters. Local SLM orchestrates, cloud LLM responds. Your data never leaves.",
   "type": "module",
   "main": "./dist/index.js",
