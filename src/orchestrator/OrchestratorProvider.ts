@@ -247,7 +247,18 @@ function createVLLMLLM(config: OrchestratorConfig): LLMFunction {
         // The error body contains the raw tool call data after "Failed to parse input at pos N: "
         // Example: 'Failed to parse input at pos 158: ; {"name": "check_identity", "parameters": {"userId": "admin@company.com"}}'
         if (response.status === 500 && toolCount > 0 && rawText.includes('Failed to parse input')) {
-          const recovered = extractToolCallsFromContent(rawText, params.tools ?? []);
+          // rawText is a JSON envelope: {"error":{"message":"Failed to parse input at pos N: ; {\"name\":...}"}}
+          // Unwrap the JSON to get the inner message string with unescaped quotes
+          let messageText = rawText;
+          try {
+            const envelope = JSON.parse(rawText) as { error?: { message?: string } };
+            if (envelope.error?.message) {
+              messageText = envelope.error.message;
+            }
+          } catch {
+            // Not valid JSON envelope — use rawText as-is
+          }
+          const recovered = extractToolCallsFromContent(messageText, params.tools ?? []);
           if (recovered.length > 0) {
             const durationMs = Date.now() - start;
             log.info('recovered tool calls from llama.cpp 500 parse error', {
