@@ -34,6 +34,7 @@ async function probeEndpoint(url: string, path: string): Promise<boolean> {
 
 async function detectBackend(): Promise<{ provider: 'auto' | 'ollama'; baseUrl: string } | null> {
   if (await probeEndpoint(GATEWAY_URL, '/v1/models')) return { provider: 'auto', baseUrl: GATEWAY_URL };
+  if (await probeEndpoint('http://localhost:8080', '/v1/models')) return { provider: 'auto', baseUrl: 'http://localhost:8080' };
   if (await probeEndpoint(OLLAMA_URL, '/api/version')) return { provider: 'ollama', baseUrl: OLLAMA_URL };
   return null;
 }
@@ -118,7 +119,7 @@ describe('Hybrid: Ollama Orchestrator → OpenAI Generator', { timeout: TIMEOUT_
 
   beforeAll(async () => {
     const backend = await detectBackend(); if (!backend) {
-      console.log('Skipping hybrid tests: Ollama not available');
+      console.log('Skipping: no inference backend available (gateway:8000, llama.cpp:8080, ollama:11434)');
     }
     if (!openaiAvailable()) {
       console.log('Skipping hybrid tests: OPENAI_API_KEY not set');

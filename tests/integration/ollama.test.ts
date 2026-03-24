@@ -31,11 +31,13 @@ async function probeEndpoint(url: string, path: string): Promise<boolean> {
 }
 
 async function detectBackend(): Promise<{ provider: 'auto' | 'ollama'; baseUrl: string } | null> {
-  // Prefer gateway (works on M5 Metal)
+  // Probe order: gateway → llama.cpp direct → Ollama
   if (await probeEndpoint(GATEWAY_URL, '/v1/models')) {
     return { provider: 'auto', baseUrl: GATEWAY_URL };
   }
-  // Fallback to Ollama
+  if (await probeEndpoint('http://localhost:8080', '/v1/models')) {
+    return { provider: 'auto', baseUrl: 'http://localhost:8080' };
+  }
   if (await probeEndpoint(OLLAMA_URL, '/api/version')) {
     return { provider: 'ollama', baseUrl: OLLAMA_URL };
   }

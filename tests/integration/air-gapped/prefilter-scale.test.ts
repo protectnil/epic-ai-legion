@@ -30,6 +30,7 @@ async function probeEndpoint(url: string, path: string): Promise<boolean> {
 
 async function detectBackend(): Promise<{ provider: 'auto' | 'ollama'; baseUrl: string } | null> {
   if (await probeEndpoint(GATEWAY_URL, '/v1/models')) return { provider: 'auto', baseUrl: GATEWAY_URL };
+  if (await probeEndpoint('http://localhost:8080', '/v1/models')) return { provider: 'auto', baseUrl: 'http://localhost:8080' };
   if (await probeEndpoint(OLLAMA_URL, '/api/version')) return { provider: 'ollama', baseUrl: OLLAMA_URL };
   return null;
 }
@@ -98,7 +99,7 @@ describe('Pre-Filter Scale Test', () => {
 
   it('model produces correct tool calls with pre-filtered 30-tool catalog', async () => {
     if (!available) {
-      console.log('SKIP — Ollama not available');
+      console.log('SKIP — no inference backend available (gateway:8000, llama.cpp:8080, ollama:11434)');
       return;
     }
 
@@ -141,7 +142,7 @@ describe('Pre-Filter Scale Test', () => {
 
   it('cross-domain query gets tools from multiple servers', async () => {
     if (!available) {
-      console.log('SKIP — Ollama not available');
+      console.log('SKIP — no inference backend available (gateway:8000, llama.cpp:8080, ollama:11434)');
       return;
     }
 

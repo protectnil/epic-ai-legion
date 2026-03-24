@@ -31,6 +31,7 @@ async function probeEndpoint(url: string, path: string): Promise<boolean> {
 
 async function detectBackend(): Promise<{ provider: 'auto' | 'ollama'; baseUrl: string } | null> {
   if (await probeEndpoint(GATEWAY_URL, '/v1/models')) return { provider: 'auto', baseUrl: GATEWAY_URL };
+  if (await probeEndpoint('http://localhost:8080', '/v1/models')) return { provider: 'auto', baseUrl: 'http://localhost:8080' };
   if (await probeEndpoint(OLLAMA_URL, '/api/version')) return { provider: 'ollama', baseUrl: OLLAMA_URL };
   return null;
 }
@@ -158,7 +159,7 @@ const SYSTEM_PROMPT = 'You are a cybersecurity AI assistant. Use the available t
 describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
   beforeAll(async () => {
     const backend = await detectBackend(); if (!backend) {
-      console.log('Skipping air-gapped tests: Ollama not available');
+      console.log('Skipping: no inference backend available (gateway:8000, llama.cpp:8080, ollama:11434)');
     }
   });
 
