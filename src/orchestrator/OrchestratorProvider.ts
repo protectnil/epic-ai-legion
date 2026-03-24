@@ -242,7 +242,28 @@ function createVLLMLLM(config: OrchestratorConfig): LLMFunction {
 
       if (!response.ok) {
         const rawText = await response.text();
-        const truncated = rawText.slice(0, 200);
+
+        // llama.cpp returns 500 when it fails to parse multi-tool output.
+        // The error body contains the raw tool call data after "Failed to parse input at pos N: "
+        // Example: 'Failed to parse input at pos 158: ; {"name": "check_identity", "parameters": {"userId": "admin@company.com"}}'
+        if (response.status === 500 && toolCount > 0 && rawText.includes('Failed to parse input')) {
+          const recovered = extractToolCallsFromContent(rawText, params.tools ?? []);
+          if (recovered.length > 0) {
+            const durationMs = Date.now() - start;
+            log.info('recovered tool calls from llama.cpp 500 parse error', {
+              recovered: recovered.length,
+              names: recovered.map(tc => tc.name),
+              durationMs,
+            });
+            return {
+              content: null,
+              toolCalls: recovered,
+              finishReason: 'tool_calls' as const,
+            };
+          }
+        }
+
+        const truncated = rawText.slice(0, 500);
         log.error('request failed', { status: response.status, body: truncated });
         throw new Error(`vLLM returned ${response.status}: ${truncated}`);
       }
