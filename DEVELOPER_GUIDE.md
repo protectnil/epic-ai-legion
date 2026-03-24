@@ -48,6 +48,8 @@ npm install redis                     # Approval queue + memory cache
 npm install mongodb                   # Audit + memory persistence
 ```
 
+> **Ollama deprecation:** As of this release, Ollama and Apple M5 Metal are incompatible — confirmed crashes with no fix timeline from either vendor ([#13867](https://github.com/ollama/ollama/issues/13867), [#13896](https://github.com/ollama/ollama/issues/13896), [#13460](https://github.com/ollama/ollama/issues/13460)). Pre-M5 hardware is unaffected. The SDK and test harnesses have been migrated to the Inference Gateway (`npx epic-ai-gateway`) with llama.cpp as the default backend.
+
 ## Quick Start
 
 ```typescript

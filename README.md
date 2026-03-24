@@ -45,6 +45,8 @@ Append-only logs are not audit trails. Epic AI® writes every agent action to a 
   npx epic-ai-gateway
   ```
 
+> **Why not Ollama?** As of this release, Ollama and Apple M5 Metal are incompatible — confirmed crashes in GGML assertions, MLX bfloat16 kernel loading, and Metal library type mismatches ([#13867](https://github.com/ollama/ollama/issues/13867), [#13896](https://github.com/ollama/ollama/issues/13896), [#13460](https://github.com/ollama/ollama/issues/13460)) with no fix timeline from either vendor. Pre-M5 hardware is unaffected. This is why we deprecated Ollama from both the SDK runtime and the testing harnesses — the Inference Gateway with llama.cpp is the reliable path forward across all Apple Silicon generations.
+
 ## Quick Start
 
 **1. Install**
