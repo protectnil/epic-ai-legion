@@ -296,7 +296,7 @@ class EpicAIAgentImpl implements EpicAIAgent {
     let generatorLLM: LLMFunction;
     if (this.config.generator) {
       generatorLLM = createGeneratorLLM(this.config.generator);
-    } else if (this.config.orchestrator.provider === 'ollama') {
+    } else if (this.config.orchestrator.provider === 'ollama' || this.config.orchestrator.provider === 'auto') {
       generatorLLM = orchestratorLLM;
     } else {
       throw new Error(
