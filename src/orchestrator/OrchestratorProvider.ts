@@ -56,61 +56,43 @@ export function createOrchestratorLLM(config: OrchestratorConfig): LLMFunction {
  * If not, fall back to Ollama with deprecation warning.
  */
 function createAutoLLM(config: OrchestratorConfig): LLMFunction {
-  const baseUrl = config.baseUrl ?? DEFAULT_GATEWAY_URL;
   const log = createLogger('orchestrator.auto', config.logLevel);
   let resolved: LLMFunction | null = null;
+
+  // Probe order: explicit baseUrl → gateway → llama.cpp → Ollama
+  const probeTargets = config.baseUrl
+    ? [config.baseUrl]
+    : [DEFAULT_GATEWAY_URL, 'http://localhost:8080', DEFAULT_OLLAMA_URL];
 
   return async (params) => {
     if (resolved) return resolved(params);
 
-    // Probe gateway/vLLM endpoint
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3_000);
+    for (const url of probeTargets) {
       try {
-        const response = await fetch(`${baseUrl}/v1/models`, { signal: controller.signal });
-        if (response.ok) {
-          log.info('auto-detected OpenAI-compatible backend', { baseUrl });
-          resolved = createVLLMLLM({ ...config, baseUrl });
-          return resolved(params);
-        }
-      } finally {
-        clearTimeout(timeout);
-      }
-    } catch {
-      // Gateway not available
-    }
-
-    // Fallback to Ollama — probe first to avoid unhandled ECONNREFUSED
-    const ollamaUrl = config.baseUrl ?? DEFAULT_OLLAMA_URL;
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3_000);
-      try {
-        const res = await fetch(`${ollamaUrl}/api/version`, { signal: controller.signal });
-        if (res.ok) {
-          log.warn('gateway not detected — falling back to Ollama (deprecated). Start the gateway: npx epic-ai-gateway');
-          if (!ollamaDeprecationWarned) {
-            ollamaDeprecationWarned = true;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3_000);
+        try {
+          const response = await fetch(`${url}/v1/models`, { signal: controller.signal });
+          if (response.ok) {
+            log.info('auto-detected inference backend', { url });
+            resolved = createVLLMLLM({ ...config, baseUrl: url });
+            return resolved(params);
           }
-          resolved = createOllamaLLM(config);
-          return resolved(params);
+        } finally {
+          clearTimeout(timeout);
         }
-      } finally {
-        clearTimeout(timeout);
+      } catch {
+        // This endpoint not available, try next
       }
-    } catch {
-      // Ollama not available either
     }
 
-    // No backend available at all
     throw new Error(
       'No inference backend available.\n\n' +
-      'The gateway was not found at ' + baseUrl + ' and Ollama was not found at ' + ollamaUrl + '.\n\n' +
-      'To fix this, start an inference backend:\n' +
-      '  Option 1 (recommended): brew install llama.cpp && llama-server --model <path-to-model.gguf> --port 8080\n' +
-      '  Option 2: npx epic-ai-gateway (after starting a backend on port 8080)\n' +
-      '  Option 3: ollama serve (not supported on Apple M5)\n'
+      'Probed: ' + probeTargets.join(', ') + ' — none responded.\n\n' +
+      'Start an inference backend:\n' +
+      '  brew install llama.cpp\n' +
+      '  llama-server --model <path-to-model.gguf> --port 8080\n\n' +
+      'Then run your code again. The SDK will auto-detect it.\n'
     );
   };
 }
