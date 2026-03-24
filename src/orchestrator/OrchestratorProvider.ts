@@ -81,13 +81,37 @@ function createAutoLLM(config: OrchestratorConfig): LLMFunction {
       // Gateway not available
     }
 
-    // Fallback to Ollama
-    log.warn('gateway not detected — falling back to Ollama (deprecated). Start the gateway: npx epic-ai-gateway');
-    if (!ollamaDeprecationWarned) {
-      ollamaDeprecationWarned = true;
+    // Fallback to Ollama — probe first to avoid unhandled ECONNREFUSED
+    const ollamaUrl = config.baseUrl ?? DEFAULT_OLLAMA_URL;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3_000);
+      try {
+        const res = await fetch(`${ollamaUrl}/api/version`, { signal: controller.signal });
+        if (res.ok) {
+          log.warn('gateway not detected — falling back to Ollama (deprecated). Start the gateway: npx epic-ai-gateway');
+          if (!ollamaDeprecationWarned) {
+            ollamaDeprecationWarned = true;
+          }
+          resolved = createOllamaLLM(config);
+          return resolved(params);
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
+    } catch {
+      // Ollama not available either
     }
-    resolved = createOllamaLLM(config);
-    return resolved(params);
+
+    // No backend available at all
+    throw new Error(
+      'No inference backend available.\n\n' +
+      'The gateway was not found at ' + baseUrl + ' and Ollama was not found at ' + ollamaUrl + '.\n\n' +
+      'To fix this, start an inference backend:\n' +
+      '  Option 1 (recommended): brew install llama.cpp && llama-server --model <path-to-model.gguf> --port 8080\n' +
+      '  Option 2: npx epic-ai-gateway (after starting a backend on port 8080)\n' +
+      '  Option 3: ollama serve (not supported on Apple M5)\n'
+    );
   };
 }
 
