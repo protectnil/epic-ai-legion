@@ -4,26 +4,42 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/backstage/backstage (mcp-actions-backend plugin) — exposes Backstage
-// scaffolder actions as MCP tools for AI clients invoking INTO Backstage (not for catalog queries).
-// Community catalog-wrapping MCPs exist (iocanel/backstage-mcp, p7ayfu77/backstage-mcp) but none are
-// official or feature-complete. This adapter covers the Catalog REST API and is the recommended
-// self-hosted solution for catalog queries, entity management, and location registration.
+// Official MCP: https://github.com/backstage/backstage/tree/master/plugins/mcp-actions-backend
+// The official backstage/mcp-actions-backend plugin exposes Backstage scaffolder actions as MCP
+// tools for AI clients invoking INTO Backstage (scaffolding / template execution). It does NOT
+// expose Catalog query, entity management, location registration, or TechDocs search as tools.
+// Community catalog-wrapping MCP servers (iocanel/backstage-mcp, p7ayfu77/backstage-mcp,
+// Coderrob/backstage-mcp-server) exist but are not officially maintained by Backstage.
+// Recommendation: Use mcp-actions-backend plugin for scaffolder action invocation from AI agents.
+// Use this adapter for Catalog queries, entity management, location registration, and search — the
+// core developer portal operations not covered by the official plugin.
+//
+// Base URL: {your Backstage backend URL}/api (e.g. https://backstage.example.com/api)
+// Auth: Bearer token (Backstage identity token or static token via dangerouslyDisableDefaultAuthPolicy).
+//       Optional — omit for Backstage instances with auth disabled.
+// Docs: https://backstage.io/docs/features/software-catalog/software-catalog-api/
+// Rate limits: Dependent on your Backstage deployment; no documented upstream rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface BackstageConfig {
   /**
    * Base URL of your Backstage backend, e.g. https://backstage.example.com
-   * The catalog API will be accessed at {baseUrl}/api/catalog
+   * The catalog API is accessed at {baseUrl}/api/catalog
+   * The search API is accessed at {baseUrl}/api/search
    */
   baseUrl: string;
   /**
-   * Bearer token for authentication (Backstage identity token or static token
-   * configured via the backend.auth.dangerouslyDisableDefaultAuthPolicy setting).
+   * Bearer token for authentication (Backstage identity token or static token).
    * Optional for Backstage instances with auth disabled.
    */
   token?: string;
+}
+
+function truncate(text: string): string {
+  return text.length > 10_000
+    ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+    : text;
 }
 
 export class BackstageMCPServer {
@@ -39,6 +55,10 @@ export class BackstageMCPServer {
     return `${this.baseUrl}/api/catalog`;
   }
 
+  private get searchBase(): string {
+    return `${this.baseUrl}/api/search`;
+  }
+
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -49,32 +69,59 @@ export class BackstageMCPServer {
     return headers;
   }
 
+  static catalog() {
+    return {
+      name: 'backstage',
+      displayName: 'Backstage',
+      version: '1.0.0',
+      category: 'devops' as const,
+      keywords: ['backstage', 'catalog', 'service catalog', 'developer portal', 'component', 'api', 'system', 'domain', 'group', 'user', 'techdocs', 'scaffolder', 'idp'],
+      toolNames: [
+        'list_entities', 'get_entity', 'get_entity_by_ref',
+        'get_entity_facets',
+        'search_entities',
+        'list_locations', 'get_location', 'create_location', 'delete_location',
+        'delete_entity', 'refresh_entity',
+        'get_entity_ancestors',
+        'validate_entity',
+      ],
+      description: 'Backstage Catalog and Search API: query entities, manage locations, refresh and validate catalog entries, and search developer portal content.',
+      author: 'protectnil' as const,
+    };
+  }
+
   get tools(): ToolDefinition[] {
     return [
+      // ── Entity Queries ───────────────────────────────────────────────────
       {
         name: 'list_entities',
-        description:
-          'Query catalog entities with optional filters. Returns components, APIs, systems, groups, users, and other entity kinds registered in Backstage.',
+        description: 'Query catalog entities with optional kind, namespace, and field filters. Returns components, APIs, systems, groups, users, and all other entity kinds.',
         inputSchema: {
           type: 'object',
           properties: {
             filter: {
               type: 'string',
-              description:
-                'Comma-separated filter expressions, e.g. "kind=component,metadata.namespace=default". Multiple values for the same key are ORed; multiple keys are ANDed.',
+              description: 'Comma-separated filter expressions, e.g. "kind=component,metadata.namespace=default,spec.type=service". Multiple values for the same key are ORed; multiple keys are ANDed.',
             },
             fields: {
               type: 'string',
-              description:
-                'Comma-separated list of fields to include in the response, e.g. "metadata.name,kind,spec.type".',
+              description: 'Comma-separated list of fields to include in the response to reduce payload size, e.g. "metadata.name,kind,spec.type,metadata.annotations".',
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of entities to return (default: 20).',
+              description: 'Maximum number of entities to return (default: 20, max: 500).',
             },
             after: {
               type: 'string',
-              description: 'Pagination cursor obtained from a previous response.',
+              description: 'Pagination cursor token obtained from a previous response to fetch the next page.',
+            },
+            orderField: {
+              type: 'string',
+              description: 'Field to sort results by, e.g. "metadata.name".',
+            },
+            orderDirection: {
+              type: 'string',
+              description: 'Sort direction: asc or desc (default: asc).',
             },
           },
         },
@@ -85,85 +132,143 @@ export class BackstageMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            kind: {
-              type: 'string',
-              description: 'Entity kind, e.g. Component, API, System, Group, User.',
-            },
-            namespace: {
-              type: 'string',
-              description: 'Entity namespace (default: default).',
-            },
-            name: {
-              type: 'string',
-              description: 'Entity name.',
-            },
+            kind: { type: 'string', description: 'Entity kind, e.g. Component, API, System, Domain, Group, User, Resource, Location.' },
+            namespace: { type: 'string', description: 'Entity namespace (default: default).' },
+            name: { type: 'string', description: 'Entity name.' },
           },
           required: ['kind', 'name'],
         },
       },
       {
+        name: 'get_entity_by_ref',
+        description: 'Get a single catalog entity by its entity reference string (kind:namespace/name format).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            entityRef: {
+              type: 'string',
+              description: 'Entity reference in the format kind:namespace/name, e.g. component:default/my-service or group:default/team-platform.',
+            },
+          },
+          required: ['entityRef'],
+        },
+      },
+      // ── Facets ───────────────────────────────────────────────────────────
+      {
         name: 'get_entity_facets',
-        description:
-          'Retrieve aggregated facet counts for catalog entities. Useful for discovering what kinds, namespaces, tags, or lifecycle values exist in the catalog.',
+        description: 'Retrieve aggregated facet counts for catalog entities. Useful for discovering available kinds, namespaces, lifecycle values, tags, and types.',
         inputSchema: {
           type: 'object',
           properties: {
             facet: {
               type: 'string',
-              description:
-                'Comma-separated list of facet fields to aggregate, e.g. "kind,metadata.namespace,spec.lifecycle".',
+              description: 'Comma-separated list of facet fields to aggregate, e.g. "kind,metadata.namespace,spec.lifecycle,spec.type,metadata.tags".',
             },
             filter: {
               type: 'string',
-              description: 'Optional filter to scope facet results, same syntax as list_entities.',
+              description: 'Optional filter to scope facet results using the same syntax as list_entities.',
             },
           },
           required: ['facet'],
         },
       },
+      // ── Search ───────────────────────────────────────────────────────────
       {
-        name: 'list_locations',
-        description: 'List all registered catalog locations (where entity descriptors are sourced from).',
+        name: 'search_entities',
+        description: 'Full-text search across catalog entities and TechDocs content using the Backstage search API.',
         inputSchema: {
           type: 'object',
-          properties: {},
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Search query text, e.g. "authentication service" or "payment API".',
+            },
+            types: {
+              type: 'string',
+              description: 'Comma-separated document types to search: software-catalog, techdocs (default: software-catalog).',
+            },
+            filters: {
+              type: 'string',
+              description: 'JSON string of key-value filter pairs to narrow results, e.g. \'{"kind":"Component"}\'.',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of results to return (default: 25).',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response.',
+            },
+          },
+          required: ['query'],
+        },
+      },
+      // ── Locations ────────────────────────────────────────────────────────
+      {
+        name: 'list_locations',
+        description: 'List all registered catalog locations (sources from which entity descriptors are ingested).',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'get_location',
+        description: 'Get details for a specific catalog location by its ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: {
+              type: 'string',
+              description: 'The location ID (UUID) to retrieve.',
+            },
+          },
+          required: ['locationId'],
         },
       },
       {
         name: 'create_location',
-        description:
-          'Register a new catalog location (e.g. a GitHub URL to a catalog-info.yaml file). Backstage will ingest entities from this location.',
+        description: 'Register a new catalog location so Backstage ingests entities from it. Typically a URL to a catalog-info.yaml file.',
         inputSchema: {
           type: 'object',
           properties: {
             type: {
               type: 'string',
-              description: 'Location type, typically "url".',
+              description: 'Location type, typically "url". Other types: "bootstrap" (internal).',
             },
             target: {
               type: 'string',
-              description:
-                'The location target, e.g. https://github.com/org/repo/blob/main/catalog-info.yaml',
+              description: 'Location target URL, e.g. https://github.com/org/repo/blob/main/catalog-info.yaml.',
             },
             dryRun: {
               type: 'boolean',
-              description:
-                'If true, validates the location without persisting it (default: false).',
+              description: 'If true, validate the location and return what entities would be ingested without persisting (default: false).',
             },
           },
           required: ['type', 'target'],
         },
       },
       {
+        name: 'delete_location',
+        description: 'Delete a registered catalog location by its ID. Entities sourced only from this location will be removed on the next refresh cycle.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: {
+              type: 'string',
+              description: 'The location ID (UUID) to delete.',
+            },
+          },
+          required: ['locationId'],
+        },
+      },
+      // ── Entity Management ────────────────────────────────────────────────
+      {
         name: 'delete_entity',
-        description:
-          'Delete an entity from the catalog by its UID. Note: if the entity is backed by a registered location, it will be re-ingested on the next refresh cycle.',
+        description: 'Delete an entity from the catalog by its UID. If the entity is backed by a registered location it will be re-ingested on the next refresh cycle.',
         inputSchema: {
           type: 'object',
           properties: {
             uid: {
               type: 'string',
-              description: 'The UID of the entity to delete (metadata.uid field).',
+              description: 'The UID of the entity to delete (metadata.uid field, a UUID string).',
             },
           },
           required: ['uid'],
@@ -171,34 +276,50 @@ export class BackstageMCPServer {
       },
       {
         name: 'refresh_entity',
-        description:
-          'Trigger an immediate refresh of a catalog entity, causing Backstage to re-read it from its source location.',
+        description: 'Trigger an immediate refresh of a catalog entity, causing Backstage to re-read it from its source location.',
         inputSchema: {
           type: 'object',
           properties: {
             entityRef: {
               type: 'string',
-              description:
-                'Entity reference in the format kind:namespace/name, e.g. component:default/my-service.',
+              description: 'Entity reference in the format kind:namespace/name, e.g. component:default/my-service.',
             },
           },
           required: ['entityRef'],
         },
       },
+      // ── Ancestry ─────────────────────────────────────────────────────────
       {
         name: 'get_entity_ancestors',
-        description:
-          'Get the ancestry chain for a catalog entity — the chain of entities that own or reference this entity.',
+        description: 'Get the ancestry chain for a catalog entity — the owning and referencing entities up to the root.',
         inputSchema: {
           type: 'object',
           properties: {
             entityRef: {
               type: 'string',
-              description:
-                'Entity reference in the format kind:namespace/name, e.g. component:default/my-service.',
+              description: 'Entity reference in the format kind:namespace/name, e.g. component:default/my-service.',
             },
           },
           required: ['entityRef'],
+        },
+      },
+      // ── Validation ───────────────────────────────────────────────────────
+      {
+        name: 'validate_entity',
+        description: 'Validate an entity descriptor object against the Backstage catalog schema without registering it.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            entity: {
+              type: 'object',
+              description: 'The entity descriptor object to validate. Must include at minimum apiVersion, kind, and metadata.name.',
+            },
+            location: {
+              type: 'string',
+              description: 'Optional source location URL for contextual validation.',
+            },
+          },
+          required: ['entity'],
         },
       },
     ];
@@ -206,213 +327,20 @@ export class BackstageMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers = this.buildHeaders();
-
       switch (name) {
-        case 'list_entities': {
-          const params = new URLSearchParams();
-          if (args.filter) params.append('filter', args.filter as string);
-          if (args.fields) params.append('fields', args.fields as string);
-          if (args.limit) params.append('limit', String(args.limit as number));
-          if (args.after) params.append('after', args.after as string);
-
-          const qs = params.toString();
-          const url = `${this.catalogBase}/entities${qs ? `?${qs}` : ''}`;
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list entities: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Backstage returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_entity': {
-          const kind = args.kind as string;
-          const namespace = (args.namespace as string) || 'default';
-          const entityName = args.name as string;
-
-          if (!kind || !entityName) {
-            return {
-              content: [{ type: 'text', text: 'kind and name are required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(
-            `${this.catalogBase}/entities/by-name/${encodeURIComponent(kind)}/${encodeURIComponent(namespace)}/${encodeURIComponent(entityName)}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get entity: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Backstage returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_entity_facets': {
-          const facet = args.facet as string;
-          if (!facet) {
-            return {
-              content: [{ type: 'text', text: 'facet is required' }],
-              isError: true,
-            };
-          }
-
-          const params = new URLSearchParams();
-          for (const f of facet.split(',')) {
-            params.append('facet', f.trim());
-          }
-          if (args.filter) params.append('filter', args.filter as string);
-
-          const response = await fetch(
-            `${this.catalogBase}/entity-facets?${params.toString()}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get entity facets: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Backstage returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_locations': {
-          const response = await fetch(`${this.catalogBase}/locations`, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list locations: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Backstage returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_location': {
-          const locationType = args.type as string;
-          const target = args.target as string;
-
-          if (!locationType || !target) {
-            return {
-              content: [{ type: 'text', text: 'type and target are required' }],
-              isError: true,
-            };
-          }
-
-          const url = `${this.catalogBase}/locations${args.dryRun ? '?dryRun=true' : ''}`;
-          const response = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ type: locationType, target }),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to create location: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Backstage returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'delete_entity': {
-          const uid = args.uid as string;
-          if (!uid) {
-            return {
-              content: [{ type: 'text', text: 'uid is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(
-            `${this.catalogBase}/entities/by-uid/${encodeURIComponent(uid)}`,
-            { method: 'DELETE', headers }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to delete entity: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          return { content: [{ type: 'text', text: `Entity ${uid} deleted successfully.` }], isError: false };
-        }
-
-        case 'refresh_entity': {
-          const entityRef = args.entityRef as string;
-          if (!entityRef) {
-            return {
-              content: [{ type: 'text', text: 'entityRef is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(`${this.catalogBase}/refresh`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ entityRef }),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to refresh entity: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          return { content: [{ type: 'text', text: `Refresh triggered for ${entityRef}.` }], isError: false };
-        }
-
-        case 'get_entity_ancestors': {
-          const entityRef = args.entityRef as string;
-          if (!entityRef) {
-            return {
-              content: [{ type: 'text', text: 'entityRef is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(
-            `${this.catalogBase}/entities/by-ref/${encodeURIComponent(entityRef)}/ancestry`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get entity ancestors: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Backstage returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_entities':        return this.listEntities(args);
+        case 'get_entity':           return this.getEntity(args);
+        case 'get_entity_by_ref':    return this.getEntityByRef(args);
+        case 'get_entity_facets':    return this.getEntityFacets(args);
+        case 'search_entities':      return this.searchEntities(args);
+        case 'list_locations':       return this.listLocations();
+        case 'get_location':         return this.getLocation(args);
+        case 'create_location':      return this.createLocation(args);
+        case 'delete_location':      return this.deleteLocation(args);
+        case 'delete_entity':        return this.deleteEntity(args);
+        case 'refresh_entity':       return this.refreshEntity(args);
+        case 'get_entity_ancestors': return this.getEntityAncestors(args);
+        case 'validate_entity':      return this.validateEntity(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -425,5 +353,149 @@ export class BackstageMCPServer {
         isError: true,
       };
     }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  private async fetchJSON(url: string, options?: RequestInit): Promise<ToolResult> {
+    const response = await fetch(url, { headers: this.buildHeaders(), ...options });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Backstage returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  // ── Entity Queries ────────────────────────────────────────────────────────
+
+  private async listEntities(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.filter) params.append('filter', String(args.filter));
+    if (args.fields) params.append('fields', String(args.fields));
+    if (args.limit) params.append('limit', String(args.limit));
+    if (args.after) params.append('after', String(args.after));
+    if (args.orderField) params.append('orderField', String(args.orderField));
+    if (args.orderDirection) params.append('orderDirection', String(args.orderDirection));
+    const qs = params.toString();
+    return this.fetchJSON(`${this.catalogBase}/entities${qs ? `?${qs}` : ''}`);
+  }
+
+  private async getEntity(args: Record<string, unknown>): Promise<ToolResult> {
+    const kind = encodeURIComponent(String(args.kind));
+    const namespace = encodeURIComponent(String((args.namespace as string) || 'default'));
+    const name = encodeURIComponent(String(args.name));
+    return this.fetchJSON(`${this.catalogBase}/entities/by-name/${kind}/${namespace}/${name}`);
+  }
+
+  private async getEntityByRef(args: Record<string, unknown>): Promise<ToolResult> {
+    const entityRef = String(args.entityRef);
+    return this.fetchJSON(`${this.catalogBase}/entities/by-ref/${encodeURIComponent(entityRef)}`);
+  }
+
+  // ── Facets ────────────────────────────────────────────────────────────────
+
+  private async getEntityFacets(args: Record<string, unknown>): Promise<ToolResult> {
+    const facetFields = String(args.facet).split(',').map(f => f.trim());
+    const params = new URLSearchParams();
+    for (const f of facetFields) {
+      params.append('facet', f);
+    }
+    if (args.filter) params.append('filter', String(args.filter));
+    return this.fetchJSON(`${this.catalogBase}/entity-facets?${params.toString()}`);
+  }
+
+  // ── Search ────────────────────────────────────────────────────────────────
+
+  private async searchEntities(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    params.set('term', String(args.query));
+    if (args.types) {
+      for (const t of String(args.types).split(',')) {
+        params.append('types', t.trim());
+      }
+    }
+    if (args.limit) params.set('pageLimit', String(args.limit));
+    if (args.cursor) params.set('pageCursor', String(args.cursor));
+    if (args.filters) {
+      try {
+        const filterObj = JSON.parse(String(args.filters)) as Record<string, string>;
+        for (const [k, v] of Object.entries(filterObj)) {
+          params.set(`filters[${k}]`, v);
+        }
+      } catch {
+        return { content: [{ type: 'text', text: 'filters must be a valid JSON string, e.g. {"kind":"Component"}' }], isError: true };
+      }
+    }
+    return this.fetchJSON(`${this.searchBase}/query?${params.toString()}`);
+  }
+
+  // ── Locations ─────────────────────────────────────────────────────────────
+
+  private async listLocations(): Promise<ToolResult> {
+    return this.fetchJSON(`${this.catalogBase}/locations`);
+  }
+
+  private async getLocation(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchJSON(`${this.catalogBase}/locations/${encodeURIComponent(String(args.locationId))}`);
+  }
+
+  private async createLocation(args: Record<string, unknown>): Promise<ToolResult> {
+    const url = `${this.catalogBase}/locations${args.dryRun ? '?dryRun=true' : ''}`;
+    return this.fetchJSON(url, {
+      method: 'POST',
+      body: JSON.stringify({ type: args.type, target: args.target }),
+    });
+  }
+
+  private async deleteLocation(args: Record<string, unknown>): Promise<ToolResult> {
+    const url = `${this.catalogBase}/locations/${encodeURIComponent(String(args.locationId))}`;
+    const response = await fetch(url, { method: 'DELETE', headers: this.buildHeaders() });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    return { content: [{ type: 'text', text: `Location ${args.locationId} deleted successfully.` }], isError: false };
+  }
+
+  // ── Entity Management ─────────────────────────────────────────────────────
+
+  private async deleteEntity(args: Record<string, unknown>): Promise<ToolResult> {
+    const url = `${this.catalogBase}/entities/by-uid/${encodeURIComponent(String(args.uid))}`;
+    const response = await fetch(url, { method: 'DELETE', headers: this.buildHeaders() });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    return { content: [{ type: 'text', text: `Entity ${args.uid} deleted successfully.` }], isError: false };
+  }
+
+  private async refreshEntity(args: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.catalogBase}/refresh`, {
+      method: 'POST',
+      headers: this.buildHeaders(),
+      body: JSON.stringify({ entityRef: args.entityRef }),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    return { content: [{ type: 'text', text: `Refresh triggered for ${args.entityRef}.` }], isError: false };
+  }
+
+  // ── Ancestry ──────────────────────────────────────────────────────────────
+
+  private async getEntityAncestors(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchJSON(
+      `${this.catalogBase}/entities/by-ref/${encodeURIComponent(String(args.entityRef))}/ancestry`,
+    );
+  }
+
+  // ── Validation ────────────────────────────────────────────────────────────
+
+  private async validateEntity(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = { entity: args.entity };
+    if (args.location) body.location = args.location;
+    return this.fetchJSON(`${this.catalogBase}/validate-entity`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
   }
 }

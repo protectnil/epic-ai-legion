@@ -4,22 +4,30 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found (multiple community adapters exist, none official from Intuit/Mailchimp)
-
-// Auth: HTTP Basic Authentication with API key as the password (any string as username).
-//   Authorization: Basic base64("anystring:{apiKey}")
-//   OAuth2 Bearer token also supported.
-// Base URL is datacenter-specific: https://{dc}.api.mailchimp.com/3.0
-//   The datacenter (dc) is the suffix of the API key after the dash, e.g. key "...abc-us6" → dc = us6.
-//   Pass the full base URL via config.baseUrl, or pass config.dc and it will be constructed automatically.
-// Source: https://mailchimp.com/developer/marketing/docs/fundamentals/
-//         https://mailchimp.com/developer/marketing/api/
+// Official MCP: None found as of 2026-03
+// No official Intuit/Mailchimp MCP server was found on GitHub or npm. Multiple community
+// adapters exist but none are officially maintained by Mailchimp.
+// Our adapter covers 18 tools across audiences, campaigns, templates, segments, and journeys.
+//
+// Base URL: https://{dc}.api.mailchimp.com/3.0
+//   The datacenter (dc) is the suffix of the API key after the last dash.
+//   Example: key ending in "-us6" → dc = us6 → base = https://us6.api.mailchimp.com/3.0
+//   Pass dc or baseUrl explicitly; otherwise the adapter derives dc from the API key format.
+// Auth: HTTP Basic with username="anystring" and password={apiKey}
+//       OAuth2 Bearer token is also accepted via the same Authorization header.
+// Docs: https://mailchimp.com/developer/marketing/api/
+//       https://mailchimp.com/developer/marketing/docs/fundamentals/
+// Rate limits: ~10 simultaneous connections per account; 120 req/min recommended maximum
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { createHash } from 'node:crypto';
 
 interface MailchimpConfig {
+  /** Mailchimp Marketing API key (format: <key>-<dc>, e.g. abc123-us6). */
   apiKey: string;
+  /** Explicit datacenter code (e.g. us6). Derived from apiKey suffix if omitted. */
   dc?: string;
+  /** Full base URL override. Takes precedence over dc derivation. */
   baseUrl?: string;
 }
 
@@ -34,229 +42,267 @@ export class MailchimpMCPServer {
     } else if (config.dc) {
       this.baseUrl = `https://${config.dc}.api.mailchimp.com/3.0`;
     } else {
-      // Attempt to derive dc from the API key (format: <key>-<dc>)
       const dcMatch = config.apiKey.match(/-([a-z0-9]+)$/);
-      if (dcMatch) {
-        this.baseUrl = `https://${dcMatch[1]}.api.mailchimp.com/3.0`;
-      } else {
+      if (!dcMatch) {
         throw new Error('Mailchimp datacenter could not be determined. Provide dc or baseUrl in config.');
       }
+      this.baseUrl = `https://${dcMatch[1]}.api.mailchimp.com/3.0`;
     }
   }
 
-  private get authHeader(): string {
-    return 'Basic ' + Buffer.from(`anystring:${this.apiKey}`).toString('base64');
+  static catalog() {
+    return {
+      name: 'mailchimp',
+      displayName: 'Mailchimp',
+      version: '1.0.0',
+      category: 'communication',
+      keywords: ['mailchimp', 'email', 'marketing', 'campaign', 'audience', 'list', 'subscriber', 'newsletter', 'automation', 'template', 'segment', 'journey'],
+      toolNames: [
+        'list_audiences', 'get_audience', 'list_members', 'get_member', 'add_or_update_member', 'archive_member',
+        'list_campaigns', 'get_campaign', 'create_campaign', 'send_campaign', 'schedule_campaign', 'cancel_campaign',
+        'get_campaign_report',
+        'list_templates', 'get_template',
+        'list_segments', 'create_segment',
+        'trigger_customer_journey',
+      ],
+      description: 'Mailchimp email marketing: manage audiences, members, campaigns, templates, segments, and customer journeys.',
+      author: 'protectnil',
+    };
   }
 
   get tools(): ToolDefinition[] {
     return [
+      // ── Audiences (Lists) ──────────────────────────────────────────────────
       {
         name: 'list_audiences',
-        description: 'List all Mailchimp audiences (lists) in the account',
+        description: 'List all Mailchimp audiences (mailing lists) in the account with optional pagination',
         inputSchema: {
           type: 'object',
           properties: {
-            count: {
-              type: 'number',
-              description: 'Number of records to return (max 1000, default 10)',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
+            count: { type: 'number', description: 'Number of audiences to return (default: 10, max: 1000)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
           },
         },
       },
       {
         name: 'get_audience',
-        description: 'Get information about a specific Mailchimp audience (list)',
+        description: 'Get details and statistics for a specific Mailchimp audience by list ID',
         inputSchema: {
           type: 'object',
           properties: {
-            list_id: {
-              type: 'string',
-              description: 'The unique ID for the Mailchimp audience',
-            },
+            list_id: { type: 'string', description: 'The unique ID for the Mailchimp audience (list)' },
+          },
+          required: ['list_id'],
+        },
+      },
+      // ── Members ────────────────────────────────────────────────────────────
+      {
+        name: 'list_members',
+        description: 'List subscribers in a Mailchimp audience with optional status and pagination filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            list_id: { type: 'string', description: 'The unique ID for the Mailchimp audience' },
+            status: { type: 'string', description: 'Filter by subscription status: subscribed, unsubscribed, cleaned, pending, transactional' },
+            count: { type: 'number', description: 'Number of members to return (default: 10, max: 1000)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
           },
           required: ['list_id'],
         },
       },
       {
-        name: 'list_members',
-        description: 'List members (subscribers) in a Mailchimp audience',
+        name: 'get_member',
+        description: 'Get profile and subscription data for a specific audience member by email address',
         inputSchema: {
           type: 'object',
           properties: {
-            list_id: {
-              type: 'string',
-              description: 'The unique ID for the Mailchimp audience',
-            },
-            status: {
-              type: 'string',
-              description: 'Filter by subscription status: subscribed, unsubscribed, cleaned, pending, transactional',
-            },
-            count: {
-              type: 'number',
-              description: 'Number of members to return (max 1000, default 10)',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
+            list_id: { type: 'string', description: 'The unique ID for the Mailchimp audience' },
+            email_address: { type: 'string', description: 'Member email address to look up' },
           },
-          required: ['list_id'],
+          required: ['list_id', 'email_address'],
         },
       },
       {
         name: 'add_or_update_member',
-        description: 'Add a new member or update an existing member in a Mailchimp audience (upsert by email)',
+        description: 'Add a new subscriber or update an existing one in a Mailchimp audience (upsert by email)',
         inputSchema: {
           type: 'object',
           properties: {
-            list_id: {
-              type: 'string',
-              description: 'The unique ID for the Mailchimp audience',
-            },
-            email_address: {
-              type: 'string',
-              description: 'Email address of the member',
-            },
-            status: {
-              type: 'string',
-              description: 'Subscription status: subscribed, unsubscribed, cleaned, pending (use subscribed to opt-in)',
-            },
-            merge_fields: {
-              type: 'object',
-              description: 'Merge fields object, e.g. { "FNAME": "Jane", "LNAME": "Doe" }',
-            },
-            tags: {
-              type: 'array',
-              description: 'Array of tag names to assign to the member',
-            },
+            list_id: { type: 'string', description: 'The unique ID for the Mailchimp audience' },
+            email_address: { type: 'string', description: 'Email address to add or update' },
+            status: { type: 'string', description: 'Subscription status: subscribed, unsubscribed, cleaned, pending' },
+            merge_fields: { type: 'object', description: 'Merge tag values, e.g. { "FNAME": "Jane", "LNAME": "Doe" }' },
+            tags: { type: 'array', description: 'Array of tag name strings to apply to the member' },
           },
           required: ['list_id', 'email_address', 'status'],
         },
       },
       {
-        name: 'list_campaigns',
-        description: 'List email campaigns in the Mailchimp account',
+        name: 'archive_member',
+        description: 'Archive (soft-delete) a subscriber from a Mailchimp audience by email address',
         inputSchema: {
           type: 'object',
           properties: {
-            count: {
-              type: 'number',
-              description: 'Number of campaigns to return (max 1000, default 10)',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
-            status: {
-              type: 'string',
-              description: 'Filter by campaign status: save, paused, schedule, sending, sent',
-            },
-            type: {
-              type: 'string',
-              description: 'Filter by campaign type: regular, plaintext, absplit, rss, variate',
-            },
+            list_id: { type: 'string', description: 'The unique ID for the Mailchimp audience' },
+            email_address: { type: 'string', description: 'Email address of the member to archive' },
+          },
+          required: ['list_id', 'email_address'],
+        },
+      },
+      // ── Campaigns ──────────────────────────────────────────────────────────
+      {
+        name: 'list_campaigns',
+        description: 'List email campaigns in the Mailchimp account with optional status, type, and pagination filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            count: { type: 'number', description: 'Number of campaigns to return (default: 10, max: 1000)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
+            status: { type: 'string', description: 'Filter by status: save, paused, schedule, sending, sent' },
+            type: { type: 'string', description: 'Filter by type: regular, plaintext, absplit, rss, variate' },
+            list_id: { type: 'string', description: 'Filter campaigns sent to a specific audience ID' },
           },
         },
       },
       {
         name: 'get_campaign',
-        description: 'Retrieve details for a single Mailchimp campaign',
+        description: 'Get full details of a specific Mailchimp campaign including settings, recipients, and status',
         inputSchema: {
           type: 'object',
           properties: {
-            campaign_id: {
-              type: 'string',
-              description: 'The unique ID for the Mailchimp campaign',
-            },
+            campaign_id: { type: 'string', description: 'The unique ID for the campaign' },
           },
           required: ['campaign_id'],
         },
       },
       {
         name: 'create_campaign',
-        description: 'Create a new email campaign in Mailchimp',
+        description: 'Create a new email campaign in Mailchimp with type, audience, subject, and sender settings',
         inputSchema: {
           type: 'object',
           properties: {
-            type: {
-              type: 'string',
-              description: 'Campaign type: regular, plaintext, absplit, rss, variate',
-            },
-            list_id: {
-              type: 'string',
-              description: 'Audience (list) ID to send the campaign to',
-            },
-            subject_line: {
-              type: 'string',
-              description: 'Email subject line',
-            },
-            from_name: {
-              type: 'string',
-              description: 'Sender display name',
-            },
-            reply_to: {
-              type: 'string',
-              description: 'Reply-to email address',
-            },
-            preview_text: {
-              type: 'string',
-              description: 'Preview text shown in email clients',
-            },
+            type: { type: 'string', description: 'Campaign type: regular, plaintext, absplit, rss, variate' },
+            list_id: { type: 'string', description: 'Audience ID to send the campaign to' },
+            subject_line: { type: 'string', description: 'Email subject line' },
+            from_name: { type: 'string', description: 'Sender display name' },
+            reply_to: { type: 'string', description: 'Reply-to email address' },
+            preview_text: { type: 'string', description: 'Preview text shown in email client inbox rows' },
+            template_id: { type: 'number', description: 'Optional template ID to base the campaign on' },
           },
           required: ['type', 'list_id', 'subject_line', 'from_name', 'reply_to'],
         },
       },
       {
         name: 'send_campaign',
-        description: 'Send a Mailchimp campaign that is ready to send',
+        description: 'Send a Mailchimp campaign that is in ready-to-send state immediately',
         inputSchema: {
           type: 'object',
           properties: {
-            campaign_id: {
-              type: 'string',
-              description: 'The unique ID for the campaign to send',
-            },
+            campaign_id: { type: 'string', description: 'The unique ID for the campaign to send' },
+          },
+          required: ['campaign_id'],
+        },
+      },
+      {
+        name: 'schedule_campaign',
+        description: 'Schedule a Mailchimp campaign for delivery at a specific UTC date and time',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            campaign_id: { type: 'string', description: 'The unique ID for the campaign to schedule' },
+            schedule_time: { type: 'string', description: 'UTC datetime to send the campaign (ISO 8601, e.g. 2026-04-01T14:00:00Z)' },
+            timewarp: { type: 'boolean', description: 'Use timewarp send (deliver at schedule_time in each recipient\'s local timezone; default: false)' },
+          },
+          required: ['campaign_id', 'schedule_time'],
+        },
+      },
+      {
+        name: 'cancel_campaign',
+        description: 'Cancel a scheduled or currently-sending Mailchimp campaign',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            campaign_id: { type: 'string', description: 'The unique ID for the campaign to cancel' },
           },
           required: ['campaign_id'],
         },
       },
       {
         name: 'get_campaign_report',
-        description: 'Retrieve send performance report for a campaign',
+        description: 'Retrieve send performance report for a campaign including opens, clicks, bounces, and unsubscribes',
         inputSchema: {
           type: 'object',
           properties: {
-            campaign_id: {
-              type: 'string',
-              description: 'The unique ID for the campaign',
-            },
+            campaign_id: { type: 'string', description: 'The unique ID for the campaign' },
           },
           required: ['campaign_id'],
         },
       },
+      // ── Templates ──────────────────────────────────────────────────────────
       {
         name: 'list_templates',
-        description: 'List email templates available in the account',
+        description: 'List email templates available in the Mailchimp account with optional type filter',
         inputSchema: {
           type: 'object',
           properties: {
-            count: {
-              type: 'number',
-              description: 'Number of templates to return (max 1000, default 10)',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
-            type: {
-              type: 'string',
-              description: 'Template type: user, base, gallery',
-            },
+            count: { type: 'number', description: 'Number of templates to return (default: 10, max: 1000)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
+            type: { type: 'string', description: 'Template type: user, base, gallery' },
           },
+        },
+      },
+      {
+        name: 'get_template',
+        description: 'Get details for a specific Mailchimp email template by ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            template_id: { type: 'number', description: 'The numeric template ID' },
+          },
+          required: ['template_id'],
+        },
+      },
+      // ── Segments ───────────────────────────────────────────────────────────
+      {
+        name: 'list_segments',
+        description: 'List segments in a Mailchimp audience with optional type filter (static or saved)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            list_id: { type: 'string', description: 'The unique ID for the Mailchimp audience' },
+            count: { type: 'number', description: 'Number of segments to return (default: 10, max: 1000)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
+            type: { type: 'string', description: 'Segment type: saved or static' },
+          },
+          required: ['list_id'],
+        },
+      },
+      {
+        name: 'create_segment',
+        description: 'Create a new static or conditional segment within a Mailchimp audience',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            list_id: { type: 'string', description: 'The unique ID for the Mailchimp audience' },
+            name: { type: 'string', description: 'Name for the new segment' },
+            static_segment: { type: 'array', description: 'Array of email addresses to include in a static segment' },
+            options: { type: 'object', description: 'Conditions object for a conditional segment (match and conditions fields)' },
+          },
+          required: ['list_id', 'name'],
+        },
+      },
+      // ── Customer Journeys ──────────────────────────────────────────────────
+      {
+        name: 'trigger_customer_journey',
+        description: 'Trigger a Customer Journey API step for a contact, enrolling them into an automation flow',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            journey_id: { type: 'number', description: 'The Customer Journey ID' },
+            step_id: { type: 'number', description: 'The journey step ID that acts as the trigger' },
+            email_address: { type: 'string', description: 'Email address of the contact to enroll in the journey' },
+          },
+          required: ['journey_id', 'step_id', 'email_address'],
         },
       },
     ];
@@ -264,194 +310,25 @@ export class MailchimpMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: this.authHeader,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      };
-
       switch (name) {
-        case 'list_audiences': {
-          const params = new URLSearchParams();
-          if (args.count !== undefined) params.set('count', String(args.count));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          let url = `${this.baseUrl}/lists`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list audiences: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_audience': {
-          const listId = args.list_id as string;
-          if (!listId) {
-            return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/lists/${encodeURIComponent(listId)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get audience: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_members': {
-          const listId = args.list_id as string;
-          if (!listId) {
-            return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
-          }
-          const params = new URLSearchParams();
-          if (args.status) params.set('status', args.status as string);
-          if (args.count !== undefined) params.set('count', String(args.count));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          let url = `${this.baseUrl}/lists/${encodeURIComponent(listId)}/members`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list members: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'add_or_update_member': {
-          const listId = args.list_id as string;
-          const emailAddress = args.email_address as string;
-          const status = args.status as string;
-          if (!listId || !emailAddress || !status) {
-            return { content: [{ type: 'text', text: 'list_id, email_address, and status are required' }], isError: true };
-          }
-          // Mailchimp uses an MD5 hash of the lowercase email as the subscriber hash for PUT upserts
-          const subscriberHash = await this.md5(emailAddress.toLowerCase());
-          const body: Record<string, unknown> = { email_address: emailAddress, status_if_new: status, status };
-          if (args.merge_fields) body.merge_fields = args.merge_fields;
-          if (args.tags && Array.isArray(args.tags)) body.tags = (args.tags as string[]).map((t: string) => ({ name: t, status: 'active' }));
-
-          const response = await fetch(`${this.baseUrl}/lists/${encodeURIComponent(listId)}/members/${subscriberHash}`, {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify(body),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to add/update member: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_campaigns': {
-          const params = new URLSearchParams();
-          if (args.count !== undefined) params.set('count', String(args.count));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          if (args.status) params.set('status', args.status as string);
-          if (args.type) params.set('type', args.type as string);
-          let url = `${this.baseUrl}/campaigns`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list campaigns: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_campaign': {
-          const campaignId = args.campaign_id as string;
-          if (!campaignId) {
-            return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/campaigns/${encodeURIComponent(campaignId)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get campaign: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_campaign': {
-          const type = args.type as string;
-          const listId = args.list_id as string;
-          const subjectLine = args.subject_line as string;
-          const fromName = args.from_name as string;
-          const replyTo = args.reply_to as string;
-          if (!type || !listId || !subjectLine || !fromName || !replyTo) {
-            return { content: [{ type: 'text', text: 'type, list_id, subject_line, from_name, and reply_to are required' }], isError: true };
-          }
-          const settings: Record<string, unknown> = { subject_line: subjectLine, from_name: fromName, reply_to: replyTo };
-          if (args.preview_text) settings.preview_text = args.preview_text;
-
-          const response = await fetch(`${this.baseUrl}/campaigns`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ type, recipients: { list_id: listId }, settings }),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to create campaign: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'send_campaign': {
-          const campaignId = args.campaign_id as string;
-          if (!campaignId) {
-            return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/campaigns/${encodeURIComponent(campaignId)}/actions/send`, {
-            method: 'POST',
-            headers,
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to send campaign: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          // Mailchimp returns 204 No Content on successful send
-          return { content: [{ type: 'text', text: `Campaign ${campaignId} sent successfully` }], isError: false };
-        }
-
-        case 'get_campaign_report': {
-          const campaignId = args.campaign_id as string;
-          if (!campaignId) {
-            return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/reports/${encodeURIComponent(campaignId)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get campaign report: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_templates': {
-          const params = new URLSearchParams();
-          if (args.count !== undefined) params.set('count', String(args.count));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          if (args.type) params.set('type', args.type as string);
-          let url = `${this.baseUrl}/templates`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list templates: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mailchimp returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_audiences':          return await this.listAudiences(args);
+        case 'get_audience':            return await this.getAudience(args);
+        case 'list_members':            return await this.listMembers(args);
+        case 'get_member':              return await this.getMember(args);
+        case 'add_or_update_member':    return await this.addOrUpdateMember(args);
+        case 'archive_member':          return await this.archiveMember(args);
+        case 'list_campaigns':          return await this.listCampaigns(args);
+        case 'get_campaign':            return await this.getCampaign(args);
+        case 'create_campaign':         return await this.createCampaign(args);
+        case 'send_campaign':           return await this.sendCampaign(args);
+        case 'schedule_campaign':       return await this.scheduleCampaign(args);
+        case 'cancel_campaign':         return await this.cancelCampaign(args);
+        case 'get_campaign_report':     return await this.getCampaignReport(args);
+        case 'list_templates':          return await this.listTemplates(args);
+        case 'get_template':            return await this.getTemplate(args);
+        case 'list_segments':           return await this.listSegments(args);
+        case 'create_segment':          return await this.createSegment(args);
+        case 'trigger_customer_journey': return await this.triggerCustomerJourney(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -463,9 +340,216 @@ export class MailchimpMCPServer {
     }
   }
 
-  // MD5 helper for subscriber hash — Mailchimp requires MD5(lowercase email) as the member resource key
-  private async md5(input: string): Promise<string> {
-    const { createHash } = await import('crypto');
-    return createHash('md5').update(input).digest('hex');
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  private get authHeader(): string {
+    return 'Basic ' + Buffer.from(`anystring:${this.apiKey}`).toString('base64');
+  }
+
+  private get reqHeaders(): Record<string, string> {
+    return {
+      'Authorization': this.authHeader,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private subscriberHash(email: string): string {
+    return createHash('md5').update(email.toLowerCase()).digest('hex');
+  }
+
+  private async fetch(url: string, opts: RequestInit = {}): Promise<ToolResult> {
+    const response = await fetch(url, { ...opts, headers: { ...this.reqHeaders, ...(opts.headers as Record<string, string> ?? {}) } });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    if (response.status === 204) {
+      return { content: [{ type: 'text', text: '{"success":true}' }], isError: false };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listAudiences(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.count !== undefined) params.set('count', String(args.count));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    return this.fetch(`${this.baseUrl}/lists${params.toString() ? '?' + params.toString() : ''}`);
+  }
+
+  private async getAudience(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.list_id) return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
+    return this.fetch(`${this.baseUrl}/lists/${encodeURIComponent(args.list_id as string)}`);
+  }
+
+  private async listMembers(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.list_id) return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
+    const params = new URLSearchParams();
+    if (args.status) params.set('status', args.status as string);
+    if (args.count !== undefined) params.set('count', String(args.count));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    return this.fetch(
+      `${this.baseUrl}/lists/${encodeURIComponent(args.list_id as string)}/members${params.toString() ? '?' + params.toString() : ''}`,
+    );
+  }
+
+  private async getMember(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.list_id || !args.email_address) {
+      return { content: [{ type: 'text', text: 'list_id and email_address are required' }], isError: true };
+    }
+    const hash = this.subscriberHash(args.email_address as string);
+    return this.fetch(`${this.baseUrl}/lists/${encodeURIComponent(args.list_id as string)}/members/${hash}`);
+  }
+
+  private async addOrUpdateMember(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.list_id || !args.email_address || !args.status) {
+      return { content: [{ type: 'text', text: 'list_id, email_address, and status are required' }], isError: true };
+    }
+    const hash = this.subscriberHash(args.email_address as string);
+    const body: Record<string, unknown> = {
+      email_address: args.email_address,
+      status_if_new: args.status,
+      status: args.status,
+    };
+    if (args.merge_fields) body.merge_fields = args.merge_fields;
+    if (args.tags && Array.isArray(args.tags)) {
+      body.tags = (args.tags as string[]).map((t) => ({ name: t, status: 'active' }));
+    }
+    return this.fetch(
+      `${this.baseUrl}/lists/${encodeURIComponent(args.list_id as string)}/members/${hash}`,
+      { method: 'PUT', body: JSON.stringify(body) },
+    );
+  }
+
+  private async archiveMember(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.list_id || !args.email_address) {
+      return { content: [{ type: 'text', text: 'list_id and email_address are required' }], isError: true };
+    }
+    const hash = this.subscriberHash(args.email_address as string);
+    return this.fetch(
+      `${this.baseUrl}/lists/${encodeURIComponent(args.list_id as string)}/members/${hash}`,
+      { method: 'DELETE' },
+    );
+  }
+
+  private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.count !== undefined) params.set('count', String(args.count));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    if (args.status) params.set('status', args.status as string);
+    if (args.type) params.set('type', args.type as string);
+    if (args.list_id) params.set('list_id', args.list_id as string);
+    return this.fetch(`${this.baseUrl}/campaigns${params.toString() ? '?' + params.toString() : ''}`);
+  }
+
+  private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
+    return this.fetch(`${this.baseUrl}/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
+  }
+
+  private async createCampaign(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.type || !args.list_id || !args.subject_line || !args.from_name || !args.reply_to) {
+      return { content: [{ type: 'text', text: 'type, list_id, subject_line, from_name, and reply_to are required' }], isError: true };
+    }
+    const settings: Record<string, unknown> = {
+      subject_line: args.subject_line,
+      from_name: args.from_name,
+      reply_to: args.reply_to,
+    };
+    if (args.preview_text) settings.preview_text = args.preview_text;
+    if (args.template_id) settings.template_id = args.template_id;
+    const body: Record<string, unknown> = {
+      type: args.type,
+      recipients: { list_id: args.list_id },
+      settings,
+    };
+    return this.fetch(`${this.baseUrl}/campaigns`, { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  private async sendCampaign(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
+    return this.fetch(
+      `${this.baseUrl}/campaigns/${encodeURIComponent(args.campaign_id as string)}/actions/send`,
+      { method: 'POST' },
+    );
+  }
+
+  private async scheduleCampaign(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.campaign_id || !args.schedule_time) {
+      return { content: [{ type: 'text', text: 'campaign_id and schedule_time are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = { schedule_time: args.schedule_time };
+    if (args.timewarp !== undefined) body.timewarp = args.timewarp;
+    return this.fetch(
+      `${this.baseUrl}/campaigns/${encodeURIComponent(args.campaign_id as string)}/actions/schedule`,
+      { method: 'POST', body: JSON.stringify(body) },
+    );
+  }
+
+  private async cancelCampaign(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
+    return this.fetch(
+      `${this.baseUrl}/campaigns/${encodeURIComponent(args.campaign_id as string)}/actions/cancel-send`,
+      { method: 'POST' },
+    );
+  }
+
+  private async getCampaignReport(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
+    return this.fetch(`${this.baseUrl}/reports/${encodeURIComponent(args.campaign_id as string)}`);
+  }
+
+  private async listTemplates(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.count !== undefined) params.set('count', String(args.count));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    if (args.type) params.set('type', args.type as string);
+    return this.fetch(`${this.baseUrl}/templates${params.toString() ? '?' + params.toString() : ''}`);
+  }
+
+  private async getTemplate(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.template_id) return { content: [{ type: 'text', text: 'template_id is required' }], isError: true };
+    return this.fetch(`${this.baseUrl}/templates/${encodeURIComponent(String(args.template_id))}`);
+  }
+
+  private async listSegments(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.list_id) return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
+    const params = new URLSearchParams();
+    if (args.count !== undefined) params.set('count', String(args.count));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    if (args.type) params.set('type', args.type as string);
+    return this.fetch(
+      `${this.baseUrl}/lists/${encodeURIComponent(args.list_id as string)}/segments${params.toString() ? '?' + params.toString() : ''}`,
+    );
+  }
+
+  private async createSegment(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.list_id || !args.name) {
+      return { content: [{ type: 'text', text: 'list_id and name are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = { name: args.name };
+    if (args.static_segment) body.static_segment = args.static_segment;
+    if (args.options) body.options = args.options;
+    return this.fetch(
+      `${this.baseUrl}/lists/${encodeURIComponent(args.list_id as string)}/segments`,
+      { method: 'POST', body: JSON.stringify(body) },
+    );
+  }
+
+  private async triggerCustomerJourney(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.journey_id || !args.step_id || !args.email_address) {
+      return { content: [{ type: 'text', text: 'journey_id, step_id, and email_address are required' }], isError: true };
+    }
+    return this.fetch(
+      `${this.baseUrl}/customer-journeys/journeys/${encodeURIComponent(String(args.journey_id))}/steps/${encodeURIComponent(String(args.step_id))}/actions/trigger`,
+      { method: 'POST', body: JSON.stringify({ email_address: args.email_address }) },
+    );
   }
 }

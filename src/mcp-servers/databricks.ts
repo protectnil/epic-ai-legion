@@ -6,20 +6,20 @@
 
 // Official MCP: https://github.com/databrickslabs/mcp — actively maintained by Databricks Labs.
 // That server provides deep Unity Catalog and workspace integration. This adapter serves the
-// API-key/PAT use case for self-hosted or air-gapped deployments without the Python runtime
+// PAT/OAuth2 use case for self-hosted or air-gapped deployments without the Python runtime
 // dependency that databrickslabs/mcp requires.
-
-// Databricks REST API base URL: https://{workspace-host}/api/2.0/ (clusters, jobs, secrets)
-//   and https://{workspace-host}/api/2.1/ (jobs v2.1) and /api/2.0/sql/statements/ (SQL exec).
-// Auth: Bearer token — personal access token (PAT) or short-lived OAuth2 access token.
-// Ref: https://docs.databricks.com/api/workspace/introduction
+//
+// Base URL: https://{workspace-host}  (e.g. https://dbc-a1b2345c-d6e7.cloud.databricks.com)
+// Auth: Bearer token — personal access token (PAT) or short-lived OAuth2 access token
+// Docs: https://docs.databricks.com/api/workspace/introduction
+// Rate limits: Not publicly documented; varies by workspace size and API endpoint
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface DatabricksConfig {
-  /** Workspace host, e.g. "https://dbc-a1b2345c-d6e7.cloud.databricks.com" */
+  /** Workspace host URL, e.g. "https://dbc-a1b2345c-d6e7.cloud.databricks.com" */
   host: string;
-  /** Personal access token or OAuth2 access token */
+  /** Personal access token (PAT) or short-lived OAuth2 access token */
   token: string;
 }
 
@@ -32,11 +32,29 @@ export class DatabricksMCPServer {
     this.token = config.token;
   }
 
-  private get headers(): Record<string, string> {
+  static catalog() {
     return {
-      Authorization: `Bearer ${this.token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
+      name: 'databricks',
+      displayName: 'Databricks',
+      version: '1.0.0',
+      category: 'data',
+      keywords: [
+        'databricks', 'spark', 'cluster', 'job', 'notebook', 'sql', 'warehouse',
+        'delta', 'unity catalog', 'mlflow', 'secret', 'dbfs', 'instance pool',
+        'library', 'pipeline', 'repo',
+      ],
+      toolNames: [
+        'list_clusters', 'get_cluster', 'start_cluster', 'terminate_cluster',
+        'list_jobs', 'get_job', 'run_job', 'list_job_runs', 'get_job_run', 'cancel_job_run',
+        'execute_sql', 'get_sql_statement_result',
+        'list_warehouses', 'get_warehouse',
+        'list_secrets_scopes', 'list_secrets',
+        'list_instance_pools', 'get_instance_pool',
+        'dbfs_list', 'dbfs_get_status',
+        'list_notebooks',
+      ],
+      description: 'Databricks workspace: manage clusters, jobs, SQL warehouses, notebooks, secrets, DBFS, and instance pools.',
+      author: 'protectnil',
     };
   }
 
@@ -44,26 +62,54 @@ export class DatabricksMCPServer {
     return [
       {
         name: 'list_clusters',
-        description: 'List all clusters in the Databricks workspace, including their state and configuration.',
+        description: 'List all clusters in the workspace with optional filter by state (RUNNING, TERMINATED, etc.)',
         inputSchema: {
           type: 'object',
           properties: {
             filter_by_state: {
               type: 'string',
-              description: 'Optional state filter: PENDING, RUNNING, RESTARTING, RESIZING, WAITING, TERMINATING, TERMINATED, ERROR, or UNKNOWN.',
+              description: 'Filter clusters by state: PENDING, RUNNING, RESTARTING, RESIZING, WAITING, TERMINATING, TERMINATED, ERROR, UNKNOWN',
             },
           },
         },
       },
       {
         name: 'get_cluster',
-        description: 'Retrieve detailed information about a specific Databricks cluster.',
+        description: 'Retrieve full configuration and current state of a specific Databricks cluster by cluster ID',
         inputSchema: {
           type: 'object',
           properties: {
             cluster_id: {
               type: 'string',
-              description: 'The unique identifier of the cluster (e.g. "1234-567890-abc123").',
+              description: 'Cluster ID (e.g. "1234-567890-abc123")',
+            },
+          },
+          required: ['cluster_id'],
+        },
+      },
+      {
+        name: 'start_cluster',
+        description: 'Start a terminated Databricks cluster; returns immediately — poll get_cluster for RUNNING state',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            cluster_id: {
+              type: 'string',
+              description: 'Cluster ID to start',
+            },
+          },
+          required: ['cluster_id'],
+        },
+      },
+      {
+        name: 'terminate_cluster',
+        description: 'Terminate a running Databricks cluster to stop billing; data on attached storage is preserved',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            cluster_id: {
+              type: 'string',
+              description: 'Cluster ID to terminate',
             },
           },
           required: ['cluster_id'],
@@ -71,42 +117,56 @@ export class DatabricksMCPServer {
       },
       {
         name: 'list_jobs',
-        description: 'List all Databricks jobs in the workspace.',
+        description: 'List all Databricks jobs in the workspace with optional name filter and pagination',
         inputSchema: {
           type: 'object',
           properties: {
             limit: {
               type: 'number',
-              description: 'Maximum number of jobs to return (max 25, default: 20).',
+              description: 'Maximum number of jobs to return (max 25, default: 20)',
             },
             offset: {
               type: 'number',
-              description: 'Offset for pagination (default: 0).',
+              description: 'Offset for pagination (default: 0)',
             },
             name: {
               type: 'string',
-              description: 'Filter jobs by name (exact match).',
+              description: 'Filter jobs by exact name match',
             },
           },
         },
       },
       {
-        name: 'run_job',
-        description: 'Trigger an existing Databricks job to run immediately (run-now).',
+        name: 'get_job',
+        description: 'Retrieve full configuration for a specific Databricks job by its numeric job ID',
         inputSchema: {
           type: 'object',
           properties: {
             job_id: {
               type: 'number',
-              description: 'The numeric ID of the job to run.',
+              description: 'Numeric job ID',
+            },
+          },
+          required: ['job_id'],
+        },
+      },
+      {
+        name: 'run_job',
+        description: 'Trigger an existing Databricks job to run immediately with optional notebook or Python parameters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            job_id: {
+              type: 'number',
+              description: 'Numeric ID of the job to run',
             },
             notebook_params: {
               type: 'object',
-              description: 'Key-value map of parameters to pass to notebook tasks.',
+              description: 'Key-value map of parameters to pass to notebook tasks',
             },
             python_params: {
               type: 'array',
-              description: 'List of string parameters to pass to Python script tasks.',
+              description: 'List of string parameters to pass to Python script tasks',
               items: { type: 'string' },
             },
           },
@@ -115,25 +175,25 @@ export class DatabricksMCPServer {
       },
       {
         name: 'list_job_runs',
-        description: 'List runs for a specific Databricks job, ordered by start time descending.',
+        description: 'List runs for a specific job ordered by start time descending with optional completion filter',
         inputSchema: {
           type: 'object',
           properties: {
             job_id: {
               type: 'number',
-              description: 'The numeric ID of the job whose runs to list.',
+              description: 'Numeric job ID whose runs to list',
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of runs to return (max 25, default: 20).',
+              description: 'Maximum number of runs to return (max 25, default: 20)',
             },
             offset: {
               type: 'number',
-              description: 'Offset for pagination.',
+              description: 'Offset for pagination (default: 0)',
             },
             completed_only: {
               type: 'boolean',
-              description: 'If true, only return completed runs.',
+              description: 'If true, only return completed runs (default: false)',
             },
           },
           required: ['job_id'],
@@ -141,13 +201,27 @@ export class DatabricksMCPServer {
       },
       {
         name: 'get_job_run',
-        description: 'Retrieve details and status of a specific Databricks job run.',
+        description: 'Retrieve the status, output, and task details of a specific Databricks job run by run ID',
         inputSchema: {
           type: 'object',
           properties: {
             run_id: {
               type: 'number',
-              description: 'The numeric ID of the job run to retrieve.',
+              description: 'Numeric job run ID to retrieve',
+            },
+          },
+          required: ['run_id'],
+        },
+      },
+      {
+        name: 'cancel_job_run',
+        description: 'Cancel an active Databricks job run that is in PENDING or RUNNING state',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            run_id: {
+              type: 'number',
+              description: 'Numeric run ID to cancel',
             },
           },
           required: ['run_id'],
@@ -155,29 +229,29 @@ export class DatabricksMCPServer {
       },
       {
         name: 'execute_sql',
-        description: 'Execute a SQL statement against a Databricks SQL warehouse and return the result. The statement runs asynchronously; poll get_sql_statement_result if status is PENDING or RUNNING.',
+        description: 'Execute a SQL statement on a SQL warehouse and return inline results or a statement ID for polling',
         inputSchema: {
           type: 'object',
           properties: {
             warehouse_id: {
               type: 'string',
-              description: 'ID of the SQL warehouse to execute the statement against.',
+              description: 'ID of the SQL warehouse to execute against',
             },
             statement: {
               type: 'string',
-              description: 'SQL statement to execute.',
+              description: 'SQL statement to execute',
             },
             catalog: {
               type: 'string',
-              description: 'Unity Catalog catalog to use as the default for the statement.',
+              description: 'Unity Catalog catalog to set as the session default',
             },
             schema: {
               type: 'string',
-              description: 'Schema to use as the default for the statement.',
+              description: 'Schema to set as the session default',
             },
             wait_timeout: {
               type: 'string',
-              description: 'How long to wait for the result inline (e.g. "30s"). Use "0s" to run fully async. Max "50s".',
+              description: 'Max inline wait time (e.g. "30s", "0s" for async). Max "50s" (default: "30s")',
             },
           },
           required: ['warehouse_id', 'statement'],
@@ -185,16 +259,123 @@ export class DatabricksMCPServer {
       },
       {
         name: 'get_sql_statement_result',
-        description: 'Poll the status and fetch results of a previously submitted SQL statement execution.',
+        description: 'Poll and fetch results of a previously submitted SQL statement execution by statement ID',
         inputSchema: {
           type: 'object',
           properties: {
             statement_id: {
               type: 'string',
-              description: 'The statement ID returned by execute_sql.',
+              description: 'Statement ID returned by execute_sql',
             },
           },
           required: ['statement_id'],
+        },
+      },
+      {
+        name: 'list_warehouses',
+        description: 'List all SQL warehouses (formerly SQL endpoints) in the workspace with state and size',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_warehouse',
+        description: 'Get configuration and current state of a specific SQL warehouse by its warehouse ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            warehouse_id: {
+              type: 'string',
+              description: 'SQL warehouse ID',
+            },
+          },
+          required: ['warehouse_id'],
+        },
+      },
+      {
+        name: 'list_secrets_scopes',
+        description: 'List all secret scopes in the Databricks workspace (does not return secret values)',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'list_secrets',
+        description: 'List secret keys (not values) within a named secret scope for inventory or audit',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            scope: {
+              type: 'string',
+              description: 'Name of the secret scope to list keys from',
+            },
+          },
+          required: ['scope'],
+        },
+      },
+      {
+        name: 'list_instance_pools',
+        description: 'List all instance pools in the workspace with their state and node type configuration',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_instance_pool',
+        description: 'Retrieve full configuration and statistics for a specific instance pool by pool ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            instance_pool_id: {
+              type: 'string',
+              description: 'Instance pool ID to retrieve',
+            },
+          },
+          required: ['instance_pool_id'],
+        },
+      },
+      {
+        name: 'dbfs_list',
+        description: 'List files and directories in the Databricks File System (DBFS) at the given path',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            path: {
+              type: 'string',
+              description: 'DBFS path to list (e.g. "/mnt/data" or "dbfs:/user/hive/warehouse")',
+            },
+          },
+          required: ['path'],
+        },
+      },
+      {
+        name: 'dbfs_get_status',
+        description: 'Get metadata (size, modification time, type) for a specific file or directory in DBFS',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            path: {
+              type: 'string',
+              description: 'DBFS path to stat',
+            },
+          },
+          required: ['path'],
+        },
+      },
+      {
+        name: 'list_notebooks',
+        description: 'List notebooks and directories in the Databricks workspace at a given path',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            path: {
+              type: 'string',
+              description: 'Workspace path to list (e.g. "/Users/user@example.com" or "/Shared"). Default: "/"',
+            },
+          },
         },
       },
     ];
@@ -202,222 +383,49 @@ export class DatabricksMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const h = this.headers;
-
       switch (name) {
-        case 'list_clusters': {
-          const response = await fetch(`${this.host}/api/2.0/clusters/list`, {
-            method: 'GET',
-            headers: h,
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list clusters: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Databricks returned non-JSON response (HTTP ${response.status})`); }
-
-          if (args.filter_by_state) {
-            const state = args.filter_by_state as string;
-            const parsed = data as { clusters?: Array<{ state?: string }> };
-            if (Array.isArray(parsed.clusters)) {
-              const filtered = parsed.clusters.filter((c) => c.state === state);
-              return { content: [{ type: 'text', text: JSON.stringify({ clusters: filtered }, null, 2) }], isError: false };
-            }
-          }
-
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_cluster': {
-          const cluster_id = args.cluster_id as string;
-          if (!cluster_id) {
-            return { content: [{ type: 'text', text: 'cluster_id is required' }], isError: true };
-          }
-
-          const response = await fetch(
-            `${this.host}/api/2.0/clusters/get?cluster_id=${encodeURIComponent(cluster_id)}`,
-            { method: 'GET', headers: h }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get cluster: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Databricks returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_jobs': {
-          const params = new URLSearchParams();
-          params.set('limit', String((args.limit as number) || 20));
-          params.set('offset', String((args.offset as number) || 0));
-          if (args.name) params.set('name', args.name as string);
-
-          const response = await fetch(`${this.host}/api/2.1/jobs/list?${params.toString()}`, {
-            method: 'GET',
-            headers: h,
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list jobs: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Databricks returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'run_job': {
-          const job_id = args.job_id as number;
-          if (!job_id) {
-            return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-          }
-
-          const body: Record<string, unknown> = { job_id };
-          if (args.notebook_params) body.notebook_params = args.notebook_params;
-          if (args.python_params) body.python_params = args.python_params;
-
-          const response = await fetch(`${this.host}/api/2.1/jobs/run-now`, {
-            method: 'POST',
-            headers: h,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to run job: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Databricks returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_job_runs': {
-          const job_id = args.job_id as number;
-          if (!job_id) {
-            return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-          }
-
-          const params = new URLSearchParams();
-          params.set('job_id', String(job_id));
-          params.set('limit', String((args.limit as number) || 20));
-          if (args.offset) params.set('offset', String(args.offset as number));
-          if (typeof args.completed_only === 'boolean') params.set('completed_only', String(args.completed_only));
-
-          const response = await fetch(`${this.host}/api/2.1/jobs/runs/list?${params.toString()}`, {
-            method: 'GET',
-            headers: h,
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list job runs: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Databricks returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_job_run': {
-          const run_id = args.run_id as number;
-          if (!run_id) {
-            return { content: [{ type: 'text', text: 'run_id is required' }], isError: true };
-          }
-
-          const response = await fetch(
-            `${this.host}/api/2.1/jobs/runs/get?run_id=${encodeURIComponent(String(run_id))}`,
-            { method: 'GET', headers: h }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get job run: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Databricks returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'execute_sql': {
-          const warehouse_id = args.warehouse_id as string;
-          const statement = args.statement as string;
-
-          if (!warehouse_id || !statement) {
-            return { content: [{ type: 'text', text: 'warehouse_id and statement are required' }], isError: true };
-          }
-
-          const body: Record<string, unknown> = {
-            warehouse_id,
-            statement,
-            wait_timeout: (args.wait_timeout as string) || '30s',
-            disposition: 'INLINE',
-            format: 'JSON_ARRAY',
-          };
-          if (args.catalog) body.catalog = args.catalog;
-          if (args.schema) body.schema = args.schema;
-
-          const response = await fetch(`${this.host}/api/2.0/sql/statements`, {
-            method: 'POST',
-            headers: h,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to execute SQL: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Databricks returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_sql_statement_result': {
-          const statement_id = args.statement_id as string;
-          if (!statement_id) {
-            return { content: [{ type: 'text', text: 'statement_id is required' }], isError: true };
-          }
-
-          const response = await fetch(
-            `${this.host}/api/2.0/sql/statements/${encodeURIComponent(statement_id)}`,
-            { method: 'GET', headers: h }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get SQL statement result: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Databricks returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_clusters':
+          return await this.listClusters(args);
+        case 'get_cluster':
+          return await this.getCluster(args);
+        case 'start_cluster':
+          return await this.startCluster(args);
+        case 'terminate_cluster':
+          return await this.terminateCluster(args);
+        case 'list_jobs':
+          return await this.listJobs(args);
+        case 'get_job':
+          return await this.getJob(args);
+        case 'run_job':
+          return await this.runJob(args);
+        case 'list_job_runs':
+          return await this.listJobRuns(args);
+        case 'get_job_run':
+          return await this.getJobRun(args);
+        case 'cancel_job_run':
+          return await this.cancelJobRun(args);
+        case 'execute_sql':
+          return await this.executeSql(args);
+        case 'get_sql_statement_result':
+          return await this.getSqlStatementResult(args);
+        case 'list_warehouses':
+          return await this.listWarehouses();
+        case 'get_warehouse':
+          return await this.getWarehouse(args);
+        case 'list_secrets_scopes':
+          return await this.listSecretScopes();
+        case 'list_secrets':
+          return await this.listSecrets(args);
+        case 'list_instance_pools':
+          return await this.listInstancePools();
+        case 'get_instance_pool':
+          return await this.getInstancePool(args);
+        case 'dbfs_list':
+          return await this.dbfsList(args);
+        case 'dbfs_get_status':
+          return await this.dbfsGetStatus(args);
+        case 'list_notebooks':
+          return await this.listNotebooks(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -430,5 +438,259 @@ export class DatabricksMCPServer {
         isError: true,
       };
     }
+  }
+
+  // ── Auth helper ───────────────────────────────────────────────────────────────
+
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+  }
+
+  // ── Response helper ───────────────────────────────────────────────────────────
+
+  private truncate(data: unknown): ToolResult {
+    const text = JSON.stringify(data, null, 2);
+    const truncated = text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+    return { content: [{ type: 'text', text: truncated }], isError: false };
+  }
+
+  private async jsonOrError(res: Response, context: string): Promise<unknown> {
+    if (!res.ok) {
+      throw new Error(`${context}: HTTP ${res.status} ${res.statusText}`);
+    }
+    try {
+      return await res.json();
+    } catch {
+      throw new Error(`Databricks returned non-JSON response for ${context} (HTTP ${res.status})`);
+    }
+  }
+
+  // ── Tool implementations ──────────────────────────────────────────────────────
+
+  private async listClusters(args: Record<string, unknown>): Promise<ToolResult> {
+    const res = await fetch(`${this.host}/api/2.0/clusters/list`, { headers: this.headers });
+    const data = await this.jsonOrError(res, 'list_clusters');
+
+    if (args.filter_by_state) {
+      const state = args.filter_by_state as string;
+      const parsed = data as { clusters?: Array<{ state?: string }> };
+      if (Array.isArray(parsed.clusters)) {
+        const filtered = parsed.clusters.filter((c) => c.state === state);
+        return this.truncate({ clusters: filtered });
+      }
+    }
+    return this.truncate(data);
+  }
+
+  private async getCluster(args: Record<string, unknown>): Promise<ToolResult> {
+    const cluster_id = args.cluster_id as string;
+    if (!cluster_id) throw new Error('cluster_id is required');
+    const res = await fetch(
+      `${this.host}/api/2.0/clusters/get?cluster_id=${encodeURIComponent(cluster_id)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'get_cluster'));
+  }
+
+  private async startCluster(args: Record<string, unknown>): Promise<ToolResult> {
+    const cluster_id = args.cluster_id as string;
+    if (!cluster_id) throw new Error('cluster_id is required');
+    const res = await fetch(`${this.host}/api/2.0/clusters/start`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({ cluster_id }),
+    });
+    return this.truncate(await this.jsonOrError(res, 'start_cluster'));
+  }
+
+  private async terminateCluster(args: Record<string, unknown>): Promise<ToolResult> {
+    const cluster_id = args.cluster_id as string;
+    if (!cluster_id) throw new Error('cluster_id is required');
+    const res = await fetch(`${this.host}/api/2.0/clusters/delete`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({ cluster_id }),
+    });
+    return this.truncate(await this.jsonOrError(res, 'terminate_cluster'));
+  }
+
+  private async listJobs(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    params.set('limit', String((args.limit as number) ?? 20));
+    params.set('offset', String((args.offset as number) ?? 0));
+    if (args.name) params.set('name', args.name as string);
+    const res = await fetch(`${this.host}/api/2.1/jobs/list?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_jobs'));
+  }
+
+  private async getJob(args: Record<string, unknown>): Promise<ToolResult> {
+    const job_id = args.job_id as number;
+    if (!job_id) throw new Error('job_id is required');
+    const res = await fetch(
+      `${this.host}/api/2.1/jobs/get?job_id=${encodeURIComponent(String(job_id))}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'get_job'));
+  }
+
+  private async runJob(args: Record<string, unknown>): Promise<ToolResult> {
+    const job_id = args.job_id as number;
+    if (!job_id) throw new Error('job_id is required');
+    const body: Record<string, unknown> = { job_id };
+    if (args.notebook_params) body.notebook_params = args.notebook_params;
+    if (args.python_params) body.python_params = args.python_params;
+    const res = await fetch(`${this.host}/api/2.1/jobs/run-now`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    return this.truncate(await this.jsonOrError(res, 'run_job'));
+  }
+
+  private async listJobRuns(args: Record<string, unknown>): Promise<ToolResult> {
+    const job_id = args.job_id as number;
+    if (!job_id) throw new Error('job_id is required');
+    const params = new URLSearchParams();
+    params.set('job_id', String(job_id));
+    params.set('limit', String((args.limit as number) ?? 20));
+    if (args.offset) params.set('offset', String(args.offset as number));
+    if (typeof args.completed_only === 'boolean') params.set('completed_only', String(args.completed_only));
+    const res = await fetch(`${this.host}/api/2.1/jobs/runs/list?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_job_runs'));
+  }
+
+  private async getJobRun(args: Record<string, unknown>): Promise<ToolResult> {
+    const run_id = args.run_id as number;
+    if (!run_id) throw new Error('run_id is required');
+    const res = await fetch(
+      `${this.host}/api/2.1/jobs/runs/get?run_id=${encodeURIComponent(String(run_id))}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'get_job_run'));
+  }
+
+  private async cancelJobRun(args: Record<string, unknown>): Promise<ToolResult> {
+    const run_id = args.run_id as number;
+    if (!run_id) throw new Error('run_id is required');
+    const res = await fetch(`${this.host}/api/2.1/jobs/runs/cancel`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({ run_id }),
+    });
+    return this.truncate(await this.jsonOrError(res, 'cancel_job_run'));
+  }
+
+  private async executeSql(args: Record<string, unknown>): Promise<ToolResult> {
+    const warehouse_id = args.warehouse_id as string;
+    const statement = args.statement as string;
+    if (!warehouse_id) throw new Error('warehouse_id is required');
+    if (!statement) throw new Error('statement is required');
+
+    const body: Record<string, unknown> = {
+      warehouse_id,
+      statement,
+      wait_timeout: (args.wait_timeout as string) ?? '30s',
+      disposition: 'INLINE',
+      format: 'JSON_ARRAY',
+    };
+    if (args.catalog) body.catalog = args.catalog;
+    if (args.schema) body.schema = args.schema;
+
+    const res = await fetch(`${this.host}/api/2.0/sql/statements`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    return this.truncate(await this.jsonOrError(res, 'execute_sql'));
+  }
+
+  private async getSqlStatementResult(args: Record<string, unknown>): Promise<ToolResult> {
+    const statement_id = args.statement_id as string;
+    if (!statement_id) throw new Error('statement_id is required');
+    const res = await fetch(
+      `${this.host}/api/2.0/sql/statements/${encodeURIComponent(statement_id)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'get_sql_statement_result'));
+  }
+
+  private async listWarehouses(): Promise<ToolResult> {
+    const res = await fetch(`${this.host}/api/2.0/sql/warehouses`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_warehouses'));
+  }
+
+  private async getWarehouse(args: Record<string, unknown>): Promise<ToolResult> {
+    const warehouse_id = args.warehouse_id as string;
+    if (!warehouse_id) throw new Error('warehouse_id is required');
+    const res = await fetch(
+      `${this.host}/api/2.0/sql/warehouses/${encodeURIComponent(warehouse_id)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'get_warehouse'));
+  }
+
+  private async listSecretScopes(): Promise<ToolResult> {
+    const res = await fetch(`${this.host}/api/2.0/secrets/scopes/list`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_secrets_scopes'));
+  }
+
+  private async listSecrets(args: Record<string, unknown>): Promise<ToolResult> {
+    const scope = args.scope as string;
+    if (!scope) throw new Error('scope is required');
+    const res = await fetch(
+      `${this.host}/api/2.0/secrets/list?scope=${encodeURIComponent(scope)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'list_secrets'));
+  }
+
+  private async listInstancePools(): Promise<ToolResult> {
+    const res = await fetch(`${this.host}/api/2.0/instance-pools/list`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_instance_pools'));
+  }
+
+  private async getInstancePool(args: Record<string, unknown>): Promise<ToolResult> {
+    const instance_pool_id = args.instance_pool_id as string;
+    if (!instance_pool_id) throw new Error('instance_pool_id is required');
+    const res = await fetch(
+      `${this.host}/api/2.0/instance-pools/get?instance_pool_id=${encodeURIComponent(instance_pool_id)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'get_instance_pool'));
+  }
+
+  private async dbfsList(args: Record<string, unknown>): Promise<ToolResult> {
+    const path = args.path as string;
+    if (!path) throw new Error('path is required');
+    const res = await fetch(
+      `${this.host}/api/2.0/dbfs/list?path=${encodeURIComponent(path)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'dbfs_list'));
+  }
+
+  private async dbfsGetStatus(args: Record<string, unknown>): Promise<ToolResult> {
+    const path = args.path as string;
+    if (!path) throw new Error('path is required');
+    const res = await fetch(
+      `${this.host}/api/2.0/dbfs/get-status?path=${encodeURIComponent(path)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'dbfs_get_status'));
+  }
+
+  private async listNotebooks(args: Record<string, unknown>): Promise<ToolResult> {
+    const path = (args.path as string) ?? '/';
+    const res = await fetch(
+      `${this.host}/api/2.0/workspace/list?path=${encodeURIComponent(path)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'list_notebooks'));
   }
 }

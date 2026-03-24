@@ -4,15 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/snyk/studio-mcp — 11 tools, officially maintained by Snyk (v1.7.0, March 2026). Requires Snyk CLI installation and runs CLI-backed scans. This adapter uses the Snyk REST API directly for programmatic access to org data, projects, and issues without requiring the CLI.
+// Official MCP: https://github.com/snyk/studio-mcp — transport: stdio, auth: Snyk CLI + token
+// Our adapter covers: 16 tools (orgs, projects, issues, targets, ignores, SBOM, audit logs).
+// Vendor MCP covers: 11 tools (requires Snyk CLI installation; backs scans via CLI).
+// Recommendation: Use this adapter for programmatic REST API access without CLI. Use vendor MCP for scan-backed results.
+//
+// Base URL: https://api.snyk.io (SNYK-US-01); EU: https://api.eu.snyk.io; AU: https://api.au.snyk.io
+// Auth: Header "Authorization: token {API_TOKEN}" — generate at app.snyk.io/account
+// Docs: https://docs.snyk.io/snyk-api/reference
+// Rate limits: 1620 req/min per organization for REST API (varies by endpoint tier)
+// API version: REST API requires ?version= param on all requests. Recommended stable: 2024-10-15
 
 import { ToolDefinition, ToolResult } from './types.js';
-
-// Auth: Authorization: token {API_TOKEN} header.
-// Base URL: https://api.snyk.io (default, SNYK-US-01 region).
-// Other regions: https://api.eu.snyk.io (SNYK-EU-01), https://api.au.snyk.io (SNYK-AU-01).
-// REST API path prefix: /rest — version param (e.g. ?version=2024-10-15) required on all REST calls.
-// Recommended stable version: 2024-10-15
 
 interface SnykConfig {
   apiToken: string;
@@ -31,11 +34,30 @@ export class SnykMCPServer {
     this.apiVersion = config.apiVersion || '2024-10-15';
   }
 
+  static catalog() {
+    return {
+      name: 'snyk',
+      displayName: 'Snyk',
+      version: '1.0.0',
+      category: 'cybersecurity',
+      keywords: ['snyk', 'vulnerability', 'security', 'dependency', 'cve', 'sca', 'container security', 'sbom', 'devsecops', 'open source', 'license compliance'],
+      toolNames: [
+        'list_orgs', 'list_projects', 'get_project', 'update_project', 'delete_project',
+        'list_issues', 'get_issue', 'list_targets', 'list_package_issues',
+        'list_ignores', 'create_ignore', 'delete_ignore',
+        'get_project_sbom', 'create_sbom_test', 'get_sbom_test_result',
+        'list_audit_logs',
+      ],
+      description: 'Snyk application security: list and triage vulnerabilities, manage projects, ignores, SBOMs, and audit logs across organizations.',
+      author: 'protectnil',
+    };
+  }
+
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_orgs',
-        description: 'List all Snyk organizations accessible with the current API token',
+        description: 'List all Snyk organizations accessible with the current API token with pagination support',
         inputSchema: {
           type: 'object',
           properties: {
@@ -45,14 +67,14 @@ export class SnykMCPServer {
             },
             starting_after: {
               type: 'string',
-              description: 'Cursor for forward pagination (from previous response)',
+              description: 'Cursor for forward pagination (from previous response next link)',
             },
           },
         },
       },
       {
         name: 'list_projects',
-        description: 'List all projects within a Snyk organization',
+        description: 'List all projects within a Snyk organization with optional filters for type and pagination',
         inputSchema: {
           type: 'object',
           properties: {
@@ -70,15 +92,77 @@ export class SnykMCPServer {
             },
             type: {
               type: 'string',
-              description: 'Filter by project type (e.g. npm, maven, dockerfile)',
+              description: 'Filter by project type: npm, maven, gradle, dockerfile, apk, cocoapods, etc.',
             },
           },
           required: ['org_id'],
         },
       },
       {
+        name: 'get_project',
+        description: 'Retrieve full details for a specific Snyk project including settings and last scan info',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            project_id: {
+              type: 'string',
+              description: 'The Snyk project ID',
+            },
+          },
+          required: ['org_id', 'project_id'],
+        },
+      },
+      {
+        name: 'update_project',
+        description: 'Update a Snyk project name, test frequency, or other settings',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            project_id: {
+              type: 'string',
+              description: 'The Snyk project ID',
+            },
+            name: {
+              type: 'string',
+              description: 'New name for the project',
+            },
+            test_frequency: {
+              type: 'string',
+              description: 'Automated test frequency: daily, weekly, never',
+            },
+          },
+          required: ['org_id', 'project_id'],
+        },
+      },
+      {
+        name: 'delete_project',
+        description: 'Delete a Snyk project and all its associated data. This action cannot be undone.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            project_id: {
+              type: 'string',
+              description: 'The Snyk project ID to delete',
+            },
+          },
+          required: ['org_id', 'project_id'],
+        },
+      },
+      {
         name: 'list_issues',
-        description: 'List security issues (vulnerabilities and license issues) for a Snyk organization',
+        description: 'List security issues (vulnerabilities and license issues) for a Snyk organization with severity and type filters',
         inputSchema: {
           type: 'object',
           properties: {
@@ -96,7 +180,7 @@ export class SnykMCPServer {
             },
             severity: {
               type: 'string',
-              description: 'Filter by severity: critical, high, medium, low (comma-separated)',
+              description: 'Filter by severity (comma-separated): critical, high, medium, low',
             },
             type: {
               type: 'string',
@@ -108,7 +192,7 @@ export class SnykMCPServer {
       },
       {
         name: 'get_issue',
-        description: 'Retrieve full details for a specific Snyk issue by ID within an organization',
+        description: 'Retrieve full details for a specific Snyk issue including CVE info, CVSS score, and fix guidance',
         inputSchema: {
           type: 'object',
           properties: {
@@ -158,15 +242,15 @@ export class SnykMCPServer {
             },
             purl: {
               type: 'string',
-              description: 'Package URL (PURL) — e.g. pkg:npm/lodash@4.17.20',
+              description: 'Package URL (PURL) identifying the package — e.g. pkg:npm/lodash@4.17.20 or pkg:maven/org.apache.struts/struts2-core@2.5.10',
             },
           },
           required: ['org_id', 'purl'],
         },
       },
       {
-        name: 'get_project',
-        description: 'Retrieve details for a specific Snyk project by project ID',
+        name: 'list_ignores',
+        description: 'List all ignored issues for a Snyk project (issues suppressed from failing tests)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -182,182 +266,200 @@ export class SnykMCPServer {
           required: ['org_id', 'project_id'],
         },
       },
+      {
+        name: 'create_ignore',
+        description: 'Ignore a specific vulnerability or license issue for a project with a reason and optional expiration',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            project_id: {
+              type: 'string',
+              description: 'The Snyk project ID',
+            },
+            issue_id: {
+              type: 'string',
+              description: 'The vulnerability or license issue ID to ignore',
+            },
+            reason: {
+              type: 'string',
+              description: 'Reason for ignoring this issue (required by most org policies)',
+            },
+            reason_type: {
+              type: 'string',
+              description: 'Reason type: not-vulnerable, wont-fix, temporary-ignore (default: wont-fix)',
+            },
+            disregard_if_fixable: {
+              type: 'boolean',
+              description: 'If true, the ignore is disregarded if a fix becomes available (default: false)',
+            },
+            expires: {
+              type: 'string',
+              description: 'Expiration date as ISO 8601 string after which the ignore is removed (e.g. 2026-12-31T00:00:00Z)',
+            },
+          },
+          required: ['org_id', 'project_id', 'issue_id'],
+        },
+      },
+      {
+        name: 'delete_ignore',
+        description: 'Remove an ignore rule for a specific issue in a Snyk project',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            project_id: {
+              type: 'string',
+              description: 'The Snyk project ID',
+            },
+            issue_id: {
+              type: 'string',
+              description: 'The issue ID to stop ignoring',
+            },
+          },
+          required: ['org_id', 'project_id', 'issue_id'],
+        },
+      },
+      {
+        name: 'get_project_sbom',
+        description: 'Get the Software Bill of Materials (SBOM) for a Snyk project in CycloneDX or SPDX format',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            project_id: {
+              type: 'string',
+              description: 'The Snyk project ID',
+            },
+            format: {
+              type: 'string',
+              description: 'SBOM format: cyclonedx1.4+json, cyclonedx1.5+json, cyclonedx1.6+json, spdx2.3+json (default: cyclonedx1.4+json)',
+            },
+          },
+          required: ['org_id', 'project_id'],
+        },
+      },
+      {
+        name: 'create_sbom_test',
+        description: 'Submit an SBOM document to Snyk for vulnerability testing and receive an async job ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            sbom: {
+              type: 'object',
+              description: 'SBOM document as a JSON object (CycloneDX 1.4/1.5/1.6 JSON or SPDX 2.3 JSON)',
+            },
+          },
+          required: ['org_id', 'sbom'],
+        },
+      },
+      {
+        name: 'get_sbom_test_result',
+        description: 'Retrieve the results of an SBOM vulnerability test by its job ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            job_id: {
+              type: 'string',
+              description: 'Job ID returned by create_sbom_test',
+            },
+          },
+          required: ['org_id', 'job_id'],
+        },
+      },
+      {
+        name: 'list_audit_logs',
+        description: 'Search and retrieve audit logs of user-initiated activity in a Snyk organization (last 90 days)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            org_id: {
+              type: 'string',
+              description: 'The Snyk organization ID',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of log entries to return (default: 100)',
+            },
+            starting_after: {
+              type: 'string',
+              description: 'Cursor for forward pagination',
+            },
+            user_id: {
+              type: 'string',
+              description: 'Filter logs by a specific user ID',
+            },
+            project_id: {
+              type: 'string',
+              description: 'Filter logs related to a specific project',
+            },
+            from: {
+              type: 'string',
+              description: 'Start of date range as ISO 8601 string (e.g. 2026-01-01T00:00:00Z)',
+            },
+            to: {
+              type: 'string',
+              description: 'End of date range as ISO 8601 string',
+            },
+          },
+          required: ['org_id'],
+        },
+      },
     ];
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `token ${this.apiToken}`,
-        'Content-Type': 'application/vnd.api+json',
-      };
-      const v = `version=${encodeURIComponent(this.apiVersion)}`;
-
       switch (name) {
-        case 'list_orgs': {
-          const params = new URLSearchParams({ version: this.apiVersion });
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.starting_after) params.set('starting_after', args.starting_after as string);
-
-          const response = await fetch(`${this.baseUrl}/rest/orgs?${params.toString()}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list orgs (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_projects': {
-          const orgId = args.org_id as string;
-          if (!orgId) {
-            return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
-          }
-
-          const params = new URLSearchParams({ version: this.apiVersion });
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.starting_after) params.set('starting_after', args.starting_after as string);
-          if (args.type) params.set('type', args.type as string);
-
-          const response = await fetch(
-            `${this.baseUrl}/rest/orgs/${encodeURIComponent(orgId)}/projects?${params.toString()}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list projects (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_issues': {
-          const orgId = args.org_id as string;
-          if (!orgId) {
-            return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
-          }
-
-          const params = new URLSearchParams({ version: this.apiVersion });
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.starting_after) params.set('starting_after', args.starting_after as string);
-          if (args.severity) params.set('severity', args.severity as string);
-          if (args.type) params.set('type', args.type as string);
-
-          const response = await fetch(
-            `${this.baseUrl}/rest/orgs/${encodeURIComponent(orgId)}/issues?${params.toString()}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list issues (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_issue': {
-          const orgId = args.org_id as string;
-          const issueId = args.issue_id as string;
-          if (!orgId || !issueId) {
-            return { content: [{ type: 'text', text: 'org_id and issue_id are required' }], isError: true };
-          }
-
-          const response = await fetch(
-            `${this.baseUrl}/rest/orgs/${encodeURIComponent(orgId)}/issues/${encodeURIComponent(issueId)}?${v}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to get issue (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_targets': {
-          const orgId = args.org_id as string;
-          if (!orgId) {
-            return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
-          }
-
-          const params = new URLSearchParams({ version: this.apiVersion });
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.starting_after) params.set('starting_after', args.starting_after as string);
-
-          const response = await fetch(
-            `${this.baseUrl}/rest/orgs/${encodeURIComponent(orgId)}/targets?${params.toString()}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list targets (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_package_issues': {
-          const orgId = args.org_id as string;
-          const purl = args.purl as string;
-          if (!orgId || !purl) {
-            return { content: [{ type: 'text', text: 'org_id and purl are required' }], isError: true };
-          }
-
-          const response = await fetch(
-            `${this.baseUrl}/rest/orgs/${encodeURIComponent(orgId)}/packages/${encodeURIComponent(purl)}/issues?${v}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list package issues (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_project': {
-          const orgId = args.org_id as string;
-          const projectId = args.project_id as string;
-          if (!orgId || !projectId) {
-            return { content: [{ type: 'text', text: 'org_id and project_id are required' }], isError: true };
-          }
-
-          const response = await fetch(
-            `${this.baseUrl}/rest/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}?${v}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to get project (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_orgs':
+          return this.listOrgs(args);
+        case 'list_projects':
+          return this.listProjects(args);
+        case 'get_project':
+          return this.getProject(args);
+        case 'update_project':
+          return this.updateProject(args);
+        case 'delete_project':
+          return this.deleteProject(args);
+        case 'list_issues':
+          return this.listIssues(args);
+        case 'get_issue':
+          return this.getIssue(args);
+        case 'list_targets':
+          return this.listTargets(args);
+        case 'list_package_issues':
+          return this.listPackageIssues(args);
+        case 'list_ignores':
+          return this.listIgnores(args);
+        case 'create_ignore':
+          return this.createIgnore(args);
+        case 'delete_ignore':
+          return this.deleteIgnore(args);
+        case 'get_project_sbom':
+          return this.getProjectSbom(args);
+        case 'create_sbom_test':
+          return this.createSbomTest(args);
+        case 'get_sbom_test_result':
+          return this.getSbomTestResult(args);
+        case 'list_audit_logs':
+          return this.listAuditLogs(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -367,5 +469,278 @@ export class SnykMCPServer {
         isError: true,
       };
     }
+  }
+
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: `token ${this.apiToken}`,
+      'Content-Type': 'application/vnd.api+json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private versionParams(extra?: Record<string, string>): URLSearchParams {
+    const p = new URLSearchParams({ version: this.apiVersion });
+    if (extra) {
+      for (const [k, v] of Object.entries(extra)) p.set(k, v);
+    }
+    return p;
+  }
+
+  private async snykGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
+    const url = `${this.baseUrl}${path}${params ? '?' + params.toString() : ''}`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async snykPost(path: string, body: unknown, params?: URLSearchParams): Promise<ToolResult> {
+    const url = `${this.baseUrl}${path}${params ? '?' + params.toString() : ''}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async snykPatch(path: string, body: unknown, params?: URLSearchParams): Promise<ToolResult> {
+    const url = `${this.baseUrl}${path}${params ? '?' + params.toString() : ''}`;
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async snykDelete(path: string, params?: URLSearchParams): Promise<ToolResult> {
+    const url = `${this.baseUrl}${path}${params ? '?' + params.toString() : ''}`;
+    const response = await fetch(url, { method: 'DELETE', headers: this.headers });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
+    }
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, status: response.status }) }], isError: false };
+  }
+
+  private async listOrgs(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.versionParams();
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.starting_after) params.set('starting_after', args.starting_after as string);
+    return this.snykGet('/rest/orgs', params);
+  }
+
+  private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    if (!orgId) return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
+    const params = this.versionParams();
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.starting_after) params.set('starting_after', args.starting_after as string);
+    if (args.type) params.set('type', args.type as string);
+    return this.snykGet(`/rest/orgs/${encodeURIComponent(orgId)}/projects`, params);
+  }
+
+  private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const projectId = args.project_id as string;
+    if (!orgId || !projectId) return { content: [{ type: 'text', text: 'org_id and project_id are required' }], isError: true };
+    return this.snykGet(`/rest/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}`, this.versionParams());
+  }
+
+  private async updateProject(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const projectId = args.project_id as string;
+    if (!orgId || !projectId) return { content: [{ type: 'text', text: 'org_id and project_id are required' }], isError: true };
+    const attributes: Record<string, unknown> = {};
+    if (args.name) attributes.name = args.name;
+    if (args.test_frequency) attributes.test_frequency = args.test_frequency;
+    const body = { data: { type: 'project', attributes } };
+    return this.snykPatch(
+      `/rest/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}`,
+      body,
+      this.versionParams(),
+    );
+  }
+
+  private async deleteProject(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const projectId = args.project_id as string;
+    if (!orgId || !projectId) return { content: [{ type: 'text', text: 'org_id and project_id are required' }], isError: true };
+    return this.snykDelete(
+      `/rest/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}`,
+      this.versionParams(),
+    );
+  }
+
+  private async listIssues(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    if (!orgId) return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
+    const params = this.versionParams();
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.starting_after) params.set('starting_after', args.starting_after as string);
+    if (args.severity) params.set('severity', args.severity as string);
+    if (args.type) params.set('type', args.type as string);
+    return this.snykGet(`/rest/orgs/${encodeURIComponent(orgId)}/issues`, params);
+  }
+
+  private async getIssue(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const issueId = args.issue_id as string;
+    if (!orgId || !issueId) return { content: [{ type: 'text', text: 'org_id and issue_id are required' }], isError: true };
+    return this.snykGet(
+      `/rest/orgs/${encodeURIComponent(orgId)}/issues/${encodeURIComponent(issueId)}`,
+      this.versionParams(),
+    );
+  }
+
+  private async listTargets(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    if (!orgId) return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
+    const params = this.versionParams();
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.starting_after) params.set('starting_after', args.starting_after as string);
+    return this.snykGet(`/rest/orgs/${encodeURIComponent(orgId)}/targets`, params);
+  }
+
+  private async listPackageIssues(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const purl = args.purl as string;
+    if (!orgId || !purl) return { content: [{ type: 'text', text: 'org_id and purl are required' }], isError: true };
+    return this.snykGet(
+      `/rest/orgs/${encodeURIComponent(orgId)}/packages/${encodeURIComponent(purl)}/issues`,
+      this.versionParams(),
+    );
+  }
+
+  private async listIgnores(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const projectId = args.project_id as string;
+    if (!orgId || !projectId) return { content: [{ type: 'text', text: 'org_id and project_id are required' }], isError: true };
+    // v1 ignores endpoint — REST equivalent is not GA as of 2024-10-15
+    const url = `${this.baseUrl}/v1/org/${encodeURIComponent(orgId)}/project/${encodeURIComponent(projectId)}/ignores`;
+    const headers = { Authorization: `token ${this.apiToken}`, 'Content-Type': 'application/json' };
+    const response = await fetch(url, { method: 'GET', headers });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async createIgnore(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const projectId = args.project_id as string;
+    const issueId = args.issue_id as string;
+    if (!orgId || !projectId || !issueId) {
+      return { content: [{ type: 'text', text: 'org_id, project_id, and issue_id are required' }], isError: true };
+    }
+    const ignoreEntry: Record<string, unknown> = {
+      reason: (args.reason as string) || '',
+      reasonType: (args.reason_type as string) || 'wont-fix',
+      disregardIfFixable: (args.disregard_if_fixable as boolean) ?? false,
+    };
+    if (args.expires) ignoreEntry.expires = args.expires;
+    const url = `${this.baseUrl}/v1/org/${encodeURIComponent(orgId)}/project/${encodeURIComponent(projectId)}/ignore/${encodeURIComponent(issueId)}`;
+    const headers = { Authorization: `token ${this.apiToken}`, 'Content-Type': 'application/json' };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify([ignoreEntry]),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Snyk returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async deleteIgnore(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const projectId = args.project_id as string;
+    const issueId = args.issue_id as string;
+    if (!orgId || !projectId || !issueId) {
+      return { content: [{ type: 'text', text: 'org_id, project_id, and issue_id are required' }], isError: true };
+    }
+    const url = `${this.baseUrl}/v1/org/${encodeURIComponent(orgId)}/project/${encodeURIComponent(projectId)}/ignore/${encodeURIComponent(issueId)}`;
+    const headers = { Authorization: `token ${this.apiToken}`, 'Content-Type': 'application/json' };
+    const response = await fetch(url, { method: 'DELETE', headers });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
+    }
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, status: response.status }) }], isError: false };
+  }
+
+  private async getProjectSbom(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const projectId = args.project_id as string;
+    if (!orgId || !projectId) return { content: [{ type: 'text', text: 'org_id and project_id are required' }], isError: true };
+    const params = this.versionParams({ format: (args.format as string) || 'cyclonedx1.4+json' });
+    return this.snykGet(
+      `/rest/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/sbom`,
+      params,
+    );
+  }
+
+  private async createSbomTest(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    if (!orgId || !args.sbom) return { content: [{ type: 'text', text: 'org_id and sbom are required' }], isError: true };
+    const body = { data: { type: 'sbom_test', attributes: { sbom: args.sbom } } };
+    return this.snykPost(
+      `/rest/orgs/${encodeURIComponent(orgId)}/sbom_tests`,
+      body,
+      this.versionParams(),
+    );
+  }
+
+  private async getSbomTestResult(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    const jobId = args.job_id as string;
+    if (!orgId || !jobId) return { content: [{ type: 'text', text: 'org_id and job_id are required' }], isError: true };
+    return this.snykGet(
+      `/rest/orgs/${encodeURIComponent(orgId)}/sbom_tests/${encodeURIComponent(jobId)}`,
+      this.versionParams(),
+    );
+  }
+
+  private async listAuditLogs(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgId = args.org_id as string;
+    if (!orgId) return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
+    const params = this.versionParams();
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.starting_after) params.set('starting_after', args.starting_after as string);
+    if (args.user_id) params.set('user_id', args.user_id as string);
+    if (args.project_id) params.set('project_id', args.project_id as string);
+    if (args.from) params.set('from', args.from as string);
+    if (args.to) params.set('to', args.to as string);
+    return this.snykGet(`/rest/orgs/${encodeURIComponent(orgId)}/audit_logs/search`, params);
   }
 }

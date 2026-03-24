@@ -1,47 +1,133 @@
-/** Sentry MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
+/**
+ * Sentry MCP Adapter
+ * Built on the Epic AI® Intelligence Platform
+ * Copyright 2026 protectNIL Inc. Apache-2.0
+ */
+
+// Official MCP: https://github.com/getsentry/sentry-mcp — transport: streamable-http (remote), auth: OAuth
+// Sentry hosts a managed remote MCP server at https://mcp.sentry.dev with OAuth authentication.
+// Their MCP covers ~20 tools focused on read-only coding-assistant workflows (find issues, get details, search errors).
+// Our adapter covers: 15 tools including write operations (resolve, update, ignore, assign, create comments, manage releases).
+// Recommendation: Use vendor MCP for IDE/cursor integration. Use this adapter for full operational and write coverage.
+//
+// Base URL: https://sentry.io/api/0
+// Auth: Bearer token — Authorization: Bearer {auth_token}
+// Docs: https://docs.sentry.io/api/
+// Rate limits: 100 req/s per organization (production), 3 req/s per org on free plans
 
 import { ToolDefinition, ToolResult } from './types.js';
+import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
+
+interface SentryConfig {
+  authToken: string;
+  baseUrl?: string;
+}
 
 export class SentryMCPServer {
+  private readonly authToken: string;
   private readonly baseUrl: string;
-  private readonly headers: Record<string, string>;
 
-  constructor(config: {
-    token: string;
-    baseUrl?: string;
-  }) {
+  constructor(config: SentryConfig) {
+    this.authToken = config.authToken;
     this.baseUrl = config.baseUrl
       ? config.baseUrl.replace(/\/$/, '')
       : 'https://sentry.io/api/0';
-    this.headers = {
-      'Authorization': `Bearer ${config.token}`,
-      'Content-Type': 'application/json',
+  }
+
+  static catalog(): AdapterCatalogEntry {
+    return {
+      name: 'sentry',
+      displayName: 'Sentry',
+      version: '1.0.0',
+      category: 'observability',
+      keywords: [
+        'sentry', 'error', 'exception', 'issue', 'event', 'stacktrace', 'debug',
+        'release', 'deploy', 'performance', 'transaction', 'project', 'organization',
+        'team', 'alert', 'monitoring', 'apm', 'crash', 'bug',
+      ],
+      toolNames: [
+        'list_organizations', 'list_projects', 'list_teams',
+        'list_issues', 'get_issue', 'update_issue', 'list_events',
+        'get_event', 'list_releases', 'get_release', 'list_release_deploys',
+        'search_issues', 'list_project_alerts', 'list_team_members', 'create_project_note',
+      ],
+      description: 'Error monitoring and performance: list and triage issues, inspect events and stacktraces, manage releases and deploys, resolve and assign issues, configure alerts.',
+      author: 'protectnil',
     };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
-        name: 'list_issues',
-        description: 'List issues for a Sentry project',
+        name: 'list_organizations',
+        description: 'List all Sentry organizations accessible to the authenticated token',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response Link header',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_projects',
+        description: 'List all projects in a Sentry organization with optional pagination',
         inputSchema: {
           type: 'object',
           properties: {
             organization_slug: {
               type: 'string',
-              description: 'Organization slug',
+              description: 'The organization slug (short identifier)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['organization_slug'],
+        },
+      },
+      {
+        name: 'list_teams',
+        description: "List all teams in a Sentry organization with member counts and project associations",
+        inputSchema: {
+          type: 'object',
+          properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['organization_slug'],
+        },
+      },
+      {
+        name: 'list_issues',
+        description: 'List issues for a Sentry project with optional query filter, status, sort, and pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug',
             },
             project_slug: {
               type: 'string',
-              description: 'Project slug',
+              description: 'The project slug',
             },
             query: {
               type: 'string',
-              description: 'Sentry issue search query (e.g., "is:unresolved assigned:me")',
+              description: 'Sentry search query (e.g., "is:unresolved assigned:me", "level:error")',
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of issues to return (default: 25)',
+              description: 'Maximum number of issues to return (default: 25, max: 100)',
             },
             cursor: {
               type: 'string',
@@ -53,13 +139,39 @@ export class SentryMCPServer {
       },
       {
         name: 'get_issue',
-        description: 'Get full details for a specific Sentry issue',
+        description: 'Get full details for a specific Sentry issue including tags, activity, and first/last seen timestamps',
         inputSchema: {
           type: 'object',
           properties: {
             issue_id: {
               type: 'string',
-              description: 'The Sentry issue ID',
+              description: 'The Sentry issue ID (numeric) or short ID (e.g., PROJECT-123)',
+            },
+          },
+          required: ['issue_id'],
+        },
+      },
+      {
+        name: 'update_issue',
+        description: 'Update an issue status or attributes: resolve, unresolve, ignore, assign, or set priority',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            issue_id: {
+              type: 'string',
+              description: 'The Sentry issue ID to update',
+            },
+            status: {
+              type: 'string',
+              description: 'New status: resolved, unresolved, ignored',
+            },
+            assigned_to: {
+              type: 'string',
+              description: 'Assign to a username, user ID, or team slug prefixed with "team:" (e.g., "team:backend")',
+            },
+            ignore_duration: {
+              type: 'number',
+              description: 'Ignore for this many minutes (used when status is ignored)',
             },
           },
           required: ['issue_id'],
@@ -67,7 +179,7 @@ export class SentryMCPServer {
       },
       {
         name: 'list_events',
-        description: 'List events (occurrences) for a specific Sentry issue',
+        description: 'List individual error events (occurrences) for a specific Sentry issue with pagination',
         inputSchema: {
           type: 'object',
           properties: {
@@ -77,7 +189,7 @@ export class SentryMCPServer {
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of events to return (default: 25)',
+              description: 'Maximum number of events to return (default: 25, max: 100)',
             },
             cursor: {
               type: 'string',
@@ -88,14 +200,48 @@ export class SentryMCPServer {
         },
       },
       {
-        name: 'list_projects',
-        description: 'List all projects in a Sentry organization',
+        name: 'get_event',
+        description: 'Get a single Sentry event by event ID including full stacktrace, breadcrumbs, and request context',
         inputSchema: {
           type: 'object',
           properties: {
             organization_slug: {
               type: 'string',
-              description: 'Organization slug',
+              description: 'The organization slug',
+            },
+            project_slug: {
+              type: 'string',
+              description: 'The project slug',
+            },
+            event_id: {
+              type: 'string',
+              description: 'The event ID (UUID format)',
+            },
+          },
+          required: ['organization_slug', 'project_slug', 'event_id'],
+        },
+      },
+      {
+        name: 'list_releases',
+        description: 'List releases for a Sentry organization with optional project filter, query, and pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug',
+            },
+            project_slug: {
+              type: 'string',
+              description: 'Filter releases by project slug',
+            },
+            query: {
+              type: 'string',
+              description: 'Filter releases by version string (partial match)',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of releases to return (default: 25)',
             },
             cursor: {
               type: 'string',
@@ -106,79 +252,161 @@ export class SentryMCPServer {
         },
       },
       {
-        name: 'resolve_issue',
-        description: 'Mark a Sentry issue as resolved',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            issue_id: {
-              type: 'string',
-              description: 'The Sentry issue ID to resolve',
-            },
-          },
-          required: ['issue_id'],
-        },
-      },
-      {
-        name: 'assign_issue',
-        description: 'Assign a Sentry issue to a user or team',
+        name: 'get_release',
+        description: 'Get detailed information about a specific release version including commit count and adoption stats',
         inputSchema: {
           type: 'object',
           properties: {
             organization_slug: {
               type: 'string',
-              description: 'Organization slug',
+              description: 'The organization slug',
             },
-            issue_id: {
+            version: {
               type: 'string',
-              description: 'The Sentry issue ID to assign',
-            },
-            assigned_to: {
-              type: 'string',
-              description: 'The actor to assign: a username, user ID, or team slug prefixed with "team:" (e.g., "jane@example.com", "team:backend")',
+              description: 'The release version string',
             },
           },
-          required: ['organization_slug', 'issue_id', 'assigned_to'],
+          required: ['organization_slug', 'version'],
+        },
+      },
+      {
+        name: 'list_release_deploys',
+        description: 'List all deploys for a specific release version across environments',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug',
+            },
+            version: {
+              type: 'string',
+              description: 'The release version string',
+            },
+          },
+          required: ['organization_slug', 'version'],
+        },
+      },
+      {
+        name: 'search_issues',
+        description: 'Search for issues across an entire organization using Sentry query syntax with date range and environment filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug',
+            },
+            query: {
+              type: 'string',
+              description: 'Sentry search query (e.g., "TypeError is:unresolved", "level:fatal")',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of issues to return (default: 25, max: 100)',
+            },
+            environment: {
+              type: 'string',
+              description: 'Filter by environment name (e.g., production, staging)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['organization_slug'],
+        },
+      },
+      {
+        name: 'list_project_alerts',
+        description: 'List alert rules configured for a Sentry project including thresholds and notification channels',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug',
+            },
+            project_slug: {
+              type: 'string',
+              description: 'The project slug',
+            },
+          },
+          required: ['organization_slug', 'project_slug'],
+        },
+      },
+      {
+        name: 'list_team_members',
+        description: 'List all members of a Sentry team with their roles and last-seen information',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug',
+            },
+            team_slug: {
+              type: 'string',
+              description: 'The team slug',
+            },
+          },
+          required: ['organization_slug', 'team_slug'],
+        },
+      },
+      {
+        name: 'create_project_note',
+        description: 'Add a note (comment) to a Sentry issue for team communication and investigation tracking',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            issue_id: {
+              type: 'string',
+              description: 'The Sentry issue ID to add a note to',
+            },
+            text: {
+              type: 'string',
+              description: 'The note text to add (supports Markdown)',
+            },
+          },
+          required: ['issue_id', 'text'],
         },
       },
     ];
   }
 
-  async callTool(
-    name: string,
-    args: Record<string, unknown>
-  ): Promise<ToolResult> {
+  async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'list_issues':
-          return await this.listIssues(
-            args.organization_slug as string,
-            args.project_slug as string,
-            args.query as string | undefined,
-            args.limit as number | undefined,
-            args.cursor as string | undefined
-          );
-        case 'get_issue':
-          return await this.getIssue(args.issue_id as string);
-        case 'list_events':
-          return await this.listEvents(
-            args.issue_id as string,
-            args.limit as number | undefined,
-            args.cursor as string | undefined
-          );
+        case 'list_organizations':
+          return await this.listOrganizations(args);
         case 'list_projects':
-          return await this.listProjects(
-            args.organization_slug as string,
-            args.cursor as string | undefined
-          );
-        case 'resolve_issue':
-          return await this.resolveIssue(args.issue_id as string);
-        case 'assign_issue':
-          return await this.assignIssue(
-            args.organization_slug as string,
-            args.issue_id as string,
-            args.assigned_to as string
-          );
+          return await this.listProjects(args);
+        case 'list_teams':
+          return await this.listTeams(args);
+        case 'list_issues':
+          return await this.listIssues(args);
+        case 'get_issue':
+          return await this.getIssue(args);
+        case 'update_issue':
+          return await this.updateIssue(args);
+        case 'list_events':
+          return await this.listEvents(args);
+        case 'get_event':
+          return await this.getEvent(args);
+        case 'list_releases':
+          return await this.listReleases(args);
+        case 'get_release':
+          return await this.getRelease(args);
+        case 'list_release_deploys':
+          return await this.listReleaseDeploys(args);
+        case 'search_issues':
+          return await this.searchIssues(args);
+        case 'list_project_alerts':
+          return await this.listProjectAlerts(args);
+        case 'list_team_members':
+          return await this.listTeamMembers(args);
+        case 'create_project_note':
+          return await this.createProjectNote(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -187,136 +415,218 @@ export class SentryMCPServer {
       }
     } catch (error) {
       return {
-        content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }],
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }
   }
 
-  private async listIssues(
-    organizationSlug: string,
-    projectSlug: string,
-    query?: string,
-    limit?: number,
-    cursor?: string
-  ): Promise<ToolResult> {
+  private authHeaders(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.authToken}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async fetchJson(url: string, options: RequestInit = {}): Promise<unknown> {
+    const response = await fetch(url, { ...options, headers: this.authHeaders() });
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new Error(`Sentry API error: ${response.status} ${response.statusText}${body ? ` — ${body.slice(0, 200)}` : ''}`);
+    }
+    return response.json();
+  }
+
+  private async listOrganizations(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
-    if (query) params.append('query', query);
-    params.append('limit', String(limit || 25));
-    if (cursor) params.append('cursor', cursor);
-
-    const response = await fetch(
-      `${this.baseUrl}/projects/${organizationSlug}/${projectSlug}/issues/?${params}`,
-      { method: 'GET', headers: this.headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Sentry API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Sentry returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    const data = await this.fetchJson(`${this.baseUrl}/organizations/?${params}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async getIssue(issueId: string): Promise<ToolResult> {
-    const response = await fetch(
-      `${this.baseUrl}/issues/${issueId}/`,
-      { method: 'GET', headers: this.headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Sentry API error: ${response.status} ${response.statusText}`);
+  private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    if (!orgSlug) {
+      return { content: [{ type: 'text', text: 'organization_slug is required' }], isError: true };
     }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Sentry returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-  }
-
-  private async listEvents(
-    issueId: string,
-    limit?: number,
-    cursor?: string
-  ): Promise<ToolResult> {
     const params = new URLSearchParams();
-    params.append('limit', String(limit || 25));
-    if (cursor) params.append('cursor', cursor);
-
-    const response = await fetch(
-      `${this.baseUrl}/issues/${issueId}/events/?${params}`,
-      { method: 'GET', headers: this.headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Sentry API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Sentry returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    const data = await this.fetchJson(`${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/projects/?${params}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async listProjects(
-    organizationSlug: string,
-    cursor?: string
-  ): Promise<ToolResult> {
+  private async listTeams(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    if (!orgSlug) {
+      return { content: [{ type: 'text', text: 'organization_slug is required' }], isError: true };
+    }
     const params = new URLSearchParams();
-    if (cursor) params.append('cursor', cursor);
-
-    const response = await fetch(
-      `${this.baseUrl}/organizations/${organizationSlug}/projects/?${params}`,
-      { method: 'GET', headers: this.headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Sentry API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Sentry returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    const data = await this.fetchJson(`${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/teams/?${params}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async resolveIssue(issueId: string): Promise<ToolResult> {
-    const response = await fetch(
-      `${this.baseUrl}/issues/${issueId}/`,
-      {
-        method: 'PUT',
-        headers: this.headers,
-        body: JSON.stringify({ status: 'resolved' }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Sentry API error: ${response.status} ${response.statusText}`);
+  private async listIssues(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    const projectSlug = args.project_slug as string;
+    if (!orgSlug || !projectSlug) {
+      return { content: [{ type: 'text', text: 'organization_slug and project_slug are required' }], isError: true };
     }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Sentry returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    const params = new URLSearchParams();
+    if (args.query) params.set('query', args.query as string);
+    params.set('limit', String((args.limit as number) ?? 25));
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    const data = await this.fetchJson(
+      `${this.baseUrl}/projects/${encodeURIComponent(orgSlug)}/${encodeURIComponent(projectSlug)}/issues/?${params}`,
+    );
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async assignIssue(
-    organizationSlug: string,
-    issueId: string,
-    assignedTo: string
-  ): Promise<ToolResult> {
-    const response = await fetch(
-      `${this.baseUrl}/organizations/${organizationSlug}/issues/${issueId}/`,
-      {
-        method: 'PUT',
-        headers: this.headers,
-        body: JSON.stringify({ assignedTo }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Sentry API error: ${response.status} ${response.statusText}`);
+  private async getIssue(args: Record<string, unknown>): Promise<ToolResult> {
+    const issueId = args.issue_id as string;
+    if (!issueId) {
+      return { content: [{ type: 'text', text: 'issue_id is required' }], isError: true };
     }
+    const data = await this.fetchJson(`${this.baseUrl}/issues/${encodeURIComponent(issueId)}/`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Sentry returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  private async updateIssue(args: Record<string, unknown>): Promise<ToolResult> {
+    const issueId = args.issue_id as string;
+    if (!issueId) {
+      return { content: [{ type: 'text', text: 'issue_id is required' }], isError: true };
+    }
+    const body: Record<string, unknown> = {};
+    if (args.status) body['status'] = args.status;
+    if (args.assigned_to) body['assignedTo'] = args.assigned_to;
+    if (args.ignore_duration !== undefined) {
+      body['statusDetails'] = { ignoreDuration: args.ignore_duration };
+    }
+    const data = await this.fetchJson(
+      `${this.baseUrl}/issues/${encodeURIComponent(issueId)}/`,
+      { method: 'PUT', body: JSON.stringify(body) },
+    );
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
+    const issueId = args.issue_id as string;
+    if (!issueId) {
+      return { content: [{ type: 'text', text: 'issue_id is required' }], isError: true };
+    }
+    const params = new URLSearchParams();
+    params.set('limit', String((args.limit as number) ?? 25));
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    const data = await this.fetchJson(`${this.baseUrl}/issues/${encodeURIComponent(issueId)}/events/?${params}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getEvent(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    const projectSlug = args.project_slug as string;
+    const eventId = args.event_id as string;
+    if (!orgSlug || !projectSlug || !eventId) {
+      return { content: [{ type: 'text', text: 'organization_slug, project_slug, and event_id are required' }], isError: true };
+    }
+    const data = await this.fetchJson(
+      `${this.baseUrl}/projects/${encodeURIComponent(orgSlug)}/${encodeURIComponent(projectSlug)}/events/${encodeURIComponent(eventId)}/`,
+    );
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listReleases(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    if (!orgSlug) {
+      return { content: [{ type: 'text', text: 'organization_slug is required' }], isError: true };
+    }
+    const params = new URLSearchParams();
+    if (args.project_slug) params.set('project', args.project_slug as string);
+    if (args.query) params.set('query', args.query as string);
+    params.set('limit', String((args.limit as number) ?? 25));
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    const data = await this.fetchJson(`${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/releases/?${params}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getRelease(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    const version = args.version as string;
+    if (!orgSlug || !version) {
+      return { content: [{ type: 'text', text: 'organization_slug and version are required' }], isError: true };
+    }
+    const data = await this.fetchJson(
+      `${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/releases/${encodeURIComponent(version)}/`,
+    );
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listReleaseDeploys(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    const version = args.version as string;
+    if (!orgSlug || !version) {
+      return { content: [{ type: 'text', text: 'organization_slug and version are required' }], isError: true };
+    }
+    const data = await this.fetchJson(
+      `${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/releases/${encodeURIComponent(version)}/deploys/`,
+    );
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async searchIssues(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    if (!orgSlug) {
+      return { content: [{ type: 'text', text: 'organization_slug is required' }], isError: true };
+    }
+    const params = new URLSearchParams();
+    if (args.query) params.set('query', args.query as string);
+    params.set('limit', String((args.limit as number) ?? 25));
+    if (args.environment) params.set('environment', args.environment as string);
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    const data = await this.fetchJson(`${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/issues/?${params}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listProjectAlerts(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    const projectSlug = args.project_slug as string;
+    if (!orgSlug || !projectSlug) {
+      return { content: [{ type: 'text', text: 'organization_slug and project_slug are required' }], isError: true };
+    }
+    const data = await this.fetchJson(
+      `${this.baseUrl}/projects/${encodeURIComponent(orgSlug)}/${encodeURIComponent(projectSlug)}/rules/`,
+    );
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listTeamMembers(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
+    const teamSlug = args.team_slug as string;
+    if (!orgSlug || !teamSlug) {
+      return { content: [{ type: 'text', text: 'organization_slug and team_slug are required' }], isError: true };
+    }
+    const data = await this.fetchJson(
+      `${this.baseUrl}/teams/${encodeURIComponent(orgSlug)}/${encodeURIComponent(teamSlug)}/members/`,
+    );
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async createProjectNote(args: Record<string, unknown>): Promise<ToolResult> {
+    const issueId = args.issue_id as string;
+    const text = args.text as string;
+    if (!issueId || !text) {
+      return { content: [{ type: 'text', text: 'issue_id and text are required' }], isError: true };
+    }
+    const data = await this.fetchJson(
+      `${this.baseUrl}/issues/${encodeURIComponent(issueId)}/comments/`,
+      { method: 'POST', body: JSON.stringify({ text }) },
+    );
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 }

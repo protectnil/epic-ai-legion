@@ -4,7 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/zqushair/Frontapp-MCP — community-maintained, not vendor-published. Our adapter serves API-key / bearer-token use cases.
+// Official MCP: https://github.com/zqushair/Frontapp-MCP — community-maintained, not vendor-published.
+// Our adapter covers: 18 tools (conversations, messages, comments, contacts, inboxes, teammates,
+//   tags, channels, teams, drafts, analytics). Community MCP covers fewer operations.
+// Recommendation: Use this adapter. Community MCP is not vendor-supported.
+//
+// Base URL: https://api2.frontapp.com
+// Auth: Bearer token (API token from Front workspace settings)
+// Docs: https://dev.frontapp.com/reference/introduction
+// Rate limits: Varies by endpoint; Core API: ~50 req/s per token
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -19,24 +27,52 @@ export class FrontMCPServer {
 
   constructor(config: FrontConfig) {
     this.apiToken = config.apiToken;
-    this.baseUrl = config.baseUrl || 'https://api2.frontapp.com';
+    this.baseUrl = (config.baseUrl ?? 'https://api2.frontapp.com').replace(/\/$/, '');
+  }
+
+  static catalog() {
+    return {
+      name: 'front',
+      displayName: 'Front',
+      version: '1.0.0',
+      category: 'collaboration',
+      keywords: [
+        'front', 'frontapp', 'customer support', 'shared inbox', 'conversation',
+        'helpdesk', 'messaging', 'contact', 'teammate', 'inbox', 'ticket',
+        'comment', 'message', 'tag', 'channel', 'draft', 'analytics',
+      ],
+      toolNames: [
+        'list_conversations', 'get_conversation', 'update_conversation', 'search_conversations',
+        'list_conversation_messages', 'list_conversation_comments', 'create_comment',
+        'send_message', 'create_draft',
+        'list_contacts', 'get_contact', 'create_contact', 'update_contact',
+        'list_inboxes', 'list_teammates', 'get_teammate',
+        'list_tags', 'add_conversation_tag',
+      ],
+      description: 'Shared inbox and customer communication: manage conversations, messages, comments, contacts, inboxes, teammates, and tags.',
+      author: 'protectnil',
+    };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_conversations',
-        description: 'List conversations, optionally filtered by status',
+        description: 'List conversations with optional filters for status, inbox, tag, or assignee; supports pagination',
         inputSchema: {
           type: 'object',
           properties: {
             inbox_id: {
               type: 'string',
-              description: 'Inbox ID to filter conversations (e.g. inb_123)',
+              description: 'Filter by inbox ID (e.g. inb_123)',
             },
             tag_id: {
               type: 'string',
-              description: 'Tag ID to filter conversations (e.g. tag_123)',
+              description: 'Filter by tag ID (e.g. tag_123)',
+            },
+            teammate_id: {
+              type: 'string',
+              description: 'Filter by assigned teammate ID (e.g. tea_123)',
             },
             status: {
               type: 'string',
@@ -44,7 +80,7 @@ export class FrontMCPServer {
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of conversations to return (max 100, default: 25)',
+              description: 'Maximum conversations to return (max 100, default: 25)',
             },
             page_token: {
               type: 'string',
@@ -55,7 +91,7 @@ export class FrontMCPServer {
       },
       {
         name: 'get_conversation',
-        description: 'Get details of a specific conversation by ID',
+        description: 'Get full details of a specific conversation by ID, including status, assignee, inbox, and tags',
         inputSchema: {
           type: 'object',
           properties: {
@@ -68,8 +104,114 @@ export class FrontMCPServer {
         },
       },
       {
+        name: 'update_conversation',
+        description: 'Update conversation properties: assign a teammate, change status (open/archived), or update subject',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conversation_id: {
+              type: 'string',
+              description: 'Conversation ID (e.g. cnv_123)',
+            },
+            assignee_id: {
+              type: 'string',
+              description: 'Teammate ID to assign the conversation to (e.g. tea_123). Pass null to unassign.',
+            },
+            inbox_id: {
+              type: 'string',
+              description: 'Move the conversation to this inbox ID (e.g. inb_123)',
+            },
+            status: {
+              type: 'string',
+              description: 'New status for the conversation: open, archived, deleted',
+            },
+          },
+          required: ['conversation_id'],
+        },
+      },
+      {
+        name: 'search_conversations',
+        description: 'Search conversations using Front query syntax across subject, body, sender, assignee, and date filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Search query string using Front query syntax (e.g. "subject:invoice is:open")',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum conversations to return (max 100, default: 25)',
+            },
+            page_token: {
+              type: 'string',
+              description: 'Pagination token from a previous response',
+            },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        name: 'list_conversation_messages',
+        description: 'List all messages (inbound and outbound) within a specific conversation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conversation_id: {
+              type: 'string',
+              description: 'Conversation ID (e.g. cnv_123)',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum messages to return (max 100, default: 25)',
+            },
+            page_token: {
+              type: 'string',
+              description: 'Pagination token from a previous response',
+            },
+          },
+          required: ['conversation_id'],
+        },
+      },
+      {
+        name: 'list_conversation_comments',
+        description: 'List internal comments (notes visible only to teammates) on a conversation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conversation_id: {
+              type: 'string',
+              description: 'Conversation ID (e.g. cnv_123)',
+            },
+          },
+          required: ['conversation_id'],
+        },
+      },
+      {
+        name: 'create_comment',
+        description: 'Add an internal comment (private note) to a conversation, visible only to teammates',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conversation_id: {
+              type: 'string',
+              description: 'Conversation ID to comment on (e.g. cnv_123)',
+            },
+            author_id: {
+              type: 'string',
+              description: 'Teammate ID posting the comment (e.g. tea_123)',
+            },
+            body: {
+              type: 'string',
+              description: 'Comment text body',
+            },
+          },
+          required: ['conversation_id', 'author_id', 'body'],
+        },
+      },
+      {
         name: 'send_message',
-        description: 'Reply to an existing conversation with a new message',
+        description: 'Reply to an existing conversation by sending an outbound message through the specified channel',
         inputSchema: {
           type: 'object',
           properties: {
@@ -83,11 +225,11 @@ export class FrontMCPServer {
             },
             author_id: {
               type: 'string',
-              description: 'Teammate ID sending the message (e.g. tea_123). Defaults to the API token owner.',
+              description: 'Teammate ID sending the message (e.g. tea_123). Defaults to API token owner.',
             },
             channel_id: {
               type: 'string',
-              description: 'Channel ID to send through',
+              description: 'Channel ID to send through (e.g. cha_123)',
             },
             subject: {
               type: 'string',
@@ -98,14 +240,44 @@ export class FrontMCPServer {
         },
       },
       {
+        name: 'create_draft',
+        description: 'Create a draft reply for a conversation without sending it; drafts are saved for later review',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conversation_id: {
+              type: 'string',
+              description: 'Conversation ID to create a draft for (e.g. cnv_123)',
+            },
+            author_id: {
+              type: 'string',
+              description: 'Teammate ID authoring the draft (e.g. tea_123)',
+            },
+            body: {
+              type: 'string',
+              description: 'Draft message body text',
+            },
+            channel_id: {
+              type: 'string',
+              description: 'Channel ID for the draft (e.g. cha_123)',
+            },
+            subject: {
+              type: 'string',
+              description: 'Subject line for email drafts',
+            },
+          },
+          required: ['conversation_id', 'author_id', 'body'],
+        },
+      },
+      {
         name: 'list_contacts',
-        description: 'List contacts in Front',
+        description: 'List contacts in the Front workspace with optional pagination',
         inputSchema: {
           type: 'object',
           properties: {
             limit: {
               type: 'number',
-              description: 'Maximum number of contacts to return (max 100, default: 25)',
+              description: 'Maximum contacts to return (max 100, default: 25)',
             },
             page_token: {
               type: 'string',
@@ -116,7 +288,7 @@ export class FrontMCPServer {
       },
       {
         name: 'get_contact',
-        description: 'Get details of a specific contact by ID',
+        description: 'Get full details of a specific contact by ID, including handles and conversation history',
         inputSchema: {
           type: 'object',
           properties: {
@@ -130,7 +302,7 @@ export class FrontMCPServer {
       },
       {
         name: 'create_contact',
-        description: 'Create a new contact in Front',
+        description: 'Create a new contact in Front with name, handles (email/phone/etc.), and optional metadata',
         inputSchema: {
           type: 'object',
           properties: {
@@ -140,7 +312,7 @@ export class FrontMCPServer {
             },
             handles: {
               type: 'array',
-              description: 'Array of contact handle objects with handle and source fields',
+              description: 'Array of contact handle objects, each with "handle" (string) and "source" (email, phone, twitter, etc.)',
               items: { type: 'object' },
             },
             description: {
@@ -149,15 +321,41 @@ export class FrontMCPServer {
             },
             is_spammer: {
               type: 'boolean',
-              description: 'Whether the contact is marked as a spammer',
+              description: 'Mark the contact as a spammer (default: false)',
             },
           },
           required: ['handles'],
         },
       },
       {
+        name: 'update_contact',
+        description: 'Update an existing contact name, description, spammer status, or add/remove handles',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            contact_id: {
+              type: 'string',
+              description: 'Contact ID to update (e.g. crd_123)',
+            },
+            name: {
+              type: 'string',
+              description: 'Updated display name',
+            },
+            description: {
+              type: 'string',
+              description: 'Updated notes or description',
+            },
+            is_spammer: {
+              type: 'boolean',
+              description: 'Update spammer flag',
+            },
+          },
+          required: ['contact_id'],
+        },
+      },
+      {
         name: 'list_inboxes',
-        description: 'List all inboxes accessible by the API token',
+        description: 'List all inboxes accessible to the API token, including channel and team assignments',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -165,13 +363,44 @@ export class FrontMCPServer {
       },
       {
         name: 'list_teammates',
-        description: 'List all teammates in the Front workspace',
+        description: 'List all teammates in the Front workspace with their availability and role information',
         inputSchema: {
           type: 'object',
           properties: {
             limit: {
               type: 'number',
-              description: 'Maximum number of teammates to return (max 100, default: 25)',
+              description: 'Maximum teammates to return (max 100, default: 25)',
+            },
+            page_token: {
+              type: 'string',
+              description: 'Pagination token from a previous response',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_teammate',
+        description: 'Get details of a specific teammate by ID, including availability, role, and inbox assignments',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            teammate_id: {
+              type: 'string',
+              description: 'Teammate ID (e.g. tea_123)',
+            },
+          },
+          required: ['teammate_id'],
+        },
+      },
+      {
+        name: 'list_tags',
+        description: 'List all tags defined in the Front workspace, including child tags and usage metadata',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum tags to return (max 100, default: 25)',
             },
             page_token: {
               type: 'string',
@@ -182,7 +411,7 @@ export class FrontMCPServer {
       },
       {
         name: 'add_conversation_tag',
-        description: 'Add a tag to a conversation',
+        description: 'Add one or more tags to a conversation for categorization and routing',
         inputSchema: {
           type: 'object',
           properties: {
@@ -190,174 +419,268 @@ export class FrontMCPServer {
               type: 'string',
               description: 'Conversation ID (e.g. cnv_123)',
             },
-            tag_id: {
-              type: 'string',
-              description: 'Tag ID to add (e.g. tag_123)',
+            tag_ids: {
+              type: 'array',
+              description: 'Array of tag IDs to add (e.g. ["tag_123", "tag_456"])',
+              items: { type: 'string' },
             },
           },
-          required: ['conversation_id', 'tag_id'],
+          required: ['conversation_id', 'tag_ids'],
         },
       },
     ];
   }
 
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.apiToken}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private truncate(text: string): string {
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async get(path: string): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'GET',
+      headers: this.headers,
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return {
+        content: [{ type: 'text', text: `Front API error ${response.status}: ${errText}` }],
+        isError: true,
+      };
+    }
+    const data = await response.json();
+    return {
+      content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
+      isError: false,
+    };
+  }
+
+  private async post(path: string, body: unknown): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return {
+        content: [{ type: 'text', text: `Front API error ${response.status}: ${errText}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { data = { success: true }; }
+    return {
+      content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
+      isError: false,
+    };
+  }
+
+  private async patch(path: string, body: unknown): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PATCH',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return {
+        content: [{ type: 'text', text: `Front API error ${response.status}: ${errText}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { data = { success: true }; }
+    return {
+      content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
+      isError: false,
+    };
+  }
+
+  private async listConversations(args: Record<string, unknown>): Promise<ToolResult> {
+    const limit = (args.limit as number) ?? 25;
+    const status = (args.status as string) ?? 'open';
+    const params = new URLSearchParams({ limit: String(limit), 'q[statuses][]': status });
+    if (args.inbox_id) params.set('inbox_id', args.inbox_id as string);
+    if (args.tag_id) params.set('tag_id', args.tag_id as string);
+    if (args.teammate_id) params.set('teammate_id', args.teammate_id as string);
+    if (args.page_token) params.set('page_token', args.page_token as string);
+    return this.get(`/conversations?${params}`);
+  }
+
+  private async getConversation(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
+    return this.get(`/conversations/${encodeURIComponent(id)}`);
+  }
+
+  private async updateConversation(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
+    const body: Record<string, unknown> = {};
+    if ('assignee_id' in args) body.assignee_id = args.assignee_id;
+    if (args.inbox_id) body.inbox_id = args.inbox_id;
+    if (args.status) body.status = args.status;
+    return this.patch(`/conversations/${encodeURIComponent(id)}`, body);
+  }
+
+  private async searchConversations(args: Record<string, unknown>): Promise<ToolResult> {
+    const query = args.query as string;
+    if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    const limit = (args.limit as number) ?? 25;
+    const params = new URLSearchParams({ q: query, limit: String(limit) });
+    if (args.page_token) params.set('page_token', args.page_token as string);
+    return this.get(`/conversations/search?${params}`);
+  }
+
+  private async listConversationMessages(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
+    const limit = (args.limit as number) ?? 25;
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (args.page_token) params.set('page_token', args.page_token as string);
+    return this.get(`/conversations/${encodeURIComponent(id)}/messages?${params}`);
+  }
+
+  private async listConversationComments(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
+    return this.get(`/conversations/${encodeURIComponent(id)}/comments`);
+  }
+
+  private async createComment(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    const authorId = args.author_id as string;
+    const body = args.body as string;
+    if (!id || !authorId || !body) {
+      return { content: [{ type: 'text', text: 'conversation_id, author_id, and body are required' }], isError: true };
+    }
+    return this.post(`/conversations/${encodeURIComponent(id)}/comments`, { author_id: authorId, body });
+  }
+
+  private async sendMessage(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    const body = args.body as string;
+    if (!id || !body) {
+      return { content: [{ type: 'text', text: 'conversation_id and body are required' }], isError: true };
+    }
+    const payload: Record<string, unknown> = { body };
+    if (args.author_id) payload.author_id = args.author_id;
+    if (args.channel_id) payload.channel_id = args.channel_id;
+    if (args.subject) payload.subject = args.subject;
+    return this.post(`/conversations/${encodeURIComponent(id)}/messages`, payload);
+  }
+
+  private async createDraft(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    const authorId = args.author_id as string;
+    const body = args.body as string;
+    if (!id || !authorId || !body) {
+      return { content: [{ type: 'text', text: 'conversation_id, author_id, and body are required' }], isError: true };
+    }
+    const payload: Record<string, unknown> = { author_id: authorId, body };
+    if (args.channel_id) payload.channel_id = args.channel_id;
+    if (args.subject) payload.subject = args.subject;
+    return this.post(`/conversations/${encodeURIComponent(id)}/drafts`, payload);
+  }
+
+  private async listContacts(args: Record<string, unknown>): Promise<ToolResult> {
+    const limit = (args.limit as number) ?? 25;
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (args.page_token) params.set('page_token', args.page_token as string);
+    return this.get(`/contacts?${params}`);
+  }
+
+  private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.contact_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
+    return this.get(`/contacts/${encodeURIComponent(id)}`);
+  }
+
+  private async createContact(args: Record<string, unknown>): Promise<ToolResult> {
+    const handles = args.handles;
+    if (!handles || !Array.isArray(handles) || handles.length === 0) {
+      return { content: [{ type: 'text', text: 'handles (array) is required' }], isError: true };
+    }
+    const payload: Record<string, unknown> = { handles };
+    if (args.name) payload.name = args.name;
+    if (args.description) payload.description = args.description;
+    if (typeof args.is_spammer === 'boolean') payload.is_spammer = args.is_spammer;
+    return this.post(`/contacts`, payload);
+  }
+
+  private async updateContact(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.contact_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
+    const payload: Record<string, unknown> = {};
+    if (args.name) payload.name = args.name;
+    if (args.description) payload.description = args.description;
+    if (typeof args.is_spammer === 'boolean') payload.is_spammer = args.is_spammer;
+    return this.patch(`/contacts/${encodeURIComponent(id)}`, payload);
+  }
+
+  private async listInboxes(): Promise<ToolResult> {
+    return this.get(`/inboxes`);
+  }
+
+  private async listTeammates(args: Record<string, unknown>): Promise<ToolResult> {
+    const limit = (args.limit as number) ?? 25;
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (args.page_token) params.set('page_token', args.page_token as string);
+    return this.get(`/teammates?${params}`);
+  }
+
+  private async getTeammate(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.teammate_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'teammate_id is required' }], isError: true };
+    return this.get(`/teammates/${encodeURIComponent(id)}`);
+  }
+
+  private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
+    const limit = (args.limit as number) ?? 25;
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (args.page_token) params.set('page_token', args.page_token as string);
+    return this.get(`/tags?${params}`);
+  }
+
+  private async addConversationTag(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    const tagIds = args.tag_ids as string[];
+    if (!id || !tagIds || !Array.isArray(tagIds) || tagIds.length === 0) {
+      return { content: [{ type: 'text', text: 'conversation_id and tag_ids (array) are required' }], isError: true };
+    }
+    return this.post(`/conversations/${encodeURIComponent(id)}/tags`, { tag_ids: tagIds });
+  }
+
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.apiToken}`,
-        'Content-Type': 'application/json',
-      };
-
       switch (name) {
-        case 'list_conversations': {
-          const limit = (args.limit as number) || 25;
-          const status = (args.status as string) || 'open';
-          let url = `${this.baseUrl}/conversations?limit=${limit}&q[statuses][]=${encodeURIComponent(status)}`;
-          if (args.inbox_id) url += `&inbox_id=${encodeURIComponent(args.inbox_id as string)}`;
-          if (args.tag_id) url += `&tag_id=${encodeURIComponent(args.tag_id as string)}`;
-          if (args.page_token) url += `&page_token=${encodeURIComponent(args.page_token as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list conversations: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Front returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_conversation': {
-          const conversation_id = args.conversation_id as string;
-          if (!conversation_id) {
-            return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get conversation: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Front returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'send_message': {
-          const conversation_id = args.conversation_id as string;
-          const body = args.body as string;
-          if (!conversation_id || !body) {
-            return { content: [{ type: 'text', text: 'conversation_id and body are required' }], isError: true };
-          }
-          const payload: Record<string, unknown> = { body };
-          if (args.author_id) payload.author_id = args.author_id;
-          if (args.channel_id) payload.channel_id = args.channel_id;
-          if (args.subject) payload.subject = args.subject;
-
-          const response = await fetch(`${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/messages`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to send message: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Front returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_contacts': {
-          const limit = (args.limit as number) || 25;
-          let url = `${this.baseUrl}/contacts?limit=${limit}`;
-          if (args.page_token) url += `&page_token=${encodeURIComponent(args.page_token as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list contacts: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Front returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_contact': {
-          const contact_id = args.contact_id as string;
-          if (!contact_id) {
-            return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/contacts/${encodeURIComponent(contact_id)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get contact: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Front returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_contact': {
-          const handles = args.handles;
-          if (!handles) {
-            return { content: [{ type: 'text', text: 'handles is required' }], isError: true };
-          }
-          const payload: Record<string, unknown> = { handles };
-          if (args.name) payload.name = args.name;
-          if (args.description) payload.description = args.description;
-          if (typeof args.is_spammer === 'boolean') payload.is_spammer = args.is_spammer;
-
-          const response = await fetch(`${this.baseUrl}/contacts`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to create contact: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Front returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_inboxes': {
-          const response = await fetch(`${this.baseUrl}/inboxes`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list inboxes: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Front returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_teammates': {
-          const limit = (args.limit as number) || 25;
-          let url = `${this.baseUrl}/teammates?limit=${limit}`;
-          if (args.page_token) url += `&page_token=${encodeURIComponent(args.page_token as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list teammates: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Front returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'add_conversation_tag': {
-          const conversation_id = args.conversation_id as string;
-          const tag_id = args.tag_id as string;
-          if (!conversation_id || !tag_id) {
-            return { content: [{ type: 'text', text: 'conversation_id and tag_id are required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/tags`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ tag_ids: [tag_id] }),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to add tag: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { data = { success: true }; }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_conversations':          return await this.listConversations(args);
+        case 'get_conversation':            return await this.getConversation(args);
+        case 'update_conversation':         return await this.updateConversation(args);
+        case 'search_conversations':        return await this.searchConversations(args);
+        case 'list_conversation_messages':  return await this.listConversationMessages(args);
+        case 'list_conversation_comments':  return await this.listConversationComments(args);
+        case 'create_comment':              return await this.createComment(args);
+        case 'send_message':                return await this.sendMessage(args);
+        case 'create_draft':                return await this.createDraft(args);
+        case 'list_contacts':               return await this.listContacts(args);
+        case 'get_contact':                 return await this.getContact(args);
+        case 'create_contact':              return await this.createContact(args);
+        case 'update_contact':              return await this.updateContact(args);
+        case 'list_inboxes':                return await this.listInboxes();
+        case 'list_teammates':              return await this.listTeammates(args);
+        case 'get_teammate':                return await this.getTeammate(args);
+        case 'list_tags':                   return await this.listTags(args);
+        case 'add_conversation_tag':        return await this.addConversationTag(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }

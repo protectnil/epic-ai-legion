@@ -4,23 +4,29 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found — no official Google/Looker MCP server exists. Community servers (e.g. datadaddy89/looker-mcp, kokevidaurre/looker-admin-mcp) are unofficial and unmaintained.
+// Official MCP: None found as of 2026-03
+// No official Google/Looker MCP server was found on GitHub or npm. Community servers
+// (e.g. datadaddy89/looker-mcp, kokevidaurre/looker-admin-mcp) are unofficial and unmaintained.
+// Our adapter covers 18 tools via the Looker API 4.0 REST interface.
+//
+// Base URL: https://{instance}:19999  (on-premises)  or  https://{instance}.cloud.looker.com  (GCC)
+// Auth: Looker API 4.0 login — POST /api/4.0/login with client_id + client_secret as form body;
+//       returns Bearer token. API 3.1 was removed in Looker 23.18.
+// Docs: https://docs.cloud.google.com/looker/docs/reference/looker-api/latest
+//       https://docs.cloud.google.com/looker/docs/api-4-ga
+// Rate limits: Not publicly documented; governed by instance configuration (default ~10 req/s)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface LookerConfig {
-  /**
-   * Looker API client ID (from the Looker Admin console API key).
-   */
+  /** Looker API client ID from the Admin > API Keys panel. */
   clientId: string;
-  /**
-   * Looker API client secret (from the Looker Admin console API key).
-   */
+  /** Looker API client secret from the Admin > API Keys panel. */
   clientSecret: string;
   /**
-   * Base URL of the Looker instance including port.
-   * Example: https://mycompany.looker.com:19999
-   * For Looker (Google Cloud core): https://mycompany.cloud.looker.com
+   * Base URL of the Looker instance including port if required.
+   * On-premises example:  https://mycompany.looker.com:19999
+   * Looker (Google Cloud core): https://mycompany.cloud.looker.com
    */
   baseUrl: string;
 }
@@ -35,22 +41,310 @@ export class LookerMCPServer {
   constructor(config: LookerConfig) {
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
-    // Normalize: strip trailing slash
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
   }
 
-  /**
-   * Authenticate via POST /api/4.0/login using client_id and client_secret
-   * as application/x-www-form-urlencoded body params.
-   * Returns a Bearer token valid for the session.
-   * Looker API 4.0 is GA as of Looker 22.4; API 3.1 was removed in Looker 23.18.
-   */
+  static catalog() {
+    return {
+      name: 'looker',
+      displayName: 'Looker',
+      version: '1.0.0',
+      category: 'data',
+      keywords: ['looker', 'bi', 'business-intelligence', 'dashboard', 'look', 'explore', 'query', 'lookml', 'report', 'analytics', 'google-cloud'],
+      toolNames: [
+        'list_looks', 'get_look', 'create_look', 'update_look', 'run_look',
+        'list_dashboards', 'get_dashboard', 'search_dashboards',
+        'run_inline_query', 'create_query', 'run_query_by_id',
+        'list_explores', 'get_explore',
+        'list_folders', 'get_folder',
+        'list_users', 'get_current_user',
+        'list_scheduled_plans',
+      ],
+      description: 'Looker BI: run Looks and queries, browse dashboards and Explores, manage folders and users, schedule data deliveries.',
+      author: 'protectnil',
+    };
+  }
+
+  get tools(): ToolDefinition[] {
+    return [
+      // ── Looks ──────────────────────────────────────────────────────────────
+      {
+        name: 'list_looks',
+        description: 'List saved Looks (named queries) in the Looker instance with optional pagination and field selection',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: { type: 'number', description: 'Maximum number of Looks to return (default: 20, max: 500)' },
+            offset: { type: 'number', description: 'Number of Looks to skip for pagination (default: 0)' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include (e.g. id,title,description)' },
+          },
+        },
+      },
+      {
+        name: 'get_look',
+        description: 'Get metadata for a specific Look by its numeric ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            look_id: { type: 'number', description: 'Numeric Looker Look ID' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+          required: ['look_id'],
+        },
+      },
+      {
+        name: 'create_look',
+        description: 'Create a new saved Look from an existing Looker query ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query_id: { type: 'number', description: 'Numeric Looker query ID to base the Look on' },
+            title: { type: 'string', description: 'Title for the new Look' },
+            description: { type: 'string', description: 'Optional description for the Look' },
+            space_id: { type: 'number', description: 'Folder/space ID to save the Look in (defaults to personal folder)' },
+            is_public: { type: 'boolean', description: 'Whether the Look is publicly visible (default: false)' },
+          },
+          required: ['query_id', 'title'],
+        },
+      },
+      {
+        name: 'update_look',
+        description: 'Update an existing Look — title, description, folder, public status, or soft-delete',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            look_id: { type: 'number', description: 'Numeric Looker Look ID to update' },
+            title: { type: 'string', description: 'New title for the Look' },
+            description: { type: 'string', description: 'New description for the Look' },
+            deleted: { type: 'boolean', description: 'Set true to soft-delete; false to restore a deleted Look' },
+            is_public: { type: 'boolean', description: 'Whether the Look is publicly visible' },
+          },
+          required: ['look_id'],
+        },
+      },
+      {
+        name: 'run_look',
+        description: 'Execute a saved Look and return query results in the specified format',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            look_id: { type: 'number', description: 'Numeric Looker Look ID to run' },
+            result_format: { type: 'string', description: 'Output format: json (default), csv, json_detail, txt, html, md' },
+            limit: { type: 'number', description: 'Row limit (default: 500, max: 5000)' },
+            apply_formatting: { type: 'boolean', description: 'Apply number and date formatting (default: false)' },
+          },
+          required: ['look_id'],
+        },
+      },
+      // ── Dashboards ─────────────────────────────────────────────────────────
+      {
+        name: 'list_dashboards',
+        description: 'List all dashboards in the Looker instance with optional pagination and field selection',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: { type: 'number', description: 'Maximum number of dashboards to return (default: 20)' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+        },
+      },
+      {
+        name: 'get_dashboard',
+        description: 'Get full details of a specific Looker dashboard by ID, including tiles and filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            dashboard_id: { type: 'string', description: 'Dashboard ID (numeric string or slug)' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+          required: ['dashboard_id'],
+        },
+      },
+      {
+        name: 'search_dashboards',
+        description: 'Search dashboards by title, folder, creator, or other criteria',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Filter by dashboard title (case-insensitive partial match)' },
+            folder_id: { type: 'string', description: 'Filter dashboards in a specific folder ID' },
+            limit: { type: 'number', description: 'Maximum number of results (default: 20)' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+        },
+      },
+      // ── Queries ────────────────────────────────────────────────────────────
+      {
+        name: 'run_inline_query',
+        description: 'Run an ad-hoc query against a Looker Explore and return results without saving',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            model: { type: 'string', description: 'LookML model name (e.g. ecommerce)' },
+            view: { type: 'string', description: 'Explore (view) name within the model (e.g. orders)' },
+            fields: { type: 'array', description: 'Array of fully-qualified field names to include (e.g. ["orders.count","orders.created_date"])' },
+            filters: { type: 'object', description: 'Key-value filter pairs (e.g. {"orders.status": "complete"})' },
+            limit: { type: 'string', description: 'Row limit as a string (default: "500")' },
+            result_format: { type: 'string', description: 'Output format: json (default), json_detail, csv' },
+            sorts: { type: 'array', description: 'Array of sort strings (e.g. ["orders.count desc"])' },
+          },
+          required: ['model', 'view', 'fields'],
+        },
+      },
+      {
+        name: 'create_query',
+        description: 'Create and persist a Looker query object, returning a query ID that can be referenced later',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            model: { type: 'string', description: 'LookML model name' },
+            view: { type: 'string', description: 'Explore (view) name within the model' },
+            fields: { type: 'array', description: 'Array of fully-qualified field names to include' },
+            filters: { type: 'object', description: 'Key-value filter pairs' },
+            limit: { type: 'string', description: 'Row limit as a string (default: "500")' },
+            sorts: { type: 'array', description: 'Array of sort strings' },
+          },
+          required: ['model', 'view', 'fields'],
+        },
+      },
+      {
+        name: 'run_query_by_id',
+        description: 'Run a previously created Looker query by its query ID and return results',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query_id: { type: 'number', description: 'Numeric Looker query ID to run' },
+            result_format: { type: 'string', description: 'Output format: json (default), json_detail, csv, txt' },
+            limit: { type: 'number', description: 'Row limit override (default: uses query setting)' },
+          },
+          required: ['query_id'],
+        },
+      },
+      // ── Explores ───────────────────────────────────────────────────────────
+      {
+        name: 'list_explores',
+        description: 'List all Explores available in a specific LookML model',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            model_name: { type: 'string', description: 'LookML model name to list Explores for' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+          required: ['model_name'],
+        },
+      },
+      {
+        name: 'get_explore',
+        description: 'Get the full field and filter metadata for a specific LookML model Explore',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            model_name: { type: 'string', description: 'LookML model name' },
+            explore_name: { type: 'string', description: 'Explore name within the model' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+          required: ['model_name', 'explore_name'],
+        },
+      },
+      // ── Folders ────────────────────────────────────────────────────────────
+      {
+        name: 'list_folders',
+        description: 'List top-level Looker folders with optional search filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+        },
+      },
+      {
+        name: 'get_folder',
+        description: 'Get details of a specific Looker folder, including its child folders and contents',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            folder_id: { type: 'string', description: 'Folder ID to retrieve' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+          required: ['folder_id'],
+        },
+      },
+      // ── Users ──────────────────────────────────────────────────────────────
+      {
+        name: 'list_users',
+        description: 'List all Looker users with optional pagination and field selection',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: { type: 'number', description: 'Maximum number of users to return (default: 20)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+        },
+      },
+      {
+        name: 'get_current_user',
+        description: 'Get the profile of the currently authenticated Looker API user',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      // ── Scheduled Plans ────────────────────────────────────────────────────
+      {
+        name: 'list_scheduled_plans',
+        description: 'List scheduled delivery plans for Looks or dashboards with optional filter by user',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            user_id: { type: 'number', description: 'Filter scheduled plans owned by this user ID (omit to return your own plans)' },
+            all_users: { type: 'boolean', description: 'Set true to return plans for all users (requires admin; default: false)' },
+            fields: { type: 'string', description: 'Comma-separated list of response fields to include' },
+          },
+        },
+      },
+    ];
+  }
+
+  async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+    try {
+      switch (name) {
+        case 'list_looks':            return await this.listLooks(args);
+        case 'get_look':              return await this.getLook(args);
+        case 'create_look':           return await this.createLook(args);
+        case 'update_look':           return await this.updateLook(args);
+        case 'run_look':              return await this.runLook(args);
+        case 'list_dashboards':       return await this.listDashboards(args);
+        case 'get_dashboard':         return await this.getDashboard(args);
+        case 'search_dashboards':     return await this.searchDashboards(args);
+        case 'run_inline_query':      return await this.runInlineQuery(args);
+        case 'create_query':          return await this.createQuery(args);
+        case 'run_query_by_id':       return await this.runQueryById(args);
+        case 'list_explores':         return await this.listExplores(args);
+        case 'get_explore':           return await this.getExplore(args);
+        case 'list_folders':          return await this.listFolders(args);
+        case 'get_folder':            return await this.getFolder(args);
+        case 'list_users':            return await this.listUsers(args);
+        case 'get_current_user':      return await this.getCurrentUser();
+        case 'list_scheduled_plans':  return await this.listScheduledPlans(args);
+        default:
+          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
+      }
+    } catch (error) {
+      return {
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
+        isError: true,
+      };
+    }
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
   private async getAccessToken(): Promise<string> {
     const now = Date.now();
-    if (this.accessToken && now < this.tokenExpiresAt - 30000) {
+    if (this.accessToken && now < this.tokenExpiresAt - 30_000) {
       return this.accessToken;
     }
-
     const response = await fetch(`${this.baseUrl}/api/4.0/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -59,448 +353,226 @@ export class LookerMCPServer {
         client_secret: this.clientSecret,
       }).toString(),
     });
-
     if (!response.ok) {
-      throw new Error(`Looker authentication failed: HTTP ${response.status} ${response.statusText}`);
+      throw new Error(`Looker authentication failed: ${response.status} ${response.statusText}`);
     }
-
-    let tokenData: { access_token: string; expires_in: number };
-    try {
-      tokenData = await response.json() as { access_token: string; expires_in: number };
-    } catch {
-      throw new Error(`Looker returned non-JSON response during login (HTTP ${response.status})`);
-    }
-
+    const tokenData = await response.json() as { access_token: string; expires_in: number };
     this.accessToken = tokenData.access_token;
     this.tokenExpiresAt = now + tokenData.expires_in * 1000;
     return this.accessToken;
   }
 
-  get tools(): ToolDefinition[] {
-    return [
-      {
-        name: 'list_looks',
-        description: 'List Looks (saved queries) in the Looker instance',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of Looks to return (default: 20)',
-            },
-            offset: {
-              type: 'number',
-              description: 'Number of Looks to skip for pagination (default: 0)',
-            },
-            fields: {
-              type: 'string',
-              description: 'Comma-separated list of fields to include in the response',
-            },
-          },
-        },
-      },
-      {
-        name: 'get_look',
-        description: 'Get a specific Look by ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            look_id: {
-              type: 'number',
-              description: 'The numeric ID of the Look to retrieve',
-            },
-            fields: {
-              type: 'string',
-              description: 'Comma-separated list of fields to include in the response',
-            },
-          },
-          required: ['look_id'],
-        },
-      },
-      {
-        name: 'run_look',
-        description: 'Run a Look and return results in the specified format',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            look_id: {
-              type: 'number',
-              description: 'The numeric ID of the Look to run',
-            },
-            result_format: {
-              type: 'string',
-              description: 'Output format: "json" (default), "csv", "json_detail", "txt", "html", "md"',
-            },
-            limit: {
-              type: 'number',
-              description: 'Row limit (max 5000)',
-            },
-          },
-          required: ['look_id'],
-        },
-      },
-      {
-        name: 'run_inline_query',
-        description: 'Run an inline query against a Looker Explore and return results',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            model: {
-              type: 'string',
-              description: 'The LookML model name',
-            },
-            view: {
-              type: 'string',
-              description: 'The Explore (view) name within the model',
-            },
-            fields: {
-              type: 'array',
-              description: 'Array of field names to include (e.g. ["orders.id", "orders.count"])',
-            },
-            filters: {
-              type: 'object',
-              description: 'Key-value filter object (e.g. {"orders.status": "complete"})',
-            },
-            limit: {
-              type: 'string',
-              description: 'Row limit as a string (default: "500")',
-            },
-            result_format: {
-              type: 'string',
-              description: 'Output format: "json" (default), "json_detail", "csv"',
-            },
-          },
-          required: ['model', 'view', 'fields'],
-        },
-      },
-      {
-        name: 'list_dashboards',
-        description: 'List all dashboards in the Looker instance',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of dashboards to return (default: 20)',
-            },
-            fields: {
-              type: 'string',
-              description: 'Comma-separated list of fields to include in the response',
-            },
-          },
-        },
-      },
-      {
-        name: 'get_dashboard',
-        description: 'Get a specific dashboard by ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            dashboard_id: {
-              type: 'string',
-              description: 'The dashboard ID (numeric or slug)',
-            },
-            fields: {
-              type: 'string',
-              description: 'Comma-separated list of fields to include in the response',
-            },
-          },
-          required: ['dashboard_id'],
-        },
-      },
-      {
-        name: 'search_dashboards',
-        description: 'Search dashboards by title or other criteria',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            title: {
-              type: 'string',
-              description: 'Filter by dashboard title (case-insensitive, partial match)',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of results (default: 20)',
-            },
-            fields: {
-              type: 'string',
-              description: 'Comma-separated list of fields to include',
-            },
-          },
-        },
-      },
-      {
-        name: 'list_explores',
-        description: 'List all Explores available in a LookML model',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            model_name: {
-              type: 'string',
-              description: 'The LookML model name to list Explores for',
-            },
-            fields: {
-              type: 'string',
-              description: 'Comma-separated list of fields to include in the response',
-            },
-          },
-          required: ['model_name'],
-        },
-      },
-      {
-        name: 'get_current_user',
-        description: 'Get the profile of the currently authenticated Looker user',
-        inputSchema: {
-          type: 'object',
-          properties: {},
-        },
-      },
-    ];
+  private async headers(): Promise<Record<string, string>> {
+    const token = await this.getAccessToken();
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
   }
 
-  async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
-    try {
-      const token = await this.getAccessToken();
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
 
-      switch (name) {
-        case 'list_looks': {
-          const limit = (args.limit as number) || 20;
-          const offset = (args.offset as number) || 0;
-          let url = `${this.baseUrl}/api/4.0/looks?limit=${limit}&offset=${offset}`;
-          if (args.fields) url += `&fields=${encodeURIComponent(args.fields as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list looks: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_look': {
-          const lookId = args.look_id as number;
-
-          if (!lookId) {
-            return {
-              content: [{ type: 'text', text: 'look_id is required' }],
-              isError: true,
-            };
-          }
-
-          let url = `${this.baseUrl}/api/4.0/looks/${lookId}`;
-          if (args.fields) url += `?fields=${encodeURIComponent(args.fields as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get look: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'run_look': {
-          const lookId = args.look_id as number;
-
-          if (!lookId) {
-            return {
-              content: [{ type: 'text', text: 'look_id is required' }],
-              isError: true,
-            };
-          }
-
-          const resultFormat = (args.result_format as string) || 'json';
-          let url = `${this.baseUrl}/api/4.0/looks/${lookId}/run/${encodeURIComponent(resultFormat)}`;
-          if (args.limit) url += `?limit=${args.limit as number}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to run look: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'run_inline_query': {
-          const model = args.model as string;
-          const view = args.view as string;
-          const fields = args.fields as string[];
-
-          if (!model || !view || !fields) {
-            return {
-              content: [{ type: 'text', text: 'model, view, and fields are required' }],
-              isError: true,
-            };
-          }
-
-          const resultFormat = (args.result_format as string) || 'json';
-          const body: Record<string, unknown> = {
-            model,
-            view,
-            fields,
-            limit: (args.limit as string) || '500',
-          };
-          if (args.filters) body.filters = args.filters;
-
-          const response = await fetch(
-            `${this.baseUrl}/api/4.0/queries/run/${encodeURIComponent(resultFormat)}`,
-            { method: 'POST', headers, body: JSON.stringify(body) }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to run inline query: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_dashboards': {
-          const limit = (args.limit as number) || 20;
-          let url = `${this.baseUrl}/api/4.0/dashboards?limit=${limit}`;
-          if (args.fields) url += `&fields=${encodeURIComponent(args.fields as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list dashboards: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_dashboard': {
-          const dashboardId = args.dashboard_id as string;
-
-          if (!dashboardId) {
-            return {
-              content: [{ type: 'text', text: 'dashboard_id is required' }],
-              isError: true,
-            };
-          }
-
-          let url = `${this.baseUrl}/api/4.0/dashboards/${encodeURIComponent(dashboardId)}`;
-          if (args.fields) url += `?fields=${encodeURIComponent(args.fields as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get dashboard: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'search_dashboards': {
-          let url = `${this.baseUrl}/api/4.0/dashboards/search`;
-          const params: string[] = [];
-          if (args.title) params.push(`title=${encodeURIComponent(args.title as string)}`);
-          if (args.limit) params.push(`limit=${args.limit as number}`);
-          if (args.fields) params.push(`fields=${encodeURIComponent(args.fields as string)}`);
-          if (params.length > 0) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to search dashboards: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_explores': {
-          const modelName = args.model_name as string;
-
-          if (!modelName) {
-            return {
-              content: [{ type: 'text', text: 'model_name is required' }],
-              isError: true,
-            };
-          }
-
-          let url = `${this.baseUrl}/api/4.0/lookml_models/${encodeURIComponent(modelName)}/explores`;
-          if (args.fields) url += `?fields=${encodeURIComponent(args.fields as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list explores: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_current_user': {
-          const response = await fetch(`${this.baseUrl}/api/4.0/user`, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get current user: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Looker returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        default:
-          return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-            isError: true,
-          };
-      }
-    } catch (error) {
-      return {
-        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
-        isError: true,
-      };
+  private async get(path: string): Promise<unknown> {
+    const h = await this.headers();
+    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: h });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText} — ${path}`);
     }
+    return response.json();
+  }
+
+  private async post(path: string, body: unknown): Promise<unknown> {
+    const h = await this.headers();
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: h,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText} — ${path}`);
+    }
+    return response.json();
+  }
+
+  private async patch(path: string, body: unknown): Promise<unknown> {
+    const h = await this.headers();
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PATCH',
+      headers: h,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText} — ${path}`);
+    }
+    return response.json();
+  }
+
+  private ok(data: unknown): ToolResult {
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listLooks(args: Record<string, unknown>): Promise<ToolResult> {
+    const limit = (args.limit as number) ?? 20;
+    const offset = (args.offset as number) ?? 0;
+    let path = `/api/4.0/looks?limit=${limit}&offset=${offset}`;
+    if (args.fields) path += `&fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async getLook(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.look_id) return { content: [{ type: 'text', text: 'look_id is required' }], isError: true };
+    let path = `/api/4.0/looks/${args.look_id as number}`;
+    if (args.fields) path += `?fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async createLook(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.query_id || !args.title) {
+      return { content: [{ type: 'text', text: 'query_id and title are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = { query_id: args.query_id, title: args.title };
+    if (args.description) body.description = args.description;
+    if (args.space_id) body.folder = { id: String(args.space_id) };
+    if (args.is_public !== undefined) body.is_public = args.is_public;
+    return this.ok(await this.post('/api/4.0/looks', body));
+  }
+
+  private async updateLook(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.look_id) return { content: [{ type: 'text', text: 'look_id is required' }], isError: true };
+    const body: Record<string, unknown> = {};
+    if (args.title !== undefined) body.title = args.title;
+    if (args.description !== undefined) body.description = args.description;
+    if (args.deleted !== undefined) body.deleted = args.deleted;
+    if (args.is_public !== undefined) body.is_public = args.is_public;
+    return this.ok(await this.patch(`/api/4.0/looks/${args.look_id as number}`, body));
+  }
+
+  private async runLook(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.look_id) return { content: [{ type: 'text', text: 'look_id is required' }], isError: true };
+    const fmt = (args.result_format as string) ?? 'json';
+    let path = `/api/4.0/looks/${args.look_id as number}/run/${encodeURIComponent(fmt)}`;
+    const params: string[] = [];
+    if (args.limit) params.push(`limit=${args.limit as number}`);
+    if (args.apply_formatting) params.push(`apply_formatting=${String(args.apply_formatting)}`);
+    if (params.length) path += `?${params.join('&')}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async listDashboards(args: Record<string, unknown>): Promise<ToolResult> {
+    const limit = (args.limit as number) ?? 20;
+    let path = `/api/4.0/dashboards?limit=${limit}`;
+    if (args.fields) path += `&fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async getDashboard(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.dashboard_id) return { content: [{ type: 'text', text: 'dashboard_id is required' }], isError: true };
+    let path = `/api/4.0/dashboards/${encodeURIComponent(args.dashboard_id as string)}`;
+    if (args.fields) path += `?fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async searchDashboards(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.title) params.set('title', args.title as string);
+    if (args.folder_id) params.set('folder_id', args.folder_id as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.fields) params.set('fields', args.fields as string);
+    const path = `/api/4.0/dashboards/search${params.toString() ? '?' + params.toString() : ''}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async runInlineQuery(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.model || !args.view || !args.fields) {
+      return { content: [{ type: 'text', text: 'model, view, and fields are required' }], isError: true };
+    }
+    const fmt = (args.result_format as string) ?? 'json';
+    const body: Record<string, unknown> = {
+      model: args.model,
+      view: args.view,
+      fields: args.fields,
+      limit: (args.limit as string) ?? '500',
+    };
+    if (args.filters) body.filters = args.filters;
+    if (args.sorts) body.sorts = args.sorts;
+    return this.ok(await this.post(`/api/4.0/queries/run/${encodeURIComponent(fmt)}`, body));
+  }
+
+  private async createQuery(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.model || !args.view || !args.fields) {
+      return { content: [{ type: 'text', text: 'model, view, and fields are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = {
+      model: args.model,
+      view: args.view,
+      fields: args.fields,
+      limit: (args.limit as string) ?? '500',
+    };
+    if (args.filters) body.filters = args.filters;
+    if (args.sorts) body.sorts = args.sorts;
+    return this.ok(await this.post('/api/4.0/queries', body));
+  }
+
+  private async runQueryById(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.query_id) return { content: [{ type: 'text', text: 'query_id is required' }], isError: true };
+    const fmt = (args.result_format as string) ?? 'json';
+    let path = `/api/4.0/queries/${args.query_id as number}/run/${encodeURIComponent(fmt)}`;
+    if (args.limit) path += `?limit=${args.limit as number}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async listExplores(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.model_name) return { content: [{ type: 'text', text: 'model_name is required' }], isError: true };
+    let path = `/api/4.0/lookml_models/${encodeURIComponent(args.model_name as string)}/explores`;
+    if (args.fields) path += `?fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async getExplore(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.model_name || !args.explore_name) {
+      return { content: [{ type: 'text', text: 'model_name and explore_name are required' }], isError: true };
+    }
+    let path = `/api/4.0/lookml_models/${encodeURIComponent(args.model_name as string)}/explores/${encodeURIComponent(args.explore_name as string)}`;
+    if (args.fields) path += `?fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async listFolders(args: Record<string, unknown>): Promise<ToolResult> {
+    let path = '/api/4.0/folders';
+    if (args.fields) path += `?fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async getFolder(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.folder_id) return { content: [{ type: 'text', text: 'folder_id is required' }], isError: true };
+    let path = `/api/4.0/folders/${encodeURIComponent(args.folder_id as string)}`;
+    if (args.fields) path += `?fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
+    const limit = (args.limit as number) ?? 20;
+    const offset = (args.offset as number) ?? 0;
+    let path = `/api/4.0/users?limit=${limit}&offset=${offset}`;
+    if (args.fields) path += `&fields=${encodeURIComponent(args.fields as string)}`;
+    return this.ok(await this.get(path));
+  }
+
+  private async getCurrentUser(): Promise<ToolResult> {
+    return this.ok(await this.get('/api/4.0/user'));
+  }
+
+  private async listScheduledPlans(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.user_id) params.set('user_id', String(args.user_id));
+    if (args.all_users) params.set('all_users', 'true');
+    if (args.fields) params.set('fields', args.fields as string);
+    const path = `/api/4.0/scheduled_plans${params.toString() ? '?' + params.toString() : ''}`;
+    return this.ok(await this.get(path));
   }
 }

@@ -1,4 +1,23 @@
-/** MongoDB MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
+/**
+ * MongoDB Atlas Data API MCP Adapter
+ * Built on the Epic AI® Intelligence Platform
+ * Copyright 2026 protectNIL Inc. Apache-2.0
+ */
+
+// Official MCP: https://github.com/mongodb-js/mongodb-mcp-server — transport: stdio, auth: connection string
+// The official MongoDB MCP server (mongodb-js/mongodb-mcp-server) is actively maintained and connects
+// via native MongoDB driver (connection string). It exposes 20+ tools covering the full query surface.
+// Recommendation: Use official MCP for direct driver access. Use this adapter for Atlas Data API
+// (HTTPS-only, no driver install required, firewall-friendly, air-gapped deployments).
+//
+// NOTE: The MongoDB Atlas Data API (app-services endpoint) reached End-of-Life in September 2025.
+// This adapter targets the legacy Data API v1 for existing deployments still using it.
+// New deployments should use the official MCP server with a connection string.
+//
+// Base URL: https://data.mongodb-api.com/app/{appId}/endpoint/data/v1
+// Auth: api-key header
+// Docs: https://www.mongodb.com/docs/api/doc/atlas-data-api-v1/
+// Rate limits: Not documented; subject to Atlas App Services tier limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -7,113 +26,330 @@ interface MongoDBConfig {
   apiKey: string;
   dataSource: string;
   database: string;
+  /** Override base URL (optional) */
+  baseUrl?: string;
 }
 
 export class MongoDBMCPServer {
-  private config: MongoDBConfig;
-  private baseUrl: string;
+  private readonly apiKey: string;
+  private readonly dataSource: string;
+  private readonly database: string;
+  private readonly baseUrl: string;
 
   constructor(config: MongoDBConfig) {
-    this.config = config;
-    this.baseUrl = `https://data.mongodb-api.com/app/${config.appId}/endpoint/data/v1`;
+    this.apiKey = config.apiKey;
+    this.dataSource = config.dataSource;
+    this.database = config.database;
+    this.baseUrl = config.baseUrl ?? `https://data.mongodb-api.com/app/${config.appId}/endpoint/data/v1`;
+  }
+
+  static catalog() {
+    return {
+      name: 'mongodb',
+      displayName: 'MongoDB',
+      version: '1.0.0',
+      category: 'data' as const,
+      keywords: [
+        'mongodb', 'atlas', 'nosql', 'document-database', 'find', 'aggregate',
+        'insert', 'update', 'delete', 'collection', 'database', 'data-api',
+        'pipeline', 'filter', 'query',
+      ],
+      toolNames: [
+        'find', 'find_one', 'insert_one', 'insert_many', 'update_one', 'update_many',
+        'delete_one', 'delete_many', 'aggregate', 'count_documents',
+      ],
+      description: 'MongoDB Atlas Data API: find, insert, update, delete, and aggregate documents in Atlas collections over HTTPS without a MongoDB driver.',
+      author: 'protectnil' as const,
+    };
+  }
+
+  private get headers(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'api-key': this.apiKey,
+    };
+  }
+
+  private truncate(text: string): string {
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async doAction(endpoint: string, payload: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}/${endpoint}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(payload),
+    });
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      data = { status: response.status, statusText: response.statusText };
+    }
+    return {
+      content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
+      isError: !response.ok,
+    };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'find',
-        description: 'Find documents in a MongoDB collection',
+        description: 'Query multiple documents from a MongoDB collection with optional filter, projection, sort, limit, and skip.',
         inputSchema: {
           type: 'object',
           properties: {
-            collection: { type: 'string', description: 'Collection name' },
-            filter: { type: 'object', description: 'Query filter document' },
-            projection: { type: 'object', description: 'Fields to include or exclude' },
-            sort: { type: 'object', description: 'Sort order' },
-            limit: { type: 'number', description: 'Maximum number of documents to return' },
-            skip: { type: 'number', description: 'Number of documents to skip' },
-            database: { type: 'string', description: 'Database name override' },
+            collection: {
+              type: 'string',
+              description: 'Collection name to query',
+            },
+            filter: {
+              type: 'object',
+              description: 'MongoDB query filter document (default: {} — returns all documents)',
+            },
+            projection: {
+              type: 'object',
+              description: 'Fields to include (1) or exclude (0), e.g. { "name": 1, "_id": 0 } (optional)',
+            },
+            sort: {
+              type: 'object',
+              description: 'Sort specification, e.g. { "createdAt": -1 } for descending (optional)',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of documents to return (optional)',
+            },
+            skip: {
+              type: 'number',
+              description: 'Number of documents to skip for pagination (optional)',
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (defaults to configured database)',
+            },
+          },
+          required: ['collection'],
+        },
+      },
+      {
+        name: 'find_one',
+        description: 'Find the first document in a MongoDB collection matching a filter. Returns null if no document matches.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            collection: {
+              type: 'string',
+              description: 'Collection name to query',
+            },
+            filter: {
+              type: 'object',
+              description: 'MongoDB query filter document (default: {} — returns first document)',
+            },
+            projection: {
+              type: 'object',
+              description: 'Fields to include or exclude (optional)',
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
           },
           required: ['collection'],
         },
       },
       {
         name: 'insert_one',
-        description: 'Insert a single document into a collection',
+        description: 'Insert a single document into a MongoDB collection. Returns the inserted document ID.',
         inputSchema: {
           type: 'object',
           properties: {
-            collection: { type: 'string', description: 'Collection name' },
-            document: { type: 'object', description: 'Document to insert' },
-            database: { type: 'string', description: 'Database name override' },
+            collection: {
+              type: 'string',
+              description: 'Collection name to insert into',
+            },
+            document: {
+              type: 'object',
+              description: 'Document object to insert',
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
           },
           required: ['collection', 'document'],
         },
       },
       {
-        name: 'update_one',
-        description: 'Update the first document matching a filter',
+        name: 'insert_many',
+        description: 'Insert multiple documents into a MongoDB collection in a single request. Returns inserted document IDs.',
         inputSchema: {
           type: 'object',
           properties: {
-            collection: { type: 'string', description: 'Collection name' },
-            filter: { type: 'object', description: 'Query filter to match document' },
-            update: { type: 'object', description: 'Update operations to apply' },
-            upsert: { type: 'boolean', description: 'Insert if no document matches (default false)' },
-            database: { type: 'string', description: 'Database name override' },
+            collection: {
+              type: 'string',
+              description: 'Collection name to insert into',
+            },
+            documents: {
+              type: 'array',
+              description: 'Array of document objects to insert',
+              items: { type: 'object' },
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
+          },
+          required: ['collection', 'documents'],
+        },
+      },
+      {
+        name: 'update_one',
+        description: 'Update the first document matching a filter in a MongoDB collection. Supports upsert.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            collection: {
+              type: 'string',
+              description: 'Collection name',
+            },
+            filter: {
+              type: 'object',
+              description: 'Query filter to match the document to update',
+            },
+            update: {
+              type: 'object',
+              description: 'Update operator document, e.g. { "$set": { "status": "active" } } or { "$inc": { "count": 1 } }',
+            },
+            upsert: {
+              type: 'boolean',
+              description: 'Insert a new document if no document matches the filter (default: false)',
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
+          },
+          required: ['collection', 'filter', 'update'],
+        },
+      },
+      {
+        name: 'update_many',
+        description: 'Update all documents matching a filter in a MongoDB collection. Supports upsert.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            collection: {
+              type: 'string',
+              description: 'Collection name',
+            },
+            filter: {
+              type: 'object',
+              description: 'Query filter to match documents to update',
+            },
+            update: {
+              type: 'object',
+              description: 'Update operator document, e.g. { "$set": { "archived": true } }',
+            },
+            upsert: {
+              type: 'boolean',
+              description: 'Insert a new document if no documents match the filter (default: false)',
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
           },
           required: ['collection', 'filter', 'update'],
         },
       },
       {
         name: 'delete_one',
-        description: 'Delete the first document matching a filter',
+        description: 'Delete the first document matching a filter from a MongoDB collection.',
         inputSchema: {
           type: 'object',
           properties: {
-            collection: { type: 'string', description: 'Collection name' },
-            filter: { type: 'object', description: 'Query filter to match document' },
-            database: { type: 'string', description: 'Database name override' },
+            collection: {
+              type: 'string',
+              description: 'Collection name',
+            },
+            filter: {
+              type: 'object',
+              description: 'Query filter to match the document to delete',
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
+          },
+          required: ['collection', 'filter'],
+        },
+      },
+      {
+        name: 'delete_many',
+        description: 'Delete all documents matching a filter from a MongoDB collection. Use with caution — no undo.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            collection: {
+              type: 'string',
+              description: 'Collection name',
+            },
+            filter: {
+              type: 'object',
+              description: 'Query filter to match documents to delete. Must be explicitly provided — empty filter {} deletes all documents.',
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
           },
           required: ['collection', 'filter'],
         },
       },
       {
         name: 'aggregate',
-        description: 'Run an aggregation pipeline on a collection',
+        description: 'Run an aggregation pipeline on a MongoDB collection. Supports all pipeline stages: $match, $group, $sort, $lookup, $project, $unwind, etc.',
         inputSchema: {
           type: 'object',
           properties: {
-            collection: { type: 'string', description: 'Collection name' },
-            pipeline: { type: 'array', description: 'Aggregation pipeline stages', items: { type: 'object' } },
-            database: { type: 'string', description: 'Database name override' },
+            collection: {
+              type: 'string',
+              description: 'Collection name to aggregate',
+            },
+            pipeline: {
+              type: 'array',
+              description: 'Array of aggregation pipeline stage objects, e.g. [{ "$match": { "status": "active" } }, { "$group": { "_id": "$category", "count": { "$sum": 1 } } }]',
+              items: { type: 'object' },
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
           },
           required: ['collection', 'pipeline'],
         },
       },
       {
-        name: 'find_one',
-        description: 'Find the first document in a collection matching a filter',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            collection: { type: 'string', description: 'Collection name' },
-            filter: { type: 'object', description: 'Query filter document' },
-            projection: { type: 'object', description: 'Fields to include or exclude' },
-            database: { type: 'string', description: 'Database name override' },
-          },
-          required: ['collection'],
-        },
-      },
-      {
         name: 'count_documents',
-        description: 'Count documents in a collection matching a filter',
+        description: 'Count documents in a MongoDB collection matching an optional filter.',
         inputSchema: {
           type: 'object',
           properties: {
-            collection: { type: 'string', description: 'Collection name' },
-            filter: { type: 'object', description: 'Query filter document' },
-            database: { type: 'string', description: 'Database name override' },
+            collection: {
+              type: 'string',
+              description: 'Collection name',
+            },
+            filter: {
+              type: 'object',
+              description: 'Query filter document (default: {} — counts all documents)',
+            },
+            database: {
+              type: 'string',
+              description: 'Database name override (optional)',
+            },
           },
           required: ['collection'],
         },
@@ -122,124 +358,129 @@ export class MongoDBMCPServer {
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'api-key': this.config.apiKey,
-    };
-
-    const database = String(args.database ?? this.config.database);
-
     try {
-      let endpoint: string;
-      let body: unknown;
-
       switch (name) {
-        case 'find': {
-          endpoint = 'action/find';
-          body = {
-            dataSource: this.config.dataSource,
-            database,
-            collection: args.collection,
-            filter: args.filter ?? {},
-            projection: args.projection,
-            sort: args.sort,
-            limit: args.limit,
-            skip: args.skip,
-          };
-          break;
-        }
-        case 'insert_one': {
-          endpoint = 'action/insertOne';
-          body = {
-            dataSource: this.config.dataSource,
-            database,
-            collection: args.collection,
-            document: args.document,
-          };
-          break;
-        }
-        case 'update_one': {
-          endpoint = 'action/updateOne';
-          body = {
-            dataSource: this.config.dataSource,
-            database,
-            collection: args.collection,
-            filter: args.filter,
-            update: args.update,
-            upsert: args.upsert ?? false,
-          };
-          break;
-        }
-        case 'delete_one': {
-          endpoint = 'action/deleteOne';
-          body = {
-            dataSource: this.config.dataSource,
-            database,
-            collection: args.collection,
-            filter: args.filter,
-          };
-          break;
-        }
-        case 'aggregate': {
-          endpoint = 'action/aggregate';
-          body = {
-            dataSource: this.config.dataSource,
-            database,
-            collection: args.collection,
-            pipeline: args.pipeline,
-          };
-          break;
-        }
-        case 'find_one': {
-          endpoint = 'action/findOne';
-          body = {
-            dataSource: this.config.dataSource,
-            database,
-            collection: args.collection,
-            filter: args.filter ?? {},
-            projection: args.projection,
-          };
-          break;
-        }
-        case 'count_documents': {
-          endpoint = 'action/count';
-          body = {
-            dataSource: this.config.dataSource,
-            database,
-            collection: args.collection,
-            filter: args.filter ?? {},
-          };
-          break;
-        }
+        case 'find':
+          return await this.find(args);
+        case 'find_one':
+          return await this.findOne(args);
+        case 'insert_one':
+          return await this.insertOne(args);
+        case 'insert_many':
+          return await this.insertMany(args);
+        case 'update_one':
+          return await this.updateOne(args);
+        case 'update_many':
+          return await this.updateMany(args);
+        case 'delete_one':
+          return await this.deleteOne(args);
+        case 'delete_many':
+          return await this.deleteMany(args);
+        case 'aggregate':
+          return await this.aggregate(args);
+        case 'count_documents':
+          return await this.countDocuments(args);
         default:
-          return {
-            content: [{ type: 'text', text: JSON.stringify({ error: `Unknown tool: ${name}` }, null, 2) }],
-            isError: true,
-          };
+          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
-
-      const response = await fetch(`${this.baseUrl}/${endpoint}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      let data: unknown;
-      try {
-        data = await response.json();
-      } catch {
-        data = { status: response.status, statusText: response.statusText };
-      }
-
-      return {
-        content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-        isError: !response.ok,
-      };
     } catch (err) {
       return {
-        content: [{ type: 'text', text: JSON.stringify({ error: String(err) }, null, 2) }],
+        content: [{ type: 'text', text: `Tool execution failed: ${err instanceof Error ? err.message : String(err)}` }],
         isError: true,
       };
     }
+  }
+
+  private resolveDatabase(args: Record<string, unknown>): string {
+    return args.database ? String(args.database) : this.database;
+  }
+
+  private basePayload(args: Record<string, unknown>): Record<string, unknown> {
+    return {
+      dataSource: this.dataSource,
+      database: this.resolveDatabase(args),
+      collection: args.collection,
+    };
+  }
+
+  private async find(args: Record<string, unknown>): Promise<ToolResult> {
+    const payload: Record<string, unknown> = {
+      ...this.basePayload(args),
+      filter: args.filter ?? {},
+    };
+    if (args.projection !== undefined) payload.projection = args.projection;
+    if (args.sort !== undefined) payload.sort = args.sort;
+    if (args.limit !== undefined) payload.limit = args.limit;
+    if (args.skip !== undefined) payload.skip = args.skip;
+    return this.doAction('action/find', payload);
+  }
+
+  private async findOne(args: Record<string, unknown>): Promise<ToolResult> {
+    const payload: Record<string, unknown> = {
+      ...this.basePayload(args),
+      filter: args.filter ?? {},
+    };
+    if (args.projection !== undefined) payload.projection = args.projection;
+    return this.doAction('action/findOne', payload);
+  }
+
+  private async insertOne(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.doAction('action/insertOne', {
+      ...this.basePayload(args),
+      document: args.document,
+    });
+  }
+
+  private async insertMany(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.doAction('action/insertMany', {
+      ...this.basePayload(args),
+      documents: args.documents,
+    });
+  }
+
+  private async updateOne(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.doAction('action/updateOne', {
+      ...this.basePayload(args),
+      filter: args.filter,
+      update: args.update,
+      upsert: args.upsert ?? false,
+    });
+  }
+
+  private async updateMany(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.doAction('action/updateMany', {
+      ...this.basePayload(args),
+      filter: args.filter,
+      update: args.update,
+      upsert: args.upsert ?? false,
+    });
+  }
+
+  private async deleteOne(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.doAction('action/deleteOne', {
+      ...this.basePayload(args),
+      filter: args.filter,
+    });
+  }
+
+  private async deleteMany(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.doAction('action/deleteMany', {
+      ...this.basePayload(args),
+      filter: args.filter,
+    });
+  }
+
+  private async aggregate(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.doAction('action/aggregate', {
+      ...this.basePayload(args),
+      pipeline: args.pipeline,
+    });
+  }
+
+  private async countDocuments(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.doAction('action/count', {
+      ...this.basePayload(args),
+      filter: args.filter ?? {},
+    });
   }
 }

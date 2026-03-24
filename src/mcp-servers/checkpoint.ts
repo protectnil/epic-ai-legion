@@ -4,7 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
+// Official MCP: https://github.com/CheckPointSW/mcp-servers — actively maintained (last commit March 2026).
+// Monorepo with 8+ servers: management, management-logs, threat-prevention, https-inspection,
+// harmony-sase, spark-management, cpinfo-analysis, argos-erm. Supports stdio transport.
+// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments
+// or environments that cannot run the Node.js-based vendor MCP server.
+//
+// Base URL: https://{management-server-ip}/web_api  (customer-provided, no default)
+// Auth: Session-based — POST /login with username+password to receive a session ID (X-Chkp-SID header).
+//       Sessions expire after 600 seconds of inactivity. This adapter auto-renews on expiry.
+// Docs: https://sc1.checkpoint.com/documents/latest/APIs/index.html
+// Rate limits: Not publicly documented; concurrency-limited by the Management Server itself
+
 import { ToolDefinition, ToolResult } from './types.js';
+
+interface CheckPointConfig {
+  baseUrl: string;
+  username: string;
+  password: string;
+}
 
 export class CheckPointMCPServer {
   private readonly baseUrl: string;
@@ -12,9 +30,9 @@ export class CheckPointMCPServer {
   private readonly password: string;
   private sessionId: string | null = null;
   private tokenExpiry: number = 0;
-  private static readonly SESSION_TTL_MS = 600_000; // 10 minutes
+  private static readonly SESSION_TTL_MS = 540_000; // 9 min — renew before 10 min server timeout
 
-  constructor(config: { baseUrl: string; username: string; password: string }) {
+  constructor(config: CheckPointConfig) {
     this.baseUrl = config.baseUrl;
     this.username = config.username;
     this.password = config.password;
@@ -24,21 +42,159 @@ export class CheckPointMCPServer {
     return [
       {
         name: 'list_access_rules',
-        description: 'List all access control rules',
+        description: 'List all access control rules in a named policy package with optional pagination',
         inputSchema: {
           type: 'object',
           properties: {
             policy_name: {
               type: 'string',
-              description: 'Name of the access policy',
+              description: 'Name of the access policy package to list rules from',
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of rules to return',
+              description: 'Maximum number of rules to return (default: 50)',
             },
             offset: {
               type: 'number',
-              description: 'Offset for pagination',
+              description: 'Offset for pagination (default: 0)',
+            },
+          },
+          required: ['policy_name'],
+        },
+      },
+      {
+        name: 'get_access_rule',
+        description: 'Retrieve details of a specific access control rule by its name or UID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            policy_name: {
+              type: 'string',
+              description: 'Name of the access policy package containing the rule',
+            },
+            rule_name: {
+              type: 'string',
+              description: 'Name of the access rule (mutually exclusive with rule_uid)',
+            },
+            rule_uid: {
+              type: 'string',
+              description: 'UID of the access rule (mutually exclusive with rule_name)',
+            },
+          },
+          required: ['policy_name'],
+        },
+      },
+      {
+        name: 'add_access_rule',
+        description: 'Add a new access control rule to a policy package at a specified position',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            policy_name: {
+              type: 'string',
+              description: 'Name of the access policy package to add the rule to',
+            },
+            position: {
+              type: 'string',
+              description: 'Position for the new rule: "top", "bottom", or a number (default: "bottom")',
+            },
+            name: {
+              type: 'string',
+              description: 'Display name for the new rule',
+            },
+            action: {
+              type: 'string',
+              description: 'Rule action: Accept, Drop, Reject, Apply Layer (default: Drop)',
+            },
+            source: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of source object names or UIDs (default: ["Any"])',
+            },
+            destination: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of destination object names or UIDs (default: ["Any"])',
+            },
+            service: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of service object names or UIDs (default: ["Any"])',
+            },
+            enabled: {
+              type: 'boolean',
+              description: 'Whether the rule is enabled (default: true)',
+            },
+          },
+          required: ['policy_name'],
+        },
+      },
+      {
+        name: 'delete_access_rule',
+        description: 'Delete an access control rule from a policy package by name or UID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            policy_name: {
+              type: 'string',
+              description: 'Name of the access policy package containing the rule',
+            },
+            rule_uid: {
+              type: 'string',
+              description: 'UID of the rule to delete (preferred)',
+            },
+            rule_name: {
+              type: 'string',
+              description: 'Name of the rule to delete (alternative to rule_uid)',
+            },
+          },
+          required: ['policy_name'],
+        },
+      },
+      {
+        name: 'publish',
+        description: 'Publish the current session changes to the management database — required before install-policy',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'install_policy',
+        description: 'Install a security policy package on one or more target gateways',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            policy_package: {
+              type: 'string',
+              description: 'Name of the policy package to install',
+            },
+            targets: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of gateway names or UIDs to install the policy on',
+            },
+            access: {
+              type: 'boolean',
+              description: 'Install the Access Control policy (default: true)',
+            },
+            threat_prevention: {
+              type: 'boolean',
+              description: 'Install the Threat Prevention policy (default: true)',
+            },
+          },
+          required: ['policy_package', 'targets'],
+        },
+      },
+      {
+        name: 'get_policy',
+        description: 'Get details of an access control policy package by name',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            policy_name: {
+              type: 'string',
+              description: 'Name of the policy package to retrieve',
             },
           },
           required: ['policy_name'],
@@ -46,63 +202,130 @@ export class CheckPointMCPServer {
       },
       {
         name: 'show_gateways',
-        description: 'List all configured gateways and servers',
+        description: 'List all configured gateways and cluster members managed by this management server',
         inputSchema: {
           type: 'object',
           properties: {
             limit: {
               type: 'number',
-              description: 'Maximum number of gateways to return',
+              description: 'Maximum number of gateways to return (default: 50)',
             },
             offset: {
               type: 'number',
-              description: 'Offset for pagination',
+              description: 'Offset for pagination (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'show_hosts',
+        description: 'List all host network objects defined in the management database',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of hosts to return (default: 50)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Offset for pagination (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'add_host',
+        description: 'Create a new host network object with a specified IP address',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Name for the new host object',
+            },
+            ip_address: {
+              type: 'string',
+              description: 'IPv4 or IPv6 address for the host object',
+            },
+          },
+          required: ['name', 'ip_address'],
+        },
+      },
+      {
+        name: 'delete_host',
+        description: 'Delete a host network object by name or UID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Name of the host object to delete (mutually exclusive with uid)',
+            },
+            uid: {
+              type: 'string',
+              description: 'UID of the host object to delete (mutually exclusive with name)',
+            },
+          },
+        },
+      },
+      {
+        name: 'show_network_objects',
+        description: 'List network objects (networks, hosts, groups) with optional type filter',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            type: {
+              type: 'string',
+              description: 'Filter by object type: host, network, group, address-range (default: all)',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of objects to return (default: 50)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Offset for pagination (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_sessions',
+        description: 'List active management API sessions and their current status',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of sessions to return (default: 50)',
             },
           },
         },
       },
       {
         name: 'list_threat_logs',
-        description: 'List threat prevention logs',
+        description: 'List threat prevention logs from the management server with optional filter expression',
         inputSchema: {
           type: 'object',
           properties: {
             filter: {
               type: 'string',
-              description: 'Filter expression for logs',
+              description: 'Free-text filter expression for the log query',
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of logs to return',
+              description: 'Maximum number of log entries to return (default: 100)',
             },
           },
         },
       },
       {
-        name: 'get_policy',
-        description: 'Get access control policy details',
+        name: 'logout',
+        description: 'Explicitly close the current management API session and invalidate the session token',
         inputSchema: {
           type: 'object',
-          properties: {
-            policy_name: {
-              type: 'string',
-              description: 'Name of the policy',
-            },
-          },
-          required: ['policy_name'],
-        },
-      },
-      {
-        name: 'list_sessions',
-        description: 'List active user sessions',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of sessions to return',
-            },
-          },
+          properties: {},
         },
       },
     ];
@@ -117,14 +340,34 @@ export class CheckPointMCPServer {
       switch (name) {
         case 'list_access_rules':
           return await this.withReauth(() => this.listAccessRules(args));
-        case 'show_gateways':
-          return await this.withReauth(() => this.showGateways(args));
-        case 'list_threat_logs':
-          return await this.withReauth(() => this.listThreatLogs(args));
+        case 'get_access_rule':
+          return await this.withReauth(() => this.getAccessRule(args));
+        case 'add_access_rule':
+          return await this.withReauth(() => this.addAccessRule(args));
+        case 'delete_access_rule':
+          return await this.withReauth(() => this.deleteAccessRule(args));
+        case 'publish':
+          return await this.withReauth(() => this.publish());
+        case 'install_policy':
+          return await this.withReauth(() => this.installPolicy(args));
         case 'get_policy':
           return await this.withReauth(() => this.getPolicy(args));
+        case 'show_gateways':
+          return await this.withReauth(() => this.showGateways(args));
+        case 'show_hosts':
+          return await this.withReauth(() => this.showHosts(args));
+        case 'add_host':
+          return await this.withReauth(() => this.addHost(args));
+        case 'delete_host':
+          return await this.withReauth(() => this.deleteHost(args));
+        case 'show_network_objects':
+          return await this.withReauth(() => this.showNetworkObjects(args));
         case 'list_sessions':
           return await this.withReauth(() => this.listSessions(args));
+        case 'list_threat_logs':
+          return await this.withReauth(() => this.listThreatLogs(args));
+        case 'logout':
+          return await this.logoutTool();
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -133,16 +376,12 @@ export class CheckPointMCPServer {
       }
     } catch (error) {
       return {
-        content: [{ type: 'text', text: error instanceof Error ? error.message : 'Unknown error' }],
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }
   }
 
-  /**
-   * Check Point uses password-based session auth (ROPC-equivalent).
-   * This is required by the Check Point Management API — no alternative token endpoint exists.
-   */
   private async withReauth<T>(fn: () => Promise<T>): Promise<T> {
     try {
       return await fn();
@@ -151,7 +390,6 @@ export class CheckPointMCPServer {
         error instanceof Error &&
         (error.message.includes('401') || error.message.includes('403'))
       ) {
-        // Clear stale session and re-authenticate once
         this.sessionId = null;
         this.tokenExpiry = 0;
         await this.login();
@@ -162,17 +400,10 @@ export class CheckPointMCPServer {
   }
 
   private async login(): Promise<void> {
-    const url = `${this.baseUrl}/login`;
-    const headers = { 'Content-Type': 'application/json' };
-    const body = JSON.stringify({
-      user: this.username,
-      password: this.password,
-    });
-
-    const response = await fetch(url, {
+    const response = await fetch(`${this.baseUrl}/login`, {
       method: 'POST',
-      headers,
-      body,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: this.username, password: this.password }),
     });
 
     if (!response.ok) {
@@ -195,140 +426,138 @@ export class CheckPointMCPServer {
     };
   }
 
-  private async listAccessRules(args: Record<string, unknown>): Promise<ToolResult> {
-    const policyName = args.policy_name as string;
-    const limit = (args.limit as number) || 50;
-    const offset = (args.offset as number) || 0;
-
-    const url = `${this.baseUrl}/show-access-rulebase`;
-    const body = JSON.stringify({
-      policy_name: policyName,
-      limit,
-      offset,
-    });
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Check Point API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Check Point returned non-JSON response (HTTP ${response.status})`);
-    }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
   }
 
-  private async showGateways(args: Record<string, unknown>): Promise<ToolResult> {
-    const limit = (args.limit as number) || 50;
-    const offset = (args.offset as number) || 0;
-
-    const url = `${this.baseUrl}/show-gateways-and-servers`;
-    const body = JSON.stringify({ limit, offset });
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Check Point API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Check Point returned non-JSON response (HTTP ${response.status})`);
-    }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-  }
-
-  private async listThreatLogs(args: Record<string, unknown>): Promise<ToolResult> {
-    const filter = args.filter as string | undefined;
-    const limit = (args.limit as number) || 100;
-
-    const url = `${this.baseUrl}/show-threat-logs`;
-    const body: Record<string, unknown> = { limit };
-
-    if (filter) {
-      body.filter = filter;
-    }
-
-    const response = await fetch(url, {
+  private async checkpointPost(endpoint: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}/${endpoint}`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
     });
-
     if (!response.ok) {
       throw new Error(`Check Point API error: ${response.status} ${response.statusText}`);
     }
-
     let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Check Point returned non-JSON response (HTTP ${response.status})`);
-    }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    try { data = await response.json(); } catch { throw new Error(`Check Point returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listAccessRules(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.checkpointPost('show-access-rulebase', {
+      policy_name: args.policy_name as string,
+      limit: (args.limit as number) || 50,
+      offset: (args.offset as number) || 0,
+    });
+  }
+
+  private async getAccessRule(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = { policy_name: args.policy_name as string };
+    if (args.rule_name) body.name = args.rule_name;
+    if (args.rule_uid) body.uid = args.rule_uid;
+    return this.checkpointPost('show-access-rule', body);
+  }
+
+  private async addAccessRule(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {
+      policy_name: args.policy_name as string,
+      position: args.position || 'bottom',
+    };
+    if (args.name) body.name = args.name;
+    if (args.action) body.action = args.action;
+    if (args.source) body.source = args.source;
+    if (args.destination) body.destination = args.destination;
+    if (args.service) body.service = args.service;
+    if (typeof args.enabled === 'boolean') body.enabled = args.enabled;
+    return this.checkpointPost('add-access-rule', body);
+  }
+
+  private async deleteAccessRule(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = { policy_name: args.policy_name as string };
+    if (args.rule_uid) body.uid = args.rule_uid;
+    if (args.rule_name) body.name = args.rule_name;
+    return this.checkpointPost('delete-access-rule', body);
+  }
+
+  private async publish(): Promise<ToolResult> {
+    return this.checkpointPost('publish', {});
+  }
+
+  private async installPolicy(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {
+      'policy-package': args.policy_package as string,
+      targets: args.targets as string[],
+    };
+    if (typeof args.access === 'boolean') body.access = args.access;
+    if (typeof args.threat_prevention === 'boolean') body['threat-prevention'] = args.threat_prevention;
+    return this.checkpointPost('install-policy', body);
   }
 
   private async getPolicy(args: Record<string, unknown>): Promise<ToolResult> {
-    const policyName = args.policy_name as string;
-
-    const url = `${this.baseUrl}/show-access-policy`;
-    const body = JSON.stringify({ policy_name: policyName });
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Check Point API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Check Point returned non-JSON response (HTTP ${response.status})`);
-    }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return this.checkpointPost('show-access-policy', { name: args.policy_name as string });
   }
 
-  private async listSessions(_args: Record<string, unknown>): Promise<ToolResult> {
-    const limit = (_args.limit as number) || 50;
-
-    const url = `${this.baseUrl}/show-sessions`;
-    const body = JSON.stringify({ limit });
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body,
+  private async showGateways(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.checkpointPost('show-gateways-and-servers', {
+      limit: (args.limit as number) || 50,
+      offset: (args.offset as number) || 0,
     });
+  }
 
-    if (!response.ok) {
-      throw new Error(`Check Point API error: ${response.status} ${response.statusText}`);
-    }
+  private async showHosts(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.checkpointPost('show-hosts', {
+      limit: (args.limit as number) || 50,
+      offset: (args.offset as number) || 0,
+    });
+  }
 
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Check Point returned non-JSON response (HTTP ${response.status})`);
+  private async addHost(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.name || !args.ip_address) {
+      return { content: [{ type: 'text', text: 'name and ip_address are required' }], isError: true };
     }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return this.checkpointPost('add-host', {
+      name: args.name as string,
+      'ip-address': args.ip_address as string,
+    });
+  }
+
+  private async deleteHost(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {};
+    if (args.name) body.name = args.name;
+    if (args.uid) body.uid = args.uid;
+    if (!body.name && !body.uid) {
+      return { content: [{ type: 'text', text: 'name or uid is required' }], isError: true };
+    }
+    return this.checkpointPost('delete-host', body);
+  }
+
+  private async showNetworkObjects(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {
+      limit: (args.limit as number) || 50,
+      offset: (args.offset as number) || 0,
+    };
+    if (args.type) body.type = args.type;
+    return this.checkpointPost('show-objects', body);
+  }
+
+  private async listSessions(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.checkpointPost('show-sessions', { limit: (args.limit as number) || 50 });
+  }
+
+  private async listThreatLogs(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = { limit: (args.limit as number) || 100 };
+    if (args.filter) body.filter = args.filter;
+    return this.checkpointPost('show-threat-logs', body);
+  }
+
+  private async logoutTool(): Promise<ToolResult> {
+    const result = await this.checkpointPost('logout', {});
+    this.sessionId = null;
+    this.tokenExpiry = 0;
+    return result;
   }
 }

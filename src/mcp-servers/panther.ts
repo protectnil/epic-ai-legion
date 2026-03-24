@@ -4,18 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/panther-labs/mcp-panther — 40+ tools, actively maintained by Panther Labs (103 commits, March 2026). If self-hosting the official MCP is feasible, prefer it. This adapter serves API-key REST use cases without running the official Python MCP process.
+// Official MCP: https://github.com/panther-labs/mcp-panther — actively maintained by Panther Labs
+// Transport: stdio. Auth: Panther API token. Coverage: 40+ tools (alerts, queries, detections,
+// schema, users). Last commit: March 2026 (103+ commits).
+// Recommendation: Use the official Panther MCP for full coverage including GraphQL operations.
+// Use this adapter for air-gapped deployments or environments that cannot run Python.
+//
+// Base URL: https://api.{YOUR_PANTHER_DOMAIN}.runpanther.net/v1 (SaaS)
+//           For self-hosted: https://{your-panther-host}/v1
+// Auth: X-API-Key header. Generate token in Panther Console: gear icon → API Tokens.
+// Docs: https://docs.panther.com/panther-developer-workflows/api/rest
+// Rate limits: Not publicly documented; Panther applies per-tenant limits
 
 import { ToolDefinition, ToolResult } from './types.js';
-
-// Auth: X-API-Key header. Generate an API token in the Panther Console (gear icon > API Tokens).
-// Base URL format for SaaS: https://api.{YOUR_PANTHER_DOMAIN}.runpanther.net
-// The REST API (Beta) base path is /v1 — e.g. /v1/alerts, /v1/queries, /v1/detections.
-// GraphQL is also available at /public/graphql but this adapter uses REST only.
+import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface PantherConfig {
   apiToken: string;
-  baseUrl: string;
+  baseUrl: string;  // Required — customer-specific Panther domain; no universal default
 }
 
 export class PantherMCPServer {
@@ -27,21 +33,46 @@ export class PantherMCPServer {
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
   }
 
+  static catalog(): AdapterCatalogEntry {
+    return {
+      name: 'panther',
+      displayName: 'Panther',
+      version: '1.0.0',
+      category: 'cybersecurity',
+      keywords: [
+        'panther', 'siem', 'soc', 'alert', 'detection', 'rule', 'log',
+        'query', 'data-lake', 'sql', 'threat', 'hunting', 'compliance',
+        'log-source', 'cloud-security', 'triage', 'investigation',
+      ],
+      toolNames: [
+        'list_alerts', 'get_alert', 'update_alert_status', 'bulk_update_alert_status',
+        'list_detections', 'get_detection', 'enable_detection', 'disable_detection',
+        'list_log_sources', 'get_log_source',
+        'query_data_lake', 'get_query_status', 'get_query_results',
+        'list_saved_queries', 'get_saved_query',
+        'list_users', 'get_user',
+        'list_schemas', 'get_schema',
+      ],
+      description: 'Cloud SIEM: triage and update alerts, manage detection rules, query the data lake with SQL, and manage log sources, users, and schemas.',
+      author: 'protectnil',
+    };
+  }
+
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_alerts',
-        description: 'List Panther alerts with optional filtering by status, severity, or rule ID',
+        description: 'List Panther alerts with optional filters for status, severity, rule ID, and creation time window.',
         inputSchema: {
           type: 'object',
           properties: {
             status: {
-              type: 'string',
-              description: 'Filter by alert status: OPEN, TRIAGED, CLOSED, RESOLVED (comma-separated for multiple)',
+              type: 'array',
+              description: 'Filter by alert status array: OPEN, TRIAGED, CLOSED, RESOLVED',
             },
             severity: {
-              type: 'string',
-              description: 'Filter by severity: CRITICAL, HIGH, MEDIUM, LOW, INFO (comma-separated)',
+              type: 'array',
+              description: 'Filter by severity array: CRITICAL, HIGH, MEDIUM, LOW, INFO',
             },
             rule_id: {
               type: 'string',
@@ -61,20 +92,20 @@ export class PantherMCPServer {
             },
             cursor: {
               type: 'string',
-              description: 'Pagination cursor from a previous response',
+              description: 'Pagination cursor from a previous response nextCursor field',
             },
           },
         },
       },
       {
         name: 'get_alert',
-        description: 'Retrieve details for a specific Panther alert by ID',
+        description: 'Retrieve full details for a specific Panther alert by ID including events, rule metadata, and assignee.',
         inputSchema: {
           type: 'object',
           properties: {
             alert_id: {
               type: 'string',
-              description: 'The Panther alert ID',
+              description: 'Panther alert ID',
             },
           },
           required: ['alert_id'],
@@ -82,58 +113,65 @@ export class PantherMCPServer {
       },
       {
         name: 'update_alert_status',
-        description: 'Update the status of one or more Panther alerts',
+        description: 'Update the status of a single Panther alert and optionally assign it to a user.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            alert_id: {
+              type: 'string',
+              description: 'Panther alert ID to update',
+            },
+            status: {
+              type: 'string',
+              description: 'New status: OPEN, TRIAGED, CLOSED, or RESOLVED',
+            },
+            assignee_id: {
+              type: 'string',
+              description: 'User ID to assign the alert to (optional)',
+            },
+            comment: {
+              type: 'string',
+              description: 'Optional comment to add with the status change',
+            },
+          },
+          required: ['alert_id', 'status'],
+        },
+      },
+      {
+        name: 'bulk_update_alert_status',
+        description: 'Update the status of multiple Panther alerts at once by alert ID array.',
         inputSchema: {
           type: 'object',
           properties: {
             alert_ids: {
               type: 'array',
-              items: { type: 'string' },
-              description: 'Array of alert IDs to update',
+              description: 'Array of Panther alert IDs to update',
             },
             status: {
               type: 'string',
-              description: 'New status: OPEN, TRIAGED, CLOSED, or RESOLVED',
+              description: 'New status for all specified alerts: OPEN, TRIAGED, CLOSED, or RESOLVED',
             },
           },
           required: ['alert_ids', 'status'],
         },
       },
       {
-        name: 'query_data_lake',
-        description: 'Execute a SQL query against the Panther data lake',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            sql: {
-              type: 'string',
-              description: 'SQL query to execute against the Panther data lake (Snowflake SQL dialect)',
-            },
-            database: {
-              type: 'string',
-              description: 'Database to query (optional — uses default if omitted)',
-            },
-          },
-          required: ['sql'],
-        },
-      },
-      {
         name: 'list_detections',
-        description: 'List Panther detection rules with optional filtering',
+        description: 'List Panther detection rules with optional filters for enabled state, severity, and name substring.',
         inputSchema: {
           type: 'object',
           properties: {
             enabled: {
               type: 'boolean',
-              description: 'Filter by enabled/disabled state (optional)',
+              description: 'Filter by enabled (true) or disabled (false) state',
             },
             severity: {
-              type: 'string',
-              description: 'Filter by severity: CRITICAL, HIGH, MEDIUM, LOW, INFO',
+              type: 'array',
+              description: 'Filter by severity array: CRITICAL, HIGH, MEDIUM, LOW, INFO',
             },
             name_contains: {
               type: 'string',
-              description: 'Filter rules whose name contains this string',
+              description: 'Filter rules whose name contains this string (case-insensitive)',
             },
             page_size: {
               type: 'number',
@@ -148,13 +186,41 @@ export class PantherMCPServer {
       },
       {
         name: 'get_detection',
-        description: 'Retrieve details for a specific Panther detection rule by ID',
+        description: 'Get full details for a specific Panther detection rule by ID including Python body and tests.',
         inputSchema: {
           type: 'object',
           properties: {
             detection_id: {
               type: 'string',
-              description: 'The Panther detection rule ID',
+              description: 'Panther detection rule ID',
+            },
+          },
+          required: ['detection_id'],
+        },
+      },
+      {
+        name: 'enable_detection',
+        description: 'Enable a disabled Panther detection rule so it starts generating alerts.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            detection_id: {
+              type: 'string',
+              description: 'Panther detection rule ID to enable',
+            },
+          },
+          required: ['detection_id'],
+        },
+      },
+      {
+        name: 'disable_detection',
+        description: 'Disable an active Panther detection rule to stop it from generating alerts.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            detection_id: {
+              type: 'string',
+              description: 'Panther detection rule ID to disable',
             },
           },
           required: ['detection_id'],
@@ -162,7 +228,7 @@ export class PantherMCPServer {
       },
       {
         name: 'list_log_sources',
-        description: 'List configured log sources in Panther',
+        description: 'List configured log sources in Panther with pagination support.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -178,14 +244,86 @@ export class PantherMCPServer {
         },
       },
       {
+        name: 'get_log_source',
+        description: 'Get details for a specific Panther log source by ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            log_source_id: {
+              type: 'string',
+              description: 'Panther log source ID',
+            },
+          },
+          required: ['log_source_id'],
+        },
+      },
+      {
+        name: 'query_data_lake',
+        description: 'Execute a SQL query against the Panther data lake (Snowflake SQL dialect) and return results synchronously.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            sql: {
+              type: 'string',
+              description: 'SQL query string in Snowflake SQL dialect',
+            },
+            database: {
+              type: 'string',
+              description: 'Database to query against (optional — uses account default if omitted)',
+            },
+            timeout_seconds: {
+              type: 'number',
+              description: 'Query execution timeout in seconds (default: 60)',
+            },
+          },
+          required: ['sql'],
+        },
+      },
+      {
+        name: 'get_query_status',
+        description: 'Get the execution status of an asynchronous Panther data lake query by query ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query_id: {
+              type: 'string',
+              description: 'Query ID returned from a previous query_data_lake call',
+            },
+          },
+          required: ['query_id'],
+        },
+      },
+      {
+        name: 'get_query_results',
+        description: 'Get the results of a completed Panther data lake query by query ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query_id: {
+              type: 'string',
+              description: 'Query ID of a completed query',
+            },
+            page_size: {
+              type: 'number',
+              description: 'Number of result rows per page (default: 100)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor for large result sets',
+            },
+          },
+          required: ['query_id'],
+        },
+      },
+      {
         name: 'list_saved_queries',
-        description: 'List saved SQL queries (scheduled queries) in Panther',
+        description: 'List saved SQL queries (scheduled queries) in Panther with pagination.',
         inputSchema: {
           type: 'object',
           properties: {
             page_size: {
               type: 'number',
-              description: 'Number of queries per page (default: 25)',
+              description: 'Number of saved queries per page (default: 25)',
             },
             cursor: {
               type: 'string',
@@ -194,197 +332,131 @@ export class PantherMCPServer {
           },
         },
       },
+      {
+        name: 'get_saved_query',
+        description: 'Get a specific saved/scheduled Panther data lake query by ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query_id: {
+              type: 'string',
+              description: 'Panther saved query ID',
+            },
+          },
+          required: ['query_id'],
+        },
+      },
+      {
+        name: 'list_users',
+        description: 'List Panther users in the organization with optional pagination.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page_size: {
+              type: 'number',
+              description: 'Number of users per page (default: 25)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_user',
+        description: 'Get details for a specific Panther user by ID including role and permissions.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'Panther user ID',
+            },
+          },
+          required: ['user_id'],
+        },
+      },
+      {
+        name: 'list_schemas',
+        description: 'List log schemas configured in Panther for use in detection rules and queries.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page_size: {
+              type: 'number',
+              description: 'Number of schemas per page (default: 25)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_schema',
+        description: 'Get the full field definition for a specific Panther log schema by name.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            schema_name: {
+              type: 'string',
+              description: 'Panther schema name (e.g. AWS.CloudTrail, Custom.MySchema)',
+            },
+          },
+          required: ['schema_name'],
+        },
+      },
     ];
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        'X-API-Key': this.apiToken,
-        'Content-Type': 'application/json',
-      };
-
       switch (name) {
-        case 'list_alerts': {
-          const params = new URLSearchParams();
-          if (args.status) params.set('status', args.status as string);
-          if (args.severity) params.set('severity', args.severity as string);
-          if (args.rule_id) params.set('ruleId', args.rule_id as string);
-          if (args.created_at_after) params.set('createdAtAfter', args.created_at_after as string);
-          if (args.created_at_before) params.set('createdAtBefore', args.created_at_before as string);
-          if (args.page_size) params.set('pageSize', String(args.page_size));
-          if (args.cursor) params.set('cursor', args.cursor as string);
-
-          const response = await fetch(`${this.baseUrl}/v1/alerts?${params.toString()}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list alerts (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Panther returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_alert': {
-          const alertId = args.alert_id as string;
-          if (!alertId) {
-            return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/v1/alerts/${encodeURIComponent(alertId)}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to get alert (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Panther returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'update_alert_status': {
-          const alertIds = args.alert_ids as string[];
-          const status = args.status as string;
-          if (!alertIds || !alertIds.length || !status) {
-            return { content: [{ type: 'text', text: 'alert_ids and status are required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/v1/alerts`, {
-            method: 'PATCH',
-            headers,
-            body: JSON.stringify({ ids: alertIds, status }),
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to update alert status (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Panther returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'query_data_lake': {
-          const sql = args.sql as string;
-          if (!sql) {
-            return { content: [{ type: 'text', text: 'sql is required' }], isError: true };
-          }
-
-          const body: Record<string, unknown> = { sql };
-          if (args.database) body.database = args.database;
-
-          const response = await fetch(`${this.baseUrl}/v1/queries`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Data lake query failed (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Panther returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_detections': {
-          const params = new URLSearchParams();
-          if (typeof args.enabled === 'boolean') params.set('enabled', String(args.enabled));
-          if (args.severity) params.set('severity', args.severity as string);
-          if (args.name_contains) params.set('nameContains', args.name_contains as string);
-          if (args.page_size) params.set('pageSize', String(args.page_size));
-          if (args.cursor) params.set('cursor', args.cursor as string);
-
-          const response = await fetch(`${this.baseUrl}/v1/detections?${params.toString()}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list detections (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Panther returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_detection': {
-          const detectionId = args.detection_id as string;
-          if (!detectionId) {
-            return { content: [{ type: 'text', text: 'detection_id is required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/v1/detections/${encodeURIComponent(detectionId)}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to get detection (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Panther returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_log_sources': {
-          const params = new URLSearchParams();
-          if (args.page_size) params.set('pageSize', String(args.page_size));
-          if (args.cursor) params.set('cursor', args.cursor as string);
-
-          const response = await fetch(`${this.baseUrl}/v1/log-sources?${params.toString()}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list log sources (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Panther returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_saved_queries': {
-          const params = new URLSearchParams();
-          if (args.page_size) params.set('pageSize', String(args.page_size));
-          if (args.cursor) params.set('cursor', args.cursor as string);
-
-          const response = await fetch(`${this.baseUrl}/v1/queries/saved?${params.toString()}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list saved queries (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Panther returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_alerts':
+          return await this.listAlerts(args);
+        case 'get_alert':
+          return await this.getAlert(args);
+        case 'update_alert_status':
+          return await this.updateAlertStatus(args);
+        case 'bulk_update_alert_status':
+          return await this.bulkUpdateAlertStatus(args);
+        case 'list_detections':
+          return await this.listDetections(args);
+        case 'get_detection':
+          return await this.getDetection(args);
+        case 'enable_detection':
+          return await this.setDetectionEnabled(args.detection_id as string, true);
+        case 'disable_detection':
+          return await this.setDetectionEnabled(args.detection_id as string, false);
+        case 'list_log_sources':
+          return await this.listLogSources(args);
+        case 'get_log_source':
+          return await this.getLogSource(args);
+        case 'query_data_lake':
+          return await this.queryDataLake(args);
+        case 'get_query_status':
+          return await this.getQueryStatus(args);
+        case 'get_query_results':
+          return await this.getQueryResults(args);
+        case 'list_saved_queries':
+          return await this.listSavedQueries(args);
+        case 'get_saved_query':
+          return await this.getSavedQuery(args);
+        case 'list_users':
+          return await this.listUsers(args);
+        case 'get_user':
+          return await this.getUser(args);
+        case 'list_schemas':
+          return await this.listSchemas(args);
+        case 'get_schema':
+          return await this.getSchema(args);
         default:
-          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
+          return {
+            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+            isError: true,
+          };
       }
     } catch (error) {
       return {
@@ -392,5 +464,191 @@ export class PantherMCPServer {
         isError: true,
       };
     }
+  }
+
+  // ─── Private helpers ──────────────────────────────────────────────────────
+
+  private get reqHeaders(): Record<string, string> {
+    return {
+      'X-API-Key': this.apiToken,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async fetchGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
+    const url = `${this.baseUrl}${path}${params && params.toString() ? '?' + params.toString() : ''}`;
+    const response = await fetch(url, { method: 'GET', headers: this.reqHeaders });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      return {
+        content: [{ type: 'text', text: `Panther API error (HTTP ${response.status}): ${response.statusText}${errText ? ' — ' + errText : ''}` }],
+        isError: true,
+      };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async fetchPost(path: string, body: unknown): Promise<ToolResult> {
+    const url = `${this.baseUrl}${path}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.reqHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      return {
+        content: [{ type: 'text', text: `Panther API error (HTTP ${response.status}): ${response.statusText}${errText ? ' — ' + errText : ''}` }],
+        isError: true,
+      };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async fetchPatch(path: string, body: unknown): Promise<ToolResult> {
+    const url = `${this.baseUrl}${path}`;
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: this.reqHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      return {
+        content: [{ type: 'text', text: `Panther API error (HTTP ${response.status}): ${response.statusText}${errText ? ' — ' + errText : ''}` }],
+        isError: true,
+      };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private buildPaginationParams(args: Record<string, unknown>): URLSearchParams {
+    const params = new URLSearchParams();
+    if (args.page_size) params.set('pageSize', String(args.page_size));
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    return params;
+  }
+
+  // ─── Tool implementations ─────────────────────────────────────────────────
+
+  private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildPaginationParams(args);
+    if (Array.isArray(args.status)) {
+      for (const s of args.status) params.append('status', s as string);
+    } else if (args.status) {
+      params.set('status', args.status as string);
+    }
+    if (Array.isArray(args.severity)) {
+      for (const s of args.severity) params.append('severity', s as string);
+    } else if (args.severity) {
+      params.set('severity', args.severity as string);
+    }
+    if (args.rule_id) params.set('ruleId', args.rule_id as string);
+    if (args.created_at_after) params.set('createdAtAfter', args.created_at_after as string);
+    if (args.created_at_before) params.set('createdAtBefore', args.created_at_before as string);
+    return this.fetchGet('/v1/alerts', params);
+  }
+
+  private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchGet(`/v1/alerts/${encodeURIComponent(args.alert_id as string)}`);
+  }
+
+  private async updateAlertStatus(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = { status: args.status };
+    if (args.assignee_id) body.assigneeId = args.assignee_id;
+    if (args.comment) body.comment = args.comment;
+    return this.fetchPatch(`/v1/alerts/${encodeURIComponent(args.alert_id as string)}`, body);
+  }
+
+  private async bulkUpdateAlertStatus(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchPatch('/v1/alerts', {
+      ids: args.alert_ids,
+      status: args.status,
+    });
+  }
+
+  private async listDetections(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildPaginationParams(args);
+    if (typeof args.enabled === 'boolean') params.set('enabled', String(args.enabled));
+    if (Array.isArray(args.severity)) {
+      for (const s of args.severity) params.append('severity', s as string);
+    } else if (args.severity) {
+      params.set('severity', args.severity as string);
+    }
+    if (args.name_contains) params.set('nameContains', args.name_contains as string);
+    return this.fetchGet('/v1/detections', params);
+  }
+
+  private async getDetection(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchGet(`/v1/detections/${encodeURIComponent(args.detection_id as string)}`);
+  }
+
+  private async setDetectionEnabled(detectionId: string, enabled: boolean): Promise<ToolResult> {
+    return this.fetchPatch(`/v1/detections/${encodeURIComponent(detectionId)}`, { enabled });
+  }
+
+  private async listLogSources(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildPaginationParams(args);
+    return this.fetchGet('/v1/log-sources', params);
+  }
+
+  private async getLogSource(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchGet(`/v1/log-sources/${encodeURIComponent(args.log_source_id as string)}`);
+  }
+
+  private async queryDataLake(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = { sql: args.sql };
+    if (args.database) body.database = args.database;
+    if (args.timeout_seconds) body.timeoutSeconds = args.timeout_seconds;
+    return this.fetchPost('/v1/queries', body);
+  }
+
+  private async getQueryStatus(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchGet(`/v1/queries/${encodeURIComponent(args.query_id as string)}`);
+  }
+
+  private async getQueryResults(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.page_size) params.set('pageSize', String(args.page_size));
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    return this.fetchGet(`/v1/queries/${encodeURIComponent(args.query_id as string)}/results`, params);
+  }
+
+  private async listSavedQueries(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildPaginationParams(args);
+    return this.fetchGet('/v1/queries/saved', params);
+  }
+
+  private async getSavedQuery(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchGet(`/v1/queries/saved/${encodeURIComponent(args.query_id as string)}`);
+  }
+
+  private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildPaginationParams(args);
+    return this.fetchGet('/v1/users', params);
+  }
+
+  private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchGet(`/v1/users/${encodeURIComponent(args.user_id as string)}`);
+  }
+
+  private async listSchemas(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildPaginationParams(args);
+    return this.fetchGet('/v1/schemas', params);
+  }
+
+  private async getSchema(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetchGet(`/v1/schemas/${encodeURIComponent(args.schema_name as string)}`);
   }
 }

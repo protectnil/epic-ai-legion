@@ -1,12 +1,16 @@
 /**
- * Anomali ThreatStream MCP Server Wrapper
- * Integrates Anomali ThreatStream REST API for threat intelligence and indicators
- * Base URL: https://api.threatstream.com/api/v2
- * Auth: Authorization header (apikey {username}:{apiKey})
- 
+ * Anomali ThreatStream MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
+
+// Official MCP: None found as of 2026-03
+// No official Anomali ThreatStream MCP server was found on GitHub.
+//
+// Base URL: https://api.threatstream.com/api/v2
+// Auth: Authorization header — "apikey {username}:{apiKey}" (credentials never in URL query parameters)
+// Docs: https://apidocs.threatstream.com/
+// Rate limits: Not publicly documented; recommended to stay under 60 req/min
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -22,7 +26,6 @@ export class AnomaliMCPServer {
 
   constructor(config: AnomaliConfig) {
     this.baseUrl = config.baseUrl || 'https://api.threatstream.com/api/v2';
-    // Credentials are sent in the Authorization header — never in URL query parameters
     this.headers = {
       'Authorization': `apikey ${config.username}:${config.apiKey}`,
       'Content-Type': 'application/json',
@@ -30,105 +33,220 @@ export class AnomaliMCPServer {
     };
   }
 
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
   get tools(): ToolDefinition[] {
     return [
+      // --- Indicators (Observables) ---
       {
         name: 'search_indicators',
-        description: 'Search for threat indicators (IPs, domains, hashes, etc)',
+        description: 'Search threat indicators (IPs, domains, hashes, URLs, emails) in ThreatStream with optional type, confidence, and severity filters.',
         inputSchema: {
           type: 'object',
           properties: {
-            query: {
-              type: 'string',
-              description: 'Search query (IP, domain, hash, email, URL, etc)',
-            },
-            type: {
-              type: 'string',
-              description: 'Indicator type (ip, domain, hash_md5, hash_sha1, hash_sha256, email, url)',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of results to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Number of results to skip',
-            },
-            confidence: {
-              type: 'number',
-              description: 'Minimum confidence level (0-100)',
-            },
+            query: { type: 'string', description: 'Search value (IP address, domain, hash, email, URL, etc.)' },
+            type: { type: 'string', description: 'Indicator type: ip, domain, hash_md5, hash_sha1, hash_sha256, email, url' },
+            confidence: { type: 'number', description: 'Minimum confidence score (0-100)' },
+            severity: { type: 'string', description: 'Filter by severity: low, medium, high, very-high' },
+            status: { type: 'string', description: 'Filter by status: active, inactive, falsepos (default: active)' },
+            limit: { type: 'number', description: 'Maximum number of results to return (default: 50, max: 1000)' },
+            offset: { type: 'number', description: 'Number of results to skip for pagination (default: 0)' },
           },
         },
       },
       {
         name: 'get_indicator',
-        description: 'Get detailed information about a specific indicator by ID',
+        description: 'Get full details of a specific ThreatStream threat indicator by its internal ID.',
         inputSchema: {
           type: 'object',
           properties: {
-            indicatorId: {
-              type: 'string',
-              description: 'The indicator ID',
-            },
+            indicator_id: { type: 'string', description: 'The indicator ID to retrieve' },
           },
-          required: ['indicatorId'],
+          required: ['indicator_id'],
         },
       },
+      {
+        name: 'create_indicator',
+        description: 'Create a new threat indicator in ThreatStream with type, value, confidence, severity, and optional tags.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            objects: {
+              type: 'array',
+              description: 'Array of indicator objects to create. Each must have: itype (e.g. "mal_ip", "phish_url"), value, confidence (0-100), severity (low/medium/high/very-high). Optional: tags, source.',
+              items: { type: 'object' },
+            },
+          },
+          required: ['objects'],
+        },
+      },
+      {
+        name: 'update_indicator',
+        description: 'Update an existing ThreatStream indicator — change confidence, severity, status, or tags.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            indicator_id: { type: 'string', description: 'The indicator ID to update' },
+            confidence: { type: 'number', description: 'Updated confidence score (0-100)' },
+            severity: { type: 'string', description: 'Updated severity: low, medium, high, or very-high' },
+            status: { type: 'string', description: 'Updated status: active, inactive, or falsepos' },
+            tags: { type: 'array', description: 'Updated tags array (replaces existing tags)', items: { type: 'string' } },
+          },
+          required: ['indicator_id'],
+        },
+      },
+      // --- Threat Bulletins ---
       {
         name: 'list_threat_bulletins',
-        description: 'List threat intelligence bulletins and reports',
+        description: 'List ThreatStream threat intelligence bulletins and reports with optional tag and status filters.',
         inputSchema: {
           type: 'object',
           properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of bulletins to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Number of bulletins to skip',
-            },
-            tag: {
-              type: 'string',
-              description: 'Filter by threat bulletin tag',
-            },
+            status: { type: 'string', description: 'Filter by bulletin status: published, draft, review' },
+            tag: { type: 'string', description: 'Filter by bulletin tag name' },
+            is_public: { type: 'boolean', description: 'Filter by visibility: true for public, false for private' },
+            limit: { type: 'number', description: 'Maximum number of bulletins to return (default: 50)' },
+            offset: { type: 'number', description: 'Number of bulletins to skip for pagination (default: 0)' },
           },
         },
       },
       {
-        name: 'search_actors',
-        description: 'Search for threat actors and campaigns',
+        name: 'get_threat_bulletin',
+        description: 'Get full details of a specific ThreatStream threat bulletin by its ID.',
         inputSchema: {
           type: 'object',
           properties: {
-            query: {
-              type: 'string',
-              description: 'Search query for actor name or campaign',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of results to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Number of results to skip',
-            },
+            bulletin_id: { type: 'string', description: 'The threat bulletin ID to retrieve' },
+          },
+          required: ['bulletin_id'],
+        },
+      },
+      // --- Threat Actors ---
+      {
+        name: 'search_actors',
+        description: 'Search for threat actors and adversary groups in ThreatStream by name or keyword.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query for actor name or alias' },
+            limit: { type: 'number', description: 'Maximum number of results to return (default: 50)' },
+            offset: { type: 'number', description: 'Number of results to skip for pagination (default: 0)' },
+          },
+        },
+      },
+      {
+        name: 'get_actor',
+        description: 'Get full details of a specific threat actor by their ThreatStream ID including TTPs, targets, and associated indicators.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            actor_id: { type: 'string', description: 'The threat actor ID to retrieve' },
+          },
+          required: ['actor_id'],
+        },
+      },
+      // --- Campaigns ---
+      {
+        name: 'list_campaigns',
+        description: 'List threat campaigns tracked in ThreatStream with optional name search and date filters.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query to filter campaigns by name' },
+            limit: { type: 'number', description: 'Maximum number of campaigns to return (default: 50)' },
+            offset: { type: 'number', description: 'Number of campaigns to skip for pagination (default: 0)' },
+          },
+        },
+      },
+      {
+        name: 'get_campaign',
+        description: 'Get full details of a specific threat campaign by its ThreatStream ID including associated indicators and actors.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            campaign_id: { type: 'string', description: 'The campaign ID to retrieve' },
+          },
+          required: ['campaign_id'],
+        },
+      },
+      // --- Vulnerabilities ---
+      {
+        name: 'search_vulnerabilities',
+        description: 'Search ThreatStream for vulnerability intelligence by CVE ID or keyword with optional severity filter.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            cve_id: { type: 'string', description: 'CVE ID to search for (e.g. CVE-2024-1234)' },
+            query: { type: 'string', description: 'Keyword search for vulnerability name or description' },
+            severity: { type: 'string', description: 'Filter by severity: low, medium, high, very-high' },
+            limit: { type: 'number', description: 'Maximum number of results to return (default: 50)' },
+            offset: { type: 'number', description: 'Number of results to skip for pagination (default: 0)' },
           },
         },
       },
       {
         name: 'get_vulnerability',
-        description: 'Get details about a vulnerability',
+        description: 'Get full ThreatStream intelligence details for a vulnerability by its CVE ID.',
         inputSchema: {
           type: 'object',
           properties: {
-            cveId: {
-              type: 'string',
-              description: 'CVE ID (e.g., CVE-2024-1234)',
-            },
+            cve_id: { type: 'string', description: 'CVE ID (e.g. CVE-2024-1234)' },
           },
-          required: ['cveId'],
+          required: ['cve_id'],
+        },
+      },
+      // --- Intelligence Sources ---
+      {
+        name: 'list_intelligence_sources',
+        description: 'List available threat intelligence feeds and sources configured in ThreatStream.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: { type: 'number', description: 'Maximum number of sources to return (default: 50)' },
+            offset: { type: 'number', description: 'Number of sources to skip for pagination (default: 0)' },
+          },
+        },
+      },
+      // --- Tags ---
+      {
+        name: 'list_tags',
+        description: 'List all tags used in ThreatStream for classifying intelligence objects.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query to filter tags by name' },
+            limit: { type: 'number', description: 'Maximum number of tags to return (default: 100)' },
+            offset: { type: 'number', description: 'Number of tags to skip for pagination (default: 0)' },
+          },
+        },
+      },
+      // --- Investigations / Incidents ---
+      {
+        name: 'list_incidents',
+        description: 'List ThreatStream incidents and investigations with optional status and date range filters.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', description: 'Filter by incident status: open, closed, in-progress' },
+            limit: { type: 'number', description: 'Maximum number of incidents to return (default: 50)' },
+            offset: { type: 'number', description: 'Number of incidents to skip for pagination (default: 0)' },
+          },
+        },
+      },
+      {
+        name: 'get_incident',
+        description: 'Get full details of a specific ThreatStream incident by its ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            incident_id: { type: 'string', description: 'The incident ID to retrieve' },
+          },
+          required: ['incident_id'],
         },
       },
     ];
@@ -137,151 +255,246 @@ export class AnomaliMCPServer {
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'search_indicators':
-          return await this.searchIndicators(args);
-        case 'get_indicator':
-          return await this.getIndicator(args);
-        case 'list_threat_bulletins':
-          return await this.listThreatBulletins(args);
-        case 'search_actors':
-          return await this.searchActors(args);
-        case 'get_vulnerability':
-          return await this.getVulnerability(args);
+        case 'search_indicators': return await this.searchIndicators(args);
+        case 'get_indicator': return await this.getIndicator(args);
+        case 'create_indicator': return await this.createIndicator(args);
+        case 'update_indicator': return await this.updateIndicator(args);
+        case 'list_threat_bulletins': return await this.listThreatBulletins(args);
+        case 'get_threat_bulletin': return await this.getThreatBulletin(args);
+        case 'search_actors': return await this.searchActors(args);
+        case 'get_actor': return await this.getActor(args);
+        case 'list_campaigns': return await this.listCampaigns(args);
+        case 'get_campaign': return await this.getCampaign(args);
+        case 'search_vulnerabilities': return await this.searchVulnerabilities(args);
+        case 'get_vulnerability': return await this.getVulnerability(args);
+        case 'list_intelligence_sources': return await this.listIntelligenceSources(args);
+        case 'list_tags': return await this.listTags(args);
+        case 'list_incidents': return await this.listIncidents(args);
+        case 'get_incident': return await this.getIncident(args);
         default:
-          return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-            isError: true,
-          };
+          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
     } catch (error) {
       return {
-        content: [{ type: 'text', text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }
   }
 
   private async searchIndicators(args: Record<string, unknown>): Promise<ToolResult> {
-    const query = String(args.query ?? '');
-
     const params = new URLSearchParams();
-    params.append('limit', String(args.limit || 50));
-    params.append('offset', String(args.offset || 0));
+    params.append('limit', String(args.limit ?? 50));
+    params.append('offset', String(args.offset ?? 0));
     if (args.type) params.append('type', String(args.type));
     if (args.confidence !== undefined) params.append('confidence__gte', String(args.confidence));
-    if (query) params.append('value__icontains', query);
-
-    const response = await fetch(
-      `${this.baseUrl}/indicators/?${params.toString()}`,
-      { method: 'GET', headers: this.headers }
-    );
-
+    if (args.severity) params.append('meta.severity', String(args.severity));
+    if (args.status) params.append('status', String(args.status));
+    if (args.query) params.append('value__icontains', String(args.query));
+    const response = await fetch(`${this.baseUrl}/indicators/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
-      throw new Error(`Anomali API error: ${response.status} ${response.statusText}`);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Anomali returned non-JSON response (HTTP ${response.status})`); }
-    return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-      isError: false,
-    };
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async getIndicator(args: Record<string, unknown>): Promise<ToolResult> {
-    const { indicatorId } = args;
-    if (!indicatorId) {
-      throw new Error('indicatorId is required');
-    }
-
-    const response = await fetch(
-      `${this.baseUrl}/indicators/${encodeURIComponent(String(indicatorId))}/`,
-      { method: 'GET', headers: this.headers }
-    );
-
+    const id = args.indicator_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'indicator_id is required' }], isError: true };
+    const response = await fetch(`${this.baseUrl}/indicators/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
-      throw new Error(`Anomali API error: ${response.status} ${response.statusText}`);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Anomali returned non-JSON response (HTTP ${response.status})`); }
-    return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-      isError: false,
-    };
+  private async createIndicator(args: Record<string, unknown>): Promise<ToolResult> {
+    const objects = args.objects as unknown[];
+    if (!objects || !Array.isArray(objects) || objects.length === 0) {
+      return { content: [{ type: 'text', text: 'objects array is required and must be non-empty' }], isError: true };
+    }
+    const response = await fetch(`${this.baseUrl}/intelligence/`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({ objects }),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async updateIndicator(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.indicator_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'indicator_id is required' }], isError: true };
+    const body: Record<string, unknown> = {};
+    if (args.confidence !== undefined) body.confidence = args.confidence;
+    if (args.severity) body.meta = { severity: args.severity };
+    if (args.status) body.status = args.status;
+    if (args.tags) body.tags = args.tags;
+    const response = await fetch(`${this.baseUrl}/indicators/${encodeURIComponent(id)}/`, {
+      method: 'PATCH',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async listThreatBulletins(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
-    params.append('limit', String(args.limit || 50));
-    params.append('offset', String(args.offset || 0));
+    params.append('limit', String(args.limit ?? 50));
+    params.append('offset', String(args.offset ?? 0));
+    if (args.status) params.append('status', String(args.status));
     if (args.tag) params.append('tags__name', String(args.tag));
-
-    const response = await fetch(
-      `${this.baseUrl}/bulletins/?${params.toString()}`,
-      { method: 'GET', headers: this.headers }
-    );
-
+    if (args.is_public !== undefined) params.append('is_public', String(args.is_public));
+    const response = await fetch(`${this.baseUrl}/bulletins/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
-      throw new Error(`Anomali API error: ${response.status} ${response.statusText}`);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Anomali returned non-JSON response (HTTP ${response.status})`); }
-    return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-      isError: false,
-    };
+  private async getThreatBulletin(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.bulletin_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'bulletin_id is required' }], isError: true };
+    const response = await fetch(`${this.baseUrl}/bulletins/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async searchActors(args: Record<string, unknown>): Promise<ToolResult> {
-    const query = String(args.query ?? '');
-
     const params = new URLSearchParams();
-    params.append('limit', String(args.limit || 50));
-    params.append('offset', String(args.offset || 0));
-    if (query) params.append('name__icontains', query);
-
-    const response = await fetch(
-      `${this.baseUrl}/actors/?${params.toString()}`,
-      { method: 'GET', headers: this.headers }
-    );
-
+    params.append('limit', String(args.limit ?? 50));
+    params.append('offset', String(args.offset ?? 0));
+    if (args.query) params.append('name__icontains', String(args.query));
+    const response = await fetch(`${this.baseUrl}/actors/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
-      throw new Error(`Anomali API error: ${response.status} ${response.statusText}`);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Anomali returned non-JSON response (HTTP ${response.status})`); }
-    return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-      isError: false,
-    };
+  private async getActor(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.actor_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'actor_id is required' }], isError: true };
+    const response = await fetch(`${this.baseUrl}/actors/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    params.append('limit', String(args.limit ?? 50));
+    params.append('offset', String(args.offset ?? 0));
+    if (args.query) params.append('name__icontains', String(args.query));
+    const response = await fetch(`${this.baseUrl}/campaign/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.campaign_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
+    const response = await fetch(`${this.baseUrl}/campaign/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async searchVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    params.append('limit', String(args.limit ?? 50));
+    params.append('offset', String(args.offset ?? 0));
+    if (args.cve_id) params.append('cve_id', String(args.cve_id));
+    if (args.query) params.append('name__icontains', String(args.query));
+    if (args.severity) params.append('meta.severity', String(args.severity));
+    const response = await fetch(`${this.baseUrl}/vulnerabilities/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async getVulnerability(args: Record<string, unknown>): Promise<ToolResult> {
-    const { cveId } = args;
-    if (!cveId) {
-      throw new Error('cveId is required');
-    }
-
+    const cveId = args.cve_id as string;
+    if (!cveId) return { content: [{ type: 'text', text: 'cve_id is required' }], isError: true };
     const params = new URLSearchParams();
-    params.append('cve_id', String(cveId));
-
-    const response = await fetch(
-      `${this.baseUrl}/vulnerabilities/?${params.toString()}`,
-      { method: 'GET', headers: this.headers }
-    );
-
+    params.append('cve_id', cveId);
+    const response = await fetch(`${this.baseUrl}/vulnerabilities/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
-      throw new Error(`Anomali API error: ${response.status} ${response.statusText}`);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Anomali returned non-JSON response (HTTP ${response.status})`); }
-    return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-      isError: false,
-    };
+  private async listIntelligenceSources(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    params.append('limit', String(args.limit ?? 50));
+    params.append('offset', String(args.offset ?? 0));
+    const response = await fetch(`${this.baseUrl}/sources/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    params.append('limit', String(args.limit ?? 100));
+    params.append('offset', String(args.offset ?? 0));
+    if (args.query) params.append('name__icontains', String(args.query));
+    const response = await fetch(`${this.baseUrl}/tags/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listIncidents(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    params.append('limit', String(args.limit ?? 50));
+    params.append('offset', String(args.offset ?? 0));
+    if (args.status) params.append('status', String(args.status));
+    const response = await fetch(`${this.baseUrl}/incident/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getIncident(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.incident_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'incident_id is required' }], isError: true };
+    const response = await fetch(`${this.baseUrl}/incident/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 }

@@ -4,15 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found
-
-// Auth: OAuth2 Authorization Code Flow.
-// Token endpoint:  POST https://login.app.carta.com/o/access_token/
-// Authorize URL:   https://login.app.carta.com/o/authorize/
-// Production API:  https://api.carta.com
-// Mock/test API:   https://mock-api.carta.com
-// Access tokens expire after 3600 s; refresh tokens expire after 14 days.
-// Source: https://docs.carta.com/carta/docs/authorization-code-flow
+// Official MCP: None from Carta as of 2026-03.
+// No official Carta MCP server was found on GitHub or the Carta developer portal.
+// Recommendation: Use this adapter as the only available integration path.
+//
+// Base URL: https://api.carta.com (production) | https://mock-api.carta.com (sandbox)
+// Auth: OAuth2 Authorization Code Flow. Access tokens passed as Bearer in Authorization header.
+//       Token endpoint: POST https://login.app.carta.com/o/access_token/
+//       Authorize URL:   https://login.app.carta.com/o/authorize/
+//       Access tokens expire after 3600s; refresh tokens expire after 14 days.
+//       This adapter accepts a pre-obtained access token via config.
+// Docs: https://docs.carta.com/carta/docs/introduction
+// Rate limits: Not formally published. Use cursor/offset pagination for large datasets.
+// API suites: Issuer API (company cap table), Investor API (fund positions/holdings),
+//             Portfolio API (individual holdings), Launch API (onboarding)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -32,162 +37,264 @@ export class CartaMCPServer {
 
   get tools(): ToolDefinition[] {
     return [
+      // Company / Issuer
       {
-        name: 'list_stakeholders',
-        description: 'List all stakeholders on the cap table for a company',
+        name: 'get_company',
+        description: 'Get profile and settings for a Carta company including name, EIN, and incorporation details',
         inputSchema: {
           type: 'object',
           properties: {
-            company_id: {
-              type: 'string',
-              description: 'Carta company ID',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of stakeholders to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
+            company_id: { type: 'string', description: 'Carta company ID' },
+          },
+          required: ['company_id'],
+        },
+      },
+      // Stakeholders
+      {
+        name: 'list_stakeholders',
+        description: 'List all stakeholders on the cap table for a company with pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            limit: { type: 'number', description: 'Maximum number of stakeholders to return' },
+            offset: { type: 'number', description: 'Pagination offset' },
           },
           required: ['company_id'],
         },
       },
       {
         name: 'get_stakeholder',
-        description: 'Retrieve details for a single stakeholder by ID',
+        description: 'Retrieve full details for a single stakeholder by ID including contact info and holdings',
         inputSchema: {
           type: 'object',
           properties: {
-            company_id: {
-              type: 'string',
-              description: 'Carta company ID',
-            },
-            stakeholder_id: {
-              type: 'string',
-              description: 'Carta stakeholder ID',
-            },
+            company_id: { type: 'string', description: 'Carta company ID' },
+            stakeholder_id: { type: 'string', description: 'Carta stakeholder ID' },
           },
           required: ['company_id', 'stakeholder_id'],
         },
       },
-      {
-        name: 'list_securities',
-        description: 'List all securities (stock options, RSUs, warrants, convertible notes, SAFEs) issued by a company',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            company_id: {
-              type: 'string',
-              description: 'Carta company ID',
-            },
-            security_type: {
-              type: 'string',
-              description: 'Filter by type: stock_option, rsu, warrant, convertible_note, safe',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of securities to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
-          },
-          required: ['company_id'],
-        },
-      },
+      // Cap Table
       {
         name: 'get_cap_table',
-        description: 'Retrieve the cap table summary for a company including share classes and ownership percentages',
+        description: 'Retrieve the cap table summary for a company including share classes, ownership percentages, and fully diluted totals',
         inputSchema: {
           type: 'object',
           properties: {
-            company_id: {
-              type: 'string',
-              description: 'Carta company ID',
-            },
+            company_id: { type: 'string', description: 'Carta company ID' },
+            as_of_date: { type: 'string', description: 'ISO 8601 date for a point-in-time cap table snapshot (e.g. 2026-01-01)' },
+          },
+          required: ['company_id'],
+        },
+      },
+      // Securities
+      {
+        name: 'list_securities',
+        description: 'List all securities issued by a company — stock options, RSUs, warrants, convertible notes, SAFEs, with optional type filter',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            security_type: { type: 'string', description: 'Filter by type: stock_option, rsu, warrant, convertible_note, safe, common_stock, preferred_stock' },
+            stakeholder_id: { type: 'string', description: 'Filter securities by stakeholder ID' },
+            limit: { type: 'number', description: 'Maximum number of securities to return' },
+            offset: { type: 'number', description: 'Pagination offset' },
           },
           required: ['company_id'],
         },
       },
       {
-        name: 'list_holdings',
-        description: 'List portfolio holdings for an investor fund across their Carta-managed investments',
+        name: 'get_security',
+        description: 'Get full details of a single security grant by its ID including grant date, quantity, and status',
         inputSchema: {
           type: 'object',
           properties: {
-            fund_id: {
-              type: 'string',
-              description: 'Fund or portfolio entity ID for the investor',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of holdings to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
+            company_id: { type: 'string', description: 'Carta company ID' },
+            security_id: { type: 'string', description: 'Security (grant) ID' },
+          },
+          required: ['company_id', 'security_id'],
+        },
+      },
+      // Vesting
+      {
+        name: 'list_vesting_schedules',
+        description: 'List all vesting events for a specific security grant ordered by vest date',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            security_id: { type: 'string', description: 'Security (grant) ID to retrieve vesting events for' },
+          },
+          required: ['company_id', 'security_id'],
+        },
+      },
+      // Equity Plans
+      {
+        name: 'list_equity_plans',
+        description: 'List equity incentive plans (EIPs) for a company including authorized share pool sizes',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+          },
+          required: ['company_id'],
+        },
+      },
+      {
+        name: 'get_equity_plan',
+        description: 'Get details of a specific equity incentive plan including shares authorized, issued, and available',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            plan_id: { type: 'string', description: 'Equity plan ID' },
+          },
+          required: ['company_id', 'plan_id'],
+        },
+      },
+      // Share Classes
+      {
+        name: 'list_share_classes',
+        description: 'List all share classes for a company including authorized shares, par value, and liquidation preferences',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+          },
+          required: ['company_id'],
+        },
+      },
+      {
+        name: 'get_share_class',
+        description: 'Get details of a specific share class including voting rights, seniority, and authorized shares',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            share_class_id: { type: 'string', description: 'Share class ID' },
+          },
+          required: ['company_id', 'share_class_id'],
+        },
+      },
+      // Transactions
+      {
+        name: 'list_transactions',
+        description: 'List cap table transactions (issuances, transfers, cancellations, exercises, repurchases) with optional type filter',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            transaction_type: { type: 'string', description: 'Filter by type: issuance, transfer, cancellation, exercise, repurchase, conversion' },
+            stakeholder_id: { type: 'string', description: 'Filter by stakeholder ID' },
+            start_date: { type: 'string', description: 'ISO 8601 start date for transaction date filter' },
+            end_date: { type: 'string', description: 'ISO 8601 end date for transaction date filter' },
+            limit: { type: 'number', description: 'Maximum number of transactions to return' },
+            offset: { type: 'number', description: 'Pagination offset' },
+          },
+          required: ['company_id'],
+        },
+      },
+      {
+        name: 'get_transaction',
+        description: 'Get details of a specific cap table transaction by its ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            transaction_id: { type: 'string', description: 'Transaction ID' },
+          },
+          required: ['company_id', 'transaction_id'],
+        },
+      },
+      // Fundraising Rounds
+      {
+        name: 'list_fundraising_rounds',
+        description: 'List all fundraising rounds for a company including pre-money valuation and total raised',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            limit: { type: 'number', description: 'Maximum number of rounds to return' },
+            offset: { type: 'number', description: 'Pagination offset' },
+          },
+          required: ['company_id'],
+        },
+      },
+      {
+        name: 'get_fundraising_round',
+        description: 'Get details of a specific fundraising round including investors, amounts, and closing dates',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+            round_id: { type: 'string', description: 'Fundraising round ID' },
+          },
+          required: ['company_id', 'round_id'],
+        },
+      },
+      // 409A Valuations
+      {
+        name: 'list_valuations',
+        description: 'List 409A valuations for a company ordered by effective date',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Carta company ID' },
+          },
+          required: ['company_id'],
+        },
+      },
+      // Investor / Fund (Investor API)
+      {
+        name: 'list_holdings',
+        description: 'List portfolio holdings for an investor fund across all Carta-managed investments with current values',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fund_id: { type: 'string', description: 'Fund or portfolio entity ID for the investor' },
+            limit: { type: 'number', description: 'Maximum number of holdings to return' },
+            offset: { type: 'number', description: 'Pagination offset' },
           },
           required: ['fund_id'],
         },
       },
       {
-        name: 'list_equity_plans',
-        description: 'List equity incentive plans (EIPs) for a company',
+        name: 'get_holding',
+        description: 'Get details of a single fund holding including security type, cost basis, and current position',
         inputSchema: {
           type: 'object',
           properties: {
-            company_id: {
-              type: 'string',
-              description: 'Carta company ID',
-            },
+            fund_id: { type: 'string', description: 'Fund entity ID' },
+            holding_id: { type: 'string', description: 'Holding ID' },
           },
-          required: ['company_id'],
+          required: ['fund_id', 'holding_id'],
         },
       },
       {
-        name: 'list_vesting_schedules',
-        description: 'List vesting events for a specific security grant',
+        name: 'list_portfolio_companies',
+        description: 'List all portfolio companies in which a fund has active holdings on Carta',
         inputSchema: {
           type: 'object',
           properties: {
-            company_id: {
-              type: 'string',
-              description: 'Carta company ID',
-            },
-            security_id: {
-              type: 'string',
-              description: 'Security (grant) ID to retrieve vesting events for',
-            },
+            fund_id: { type: 'string', description: 'Fund entity ID' },
+            limit: { type: 'number', description: 'Maximum number of companies to return' },
+            offset: { type: 'number', description: 'Pagination offset' },
           },
-          required: ['company_id', 'security_id'],
+          required: ['fund_id'],
         },
       },
+      // Documents
       {
-        name: 'list_transactions',
-        description: 'List cap table transactions (issuances, transfers, cancellations, exercises) for a company',
+        name: 'list_documents',
+        description: 'List documents (grant letters, board consents, side letters) associated with a company',
         inputSchema: {
           type: 'object',
           properties: {
-            company_id: {
-              type: 'string',
-              description: 'Carta company ID',
-            },
-            transaction_type: {
-              type: 'string',
-              description: 'Filter by type: issuance, transfer, cancellation, exercise, repurchase',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of transactions to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
+            company_id: { type: 'string', description: 'Carta company ID' },
+            document_type: { type: 'string', description: 'Filter by document type: grant_notice, board_consent, option_agreement, side_letter' },
+            limit: { type: 'number', description: 'Maximum number of documents to return' },
+            offset: { type: 'number', description: 'Pagination offset' },
           },
           required: ['company_id'],
         },
@@ -197,157 +304,27 @@ export class CartaMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      };
-
       switch (name) {
-        case 'list_stakeholders': {
-          const companyId = args.company_id as string;
-          if (!companyId) {
-            return { content: [{ type: 'text', text: 'company_id is required' }], isError: true };
-          }
-          const params = new URLSearchParams();
-          if (args.limit !== undefined) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          let url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/stakeholders`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list stakeholders: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_stakeholder': {
-          const companyId = args.company_id as string;
-          const stakeholderId = args.stakeholder_id as string;
-          if (!companyId || !stakeholderId) {
-            return { content: [{ type: 'text', text: 'company_id and stakeholder_id are required' }], isError: true };
-          }
-          const url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/stakeholders/${encodeURIComponent(stakeholderId)}`;
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get stakeholder: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_securities': {
-          const companyId = args.company_id as string;
-          if (!companyId) {
-            return { content: [{ type: 'text', text: 'company_id is required' }], isError: true };
-          }
-          const params = new URLSearchParams();
-          if (args.security_type) params.set('security_type', args.security_type as string);
-          if (args.limit !== undefined) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          let url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/securities`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list securities: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_cap_table': {
-          const companyId = args.company_id as string;
-          if (!companyId) {
-            return { content: [{ type: 'text', text: 'company_id is required' }], isError: true };
-          }
-          const url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/cap-table`;
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get cap table: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_holdings': {
-          const fundId = args.fund_id as string;
-          if (!fundId) {
-            return { content: [{ type: 'text', text: 'fund_id is required' }], isError: true };
-          }
-          const params = new URLSearchParams();
-          if (args.limit !== undefined) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          let url = `${this.baseUrl}/funds/${encodeURIComponent(fundId)}/holdings`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list holdings: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_equity_plans': {
-          const companyId = args.company_id as string;
-          if (!companyId) {
-            return { content: [{ type: 'text', text: 'company_id is required' }], isError: true };
-          }
-          const url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/equity-plans`;
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list equity plans: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_vesting_schedules': {
-          const companyId = args.company_id as string;
-          const securityId = args.security_id as string;
-          if (!companyId || !securityId) {
-            return { content: [{ type: 'text', text: 'company_id and security_id are required' }], isError: true };
-          }
-          const url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/securities/${encodeURIComponent(securityId)}/vesting`;
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list vesting schedules: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_transactions': {
-          const companyId = args.company_id as string;
-          if (!companyId) {
-            return { content: [{ type: 'text', text: 'company_id is required' }], isError: true };
-          }
-          const params = new URLSearchParams();
-          if (args.transaction_type) params.set('transaction_type', args.transaction_type as string);
-          if (args.limit !== undefined) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          let url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/transactions`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list transactions: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'get_company': return this.getCompany(args);
+        case 'list_stakeholders': return this.listStakeholders(args);
+        case 'get_stakeholder': return this.getStakeholder(args);
+        case 'get_cap_table': return this.getCapTable(args);
+        case 'list_securities': return this.listSecurities(args);
+        case 'get_security': return this.getSecurity(args);
+        case 'list_vesting_schedules': return this.listVestingSchedules(args);
+        case 'list_equity_plans': return this.listEquityPlans(args);
+        case 'get_equity_plan': return this.getEquityPlan(args);
+        case 'list_share_classes': return this.listShareClasses(args);
+        case 'get_share_class': return this.getShareClass(args);
+        case 'list_transactions': return this.listTransactions(args);
+        case 'get_transaction': return this.getTransaction(args);
+        case 'list_fundraising_rounds': return this.listFundraisingRounds(args);
+        case 'get_fundraising_round': return this.getFundraisingRound(args);
+        case 'list_valuations': return this.listValuations(args);
+        case 'list_holdings': return this.listHoldings(args);
+        case 'get_holding': return this.getHolding(args);
+        case 'list_portfolio_companies': return this.listPortfolioCompanies(args);
+        case 'list_documents': return this.listDocuments(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -357,5 +334,151 @@ export class CartaMCPServer {
         isError: true,
       };
     }
+  }
+
+  private headers(): Record<string, string> {
+    return { Authorization: `Bearer ${this.accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
+  }
+
+  private async get(path: string, params?: URLSearchParams): Promise<ToolResult> {
+    const qs = params?.toString();
+    const url = `${this.baseUrl}${path}${qs ? `?${qs}` : ''}`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers() });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Carta returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private buildParams(args: Record<string, unknown>, fields: string[]): URLSearchParams {
+    const params = new URLSearchParams();
+    for (const field of fields) {
+      if (args[field] !== undefined) params.set(field, String(args[field]));
+    }
+    return params;
+  }
+
+  private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}`);
+  }
+
+  private async listStakeholders(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(
+      `/companies/${encodeURIComponent(args.company_id as string)}/stakeholders`,
+      this.buildParams(args, ['limit', 'offset']),
+    );
+  }
+
+  private async getStakeholder(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/stakeholders/${encodeURIComponent(args.stakeholder_id as string)}`);
+  }
+
+  private async getCapTable(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.as_of_date) params.set('as_of_date', args.as_of_date as string);
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/cap-table`, params);
+  }
+
+  private async listSecurities(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildParams(args, ['limit', 'offset']);
+    if (args.security_type) params.set('security_type', args.security_type as string);
+    if (args.stakeholder_id) params.set('stakeholder_id', args.stakeholder_id as string);
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/securities`, params);
+  }
+
+  private async getSecurity(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/securities/${encodeURIComponent(args.security_id as string)}`);
+  }
+
+  private async listVestingSchedules(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/securities/${encodeURIComponent(args.security_id as string)}/vesting`);
+  }
+
+  private async listEquityPlans(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/equity-plans`);
+  }
+
+  private async getEquityPlan(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/equity-plans/${encodeURIComponent(args.plan_id as string)}`);
+  }
+
+  private async listShareClasses(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/share-classes`);
+  }
+
+  private async getShareClass(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/share-classes/${encodeURIComponent(args.share_class_id as string)}`);
+  }
+
+  private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildParams(args, ['limit', 'offset']);
+    if (args.transaction_type) params.set('transaction_type', args.transaction_type as string);
+    if (args.stakeholder_id) params.set('stakeholder_id', args.stakeholder_id as string);
+    if (args.start_date) params.set('start_date', args.start_date as string);
+    if (args.end_date) params.set('end_date', args.end_date as string);
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/transactions`, params);
+  }
+
+  private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/transactions/${encodeURIComponent(args.transaction_id as string)}`);
+  }
+
+  private async listFundraisingRounds(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(
+      `/companies/${encodeURIComponent(args.company_id as string)}/fundraising-rounds`,
+      this.buildParams(args, ['limit', 'offset']),
+    );
+  }
+
+  private async getFundraisingRound(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/fundraising-rounds/${encodeURIComponent(args.round_id as string)}`);
+  }
+
+  private async listValuations(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/valuations`);
+  }
+
+  private async listHoldings(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(
+      `/funds/${encodeURIComponent(args.fund_id as string)}/holdings`,
+      this.buildParams(args, ['limit', 'offset']),
+    );
+  }
+
+  private async getHolding(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/funds/${encodeURIComponent(args.fund_id as string)}/holdings/${encodeURIComponent(args.holding_id as string)}`);
+  }
+
+  private async listPortfolioCompanies(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(
+      `/funds/${encodeURIComponent(args.fund_id as string)}/portfolio-companies`,
+      this.buildParams(args, ['limit', 'offset']),
+    );
+  }
+
+  private async listDocuments(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.buildParams(args, ['limit', 'offset']);
+    if (args.document_type) params.set('document_type', args.document_type as string);
+    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/documents`, params);
+  }
+
+  static catalog() {
+    return {
+      name: 'carta',
+      displayName: 'Carta',
+      version: '1.0.0',
+      category: 'finance' as const,
+      keywords: ['carta', 'cap table', 'equity', 'stock option', 'rsu', 'warrant', 'safe', 'convertible note', 'vesting', 'stakeholder', 'share class', '409a', 'fundraising', 'portfolio', 'startup finance'],
+      toolNames: ['get_company', 'list_stakeholders', 'get_stakeholder', 'get_cap_table', 'list_securities', 'get_security', 'list_vesting_schedules', 'list_equity_plans', 'get_equity_plan', 'list_share_classes', 'get_share_class', 'list_transactions', 'get_transaction', 'list_fundraising_rounds', 'get_fundraising_round', 'list_valuations', 'list_holdings', 'get_holding', 'list_portfolio_companies', 'list_documents'],
+      description: 'Carta equity management: cap tables, securities, vesting, stakeholders, share classes, fundraising rounds, 409A valuations, and investor fund holdings.',
+      author: 'protectnil' as const,
+    };
   }
 }

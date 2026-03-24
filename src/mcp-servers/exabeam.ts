@@ -4,16 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/hagoodarzi/Exabeam-MCP — community-authored, not official Exabeam. Not actively maintained. Build this adapter as the canonical implementation using the verified Exabeam developer API.
+// Official MCP: https://github.com/hagoodarzi/Exabeam-MCP — community-authored, not an official
+// Exabeam-maintained server. Not actively maintained. Build this adapter as the canonical
+// implementation using the verified Exabeam New-Scale Security Operations developer API.
+// Our adapter covers: 14 tools (core SOC operations). Vendor MCP covers: limited tools.
+// Recommendation: Use this adapter for production deployments.
+//
+// Base URL: region-specific — user MUST supply their regional base URL.
+//   US West: https://api.us-west.exabeam.cloud
+//   EU West: https://api.eu-west.exabeam.cloud
+//   AP SE:   https://api.ap-southeast.exabeam.cloud
+// Auth: OAuth 2.0 Client Credentials — POST /auth/v1/token with client_id + client_secret
+// Docs: https://developers.exabeam.com/exabeam/
+// Rate limits: Not publicly documented; use conservative retry with backoff
 
 import { ToolDefinition, ToolResult } from './types.js';
 
-// Auth: OAuth 2.0 Client Credentials. POST /auth/v1/token with client_id + client_secret + grant_type=client_credentials.
-// Base URL is region-specific — the user MUST supply their regional base URL.
-// US West example: https://api.us-west.exabeam.cloud
-// Other regions: https://api.eu-west.exabeam.cloud, https://api.ap-southeast.exabeam.cloud, etc.
-
 interface ExabeamConfig {
+  /** Regional base URL, e.g. https://api.us-west.exabeam.cloud */
   baseUrl: string;
   clientId: string;
   clientSecret: string;
@@ -30,6 +38,27 @@ export class ExabeamMCPServer {
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
+  }
+
+  static catalog() {
+    return {
+      name: 'exabeam',
+      displayName: 'Exabeam',
+      version: '1.0.0',
+      category: 'cybersecurity' as const,
+      keywords: [
+        'exabeam', 'ueba', 'siem', 'soc', 'security', 'user behavior analytics',
+        'risk score', 'threat detection', 'incident', 'case', 'alert', 'watchlist',
+        'correlation rule', 'context table', 'notable user', 'session', 'event',
+      ],
+      toolNames: [
+        'search_events', 'get_user_sessions', 'get_user_risk_score', 'list_notable_users',
+        'get_asset_info', 'list_watchlisted_users', 'get_rules', 'list_cases', 'get_case',
+        'update_case', 'list_alerts', 'get_alert', 'list_context_tables', 'query_context_table',
+      ],
+      description: 'Exabeam New-Scale SOC platform: search security events, investigate user risk scores, manage UEBA cases and alerts, query context tables, and review correlation rules.',
+      author: 'protectnil' as const,
+    };
   }
 
   private async getAccessToken(): Promise<string> {
@@ -53,21 +82,27 @@ export class ExabeamMCPServer {
 
     const data = await response.json() as { access_token: string; expires_in?: number };
     this.accessToken = data.access_token;
-    this.tokenExpiry = Date.now() + ((data.expires_in || 3600) - 60) * 1000;
+    this.tokenExpiry = Date.now() + ((data.expires_in ?? 3600) - 60) * 1000;
     return this.accessToken;
+  }
+
+  private truncate(text: string): string {
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'search_events',
-        description: 'Search security events in the Exabeam data lake using a query string',
+        description: 'Search security events in the Exabeam data lake using a query string with optional time range and pagination',
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'Search query string (Exabeam search syntax)',
+              description: 'Search query string using Exabeam search syntax (e.g. "event_type:authentication")',
             },
             start_time: {
               type: 'string',
@@ -79,7 +114,7 @@ export class ExabeamMCPServer {
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of events to return (default: 100)',
+              description: 'Maximum number of events to return (default: 100, max: 1000)',
             },
             offset: {
               type: 'number',
@@ -91,7 +126,7 @@ export class ExabeamMCPServer {
       },
       {
         name: 'get_user_sessions',
-        description: 'Retrieve behavioral analytics sessions for a specific user within a time range',
+        description: 'Retrieve UEBA behavioral analytics sessions for a specific user within a time range',
         inputSchema: {
           type: 'object',
           properties: {
@@ -117,7 +152,7 @@ export class ExabeamMCPServer {
       },
       {
         name: 'get_user_risk_score',
-        description: 'Retrieve the current risk score and risk history for a user',
+        description: 'Retrieve the current risk score and risk score history for a specific user',
         inputSchema: {
           type: 'object',
           properties: {
@@ -131,7 +166,7 @@ export class ExabeamMCPServer {
       },
       {
         name: 'list_notable_users',
-        description: 'List users with elevated risk scores (notable users) in Exabeam',
+        description: 'List users with elevated risk scores (notable users) in Exabeam with lookback period and pagination',
         inputSchema: {
           type: 'object',
           properties: {
@@ -156,24 +191,24 @@ export class ExabeamMCPServer {
       },
       {
         name: 'get_asset_info',
-        description: 'Retrieve asset details and risk information for a hostname or IP address',
+        description: 'Retrieve asset details and risk information for a hostname or IP address from Exabeam',
         inputSchema: {
           type: 'object',
           properties: {
             hostname: {
               type: 'string',
-              description: 'The hostname to look up (mutually exclusive with ip_address)',
+              description: 'The hostname to look up (provide either hostname or ip_address)',
             },
             ip_address: {
               type: 'string',
-              description: 'The IP address to look up (mutually exclusive with hostname)',
+              description: 'The IP address to look up (provide either hostname or ip_address)',
             },
           },
         },
       },
       {
         name: 'list_watchlisted_users',
-        description: 'List users currently on an Exabeam watchlist',
+        description: 'List users currently on an Exabeam watchlist, optionally filtered by watchlist name',
         inputSchema: {
           type: 'object',
           properties: {
@@ -194,7 +229,7 @@ export class ExabeamMCPServer {
       },
       {
         name: 'get_rules',
-        description: 'List Exabeam behavioral analytics rules',
+        description: 'List Exabeam behavioral analytics and correlation rules with optional name filter and pagination',
         inputSchema: {
           type: 'object',
           properties: {
@@ -213,6 +248,169 @@ export class ExabeamMCPServer {
           },
         },
       },
+      {
+        name: 'list_cases',
+        description: 'List Exabeam Threat Center cases with optional status and priority filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              description: 'Filter by case status: open, in_progress, closed (default: open)',
+            },
+            priority: {
+              type: 'string',
+              description: 'Filter by priority: low, medium, high, critical',
+            },
+            assignee: {
+              type: 'string',
+              description: 'Filter by assigned analyst username',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of cases to return (default: 25)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Pagination offset (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_case',
+        description: 'Retrieve full details of a specific Exabeam Threat Center case including notes and timeline',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            case_id: {
+              type: 'string',
+              description: 'The unique case ID to retrieve',
+            },
+          },
+          required: ['case_id'],
+        },
+      },
+      {
+        name: 'update_case',
+        description: 'Update the status, priority, or assignee of an Exabeam Threat Center case',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            case_id: {
+              type: 'string',
+              description: 'The unique case ID to update',
+            },
+            status: {
+              type: 'string',
+              description: 'New status: open, in_progress, closed',
+            },
+            priority: {
+              type: 'string',
+              description: 'New priority: low, medium, high, critical',
+            },
+            assignee: {
+              type: 'string',
+              description: 'Username of the analyst to assign the case to',
+            },
+            note: {
+              type: 'string',
+              description: 'Optional note to add to the case timeline',
+            },
+          },
+          required: ['case_id'],
+        },
+      },
+      {
+        name: 'list_alerts',
+        description: 'List Exabeam Threat Center alerts with optional filters for status, severity, and rule name',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              description: 'Filter by alert status: open, acknowledged, closed',
+            },
+            severity: {
+              type: 'string',
+              description: 'Filter by severity: low, medium, high, critical',
+            },
+            rule_name: {
+              type: 'string',
+              description: 'Filter by triggering rule name',
+            },
+            start_time: {
+              type: 'string',
+              description: 'Filter alerts after this ISO 8601 timestamp',
+            },
+            end_time: {
+              type: 'string',
+              description: 'Filter alerts before this ISO 8601 timestamp',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of alerts to return (default: 50)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Pagination offset (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_alert',
+        description: 'Retrieve full details of a specific Exabeam Threat Center alert by ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            alert_id: {
+              type: 'string',
+              description: 'The unique alert ID to retrieve',
+            },
+          },
+          required: ['alert_id'],
+        },
+      },
+      {
+        name: 'list_context_tables',
+        description: 'List Exabeam context tables including threat intelligence and custom tables',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of context tables to return (default: 50)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Pagination offset (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'query_context_table',
+        description: 'Query an Exabeam context table by name to look up threat intelligence or contextual data',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            table_name: {
+              type: 'string',
+              description: 'Name of the context table to query',
+            },
+            lookup_value: {
+              type: 'string',
+              description: 'Value to look up in the context table (e.g. IP address, domain, username)',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of records to return (default: 50)',
+            },
+          },
+          required: ['table_name'],
+        },
+      },
     ];
   }
 
@@ -225,169 +423,34 @@ export class ExabeamMCPServer {
       };
 
       switch (name) {
-        case 'search_events': {
-          const query = args.query as string;
-          if (!query) {
-            return { content: [{ type: 'text', text: 'query is required' }], isError: true };
-          }
-
-          const body: Record<string, unknown> = { query };
-          if (args.start_time) body.startTime = args.start_time;
-          if (args.end_time) body.endTime = args.end_time;
-          if (args.limit) body.limit = args.limit;
-          if (args.offset !== undefined) body.offset = args.offset;
-
-          const response = await fetch(`${this.baseUrl}/search/v2/events`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Event search failed (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Exabeam returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_user_sessions': {
-          const username = args.username as string;
-          if (!username) {
-            return { content: [{ type: 'text', text: 'username is required' }], isError: true };
-          }
-
-          const params = new URLSearchParams();
-          if (args.start_time) params.set('startTime', args.start_time as string);
-          if (args.end_time) params.set('endTime', args.end_time as string);
-          if (args.limit) params.set('limit', String(args.limit));
-
-          const response = await fetch(
-            `${this.baseUrl}/uba/api/user/${encodeURIComponent(username)}/sequences?${params.toString()}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to get user sessions (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Exabeam returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_user_risk_score': {
-          const username = args.username as string;
-          if (!username) {
-            return { content: [{ type: 'text', text: 'username is required' }], isError: true };
-          }
-
-          const response = await fetch(
-            `${this.baseUrl}/uba/api/user/${encodeURIComponent(username)}/riskScoreHistory`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to get user risk score (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Exabeam returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_notable_users': {
-          const params = new URLSearchParams();
-          if (args.unit) params.set('unit', args.unit as string);
-          if (args.num) params.set('num', String(args.num));
-          if (args.limit) params.set('numberOfResults', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-
-          const response = await fetch(`${this.baseUrl}/uba/api/users/notable?${params.toString()}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list notable users (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Exabeam returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_asset_info': {
-          const hostname = args.hostname as string;
-          const ipAddress = args.ip_address as string;
-
-          if (!hostname && !ipAddress) {
-            return { content: [{ type: 'text', text: 'hostname or ip_address is required' }], isError: true };
-          }
-
-          const identifier = hostname || ipAddress;
-          const response = await fetch(
-            `${this.baseUrl}/uba/api/asset/${encodeURIComponent(identifier)}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to get asset info (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Exabeam returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_watchlisted_users': {
-          const params = new URLSearchParams();
-          if (args.watchlist_name) params.set('watchlistName', args.watchlist_name as string);
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-
-          const response = await fetch(`${this.baseUrl}/uba/api/watchlist/users?${params.toString()}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to list watchlisted users (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Exabeam returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_rules': {
-          const params = new URLSearchParams();
-          if (args.filter) params.set('filter', args.filter as string);
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-
-          const response = await fetch(`${this.baseUrl}/uba/api/rules?${params.toString()}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return { content: [{ type: 'text', text: `Failed to get rules (HTTP ${response.status}): ${errText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Exabeam returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'search_events':
+          return this.searchEvents(args, headers);
+        case 'get_user_sessions':
+          return this.getUserSessions(args, headers);
+        case 'get_user_risk_score':
+          return this.getUserRiskScore(args, headers);
+        case 'list_notable_users':
+          return this.listNotableUsers(args, headers);
+        case 'get_asset_info':
+          return this.getAssetInfo(args, headers);
+        case 'list_watchlisted_users':
+          return this.listWatchlistedUsers(args, headers);
+        case 'get_rules':
+          return this.getRules(args, headers);
+        case 'list_cases':
+          return this.listCases(args, headers);
+        case 'get_case':
+          return this.getCase(args, headers);
+        case 'update_case':
+          return this.updateCase(args, headers);
+        case 'list_alerts':
+          return this.listAlerts(args, headers);
+        case 'get_alert':
+          return this.getAlert(args, headers);
+        case 'list_context_tables':
+          return this.listContextTables(args, headers);
+        case 'query_context_table':
+          return this.queryContextTable(args, headers);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -397,5 +460,310 @@ export class ExabeamMCPServer {
         isError: true,
       };
     }
+  }
+
+  private async searchEvents(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const query = args.query as string;
+    if (!query) {
+      return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    }
+
+    const body: Record<string, unknown> = { query };
+    if (args.start_time) body.startTime = args.start_time;
+    if (args.end_time) body.endTime = args.end_time;
+    if (args.limit) body.limit = args.limit;
+    if (args.offset !== undefined) body.offset = args.offset;
+
+    const response = await fetch(`${this.baseUrl}/search/v2/events`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Event search failed (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getUserSessions(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const username = args.username as string;
+    if (!username) {
+      return { content: [{ type: 'text', text: 'username is required' }], isError: true };
+    }
+
+    const params = new URLSearchParams();
+    if (args.start_time) params.set('startTime', args.start_time as string);
+    if (args.end_time) params.set('endTime', args.end_time as string);
+    if (args.limit) params.set('limit', String(args.limit));
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${this.baseUrl}/uba/api/user/${encodeURIComponent(username)}/sequences${qs}`,
+      { method: 'GET', headers },
+    );
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get user sessions (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getUserRiskScore(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const username = args.username as string;
+    if (!username) {
+      return { content: [{ type: 'text', text: 'username is required' }], isError: true };
+    }
+
+    const response = await fetch(
+      `${this.baseUrl}/uba/api/user/${encodeURIComponent(username)}/riskScoreHistory`,
+      { method: 'GET', headers },
+    );
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get user risk score (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async listNotableUsers(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.unit) params.set('unit', args.unit as string);
+    if (args.num) params.set('num', String(args.num));
+    if (args.limit) params.set('numberOfResults', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.baseUrl}/uba/api/users/notable${qs}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list notable users (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getAssetInfo(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const hostname = args.hostname as string;
+    const ipAddress = args.ip_address as string;
+
+    if (!hostname && !ipAddress) {
+      return { content: [{ type: 'text', text: 'hostname or ip_address is required' }], isError: true };
+    }
+
+    const identifier = hostname || ipAddress;
+    const response = await fetch(
+      `${this.baseUrl}/uba/api/asset/${encodeURIComponent(identifier)}`,
+      { method: 'GET', headers },
+    );
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get asset info (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async listWatchlistedUsers(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.watchlist_name) params.set('watchlistName', args.watchlist_name as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.baseUrl}/uba/api/watchlist/users${qs}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list watchlisted users (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getRules(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.filter) params.set('filter', args.filter as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.baseUrl}/uba/api/rules${qs}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get rules (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async listCases(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.status) params.set('status', args.status as string);
+    if (args.priority) params.set('priority', args.priority as string);
+    if (args.assignee) params.set('assignee', args.assignee as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.baseUrl}/threat-center/api/v1/cases${qs}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list cases (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getCase(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const caseId = args.case_id as string;
+    if (!caseId) {
+      return { content: [{ type: 'text', text: 'case_id is required' }], isError: true };
+    }
+
+    const response = await fetch(
+      `${this.baseUrl}/threat-center/api/v1/cases/${encodeURIComponent(caseId)}`,
+      { method: 'GET', headers },
+    );
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get case (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async updateCase(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const caseId = args.case_id as string;
+    if (!caseId) {
+      return { content: [{ type: 'text', text: 'case_id is required' }], isError: true };
+    }
+
+    const body: Record<string, unknown> = {};
+    if (args.status) body.status = args.status;
+    if (args.priority) body.priority = args.priority;
+    if (args.assignee) body.assignee = args.assignee;
+    if (args.note) body.note = args.note;
+
+    const response = await fetch(
+      `${this.baseUrl}/threat-center/api/v1/cases/${encodeURIComponent(caseId)}`,
+      { method: 'PATCH', headers, body: JSON.stringify(body) },
+    );
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to update case (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async listAlerts(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.status) params.set('status', args.status as string);
+    if (args.severity) params.set('severity', args.severity as string);
+    if (args.rule_name) params.set('ruleName', args.rule_name as string);
+    if (args.start_time) params.set('startTime', args.start_time as string);
+    if (args.end_time) params.set('endTime', args.end_time as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.baseUrl}/threat-center/api/v1/alerts${qs}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list alerts (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getAlert(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const alertId = args.alert_id as string;
+    if (!alertId) {
+      return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
+    }
+
+    const response = await fetch(
+      `${this.baseUrl}/threat-center/api/v1/alerts/${encodeURIComponent(alertId)}`,
+      { method: 'GET', headers },
+    );
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get alert (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async listContextTables(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.baseUrl}/uba/api/context-tables${qs}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list context tables (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async queryContextTable(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
+    const tableName = args.table_name as string;
+    if (!tableName) {
+      return { content: [{ type: 'text', text: 'table_name is required' }], isError: true };
+    }
+
+    const params = new URLSearchParams();
+    if (args.lookup_value) params.set('lookupValue', args.lookup_value as string);
+    if (args.limit) params.set('limit', String(args.limit));
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${this.baseUrl}/uba/api/context-tables/${encodeURIComponent(tableName)}/query${qs}`,
+      { method: 'GET', headers },
+    );
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to query context table (HTTP ${response.status}): ${await response.text()}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 }

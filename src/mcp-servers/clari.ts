@@ -4,22 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found — community repo avadh/clari-mcp-server exists but has 0 stars and is unmaintained.
-// This adapter covers both the Clari platform (revenue forecasting) and Clari Copilot (call intelligence) APIs.
+// Official MCP: None found as of 2026-03
+// Community repo avadh/clari-mcp-server exists but has 0 stars and is unmaintained.
+// No official Clari MCP server was found on GitHub.
+//
+// Base URL: https://api.clari.com/v4  (Clari platform — forecasting, pipeline)
+// Copilot URL: https://api.copilot.clari.com  (Clari Copilot — call intelligence)
+// Auth: API key in 'apikey' request header (both Clari platform and Copilot APIs)
+// Docs: https://developer.clari.com/documentation/external_spec
+// Rate limits: Not publicly documented. Contact Clari support for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface ClariConfig {
   apiKey: string;
-  /**
-   * Base URL for the Clari platform (forecasting/pipeline) API.
-   * Defaults to https://api.clari.com/v4
-   */
+  /** Base URL for the Clari platform (forecasting/pipeline). Defaults to https://api.clari.com/v4 */
   baseUrl?: string;
-  /**
-   * Base URL for the Clari Copilot (call intelligence) API.
-   * Defaults to https://api.copilot.clari.com
-   */
+  /** Base URL for the Clari Copilot (call intelligence). Defaults to https://api.copilot.clari.com */
   copilotBaseUrl?: string;
 }
 
@@ -38,34 +39,34 @@ export class ClariMCPServer {
     return [
       {
         name: 'export_forecast',
-        description: 'Export manual forecast submissions from Clari for a given time period. Supports forecast calls, quota, adjustments, and CRM totals. Returns an async job ID — use get_export_job to poll for completion.',
+        description: 'Export forecast submissions from Clari for a time period. Returns an async job ID — poll with get_export_job. Supports forecast calls, quota, adjustments, and CRM totals.',
         inputSchema: {
           type: 'object',
           properties: {
             forecastName: {
               type: 'string',
-              description: 'Name of the Clari forecast to export (used in the URL path).',
+              description: 'Name of the Clari forecast to export (used in the URL path)',
             },
             timePeriod: {
               type: 'string',
-              description: 'Time period in YYYY_Qn format (e.g. "2026_Q1").',
+              description: 'Time period in YYYY_Qn format (e.g. "2026_Q1")',
             },
             typesToExport: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Data types to export: forecast, quota, forecast_updated, adjustment, crm_total, crm_closed.',
+              description: 'Data types: forecast | quota | forecast_updated | adjustment | crm_total | crm_closed',
             },
             currency: {
               type: 'string',
-              description: 'Currency code for monetary values (e.g. "USD").',
+              description: 'Currency code for monetary values (e.g. "USD")',
             },
             includeHistorical: {
               type: 'boolean',
-              description: 'Whether to include historical forecast snapshots (default: false).',
+              description: 'Include historical forecast snapshots (default: false)',
             },
             exportFormat: {
               type: 'string',
-              description: 'Output format: "json" or "csv" (default: "json").',
+              description: 'Output format: json | csv (default: json)',
             },
           },
           required: ['forecastName', 'timePeriod'],
@@ -73,89 +74,171 @@ export class ClariMCPServer {
       },
       {
         name: 'get_export_job',
-        description: 'Poll the status of an async Clari export job initiated by export_forecast. Returns "pending", "running", "complete", or "failed" along with a download URL when complete.',
+        description: 'Poll the status of an async Clari export job. Returns "pending", "running", "complete", or "failed" with a download URL when complete.',
         inputSchema: {
           type: 'object',
           properties: {
             jobId: {
               type: 'string',
-              description: 'Job ID returned by export_forecast.',
+              description: 'Job ID returned by export_forecast',
             },
           },
           required: ['jobId'],
         },
       },
       {
+        name: 'list_export_jobs',
+        description: 'List all running and recently completed Clari export jobs with their status and timestamps',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              description: 'Filter by job status: pending | running | complete | failed (omit for all)',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_calls',
+        description: 'List Clari Copilot call recordings with optional date range and user filters. Returns call IDs, titles, participants, and durations.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fromDate: {
+              type: 'string',
+              description: 'Start date for filtering calls (ISO-8601, e.g. "2026-01-01")',
+            },
+            toDate: {
+              type: 'string',
+              description: 'End date for filtering calls (ISO-8601, e.g. "2026-03-31")',
+            },
+            userId: {
+              type: 'string',
+              description: 'Filter calls by Clari user ID',
+            },
+            limit: {
+              type: 'number',
+              description: 'Max number of calls to return (default: 50)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Number of calls to skip for pagination',
+            },
+          },
+        },
+      },
+      {
         name: 'get_call_details',
-        description: 'Retrieve full details for a Clari Copilot call by call ID, including transcript, AI-generated summary, talk ratio, topics, and action items.',
+        description: 'Get full details for a Clari Copilot call including transcript, AI-generated summary, talk ratio, topics, and action items',
         inputSchema: {
           type: 'object',
           properties: {
             callId: {
               type: 'string',
-              description: 'Clari Copilot call ID.',
+              description: 'Clari Copilot call ID',
             },
           },
           required: ['callId'],
         },
       },
       {
+        name: 'search_calls',
+        description: 'Search Clari Copilot call recordings by keyword in title, transcript, or topics. Returns matching calls with relevance context.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Search query — keywords found in call title, transcript, or topics',
+            },
+            fromDate: {
+              type: 'string',
+              description: 'Start date for search scope (ISO-8601)',
+            },
+            toDate: {
+              type: 'string',
+              description: 'End date for search scope (ISO-8601)',
+            },
+            limit: {
+              type: 'number',
+              description: 'Max results to return (default: 20)',
+            },
+          },
+          required: ['query'],
+        },
+      },
+      {
         name: 'get_call_topics',
-        description: 'Retrieve topics and keywords discussed across Clari Copilot calls, with metadata including frequency and associated call IDs.',
+        description: 'Get topics and keywords discussed across Clari Copilot calls with frequency counts and associated call IDs',
         inputSchema: {
           type: 'object',
           properties: {
             fromDate: {
               type: 'string',
-              description: 'Start date for filtering calls (ISO-8601, e.g. "2024-01-01").',
+              description: 'Start date for filtering calls (ISO-8601)',
             },
             toDate: {
               type: 'string',
-              description: 'End date for filtering calls (ISO-8601, e.g. "2024-12-31").',
+              description: 'End date for filtering calls (ISO-8601)',
             },
             userId: {
               type: 'string',
-              description: 'Filter by Clari user ID.',
+              description: 'Filter topics by Clari user ID',
             },
           },
         },
       },
       {
+        name: 'get_call_scorecards',
+        description: 'Get scorecard evaluations for a Clari Copilot call, including criteria scores and reviewer feedback',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            callId: {
+              type: 'string',
+              description: 'Clari Copilot call ID',
+            },
+          },
+          required: ['callId'],
+        },
+      },
+      {
         name: 'create_call',
-        description: 'Submit an external call recording to Clari Copilot for processing. Clari will generate a transcript, talk ratio, topics, and AI insights. Accepts a publicly accessible audio/video URL.',
+        description: 'Submit an external call recording to Clari Copilot for processing. Clari generates transcript, talk ratio, topics, and AI insights. Accepts a public audio/video URL.',
         inputSchema: {
           type: 'object',
           properties: {
             title: {
               type: 'string',
-              description: 'Title or subject of the call.',
+              description: 'Title or subject of the call',
             },
             mediaUrl: {
               type: 'string',
-              description: 'Publicly accessible URL of the audio or video recording.',
+              description: 'Publicly accessible URL of the audio or video recording',
             },
             startTime: {
               type: 'string',
-              description: 'ISO-8601 start time of the call (e.g. "2024-06-15T14:00:00Z").',
+              description: 'ISO-8601 start time (e.g. "2026-03-15T14:00:00Z")',
             },
             durationSeconds: {
               type: 'number',
-              description: 'Duration of the call in seconds.',
+              description: 'Duration of the call in seconds',
             },
             participants: {
               type: 'array',
               items: {
                 type: 'object',
                 properties: {
-                  name: { type: 'string' },
-                  email: { type: 'string' },
+                  name: { type: 'string', description: 'Participant full name' },
+                  email: { type: 'string', description: 'Participant email address' },
                 },
               },
-              description: 'List of call participants.',
+              description: 'List of call participants with name and email',
             },
             crmObjectId: {
               type: 'string',
-              description: 'CRM opportunity or account ID to associate with the call.',
+              description: 'CRM opportunity or account ID to associate with this call',
             },
           },
           required: ['title', 'mediaUrl', 'startTime'],
@@ -164,175 +247,43 @@ export class ClariMCPServer {
     ];
   }
 
+  private get platformHeaders(): Record<string, string> {
+    return { apikey: this.apiKey, 'Content-Type': 'application/json' };
+  }
+
+  private get copilotHeaders(): Record<string, string> {
+    return { apikey: this.apiKey, 'Content-Type': 'application/json' };
+  }
+
+  private truncate(text: string): string {
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const platformHeaders: Record<string, string> = {
-        apikey: this.apiKey,
-        'Content-Type': 'application/json',
-      };
-
-      const copilotHeaders: Record<string, string> = {
-        apikey: this.apiKey,
-        'Content-Type': 'application/json',
-      };
-
       switch (name) {
-        case 'export_forecast': {
-          const forecastName = args.forecastName as string;
-          if (!forecastName) {
-            return {
-              content: [{ type: 'text', text: 'forecastName is required' }],
-              isError: true,
-            };
-          }
-          if (!args.timePeriod) {
-            return {
-              content: [{ type: 'text', text: 'timePeriod is required (e.g. "2026_Q1")' }],
-              isError: true,
-            };
-          }
-
-          const body: Record<string, unknown> = { timePeriod: args.timePeriod };
-          if (args.typesToExport) body.typesToExport = args.typesToExport;
-          if (args.currency) body.currency = args.currency;
-          if (typeof args.includeHistorical === 'boolean') body.includeHistorical = args.includeHistorical;
-          if (args.exportFormat) body.exportFormat = args.exportFormat;
-
-          const response = await fetch(`${this.baseUrl}/export/forecast/${encodeURIComponent(forecastName)}`, {
-            method: 'POST',
-            headers: platformHeaders,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to export forecast: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Clari returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_export_job': {
-          const jobId = args.jobId as string;
-          if (!jobId) {
-            return {
-              content: [{ type: 'text', text: 'jobId is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(`${this.baseUrl}/export/jobs/${encodeURIComponent(jobId)}`, {
-            method: 'GET',
-            headers: platformHeaders,
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get export job: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Clari returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_call_details': {
-          const callId = args.callId as string;
-          if (!callId) {
-            return {
-              content: [{ type: 'text', text: 'callId is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(`${this.copilotBaseUrl}/call-details?id=${encodeURIComponent(callId)}`, {
-            method: 'GET',
-            headers: copilotHeaders,
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get call details: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Clari Copilot returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_call_topics': {
-          let url = `${this.copilotBaseUrl}/v2/topics`;
-          const params: string[] = [];
-          if (args.fromDate) params.push(`fromDate=${encodeURIComponent(args.fromDate as string)}`);
-          if (args.toDate) params.push(`toDate=${encodeURIComponent(args.toDate as string)}`);
-          if (args.userId) params.push(`userId=${encodeURIComponent(args.userId as string)}`);
-          if (params.length) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: copilotHeaders,
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get call topics: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Clari Copilot returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_call': {
-          if (!args.title || !args.mediaUrl || !args.startTime) {
-            return {
-              content: [{ type: 'text', text: 'title, mediaUrl, and startTime are required' }],
-              isError: true,
-            };
-          }
-
-          const body: Record<string, unknown> = {
-            title: args.title,
-            mediaUrl: args.mediaUrl,
-            startTime: args.startTime,
-          };
-          if (args.durationSeconds) body.durationSeconds = args.durationSeconds;
-          if (args.participants) body.participants = args.participants;
-          if (args.crmObjectId) body.crmObjectId = args.crmObjectId;
-
-          const response = await fetch(`${this.copilotBaseUrl}/create-call`, {
-            method: 'POST',
-            headers: copilotHeaders,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to create call: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Clari Copilot returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'export_forecast':
+          return await this.exportForecast(args);
+        case 'get_export_job':
+          return await this.getExportJob(args);
+        case 'list_export_jobs':
+          return await this.listExportJobs(args);
+        case 'list_calls':
+          return await this.listCalls(args);
+        case 'get_call_details':
+          return await this.getCallDetails(args);
+        case 'search_calls':
+          return await this.searchCalls(args);
+        case 'get_call_topics':
+          return await this.getCallTopics(args);
+        case 'get_call_scorecards':
+          return await this.getCallScorecards(args);
+        case 'create_call':
+          return await this.createCall(args);
         default:
-          return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-            isError: true,
-          };
+          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
     } catch (error) {
       return {
@@ -340,5 +291,166 @@ export class ClariMCPServer {
         isError: true,
       };
     }
+  }
+
+  private async exportForecast(args: Record<string, unknown>): Promise<ToolResult> {
+    const forecastName = args.forecastName as string;
+    const timePeriod = args.timePeriod as string;
+    if (!forecastName || !timePeriod) {
+      return { content: [{ type: 'text', text: 'forecastName and timePeriod are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = { timePeriod };
+    if (args.typesToExport) body.typesToExport = args.typesToExport;
+    if (args.currency) body.currency = args.currency;
+    if (typeof args.includeHistorical === 'boolean') body.includeHistorical = args.includeHistorical;
+    if (args.exportFormat) body.exportFormat = args.exportFormat;
+
+    const response = await fetch(`${this.baseUrl}/export/forecast/${encodeURIComponent(forecastName)}`, {
+      method: 'POST',
+      headers: this.platformHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to export forecast: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getExportJob(args: Record<string, unknown>): Promise<ToolResult> {
+    const jobId = args.jobId as string;
+    if (!jobId) {
+      return { content: [{ type: 'text', text: 'jobId is required' }], isError: true };
+    }
+    const response = await fetch(`${this.baseUrl}/export/jobs/${encodeURIComponent(jobId)}`, {
+      headers: this.platformHeaders,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get export job: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async listExportJobs(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.status) params.set('status', args.status as string);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.baseUrl}/export/jobs${qs}`, {
+      headers: this.platformHeaders,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list export jobs: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async listCalls(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.fromDate) params.set('fromDate', args.fromDate as string);
+    if (args.toDate) params.set('toDate', args.toDate as string);
+    if (args.userId) params.set('userId', args.userId as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.offset) params.set('offset', String(args.offset));
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.copilotBaseUrl}/v2/calls${qs}`, {
+      headers: this.copilotHeaders,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list calls: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari Copilot returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getCallDetails(args: Record<string, unknown>): Promise<ToolResult> {
+    const callId = args.callId as string;
+    if (!callId) {
+      return { content: [{ type: 'text', text: 'callId is required' }], isError: true };
+    }
+    const response = await fetch(`${this.copilotBaseUrl}/call-details?id=${encodeURIComponent(callId)}`, {
+      headers: this.copilotHeaders,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get call details: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari Copilot returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async searchCalls(args: Record<string, unknown>): Promise<ToolResult> {
+    const query = args.query as string;
+    if (!query) {
+      return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    }
+    const params = new URLSearchParams({ q: query });
+    if (args.fromDate) params.set('fromDate', args.fromDate as string);
+    if (args.toDate) params.set('toDate', args.toDate as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    const response = await fetch(`${this.copilotBaseUrl}/v2/calls/search?${params.toString()}`, {
+      headers: this.copilotHeaders,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to search calls: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari Copilot returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getCallTopics(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.fromDate) params.set('fromDate', args.fromDate as string);
+    if (args.toDate) params.set('toDate', args.toDate as string);
+    if (args.userId) params.set('userId', args.userId as string);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.copilotBaseUrl}/v2/topics${qs}`, {
+      headers: this.copilotHeaders,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get call topics: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari Copilot returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getCallScorecards(args: Record<string, unknown>): Promise<ToolResult> {
+    const callId = args.callId as string;
+    if (!callId) {
+      return { content: [{ type: 'text', text: 'callId is required' }], isError: true };
+    }
+    const response = await fetch(`${this.copilotBaseUrl}/v2/calls/${encodeURIComponent(callId)}/scorecards`, {
+      headers: this.copilotHeaders,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get call scorecards: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari Copilot returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async createCall(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.title || !args.mediaUrl || !args.startTime) {
+      return { content: [{ type: 'text', text: 'title, mediaUrl, and startTime are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = {
+      title: args.title,
+      mediaUrl: args.mediaUrl,
+      startTime: args.startTime,
+    };
+    if (args.durationSeconds) body.durationSeconds = args.durationSeconds;
+    if (args.participants) body.participants = args.participants;
+    if (args.crmObjectId) body.crmObjectId = args.crmObjectId;
+
+    const response = await fetch(`${this.copilotBaseUrl}/create-call`, {
+      method: 'POST',
+      headers: this.copilotHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to create call: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json().catch(() => { throw new Error(`Clari Copilot returned non-JSON (HTTP ${response.status})`); });
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 }

@@ -4,23 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/CDataSoftware/adp-mcp-server-by-cdata — read-only JDBC bridge requiring a CData license. Our adapter serves the direct OAuth2 REST API use case for ADP Workforce Now.
+// Official MCP: https://github.com/CDataSoftware/adp-mcp-server-by-cdata — read-only JDBC bridge requiring a CData license.
+// Our adapter serves the direct OAuth2 REST API use case for ADP Workforce Now without CData dependency.
+// Recommendation: Use the CData MCP server for broad schema exploration. Use this adapter for direct OAuth2 REST access.
+//
+// Base URL: https://api.adp.com
+// Auth: OAuth2 client_credentials flow
+//   Token endpoint: https://accounts.adp.com/auth/oauth/v2/token
+//   Note: ADP production requires mutual TLS (mTLS). Pass a pre-obtained accessToken for mTLS environments.
+// Docs: https://developers.adp.com/build/api-explorer/hcm-offrg-wfn
+// Rate limits: Not publicly documented; ADP enforces quotas per API product subscription
 
 import { ToolDefinition, ToolResult } from './types.js';
-
-// ADP Workforce Now REST API base URL: https://api.adp.com
-// Auth: OAuth2 client_credentials flow. Token endpoint: https://accounts.adp.com/auth/oauth/v2/token
-// Requires mutual TLS (mTLS) — ADP mandates a client certificate in addition to the Bearer token.
-// Workers API: GET /hr/v2/workers, GET /hr/v2/workers/{aoid}
-// Payroll: GET /payroll/v1/paydata
-// Time Off: GET /time/v2/workers/{aoid}/time-off-details/time-off-requests
 
 interface ADPConfig {
   clientId: string;
   clientSecret: string;
   /** Override production base URL; useful for sandbox testing */
   baseUrl?: string;
-  /** Pre-obtained Bearer access token (if you manage token refresh externally) */
+  /** Pre-obtained Bearer access token (if you manage token refresh or mTLS externally) */
   accessToken?: string;
 }
 
@@ -28,19 +30,23 @@ export class ADPMCPServer {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
-  private accessToken: string;
+  private cachedToken: string;
+  private tokenExpiry: number = 0;
 
   constructor(config: ADPConfig) {
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = (config.baseUrl || 'https://api.adp.com').replace(/\/$/, '');
-    this.accessToken = config.accessToken || '';
+    this.cachedToken = config.accessToken || '';
   }
 
-  private async getAccessToken(): Promise<string> {
-    if (this.accessToken) return this.accessToken;
+  private async getOrRefreshToken(): Promise<string> {
+    const now = Date.now();
+    if (this.cachedToken && this.tokenExpiry > now) {
+      return this.cachedToken;
+    }
 
-    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+    const credentials = btoa(`${this.clientId}:${this.clientSecret}`);
     const response = await fetch('https://accounts.adp.com/auth/oauth/v2/token', {
       method: 'POST',
       headers: {
@@ -54,43 +60,49 @@ export class ADPMCPServer {
       throw new Error(`ADP token request failed: HTTP ${response.status} ${response.statusText}`);
     }
 
-    let tokenData: { access_token?: string };
-    try { tokenData = await response.json() as { access_token?: string }; } catch { throw new Error('ADP returned non-JSON token response'); }
+    let tokenData: { access_token?: string; expires_in?: number };
+    try {
+      tokenData = await response.json() as { access_token?: string; expires_in?: number };
+    } catch {
+      throw new Error('ADP returned non-JSON token response');
+    }
 
     if (!tokenData.access_token) {
       throw new Error('ADP token response did not include access_token');
     }
 
-    this.accessToken = tokenData.access_token;
-    return this.accessToken;
+    this.cachedToken = tokenData.access_token;
+    // Refresh 60 seconds early; default to 1 hour if expires_in not provided
+    this.tokenExpiry = now + ((tokenData.expires_in ?? 3600) - 60) * 1000;
+    return this.cachedToken;
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_workers',
-        description: 'Retrieve a paginated list of workers from ADP Workforce Now. Returns worker details including Associate OID (AOID), name, department, job title, and employment status.',
+        description: 'List workers from ADP Workforce Now with optional OData filter and pagination. Returns Associate OID, name, department, job title, and employment status.',
         inputSchema: {
           type: 'object',
           properties: {
             top: {
               type: 'number',
-              description: 'Maximum number of workers to return (ADP uses $top, default: 100, max: 100)',
+              description: 'Maximum workers to return (default: 100, max: 100 per ADP limits)',
             },
             skip: {
               type: 'number',
-              description: 'Number of records to skip for pagination using $skip (default: 0)',
+              description: 'Records to skip for pagination using $skip (default: 0)',
             },
             filter: {
               type: 'string',
-              description: 'OData-style filter string, e.g. "workers/workAssignments/jobCode/codeValue eq \'ENG\'\'  (optional)',
+              description: 'OData filter string (e.g., "workers/workAssignments/jobCode/codeValue eq \'ENG\'")',
             },
           },
         },
       },
       {
         name: 'get_worker',
-        description: 'Retrieve full details for a single ADP worker by their Associate OID (AOID).',
+        description: 'Get full details for a single ADP worker by their Associate OID (AOID), including job, compensation, and contact info.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -103,8 +115,16 @@ export class ADPMCPServer {
         },
       },
       {
+        name: 'get_workers_meta',
+        description: 'Retrieve metadata for the Workers v2 API, including available fields and their data types.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
         name: 'get_worker_time_off_requests',
-        description: 'Retrieve time off requests for a specific ADP worker by their Associate OID.',
+        description: 'Retrieve time-off requests for a specific ADP worker by AOID with optional date range filter.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -114,11 +134,25 @@ export class ADPMCPServer {
             },
             start_date: {
               type: 'string',
-              description: 'Start date for the time-off request query (YYYY-MM-DD, optional)',
+              description: 'Start date for the query (YYYY-MM-DD)',
             },
             end_date: {
               type: 'string',
-              description: 'End date for the time-off request query (YYYY-MM-DD, optional)',
+              description: 'End date for the query (YYYY-MM-DD)',
+            },
+          },
+          required: ['aoid'],
+        },
+      },
+      {
+        name: 'get_worker_leave_requests',
+        description: 'Retrieve leave of absence requests for a specific ADP worker by AOID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            aoid: {
+              type: 'string',
+              description: 'The ADP Associate OID of the worker',
             },
           },
           required: ['aoid'],
@@ -126,31 +160,93 @@ export class ADPMCPServer {
       },
       {
         name: 'get_payroll_data',
-        description: 'Retrieve payroll data from ADP. Returns pay data including earnings, deductions, and net pay.',
+        description: 'Retrieve payroll data from ADP Pay Data Input v1 API, including earnings, deductions, and net pay with optional OData filter.',
         inputSchema: {
           type: 'object',
           properties: {
             top: {
               type: 'number',
-              description: 'Maximum number of payroll records to return (default: 100)',
+              description: 'Maximum payroll records to return (default: 100)',
             },
             skip: {
               type: 'number',
-              description: 'Number of records to skip for pagination (default: 0)',
+              description: 'Records to skip for pagination (default: 0)',
             },
             filter: {
               type: 'string',
-              description: 'OData filter string to narrow payroll results (optional)',
+              description: 'OData filter string to narrow payroll results',
             },
           },
         },
       },
       {
-        name: 'get_workers_meta',
-        description: 'Retrieve metadata for the Workers v2 API, including available fields and their data types. Useful for discovering what data can be queried.',
+        name: 'list_pay_statements',
+        description: 'List pay statements (pay stubs) for a specific worker by AOID, showing gross pay, deductions, and net pay per period.',
         inputSchema: {
           type: 'object',
-          properties: {},
+          properties: {
+            aoid: {
+              type: 'string',
+              description: 'The ADP Associate OID of the worker',
+            },
+            top: {
+              type: 'number',
+              description: 'Maximum pay statements to return (default: 25)',
+            },
+            skip: {
+              type: 'number',
+              description: 'Records to skip for pagination (default: 0)',
+            },
+          },
+          required: ['aoid'],
+        },
+      },
+      {
+        name: 'list_organization_departments',
+        description: 'List departments and organizational units in ADP Workforce Now.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            top: {
+              type: 'number',
+              description: 'Maximum departments to return (default: 100)',
+            },
+            skip: {
+              type: 'number',
+              description: 'Records to skip for pagination (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_job_classifications',
+        description: 'List job codes and classifications defined in ADP Workforce Now.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            top: {
+              type: 'number',
+              description: 'Maximum job classifications to return (default: 100)',
+            },
+            skip: {
+              type: 'number',
+              description: 'Records to skip for pagination (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_worker_benefits',
+        description: 'List benefit enrollments for a specific ADP worker by AOID, including health, dental, and retirement plans.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            aoid: {
+              type: 'string',
+              description: 'The ADP Associate OID of the worker',
+            },
+          },
+          required: ['aoid'],
         },
       },
     ];
@@ -158,128 +254,29 @@ export class ADPMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const token = await this.getAccessToken();
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      };
-
       switch (name) {
-        case 'list_workers': {
-          const top = (args.top as number) || 100;
-          const skip = (args.skip as number) || 0;
-          let url = `${this.baseUrl}/hr/v2/workers?$top=${top}&$skip=${skip}`;
-          if (args.filter) url += `&$filter=${encodeURIComponent(args.filter as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list workers: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`ADP returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_worker': {
-          const aoid = args.aoid as string;
-
-          if (!aoid) {
-            return {
-              content: [{ type: 'text', text: 'aoid is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(`${this.baseUrl}/hr/v2/workers/${encodeURIComponent(aoid)}`, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get worker: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`ADP returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_worker_time_off_requests': {
-          const aoid = args.aoid as string;
-
-          if (!aoid) {
-            return {
-              content: [{ type: 'text', text: 'aoid is required' }],
-              isError: true,
-            };
-          }
-
-          let url = `${this.baseUrl}/time/v2/workers/${encodeURIComponent(aoid)}/time-off-details/time-off-requests`;
-          const params: string[] = [];
-          if (args.start_date) params.push(`startDate=${encodeURIComponent(args.start_date as string)}`);
-          if (args.end_date) params.push(`endDate=${encodeURIComponent(args.end_date as string)}`);
-          if (params.length > 0) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get time off requests: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`ADP returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_payroll_data': {
-          const top = (args.top as number) || 100;
-          const skip = (args.skip as number) || 0;
-          let url = `${this.baseUrl}/payroll/v1/paydata?$top=${top}&$skip=${skip}`;
-          if (args.filter) url += `&$filter=${encodeURIComponent(args.filter as string)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get payroll data: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`ADP returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_workers_meta': {
-          const response = await fetch(`${this.baseUrl}/hr/v2/workers/meta`, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get workers meta: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`ADP returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_workers':
+          return await this.listWorkers(args);
+        case 'get_worker':
+          return await this.getWorker(args);
+        case 'get_workers_meta':
+          return await this.getWorkersMeta(args);
+        case 'get_worker_time_off_requests':
+          return await this.getWorkerTimeOffRequests(args);
+        case 'get_worker_leave_requests':
+          return await this.getWorkerLeaveRequests(args);
+        case 'get_payroll_data':
+          return await this.getPayrollData(args);
+        case 'list_pay_statements':
+          return await this.listPayStatements(args);
+        case 'list_organization_departments':
+          return await this.listOrganizationDepartments(args);
+        case 'list_job_classifications':
+          return await this.listJobClassifications(args);
+        case 'list_worker_benefits':
+          return await this.listWorkerBenefits(args);
         default:
-          return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-            isError: true,
-          };
+          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
     } catch (error) {
       return {
@@ -287,5 +284,103 @@ export class ADPMCPServer {
         isError: true,
       };
     }
+  }
+
+  private async fetch(url: string): Promise<ToolResult> {
+    const token = await this.getOrRefreshToken();
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `ADP API error HTTP ${response.status}: ${response.statusText}` }],
+        isError: true,
+      };
+    }
+
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`ADP returned non-JSON response (HTTP ${response.status})`); }
+
+    const text = JSON.stringify(data, null, 2);
+    const truncated = text.length > 10_000
+      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
+      : text;
+
+    return { content: [{ type: 'text', text: truncated }], isError: false };
+  }
+
+  private async listWorkers(args: Record<string, unknown>): Promise<ToolResult> {
+    const top = (args.top as number) || 100;
+    const skip = (args.skip as number) || 0;
+    let url = `${this.baseUrl}/hr/v2/workers?$top=${top}&$skip=${skip}`;
+    if (args.filter) url += `&$filter=${encodeURIComponent(args.filter as string)}`;
+    return this.fetch(url);
+  }
+
+  private async getWorker(args: Record<string, unknown>): Promise<ToolResult> {
+    const aoid = args.aoid as string;
+    if (!aoid) return { content: [{ type: 'text', text: 'aoid is required' }], isError: true };
+    return this.fetch(`${this.baseUrl}/hr/v2/workers/${encodeURIComponent(aoid)}`);
+  }
+
+  private async getWorkersMeta(_args: Record<string, unknown>): Promise<ToolResult> {
+    return this.fetch(`${this.baseUrl}/hr/v2/workers/meta`);
+  }
+
+  private async getWorkerTimeOffRequests(args: Record<string, unknown>): Promise<ToolResult> {
+    const aoid = args.aoid as string;
+    if (!aoid) return { content: [{ type: 'text', text: 'aoid is required' }], isError: true };
+    let url = `${this.baseUrl}/time/v2/workers/${encodeURIComponent(aoid)}/time-off-details/time-off-requests`;
+    const params: string[] = [];
+    if (args.start_date) params.push(`startDate=${encodeURIComponent(args.start_date as string)}`);
+    if (args.end_date) params.push(`endDate=${encodeURIComponent(args.end_date as string)}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+    return this.fetch(url);
+  }
+
+  private async getWorkerLeaveRequests(args: Record<string, unknown>): Promise<ToolResult> {
+    const aoid = args.aoid as string;
+    if (!aoid) return { content: [{ type: 'text', text: 'aoid is required' }], isError: true };
+    return this.fetch(`${this.baseUrl}/time/v2/workers/${encodeURIComponent(aoid)}/leave-requests`);
+  }
+
+  private async getPayrollData(args: Record<string, unknown>): Promise<ToolResult> {
+    const top = (args.top as number) || 100;
+    const skip = (args.skip as number) || 0;
+    let url = `${this.baseUrl}/payroll/v1/paydata?$top=${top}&$skip=${skip}`;
+    if (args.filter) url += `&$filter=${encodeURIComponent(args.filter as string)}`;
+    return this.fetch(url);
+  }
+
+  private async listPayStatements(args: Record<string, unknown>): Promise<ToolResult> {
+    const aoid = args.aoid as string;
+    if (!aoid) return { content: [{ type: 'text', text: 'aoid is required' }], isError: true };
+    const top = (args.top as number) || 25;
+    const skip = (args.skip as number) || 0;
+    return this.fetch(`${this.baseUrl}/payroll/v1/workers/${encodeURIComponent(aoid)}/pay-statements?$top=${top}&$skip=${skip}`);
+  }
+
+  private async listOrganizationDepartments(args: Record<string, unknown>): Promise<ToolResult> {
+    const top = (args.top as number) || 100;
+    const skip = (args.skip as number) || 0;
+    return this.fetch(`${this.baseUrl}/hr/v2/organization-departments?$top=${top}&$skip=${skip}`);
+  }
+
+  private async listJobClassifications(args: Record<string, unknown>): Promise<ToolResult> {
+    const top = (args.top as number) || 100;
+    const skip = (args.skip as number) || 0;
+    return this.fetch(`${this.baseUrl}/hr/v2/worker-management/job-classifications?$top=${top}&$skip=${skip}`);
+  }
+
+  private async listWorkerBenefits(args: Record<string, unknown>): Promise<ToolResult> {
+    const aoid = args.aoid as string;
+    if (!aoid) return { content: [{ type: 'text', text: 'aoid is required' }], isError: true };
+    return this.fetch(`${this.baseUrl}/benefits/v2/workers/${encodeURIComponent(aoid)}/enrollments`);
   }
 }

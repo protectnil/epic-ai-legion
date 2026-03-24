@@ -4,76 +4,101 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found — no official LexisNexis MCP server exists on GitHub as of March 2026.
+// Official MCP: None found as of 2026-03.
+// No official LexisNexis MCP server was found on GitHub or the LexisNexis Developer Portal.
+//
+// Base URL: Configurable — provided during onboarding via dev.lexisnexis.com (enterprise-specific)
+// Auth: OAuth2 client credentials flow (POST /oauth2/token with client_id + client_secret)
+// Docs: https://dev.lexisnexis.com/
+// Rate limits: Firm-wide throttling; enforced server-side. Retry-After headers returned on 429.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface LexisNexisConfig {
-  /** OAuth2 Bearer access token */
-  accessToken: string;
+  /** OAuth2 client ID — obtained from the LexisNexis Developer Portal onboarding. */
+  clientId: string;
+  /** OAuth2 client secret — obtained from the LexisNexis Developer Portal onboarding. */
+  clientSecret: string;
   /**
-   * Enterprise base URL — configurable per deployment.
-   * LexisNexis API access is credentialed; the exact base URL is provided
-   * during onboarding via the LexisNexis Developer Portal (dev.lexisnexis.com).
+   * Enterprise base URL — provided during onboarding.
    * Example: https://api.lexisnexis.com
    */
   baseUrl: string;
 }
 
 export class LexisNexisMCPServer {
-  private readonly accessToken: string;
+  private readonly clientId: string;
+  private readonly clientSecret: string;
   private readonly baseUrl: string;
 
+  private bearerToken: string | null = null;
+  private tokenExpiry: number = 0;
+
   constructor(config: LexisNexisConfig) {
-    this.accessToken = config.accessToken;
+    this.clientId = config.clientId;
+    this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
+  }
+
+  static catalog() {
+    return {
+      name: 'lexisnexis',
+      displayName: 'LexisNexis',
+      version: '1.0.0',
+      category: 'misc' as const,
+      keywords: [
+        'lexisnexis', 'legal', 'case law', 'statutes', 'regulations', 'shepards', 'citations',
+        'news', 'company intelligence', 'litigation', 'legal research', 'law', 'court',
+      ],
+      toolNames: [
+        'search_cases', 'get_case', 'search_statutes', 'get_statute',
+        'search_news', 'get_news_article', 'search_company', 'get_company',
+        'get_shepards_report', 'search_secondary_materials',
+      ],
+      description: 'Search and retrieve LexisNexis legal case law, statutes, news, company profiles, and Shepard\'s citation reports.',
+      author: 'protectnil' as const,
+    };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'search_cases',
-        description: 'Search LexisNexis legal case law by keyword or citation',
+        description: 'Search LexisNexis legal case law by keyword, citation, or Boolean query with optional jurisdiction and date range filters.',
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'Search query string — supports natural language and Boolean operators (AND, OR, NOT)',
+              description: 'Search query — supports natural language and Boolean operators (AND, OR, NOT).',
             },
             jurisdiction: {
               type: 'string',
-              description: 'Jurisdiction filter, e.g. "US Federal" or "California" (optional)',
+              description: 'Jurisdiction filter, e.g. "US Federal", "California", "New York" (optional).',
             },
             dateFrom: {
               type: 'string',
-              description: 'Earliest decision date in YYYY-MM-DD format (optional)',
+              description: 'Earliest decision date in YYYY-MM-DD format (optional).',
             },
             dateTo: {
               type: 'string',
-              description: 'Latest decision date in YYYY-MM-DD format (optional)',
+              description: 'Latest decision date in YYYY-MM-DD format (optional).',
             },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            pageSize: {
-              type: 'number',
-              description: 'Results per page (default: 25, max: 100)',
-            },
+            page: { type: 'number', description: 'Page number for pagination (default: 1).' },
+            pageSize: { type: 'number', description: 'Results per page (default: 25, max: 100).' },
           },
           required: ['query'],
         },
       },
       {
         name: 'get_case',
-        description: 'Retrieve the full text and metadata for a specific legal case by its LexisNexis document ID',
+        description: 'Retrieve the full text and metadata for a specific legal case by its LexisNexis document ID.',
         inputSchema: {
           type: 'object',
           properties: {
             documentId: {
               type: 'string',
-              description: 'LexisNexis document identifier for the case',
+              description: 'LexisNexis document identifier for the case (returned by search_cases).',
             },
           },
           required: ['documentId'],
@@ -81,102 +106,122 @@ export class LexisNexisMCPServer {
       },
       {
         name: 'search_statutes',
-        description: 'Search statutes, codes, and regulations in the LexisNexis database',
+        description: 'Search statutes, codes, and regulations in the LexisNexis database by keyword with optional jurisdiction.',
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'Search query for statute or code text',
+              description: 'Search query for statute or code text.',
             },
             jurisdiction: {
               type: 'string',
-              description: 'Jurisdiction, e.g. "US Federal", "Texas", "New York" (optional)',
+              description: 'Jurisdiction, e.g. "US Federal", "Texas", "New York" (optional).',
             },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            pageSize: {
-              type: 'number',
-              description: 'Results per page (default: 25, max: 100)',
-            },
+            page: { type: 'number', description: 'Page number for pagination (default: 1).' },
+            pageSize: { type: 'number', description: 'Results per page (default: 25, max: 100).' },
           },
           required: ['query'],
+        },
+      },
+      {
+        name: 'get_statute',
+        description: 'Retrieve the full text and metadata for a specific statute or regulation by its LexisNexis document ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            documentId: {
+              type: 'string',
+              description: 'LexisNexis document identifier for the statute (returned by search_statutes).',
+            },
+          },
+          required: ['documentId'],
         },
       },
       {
         name: 'search_news',
-        description: 'Search news articles and press releases in the LexisNexis news database',
+        description: 'Search news articles and press releases in the LexisNexis news database with optional date range and source filters.',
         inputSchema: {
           type: 'object',
           properties: {
-            query: {
-              type: 'string',
-              description: 'Search query for news content',
-            },
-            dateFrom: {
-              type: 'string',
-              description: 'Earliest publication date in YYYY-MM-DD format (optional)',
-            },
-            dateTo: {
-              type: 'string',
-              description: 'Latest publication date in YYYY-MM-DD format (optional)',
-            },
-            sources: {
-              type: 'string',
-              description: 'Comma-separated list of source names to filter by (optional)',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            pageSize: {
-              type: 'number',
-              description: 'Results per page (default: 25, max: 100)',
-            },
+            query: { type: 'string', description: 'Search query for news content.' },
+            dateFrom: { type: 'string', description: 'Earliest publication date in YYYY-MM-DD format (optional).' },
+            dateTo: { type: 'string', description: 'Latest publication date in YYYY-MM-DD format (optional).' },
+            sources: { type: 'string', description: 'Comma-separated source names to filter by (optional).' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1).' },
+            pageSize: { type: 'number', description: 'Results per page (default: 25, max: 100).' },
           },
           required: ['query'],
         },
       },
       {
-        name: 'search_company',
-        description: 'Search LexisNexis company profiles and business intelligence data',
+        name: 'get_news_article',
+        description: 'Retrieve the full text and metadata of a specific news article by its LexisNexis document ID.',
         inputSchema: {
           type: 'object',
           properties: {
-            companyName: {
+            documentId: {
               type: 'string',
-              description: 'Name of the company to search for',
+              description: 'LexisNexis document identifier for the news article (returned by search_news).',
             },
-            country: {
-              type: 'string',
-              description: 'Country of incorporation or headquarters (optional)',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            pageSize: {
-              type: 'number',
-              description: 'Results per page (default: 25, max: 100)',
-            },
+          },
+          required: ['documentId'],
+        },
+      },
+      {
+        name: 'search_company',
+        description: 'Search LexisNexis company profiles and business intelligence data by company name with optional country filter.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            companyName: { type: 'string', description: 'Name of the company to search for.' },
+            country: { type: 'string', description: 'Country of incorporation or headquarters (optional).' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1).' },
+            pageSize: { type: 'number', description: 'Results per page (default: 25, max: 100).' },
           },
           required: ['companyName'],
         },
       },
       {
+        name: 'get_company',
+        description: 'Retrieve full business profile and intelligence data for a company by its LexisNexis company ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            companyId: {
+              type: 'string',
+              description: 'LexisNexis company identifier (returned by search_company).',
+            },
+          },
+          required: ['companyId'],
+        },
+      },
+      {
         name: 'get_shepards_report',
-        description: "Retrieve a Shepard's Citations report for a case — shows subsequent history, citing decisions, and validity signals",
+        description: "Retrieve a Shepard's Citations report for a legal citation — shows subsequent history, citing decisions, and validity signals.",
         inputSchema: {
           type: 'object',
           properties: {
             citation: {
               type: 'string',
-              description: 'Legal citation to Shepardize, e.g. "410 U.S. 113"',
+              description: 'Legal citation to Shepardize, e.g. "410 U.S. 113".',
             },
           },
           required: ['citation'],
+        },
+      },
+      {
+        name: 'search_secondary_materials',
+        description: 'Search LexisNexis secondary legal materials including law reviews, treatises, and practice guides.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query for secondary materials.' },
+            jurisdiction: { type: 'string', description: 'Jurisdiction filter (optional).' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1).' },
+            pageSize: { type: 'number', description: 'Results per page (default: 25, max: 100).' },
+          },
+          required: ['query'],
         },
       },
     ];
@@ -184,212 +229,29 @@ export class LexisNexisMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      };
-
       switch (name) {
-        case 'search_cases': {
-          const query = args.query as string;
-
-          if (!query) {
-            return {
-              content: [{ type: 'text', text: 'query is required' }],
-              isError: true,
-            };
-          }
-
-          const page = (args.page as number) || 1;
-          const pageSize = (args.pageSize as number) || 25;
-
-          const body: Record<string, unknown> = { query, page, pageSize };
-          if (args.jurisdiction) body.jurisdiction = args.jurisdiction;
-          if (args.dateFrom) body.dateFrom = args.dateFrom;
-          if (args.dateTo) body.dateTo = args.dateTo;
-
-          const response = await fetch(`${this.baseUrl}/v1/cases/search`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to search cases: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`LexisNexis returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_case': {
-          const documentId = args.documentId as string;
-
-          if (!documentId) {
-            return {
-              content: [{ type: 'text', text: 'documentId is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(
-            `${this.baseUrl}/v1/cases/${encodeURIComponent(documentId)}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get case: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`LexisNexis returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'search_statutes': {
-          const query = args.query as string;
-
-          if (!query) {
-            return {
-              content: [{ type: 'text', text: 'query is required' }],
-              isError: true,
-            };
-          }
-
-          const page = (args.page as number) || 1;
-          const pageSize = (args.pageSize as number) || 25;
-
-          const body: Record<string, unknown> = { query, page, pageSize };
-          if (args.jurisdiction) body.jurisdiction = args.jurisdiction;
-
-          const response = await fetch(`${this.baseUrl}/v1/statutes/search`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to search statutes: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`LexisNexis returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'search_news': {
-          const query = args.query as string;
-
-          if (!query) {
-            return {
-              content: [{ type: 'text', text: 'query is required' }],
-              isError: true,
-            };
-          }
-
-          const page = (args.page as number) || 1;
-          const pageSize = (args.pageSize as number) || 25;
-
-          const body: Record<string, unknown> = { query, page, pageSize };
-          if (args.dateFrom) body.dateFrom = args.dateFrom;
-          if (args.dateTo) body.dateTo = args.dateTo;
-          if (args.sources) body.sources = args.sources;
-
-          const response = await fetch(`${this.baseUrl}/v1/news/search`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to search news: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`LexisNexis returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'search_company': {
-          const companyName = args.companyName as string;
-
-          if (!companyName) {
-            return {
-              content: [{ type: 'text', text: 'companyName is required' }],
-              isError: true,
-            };
-          }
-
-          const page = (args.page as number) || 1;
-          const pageSize = (args.pageSize as number) || 25;
-
-          const body: Record<string, unknown> = { companyName, page, pageSize };
-          if (args.country) body.country = args.country;
-
-          const response = await fetch(`${this.baseUrl}/v1/companies/search`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to search companies: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`LexisNexis returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_shepards_report': {
-          const citation = args.citation as string;
-
-          if (!citation) {
-            return {
-              content: [{ type: 'text', text: 'citation is required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(
-            `${this.baseUrl}/v1/shepards?citation=${encodeURIComponent(citation)}`,
-            { method: 'GET', headers }
-          );
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get Shepard's report: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`LexisNexis returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'search_cases':
+          return await this.searchCases(args);
+        case 'get_case':
+          return await this.getCase(args);
+        case 'search_statutes':
+          return await this.searchStatutes(args);
+        case 'get_statute':
+          return await this.getStatute(args);
+        case 'search_news':
+          return await this.searchNews(args);
+        case 'get_news_article':
+          return await this.getNewsArticle(args);
+        case 'search_company':
+          return await this.searchCompany(args);
+        case 'get_company':
+          return await this.getCompany(args);
+        case 'get_shepards_report':
+          return await this.getShepardsReport(args);
+        case 'search_secondary_materials':
+          return await this.searchSecondaryMaterials(args);
         default:
-          return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-            isError: true,
-          };
+          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
     } catch (error) {
       return {
@@ -397,5 +259,156 @@ export class LexisNexisMCPServer {
         isError: true,
       };
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
+  private async getOrRefreshToken(): Promise<string> {
+    const now = Date.now();
+    if (this.bearerToken && this.tokenExpiry > now) {
+      return this.bearerToken;
+    }
+    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials',
+    });
+    if (!response.ok) {
+      throw new Error(`OAuth2 token request failed: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json() as { access_token: string; expires_in: number };
+    this.bearerToken = data.access_token;
+    this.tokenExpiry = now + (data.expires_in - 60) * 1000;
+    return this.bearerToken;
+  }
+
+  private async authHeaders(): Promise<Record<string, string>> {
+    const token = await this.getOrRefreshToken();
+    return {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+  }
+
+  private truncate(text: string): string {
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async postSearch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const headers = await this.authHeaders();
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async getDoc(path: string): Promise<ToolResult> {
+    const headers = await this.authHeaders();
+    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async searchCases(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    const body: Record<string, unknown> = {
+      query: args.query,
+      page: (args.page as number) ?? 1,
+      pageSize: (args.pageSize as number) ?? 25,
+    };
+    if (args.jurisdiction) body.jurisdiction = args.jurisdiction;
+    if (args.dateFrom) body.dateFrom = args.dateFrom;
+    if (args.dateTo) body.dateTo = args.dateTo;
+    return this.postSearch('/v1/cases/search', body);
+  }
+
+  private async getCase(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.documentId) return { content: [{ type: 'text', text: 'documentId is required' }], isError: true };
+    return this.getDoc(`/v1/cases/${encodeURIComponent(args.documentId as string)}`);
+  }
+
+  private async searchStatutes(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    const body: Record<string, unknown> = {
+      query: args.query,
+      page: (args.page as number) ?? 1,
+      pageSize: (args.pageSize as number) ?? 25,
+    };
+    if (args.jurisdiction) body.jurisdiction = args.jurisdiction;
+    return this.postSearch('/v1/statutes/search', body);
+  }
+
+  private async getStatute(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.documentId) return { content: [{ type: 'text', text: 'documentId is required' }], isError: true };
+    return this.getDoc(`/v1/statutes/${encodeURIComponent(args.documentId as string)}`);
+  }
+
+  private async searchNews(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    const body: Record<string, unknown> = {
+      query: args.query,
+      page: (args.page as number) ?? 1,
+      pageSize: (args.pageSize as number) ?? 25,
+    };
+    if (args.dateFrom) body.dateFrom = args.dateFrom;
+    if (args.dateTo) body.dateTo = args.dateTo;
+    if (args.sources) body.sources = args.sources;
+    return this.postSearch('/v1/news/search', body);
+  }
+
+  private async getNewsArticle(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.documentId) return { content: [{ type: 'text', text: 'documentId is required' }], isError: true };
+    return this.getDoc(`/v1/news/${encodeURIComponent(args.documentId as string)}`);
+  }
+
+  private async searchCompany(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.companyName) return { content: [{ type: 'text', text: 'companyName is required' }], isError: true };
+    const body: Record<string, unknown> = {
+      companyName: args.companyName,
+      page: (args.page as number) ?? 1,
+      pageSize: (args.pageSize as number) ?? 25,
+    };
+    if (args.country) body.country = args.country;
+    return this.postSearch('/v1/companies/search', body);
+  }
+
+  private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.companyId) return { content: [{ type: 'text', text: 'companyId is required' }], isError: true };
+    return this.getDoc(`/v1/companies/${encodeURIComponent(args.companyId as string)}`);
+  }
+
+  private async getShepardsReport(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.citation) return { content: [{ type: 'text', text: 'citation is required' }], isError: true };
+    return this.getDoc(`/v1/shepards?citation=${encodeURIComponent(args.citation as string)}`);
+  }
+
+  private async searchSecondaryMaterials(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    const body: Record<string, unknown> = {
+      query: args.query,
+      page: (args.page as number) ?? 1,
+      pageSize: (args.pageSize as number) ?? 25,
+    };
+    if (args.jurisdiction) body.jurisdiction = args.jurisdiction;
+    return this.postSearch('/v1/secondary/search', body);
   }
 }

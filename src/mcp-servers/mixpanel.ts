@@ -4,7 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found — no official MCP server from the Mixpanel GitHub organization.
+// Official MCP: None found as of 2026-03
+// No official MCP server from the Mixpanel GitHub organization.
+// This adapter covers the full Mixpanel Ingestion API and Query API surface.
+//
+// Base URL (ingestion): https://api.mixpanel.com  (EU: https://api-eu.mixpanel.com)
+// Base URL (query):     https://mixpanel.com/api/2.0
+// Auth: Ingestion events use project token in payload.
+//       Import + all Query API calls use HTTP Basic auth with service account credentials.
+// Docs: https://developer.mixpanel.com/reference/overview
+// Rate limits: Query API — 60 req/hr, max 5 concurrent. Ingestion — no documented hard limit.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -38,16 +47,76 @@ export class MixpanelMCPServer {
     this.analyticsBaseUrl = config.analyticsBaseUrl ?? 'https://mixpanel.com/api/2.0';
   }
 
+  static catalog() {
+    return {
+      name: 'mixpanel',
+      displayName: 'Mixpanel',
+      version: '1.0.0',
+      category: 'misc' as const,
+      keywords: [
+        'mixpanel', 'analytics', 'product-analytics', 'event-tracking', 'funnel',
+        'retention', 'segmentation', 'user-profile', 'cohort', 'behavioral-analytics',
+        'engagement', 'jql', 'insights', 'activity-stream',
+      ],
+      toolNames: [
+        'track_event', 'import_events', 'set_user_profile', 'increment_user_property',
+        'append_user_property', 'union_user_property', 'remove_user_property',
+        'delete_user_profile', 'query_segmentation', 'query_funnel', 'query_retention',
+        'query_profiles', 'query_activity_stream', 'query_insights', 'query_jql',
+      ],
+      description: 'Mixpanel product analytics: track events, manage user profiles, and query segmentation, funnel, retention, and cohort reports.',
+      author: 'protectnil' as const,
+    };
+  }
+
   private get basicAuthHeader(): string {
-    const encoded = Buffer.from(`${this.serviceAccountUsername}:${this.serviceAccountSecret}`).toString('base64');
+    const encoded = btoa(`${this.serviceAccountUsername}:${this.serviceAccountSecret}`);
     return `Basic ${encoded}`;
+  }
+
+  private truncate(text: string): string {
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async doEngagePost(record: Record<string, unknown>): Promise<ToolResult> {
+    const body = `data=${encodeURIComponent(JSON.stringify(record))}`;
+    const response = await fetch(`${this.ingestionBaseUrl}/engage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Engage API error: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async doQueryGet(path: string, params: Record<string, string | number | undefined>): Promise<ToolResult> {
+    const qs = new URLSearchParams();
+    qs.set('project_id', this.projectId);
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined) qs.set(k, String(v));
+    }
+    const url = `${this.analyticsBaseUrl}/${path}?${qs.toString()}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: this.basicAuthHeader, Accept: 'application/json' },
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Query API error: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'track_event',
-        description: 'Track a single event via the Mixpanel ingestion API (/track). Only accepts events timestamped within the last 5 days. Use import_events for historical data.',
+        description: 'Track a single event via the Mixpanel ingestion API. Only accepts events within the last 5 days. Use import_events for historical data.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -61,7 +130,7 @@ export class MixpanelMCPServer {
             },
             properties: {
               type: 'object',
-              description: 'Additional event properties. The token is injected automatically. Optional standard fields: $insert_id (deduplication), time (Unix seconds), ip, $city, $region, $country_code.',
+              description: 'Additional event properties. Token is injected automatically. Optional: $insert_id (deduplication), time (Unix seconds), ip, $city, $region, $country_code.',
             },
           },
           required: ['event', 'distinct_id'],
@@ -69,13 +138,13 @@ export class MixpanelMCPServer {
       },
       {
         name: 'import_events',
-        description: 'Bulk-import historical events via the Mixpanel /import endpoint. Accepts events of any age. Authenticated with service account credentials. Max 2000 events per request.',
+        description: 'Bulk-import historical events via the Mixpanel /import endpoint. Accepts events of any age. Max 2000 events per request. Authenticated with service account credentials.',
         inputSchema: {
           type: 'object',
           properties: {
             events: {
               type: 'array',
-              description: 'Array of event objects. Each must have: event (string), properties.distinct_id (string), properties.time (Unix seconds), properties.token (auto-injected if omitted).',
+              description: 'Array of event objects. Each must have: event (string), properties.distinct_id (string), properties.time (Unix seconds). Token is auto-injected if omitted.',
               items: { type: 'object' },
             },
           },
@@ -84,7 +153,7 @@ export class MixpanelMCPServer {
       },
       {
         name: 'set_user_profile',
-        description: 'Set or update properties on a user profile via the Mixpanel /engage endpoint ($set operation).',
+        description: 'Set or update properties on a Mixpanel user profile ($set operation). Overwrites existing values for specified keys.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -98,7 +167,7 @@ export class MixpanelMCPServer {
             },
             ip: {
               type: 'string',
-              description: 'Optional IP address for geo-resolution',
+              description: 'Optional IP address for automatic geo-resolution',
             },
           },
           required: ['distinct_id', 'properties'],
@@ -106,7 +175,7 @@ export class MixpanelMCPServer {
       },
       {
         name: 'increment_user_property',
-        description: 'Numerically increment one or more user profile properties via the Mixpanel /engage endpoint ($add operation).',
+        description: 'Numerically increment one or more Mixpanel user profile properties ($add operation). Accepts positive or negative values.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -123,8 +192,77 @@ export class MixpanelMCPServer {
         },
       },
       {
+        name: 'append_user_property',
+        description: 'Append values to a list property on a Mixpanel user profile ($append operation). Creates the list if the property does not exist.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            distinct_id: {
+              type: 'string',
+              description: 'User identifier',
+            },
+            append: {
+              type: 'object',
+              description: 'Object mapping list property names to values to append. Each value is appended to the end of the list.',
+            },
+          },
+          required: ['distinct_id', 'append'],
+        },
+      },
+      {
+        name: 'union_user_property',
+        description: 'Union values into a list property on a Mixpanel user profile ($union operation). Only adds values not already present — prevents duplicates.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            distinct_id: {
+              type: 'string',
+              description: 'User identifier',
+            },
+            union: {
+              type: 'object',
+              description: 'Object mapping list property names to arrays of values to union in.',
+            },
+          },
+          required: ['distinct_id', 'union'],
+        },
+      },
+      {
+        name: 'remove_user_property',
+        description: 'Remove one or more properties from a Mixpanel user profile ($unset operation). The properties are permanently deleted from the profile.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            distinct_id: {
+              type: 'string',
+              description: 'User identifier',
+            },
+            properties: {
+              type: 'array',
+              description: 'Array of property names to remove from the profile',
+              items: { type: 'string' },
+            },
+          },
+          required: ['distinct_id', 'properties'],
+        },
+      },
+      {
+        name: 'delete_user_profile',
+        description: 'Permanently delete a Mixpanel user profile ($delete operation). This cannot be undone. Events sent by the user are not deleted.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            distinct_id: {
+              type: 'string',
+              description: 'User identifier to permanently delete',
+            },
+          },
+          required: ['distinct_id'],
+        },
+      },
+      {
         name: 'query_segmentation',
-        description: 'Run an event segmentation query against the Mixpanel analytics API — returns time series data for an event or expression.',
+        description: 'Run an event segmentation report returning time-series counts for an event, with optional property breakdown and filters.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -142,11 +280,11 @@ export class MixpanelMCPServer {
             },
             type: {
               type: 'string',
-              description: 'Count type: general (event counts, default), unique (distinct user count), average, or median',
+              description: 'Count type: general (event counts, default), unique (distinct users), average, or median',
             },
             unit: {
               type: 'string',
-              description: 'Time unit for bucketing: minute, hour, day (default), week, or month',
+              description: 'Time bucket unit: minute, hour, day (default), week, or month',
             },
             on: {
               type: 'string',
@@ -166,7 +304,7 @@ export class MixpanelMCPServer {
       },
       {
         name: 'query_funnel',
-        description: 'Query a Mixpanel funnel by funnel ID to retrieve conversion rates and step-by-step drop-off.',
+        description: 'Query a Mixpanel funnel by funnel ID to retrieve step-by-step conversion rates and drop-off counts.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -184,11 +322,11 @@ export class MixpanelMCPServer {
             },
             unit: {
               type: 'string',
-              description: 'Time unit: day (default), week, or month',
+              description: 'Time unit for bucketing: day (default), week, or month',
             },
             on: {
               type: 'string',
-              description: 'Property to segment the funnel by (optional)',
+              description: 'Property expression to segment the funnel by (optional)',
             },
             where: {
               type: 'string',
@@ -200,7 +338,7 @@ export class MixpanelMCPServer {
       },
       {
         name: 'query_retention',
-        description: 'Query Mixpanel retention — returns the percentage of users who returned after performing a "born" event.',
+        description: 'Query Mixpanel retention — returns the percentage of users who returned after a "born" event over time.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -214,11 +352,11 @@ export class MixpanelMCPServer {
             },
             born_event: {
               type: 'string',
-              description: 'Event that defines the user cohort (the "born" event)',
+              description: 'Event that defines the user cohort (the "born" or first event)',
             },
             event: {
               type: 'string',
-              description: 'Return event to measure. If omitted, defaults to any event (null).',
+              description: 'Return event to measure. If omitted, defaults to any event.',
             },
             retention_type: {
               type: 'string',
@@ -232,221 +370,121 @@ export class MixpanelMCPServer {
           required: ['from_date', 'to_date', 'born_event'],
         },
       },
+      {
+        name: 'query_profiles',
+        description: 'Query Mixpanel user profiles matching a filter expression. Returns a paginated list of profile records.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            where: {
+              type: 'string',
+              description: 'Filter expression using Mixpanel profile filter syntax, e.g. properties["$country_code"] == "US" (optional, returns all if omitted)',
+            },
+            session_id: {
+              type: 'string',
+              description: 'Session ID from a previous query response to paginate through results (optional)',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number when paginating with session_id (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'query_activity_stream',
+        description: 'Retrieve the event activity feed for a specific user by distinct_id — shows their event history in chronological order.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            distinct_id: {
+              type: 'string',
+              description: 'User identifier to fetch activity for',
+            },
+            from_date: {
+              type: 'string',
+              description: 'Start date in YYYY-MM-DD format',
+            },
+            to_date: {
+              type: 'string',
+              description: 'End date in YYYY-MM-DD format',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of events to return (default: 100)',
+            },
+          },
+          required: ['distinct_id'],
+        },
+      },
+      {
+        name: 'query_insights',
+        description: 'Query a saved Insights report by bookmark ID, returning the same chart data shown in the Mixpanel UI.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            bookmark_id: {
+              type: 'number',
+              description: 'Numeric ID of a saved Insights report from the Mixpanel dashboard',
+            },
+          },
+          required: ['bookmark_id'],
+        },
+      },
+      {
+        name: 'query_jql',
+        description: 'Execute a custom JQL (JavaScript Query Language) query against Mixpanel event data. JQL is in maintenance mode; prefer segmentation for new queries.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            script: {
+              type: 'string',
+              description: 'JQL script as a string. The script must call main() and return a transformation over join() or People()/Events().',
+            },
+            params: {
+              type: 'object',
+              description: 'Optional params object passed to the script as script_params (accessible via params in the script)',
+            },
+          },
+          required: ['script'],
+        },
+      },
     ];
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'track_event': {
-          const event = args.event as string;
-          const distinct_id = args.distinct_id as string;
-          if (!event || !distinct_id) {
-            return { content: [{ type: 'text', text: 'event and distinct_id are required' }], isError: true };
-          }
-
-          const properties: Record<string, unknown> = {
-            token: this.projectToken,
-            distinct_id,
-            ...(args.properties as Record<string, unknown> ?? {}),
-          };
-
-          const payload = [{ event, properties }];
-          const body = `data=${encodeURIComponent(JSON.stringify(payload))}`;
-
-          const response = await fetch(`${this.ingestionBaseUrl}/track`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
-            body,
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to track event: HTTP ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mixpanel returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'import_events': {
-          const events = args.events as unknown[];
-          if (!events || !Array.isArray(events) || events.length === 0) {
-            return { content: [{ type: 'text', text: 'events array is required and must be non-empty' }], isError: true };
-          }
-
-          const enriched = events.map((ev: unknown) => {
-            const e = ev as Record<string, unknown>;
-            const props = (e.properties as Record<string, unknown>) ?? {};
-            if (!props.token) props.token = this.projectToken;
-            return { ...e, properties: props };
-          });
-
-          const url = `${this.ingestionBaseUrl}/import?project_id=${encodeURIComponent(this.projectId)}`;
-
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              Authorization: this.basicAuthHeader,
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-            },
-            body: JSON.stringify(enriched),
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to import events: HTTP ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mixpanel returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'set_user_profile': {
-          const distinct_id = args.distinct_id as string;
-          const properties = args.properties as Record<string, unknown>;
-          if (!distinct_id || !properties) {
-            return { content: [{ type: 'text', text: 'distinct_id and properties are required' }], isError: true };
-          }
-
-          const record: Record<string, unknown> = {
-            $token: this.projectToken,
-            $distinct_id: distinct_id,
-            $set: properties,
-          };
-          if (args.ip) record.$ip = args.ip;
-
-          const body = `data=${encodeURIComponent(JSON.stringify(record))}`;
-
-          const response = await fetch(`${this.ingestionBaseUrl}/engage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
-            body,
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to set user profile: HTTP ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mixpanel returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'increment_user_property': {
-          const distinct_id = args.distinct_id as string;
-          const add = args.add as Record<string, unknown>;
-          if (!distinct_id || !add) {
-            return { content: [{ type: 'text', text: 'distinct_id and add are required' }], isError: true };
-          }
-
-          const record = {
-            $token: this.projectToken,
-            $distinct_id: distinct_id,
-            $add: add,
-          };
-
-          const body = `data=${encodeURIComponent(JSON.stringify(record))}`;
-
-          const response = await fetch(`${this.ingestionBaseUrl}/engage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
-            body,
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to increment user property: HTTP ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mixpanel returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'query_segmentation': {
-          const event = args.event as string;
-          const from_date = args.from_date as string;
-          const to_date = args.to_date as string;
-          if (!event || !from_date || !to_date) {
-            return { content: [{ type: 'text', text: 'event, from_date, and to_date are required' }], isError: true };
-          }
-
-          let url = `${this.analyticsBaseUrl}/segmentation?project_id=${encodeURIComponent(this.projectId)}&event=${encodeURIComponent(event)}&from_date=${encodeURIComponent(from_date)}&to_date=${encodeURIComponent(to_date)}`;
-          if (args.type) url += `&type=${encodeURIComponent(args.type as string)}`;
-          if (args.unit) url += `&unit=${encodeURIComponent(args.unit as string)}`;
-          if (args.on) url += `&on=${encodeURIComponent(args.on as string)}`;
-          if (args.where) url += `&where=${encodeURIComponent(args.where as string)}`;
-          if (args.limit) url += `&limit=${args.limit as number}`;
-
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: { Authorization: this.basicAuthHeader, Accept: 'application/json' },
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to query segmentation: HTTP ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mixpanel returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'query_funnel': {
-          const funnel_id = args.funnel_id as number;
-          const from_date = args.from_date as string;
-          const to_date = args.to_date as string;
-          if (!funnel_id || !from_date || !to_date) {
-            return { content: [{ type: 'text', text: 'funnel_id, from_date, and to_date are required' }], isError: true };
-          }
-
-          let url = `${this.analyticsBaseUrl}/funnels?project_id=${encodeURIComponent(this.projectId)}&funnel_id=${funnel_id}&from_date=${encodeURIComponent(from_date)}&to_date=${encodeURIComponent(to_date)}`;
-          if (args.unit) url += `&unit=${encodeURIComponent(args.unit as string)}`;
-          if (args.on) url += `&on=${encodeURIComponent(args.on as string)}`;
-          if (args.where) url += `&where=${encodeURIComponent(args.where as string)}`;
-
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: { Authorization: this.basicAuthHeader, Accept: 'application/json' },
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to query funnel: HTTP ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mixpanel returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'query_retention': {
-          const from_date = args.from_date as string;
-          const to_date = args.to_date as string;
-          const born_event = args.born_event as string;
-          if (!from_date || !to_date || !born_event) {
-            return { content: [{ type: 'text', text: 'from_date, to_date, and born_event are required' }], isError: true };
-          }
-
-          let url = `${this.analyticsBaseUrl}/retention?project_id=${encodeURIComponent(this.projectId)}&from_date=${encodeURIComponent(from_date)}&to_date=${encodeURIComponent(to_date)}&born_event=${encodeURIComponent(born_event)}`;
-          if (args.event) url += `&event=${encodeURIComponent(args.event as string)}`;
-          if (args.retention_type) url += `&retention_type=${encodeURIComponent(args.retention_type as string)}`;
-          if (args.unit) url += `&unit=${encodeURIComponent(args.unit as string)}`;
-
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: { Authorization: this.basicAuthHeader, Accept: 'application/json' },
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to query retention: HTTP ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Mixpanel returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'track_event':
+          return await this.trackEvent(args);
+        case 'import_events':
+          return await this.importEvents(args);
+        case 'set_user_profile':
+          return await this.setUserProfile(args);
+        case 'increment_user_property':
+          return await this.incrementUserProperty(args);
+        case 'append_user_property':
+          return await this.appendUserProperty(args);
+        case 'union_user_property':
+          return await this.unionUserProperty(args);
+        case 'remove_user_property':
+          return await this.removeUserProperty(args);
+        case 'delete_user_profile':
+          return await this.deleteUserProfile(args);
+        case 'query_segmentation':
+          return await this.querySegmentation(args);
+        case 'query_funnel':
+          return await this.queryFunnel(args);
+        case 'query_retention':
+          return await this.queryRetention(args);
+        case 'query_profiles':
+          return await this.queryProfiles(args);
+        case 'query_activity_stream':
+          return await this.queryActivityStream(args);
+        case 'query_insights':
+          return await this.queryInsights(args);
+        case 'query_jql':
+          return await this.queryJql(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -456,5 +494,207 @@ export class MixpanelMCPServer {
         isError: true,
       };
     }
+  }
+
+  private async trackEvent(args: Record<string, unknown>): Promise<ToolResult> {
+    const event = args.event as string;
+    const distinct_id = args.distinct_id as string;
+    if (!event || !distinct_id) {
+      return { content: [{ type: 'text', text: 'event and distinct_id are required' }], isError: true };
+    }
+    const properties: Record<string, unknown> = {
+      token: this.projectToken,
+      distinct_id,
+      ...(args.properties as Record<string, unknown> ?? {}),
+    };
+    const payload = [{ event, properties }];
+    const body = `data=${encodeURIComponent(JSON.stringify(payload))}`;
+    const response = await fetch(`${this.ingestionBaseUrl}/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Track error: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async importEvents(args: Record<string, unknown>): Promise<ToolResult> {
+    const events = args.events as unknown[];
+    if (!events || !Array.isArray(events) || events.length === 0) {
+      return { content: [{ type: 'text', text: 'events array is required and must be non-empty' }], isError: true };
+    }
+    const enriched = events.map((ev: unknown) => {
+      const e = ev as Record<string, unknown>;
+      const props = (e.properties as Record<string, unknown>) ?? {};
+      if (!props.token) props.token = this.projectToken;
+      return { ...e, properties: props };
+    });
+    const url = `${this.ingestionBaseUrl}/import?project_id=${encodeURIComponent(this.projectId)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: this.basicAuthHeader, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(enriched),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Import error: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
+  private async setUserProfile(args: Record<string, unknown>): Promise<ToolResult> {
+    const distinct_id = args.distinct_id as string;
+    const properties = args.properties as Record<string, unknown>;
+    if (!distinct_id || !properties) {
+      return { content: [{ type: 'text', text: 'distinct_id and properties are required' }], isError: true };
+    }
+    const record: Record<string, unknown> = {
+      $token: this.projectToken,
+      $distinct_id: distinct_id,
+      $set: properties,
+    };
+    if (args.ip) record.$ip = args.ip;
+    return this.doEngagePost(record);
+  }
+
+  private async incrementUserProperty(args: Record<string, unknown>): Promise<ToolResult> {
+    const distinct_id = args.distinct_id as string;
+    const add = args.add as Record<string, unknown>;
+    if (!distinct_id || !add) {
+      return { content: [{ type: 'text', text: 'distinct_id and add are required' }], isError: true };
+    }
+    return this.doEngagePost({ $token: this.projectToken, $distinct_id: distinct_id, $add: add });
+  }
+
+  private async appendUserProperty(args: Record<string, unknown>): Promise<ToolResult> {
+    const distinct_id = args.distinct_id as string;
+    const append = args.append as Record<string, unknown>;
+    if (!distinct_id || !append) {
+      return { content: [{ type: 'text', text: 'distinct_id and append are required' }], isError: true };
+    }
+    return this.doEngagePost({ $token: this.projectToken, $distinct_id: distinct_id, $append: append });
+  }
+
+  private async unionUserProperty(args: Record<string, unknown>): Promise<ToolResult> {
+    const distinct_id = args.distinct_id as string;
+    const union = args.union as Record<string, unknown>;
+    if (!distinct_id || !union) {
+      return { content: [{ type: 'text', text: 'distinct_id and union are required' }], isError: true };
+    }
+    return this.doEngagePost({ $token: this.projectToken, $distinct_id: distinct_id, $union: union });
+  }
+
+  private async removeUserProperty(args: Record<string, unknown>): Promise<ToolResult> {
+    const distinct_id = args.distinct_id as string;
+    const properties = args.properties as string[];
+    if (!distinct_id || !properties) {
+      return { content: [{ type: 'text', text: 'distinct_id and properties are required' }], isError: true };
+    }
+    return this.doEngagePost({ $token: this.projectToken, $distinct_id: distinct_id, $unset: properties });
+  }
+
+  private async deleteUserProfile(args: Record<string, unknown>): Promise<ToolResult> {
+    const distinct_id = args.distinct_id as string;
+    if (!distinct_id) {
+      return { content: [{ type: 'text', text: 'distinct_id is required' }], isError: true };
+    }
+    return this.doEngagePost({ $token: this.projectToken, $distinct_id: distinct_id, $delete: '' });
+  }
+
+  private async querySegmentation(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string | number | undefined> = {
+      event: args.event as string,
+      from_date: args.from_date as string,
+      to_date: args.to_date as string,
+      type: args.type as string | undefined,
+      unit: args.unit as string | undefined,
+      on: args.on as string | undefined,
+      where: args.where as string | undefined,
+      limit: args.limit as number | undefined,
+    };
+    return this.doQueryGet('segmentation', params);
+  }
+
+  private async queryFunnel(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string | number | undefined> = {
+      funnel_id: args.funnel_id as number,
+      from_date: args.from_date as string,
+      to_date: args.to_date as string,
+      unit: args.unit as string | undefined,
+      on: args.on as string | undefined,
+      where: args.where as string | undefined,
+    };
+    return this.doQueryGet('funnels', params);
+  }
+
+  private async queryRetention(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string | number | undefined> = {
+      from_date: args.from_date as string,
+      to_date: args.to_date as string,
+      born_event: args.born_event as string,
+      event: args.event as string | undefined,
+      retention_type: args.retention_type as string | undefined,
+      unit: args.unit as string | undefined,
+    };
+    return this.doQueryGet('retention', params);
+  }
+
+  private async queryProfiles(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string | number | undefined> = {
+      where: args.where as string | undefined,
+      session_id: args.session_id as string | undefined,
+      page: args.page as number | undefined,
+    };
+    return this.doQueryGet('engage', params);
+  }
+
+  private async queryActivityStream(args: Record<string, unknown>): Promise<ToolResult> {
+    const distinct_id = args.distinct_id as string;
+    if (!distinct_id) {
+      return { content: [{ type: 'text', text: 'distinct_id is required' }], isError: true };
+    }
+    const params: Record<string, string | number | undefined> = {
+      distinct_id,
+      from_date: args.from_date as string | undefined,
+      to_date: args.to_date as string | undefined,
+      limit: args.limit as number | undefined,
+    };
+    return this.doQueryGet('stream/query', params);
+  }
+
+  private async queryInsights(args: Record<string, unknown>): Promise<ToolResult> {
+    const bookmark_id = args.bookmark_id as number;
+    if (!bookmark_id) {
+      return { content: [{ type: 'text', text: 'bookmark_id is required' }], isError: true };
+    }
+    return this.doQueryGet('insights', { bookmark_id });
+  }
+
+  private async queryJql(args: Record<string, unknown>): Promise<ToolResult> {
+    const script = args.script as string;
+    if (!script) {
+      return { content: [{ type: 'text', text: 'script is required' }], isError: true };
+    }
+    const qs = new URLSearchParams({ project_id: this.projectId });
+    const url = `${this.analyticsBaseUrl}/jql?${qs.toString()}`;
+    const body: Record<string, unknown> = { script };
+    if (args.params) body.params = JSON.stringify(args.params);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: this.basicAuthHeader,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `JQL error: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 }

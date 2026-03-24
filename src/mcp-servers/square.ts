@@ -4,9 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/square/square-mcp-server — 3 generic tools (get_service_info, get_type_info, make_api_request).
-// Their server is auto-generated and exposes a single make_api_request wrapper rather than named domain tools.
-// Our adapter provides named, typed tools for the core payment and commerce flows.
+// Official MCP: https://github.com/square/square-mcp-server — transport: stdio, auth: OAuth2 access token
+// Their server is auto-generated from Square's OpenAPI spec and exposes 3 generic tools:
+//   make_api_request, get_type_info, get_service_info — a single unified wrapper, not named domain tools.
+// Our adapter covers: 18 tools (payments, refunds, customers, orders, catalog, invoices, disputes, locations).
+// Vendor MCP covers: all Square APIs via make_api_request but requires prompt-engineering the path/method.
+// Recommendation: Use this adapter for named, typed tool resolution. Use vendor MCP for raw API exploration.
+//
+// Base URL: https://connect.squareup.com/v2 (production) | https://connect.squareupsandbox.com/v2 (sandbox)
+// Auth: Bearer token (Square access token or OAuth2 bearer)
+// Docs: https://developer.squareup.com/reference/square
+// Rate limits: ~100 requests/second per access token for most endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -31,15 +39,33 @@ export class SquareMCPServer {
 
   constructor(config: SquareConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl || 'https://connect.squareupsandbox.com/v2';
-    this.apiVersion = config.apiVersion || '2026-01-22';
+    this.baseUrl = config.baseUrl ?? 'https://connect.squareupsandbox.com/v2';
+    this.apiVersion = config.apiVersion ?? '2026-01-22';
+  }
+
+  static catalog() {
+    return {
+      name: 'square',
+      displayName: 'Square',
+      version: '1.0.0',
+      category: 'commerce' as const,
+      keywords: ['square', 'payment', 'pos', 'point-of-sale', 'commerce', 'order', 'invoice', 'refund', 'customer', 'catalog', 'dispute', 'location'],
+      toolNames: [
+        'list_locations', 'list_payments', 'get_payment', 'create_payment', 'refund_payment',
+        'list_refunds', 'list_customers', 'search_customers', 'create_customer', 'get_customer',
+        'create_order', 'get_order', 'search_orders', 'list_catalog', 'search_catalog',
+        'list_invoices', 'create_invoice', 'list_disputes',
+      ],
+      description: 'Payments, orders, catalog, invoices, refunds, customers, and disputes for Square sellers.',
+      author: 'protectnil' as const,
+    };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_locations',
-        description: "List all of the seller's locations, including inactive ones.",
+        description: "List all of the seller's locations including name, address, status, and capabilities.",
         inputSchema: {
           type: 'object',
           properties: {},
@@ -47,7 +73,7 @@ export class SquareMCPServer {
       },
       {
         name: 'list_payments',
-        description: 'Retrieve a list of payments taken by the account. Results are ordered by created_at descending.',
+        description: 'List payments taken by the account ordered by created_at descending. Filter by time range, location, or status.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -69,14 +95,28 @@ export class SquareMCPServer {
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of results to return (max 100)',
+              description: 'Maximum number of results to return (1–100, default 100)',
             },
           },
         },
       },
       {
+        name: 'get_payment',
+        description: 'Retrieve a single payment by its ID, including status, amount, source, and associated order.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            paymentId: {
+              type: 'string',
+              description: 'The unique payment ID to retrieve',
+            },
+          },
+          required: ['paymentId'],
+        },
+      },
+      {
         name: 'create_payment',
-        description: 'Create a payment using a source (nonce, card on file, etc.). Requires an idempotency key.',
+        description: 'Create a payment using a source (card nonce, token, or stored card). Requires an idempotency key to prevent duplicates.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -98,7 +138,7 @@ export class SquareMCPServer {
             },
             note: {
               type: 'string',
-              description: 'Optional note to associate with the payment',
+              description: 'Optional note to associate with the payment (max 500 characters)',
             },
             referenceId: {
               type: 'string',
@@ -114,17 +154,17 @@ export class SquareMCPServer {
       },
       {
         name: 'refund_payment',
-        description: 'Refund a completed payment. Partial refunds are supported.',
+        description: 'Refund a completed payment. Partial refunds are supported by specifying a smaller amountMoney.',
         inputSchema: {
           type: 'object',
           properties: {
             idempotencyKey: {
               type: 'string',
-              description: 'Unique key to prevent duplicate refunds',
+              description: 'Unique key to prevent duplicate refunds (UUID recommended)',
             },
             amountMoney: {
               type: 'object',
-              description: 'Amount to refund with amount (smallest unit) and currency. May be less than the payment amount.',
+              description: 'Amount to refund with amount (smallest currency unit) and currency. May be less than the original payment.',
             },
             paymentId: {
               type: 'string',
@@ -139,8 +179,37 @@ export class SquareMCPServer {
         },
       },
       {
+        name: 'list_refunds',
+        description: 'List refunds for the account ordered by created_at descending. Filter by time range and location.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            beginTime: {
+              type: 'string',
+              description: 'RFC 3339 timestamp — return refunds at or after this time',
+            },
+            endTime: {
+              type: 'string',
+              description: 'RFC 3339 timestamp — return refunds at or before this time',
+            },
+            locationId: {
+              type: 'string',
+              description: 'Filter by location ID',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum results to return (1–100, default 100)',
+            },
+          },
+        },
+      },
+      {
         name: 'list_customers',
-        description: "List the customer profiles associated with the seller's account.",
+        description: "List customer profiles associated with the seller's account. Supports sorting and pagination.",
         inputSchema: {
           type: 'object',
           properties: {
@@ -164,14 +233,43 @@ export class SquareMCPServer {
         },
       },
       {
+        name: 'search_customers',
+        description: 'Search customer profiles by email address, phone number, reference ID, or name with optional filters.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            emailAddress: {
+              type: 'string',
+              description: 'Filter customers whose email address exactly matches this value',
+            },
+            phoneNumber: {
+              type: 'string',
+              description: 'Filter customers whose phone number exactly matches this value',
+            },
+            referenceId: {
+              type: 'string',
+              description: 'Filter customers by external reference ID',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of results to return (1–100)',
+            },
+          },
+        },
+      },
+      {
         name: 'create_customer',
-        description: 'Create a new customer profile.',
+        description: 'Create a new customer profile with name, email, phone, and optional reference ID.',
         inputSchema: {
           type: 'object',
           properties: {
             idempotencyKey: {
               type: 'string',
-              description: 'Unique key to prevent duplicate customers',
+              description: 'Unique key to prevent duplicate customer records',
             },
             givenName: {
               type: 'string',
@@ -201,8 +299,22 @@ export class SquareMCPServer {
         },
       },
       {
+        name: 'get_customer',
+        description: 'Retrieve a single customer profile by customer ID, including payment methods and contact info.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            customerId: {
+              type: 'string',
+              description: 'The unique customer ID to retrieve',
+            },
+          },
+          required: ['customerId'],
+        },
+      },
+      {
         name: 'create_order',
-        description: 'Create a new order. Orders track items, taxes, discounts, and fulfilment details.',
+        description: 'Create a new order with line items, taxes, discounts, and fulfillment details tied to a location.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -231,8 +343,51 @@ export class SquareMCPServer {
         },
       },
       {
+        name: 'get_order',
+        description: 'Retrieve a single order by ID including line items, fulfillment status, and totals.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            orderId: {
+              type: 'string',
+              description: 'The unique order ID to retrieve',
+            },
+          },
+          required: ['orderId'],
+        },
+      },
+      {
+        name: 'search_orders',
+        description: 'Search orders across one or more locations with filters for state, date range, and customer ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationIds: {
+              type: 'array',
+              description: 'List of location IDs to search orders within',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of orders to return (1–500)',
+            },
+            stateFilter: {
+              type: 'array',
+              description: 'Filter by order states: OPEN, COMPLETED, CANCELED (array of strings)',
+            },
+            customerId: {
+              type: 'string',
+              description: 'Filter orders associated with a specific customer ID',
+            },
+          },
+        },
+      },
+      {
         name: 'list_catalog',
-        description: 'List all CatalogObjects (items, variations, taxes, discounts, etc.) in the catalog.',
+        description: 'List all CatalogObjects (items, variations, taxes, discounts, modifiers) with optional type filter.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -242,7 +397,105 @@ export class SquareMCPServer {
             },
             types: {
               type: 'string',
-              description: 'Comma-separated list of CatalogObject types to return (e.g. ITEM,ITEM_VARIATION,TAX,DISCOUNT)',
+              description: 'Comma-separated CatalogObject types: ITEM, ITEM_VARIATION, TAX, DISCOUNT, MODIFIER, MODIFIER_LIST, CATEGORY',
+            },
+          },
+        },
+      },
+      {
+        name: 'search_catalog',
+        description: 'Search catalog objects by text query across item names, descriptions, and variations.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            textFilter: {
+              type: 'string',
+              description: 'Text to search across catalog item names and descriptions',
+            },
+            objectTypes: {
+              type: 'array',
+              description: 'Filter by object types: ITEM, ITEM_VARIATION, CATEGORY, TAX, DISCOUNT (array of strings)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum results to return (1–1000)',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_invoices',
+        description: 'List invoices for a given location, ordered by created_at descending.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            locationId: {
+              type: 'string',
+              description: 'Location ID to filter invoices by',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum results to return (1–200)',
+            },
+          },
+          required: ['locationId'],
+        },
+      },
+      {
+        name: 'create_invoice',
+        description: 'Create an invoice for an existing order. Configure delivery method, payment schedule, and due dates.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            orderId: {
+              type: 'string',
+              description: 'Order ID this invoice is for (order must exist and have an unfulfilled payment)',
+            },
+            idempotencyKey: {
+              type: 'string',
+              description: 'Unique key to prevent duplicate invoices',
+            },
+            primaryRecipient: {
+              type: 'object',
+              description: 'Primary recipient object with customerId or email_address',
+            },
+            paymentRequests: {
+              type: 'array',
+              description: 'Array of payment request objects defining amount, due date, and request type (BALANCE, DEPOSIT, INSTALLMENT)',
+            },
+            deliveryMethod: {
+              type: 'string',
+              description: 'How the invoice is delivered: EMAIL, SMS, or SHARE_MANUALLY',
+            },
+          },
+          required: ['orderId', 'idempotencyKey'],
+        },
+      },
+      {
+        name: 'list_disputes',
+        description: 'List disputes (chargebacks) for the account with optional filters for state and location.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+            states: {
+              type: 'string',
+              description: 'Filter by dispute state: INQUIRY_EVIDENCE_REQUIRED, INQUIRY_PROCESSING, INQUIRY_CLOSED, EVIDENCE_REQUIRED, PROCESSING, WON, LOST, ACCEPTED, WAITING_THIRD_PARTY',
+            },
+            locationId: {
+              type: 'string',
+              description: 'Filter disputes by location ID',
             },
           },
         },
@@ -250,240 +503,111 @@ export class SquareMCPServer {
     ];
   }
 
+  private get authHeaders(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.accessToken}`,
+      'Content-Type': 'application/json',
+      'Square-Version': this.apiVersion,
+    };
+  }
+
+  private truncate(text: string): string {
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async request(
+    method: string,
+    path: string,
+    body?: unknown,
+  ): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method,
+      headers: this.authHeaders,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return {
+        content: [{ type: 'text', text: `Square API error (HTTP ${response.status}): ${errText}` }],
+        isError: true,
+      };
+    }
+
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      return {
+        content: [{ type: 'text', text: `Square returned non-JSON response (HTTP ${response.status})` }],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
+      isError: false,
+    };
+  }
+
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-        'Square-Version': this.apiVersion,
-      };
-
       switch (name) {
-        case 'list_locations': {
-          const response = await fetch(`${this.baseUrl}/locations`, { method: 'GET', headers });
+        case 'list_locations':
+          return this.listLocations();
 
-          if (!response.ok) {
-            const errText = await response.text();
-            return {
-              content: [{ type: 'text', text: `Failed to list locations (HTTP ${response.status}): ${errText}` }],
-              isError: true,
-            };
-          }
+        case 'list_payments':
+          return this.listPayments(args);
 
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Square returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
+        case 'get_payment':
+          return this.getPayment(args);
 
-        case 'list_payments': {
-          const params = new URLSearchParams();
-          if (args.beginTime) params.set('begin_time', args.beginTime as string);
-          if (args.endTime) params.set('end_time', args.endTime as string);
-          if (args.locationId) params.set('location_id', args.locationId as string);
-          if (args.cursor) params.set('cursor', args.cursor as string);
-          if (args.limit) params.set('limit', String(args.limit));
+        case 'create_payment':
+          return this.createPayment(args);
 
-          const query = params.toString();
-          const url = `${this.baseUrl}/payments${query ? `?${query}` : ''}`;
-          const response = await fetch(url, { method: 'GET', headers });
+        case 'refund_payment':
+          return this.refundPayment(args);
 
-          if (!response.ok) {
-            const errText = await response.text();
-            return {
-              content: [{ type: 'text', text: `Failed to list payments (HTTP ${response.status}): ${errText}` }],
-              isError: true,
-            };
-          }
+        case 'list_refunds':
+          return this.listRefunds(args);
 
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Square returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
+        case 'list_customers':
+          return this.listCustomers(args);
 
-        case 'create_payment': {
-          if (!args.sourceId || !args.idempotencyKey || !args.amountMoney) {
-            return {
-              content: [{ type: 'text', text: 'sourceId, idempotencyKey, and amountMoney are required' }],
-              isError: true,
-            };
-          }
+        case 'search_customers':
+          return this.searchCustomers(args);
 
-          const body: Record<string, unknown> = {
-            source_id: args.sourceId,
-            idempotency_key: args.idempotencyKey,
-            amount_money: args.amountMoney,
-          };
-          if (args.locationId) body.location_id = args.locationId;
-          if (args.note) body.note = args.note;
-          if (args.referenceId) body.reference_id = args.referenceId;
-          if (args.customerId) body.customer_id = args.customerId;
+        case 'create_customer':
+          return this.createCustomer(args);
 
-          const response = await fetch(`${this.baseUrl}/payments`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
+        case 'get_customer':
+          return this.getCustomer(args);
 
-          if (!response.ok) {
-            const errText = await response.text();
-            return {
-              content: [{ type: 'text', text: `Failed to create payment (HTTP ${response.status}): ${errText}` }],
-              isError: true,
-            };
-          }
+        case 'create_order':
+          return this.createOrder(args);
 
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Square returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
+        case 'get_order':
+          return this.getOrder(args);
 
-        case 'refund_payment': {
-          if (!args.idempotencyKey || !args.amountMoney || !args.paymentId) {
-            return {
-              content: [{ type: 'text', text: 'idempotencyKey, amountMoney, and paymentId are required' }],
-              isError: true,
-            };
-          }
+        case 'search_orders':
+          return this.searchOrders(args);
 
-          const body: Record<string, unknown> = {
-            idempotency_key: args.idempotencyKey,
-            amount_money: args.amountMoney,
-            payment_id: args.paymentId,
-          };
-          if (args.reason) body.reason = args.reason;
+        case 'list_catalog':
+          return this.listCatalog(args);
 
-          const response = await fetch(`${this.baseUrl}/refunds`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
+        case 'search_catalog':
+          return this.searchCatalog(args);
 
-          if (!response.ok) {
-            const errText = await response.text();
-            return {
-              content: [{ type: 'text', text: `Failed to refund payment (HTTP ${response.status}): ${errText}` }],
-              isError: true,
-            };
-          }
+        case 'list_invoices':
+          return this.listInvoices(args);
 
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Square returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
+        case 'create_invoice':
+          return this.createInvoice(args);
 
-        case 'list_customers': {
-          const params = new URLSearchParams();
-          if (args.cursor) params.set('cursor', args.cursor as string);
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.sortField) params.set('sort_field', args.sortField as string);
-          if (args.sortOrder) params.set('sort_order', args.sortOrder as string);
-
-          const query = params.toString();
-          const url = `${this.baseUrl}/customers${query ? `?${query}` : ''}`;
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return {
-              content: [{ type: 'text', text: `Failed to list customers (HTTP ${response.status}): ${errText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Square returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_customer': {
-          const body: Record<string, unknown> = {};
-          if (args.idempotencyKey) body.idempotency_key = args.idempotencyKey;
-          if (args.givenName) body.given_name = args.givenName;
-          if (args.familyName) body.family_name = args.familyName;
-          if (args.emailAddress) body.email_address = args.emailAddress;
-          if (args.phoneNumber) body.phone_number = args.phoneNumber;
-          if (args.referenceId) body.reference_id = args.referenceId;
-          if (args.note) body.note = args.note;
-
-          const response = await fetch(`${this.baseUrl}/customers`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return {
-              content: [{ type: 'text', text: `Failed to create customer (HTTP ${response.status}): ${errText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Square returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_order': {
-          if (!args.locationId || !args.idempotencyKey) {
-            return {
-              content: [{ type: 'text', text: 'locationId and idempotencyKey are required' }],
-              isError: true,
-            };
-          }
-
-          const order: Record<string, unknown> = {
-            location_id: args.locationId,
-          };
-          if (args.lineItems) order.line_items = args.lineItems;
-          if (args.customerId) order.customer_id = args.customerId;
-          if (args.referenceId) order.reference_id = args.referenceId;
-
-          const body: Record<string, unknown> = {
-            idempotency_key: args.idempotencyKey,
-            order,
-          };
-
-          const response = await fetch(`${this.baseUrl}/orders`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return {
-              content: [{ type: 'text', text: `Failed to create order (HTTP ${response.status}): ${errText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Square returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_catalog': {
-          const params = new URLSearchParams();
-          if (args.cursor) params.set('cursor', args.cursor as string);
-          if (args.types) params.set('types', args.types as string);
-
-          const query = params.toString();
-          const url = `${this.baseUrl}/catalog/list${query ? `?${query}` : ''}`;
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            return {
-              content: [{ type: 'text', text: `Failed to list catalog (HTTP ${response.status}): ${errText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Square returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
+        case 'list_disputes':
+          return this.listDisputes(args);
 
         default:
           return {
@@ -497,5 +621,207 @@ export class SquareMCPServer {
         isError: true,
       };
     }
+  }
+
+  private async listLocations(): Promise<ToolResult> {
+    return this.request('GET', '/locations');
+  }
+
+  private async listPayments(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.beginTime) params.set('begin_time', args.beginTime as string);
+    if (args.endTime) params.set('end_time', args.endTime as string);
+    if (args.locationId) params.set('location_id', args.locationId as string);
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    const qs = params.toString();
+    return this.request('GET', `/payments${qs ? `?${qs}` : ''}`);
+  }
+
+  private async getPayment(args: Record<string, unknown>): Promise<ToolResult> {
+    const paymentId = args.paymentId as string;
+    if (!paymentId) {
+      return { content: [{ type: 'text', text: 'paymentId is required' }], isError: true };
+    }
+    return this.request('GET', `/payments/${encodeURIComponent(paymentId)}`);
+  }
+
+  private async createPayment(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.sourceId || !args.idempotencyKey || !args.amountMoney) {
+      return {
+        content: [{ type: 'text', text: 'sourceId, idempotencyKey, and amountMoney are required' }],
+        isError: true,
+      };
+    }
+    const body: Record<string, unknown> = {
+      source_id: args.sourceId,
+      idempotency_key: args.idempotencyKey,
+      amount_money: args.amountMoney,
+    };
+    if (args.locationId) body.location_id = args.locationId;
+    if (args.note) body.note = args.note;
+    if (args.referenceId) body.reference_id = args.referenceId;
+    if (args.customerId) body.customer_id = args.customerId;
+    return this.request('POST', '/payments', body);
+  }
+
+  private async refundPayment(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.idempotencyKey || !args.amountMoney || !args.paymentId) {
+      return {
+        content: [{ type: 'text', text: 'idempotencyKey, amountMoney, and paymentId are required' }],
+        isError: true,
+      };
+    }
+    const body: Record<string, unknown> = {
+      idempotency_key: args.idempotencyKey,
+      amount_money: args.amountMoney,
+      payment_id: args.paymentId,
+    };
+    if (args.reason) body.reason = args.reason;
+    return this.request('POST', '/refunds', body);
+  }
+
+  private async listRefunds(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.beginTime) params.set('begin_time', args.beginTime as string);
+    if (args.endTime) params.set('end_time', args.endTime as string);
+    if (args.locationId) params.set('location_id', args.locationId as string);
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    const qs = params.toString();
+    return this.request('GET', `/refunds${qs ? `?${qs}` : ''}`);
+  }
+
+  private async listCustomers(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.sortField) params.set('sort_field', args.sortField as string);
+    if (args.sortOrder) params.set('sort_order', args.sortOrder as string);
+    const qs = params.toString();
+    return this.request('GET', `/customers${qs ? `?${qs}` : ''}`);
+  }
+
+  private async searchCustomers(args: Record<string, unknown>): Promise<ToolResult> {
+    const filter: Record<string, unknown> = {};
+    if (args.emailAddress) filter.email_address = { exact: args.emailAddress };
+    if (args.phoneNumber) filter.phone_number = { exact: args.phoneNumber };
+    if (args.referenceId) filter.reference_id = { exact: args.referenceId };
+
+    const body: Record<string, unknown> = {
+      query: { filter },
+    };
+    if (args.limit) body.limit = args.limit;
+    if (args.cursor) body.cursor = args.cursor;
+    return this.request('POST', '/customers/search', body);
+  }
+
+  private async createCustomer(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {};
+    if (args.idempotencyKey) body.idempotency_key = args.idempotencyKey;
+    if (args.givenName) body.given_name = args.givenName;
+    if (args.familyName) body.family_name = args.familyName;
+    if (args.emailAddress) body.email_address = args.emailAddress;
+    if (args.phoneNumber) body.phone_number = args.phoneNumber;
+    if (args.referenceId) body.reference_id = args.referenceId;
+    if (args.note) body.note = args.note;
+    return this.request('POST', '/customers', body);
+  }
+
+  private async getCustomer(args: Record<string, unknown>): Promise<ToolResult> {
+    const customerId = args.customerId as string;
+    if (!customerId) {
+      return { content: [{ type: 'text', text: 'customerId is required' }], isError: true };
+    }
+    return this.request('GET', `/customers/${encodeURIComponent(customerId)}`);
+  }
+
+  private async createOrder(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.locationId || !args.idempotencyKey) {
+      return {
+        content: [{ type: 'text', text: 'locationId and idempotencyKey are required' }],
+        isError: true,
+      };
+    }
+    const order: Record<string, unknown> = { location_id: args.locationId };
+    if (args.lineItems) order.line_items = args.lineItems;
+    if (args.customerId) order.customer_id = args.customerId;
+    if (args.referenceId) order.reference_id = args.referenceId;
+    return this.request('POST', '/orders', { idempotency_key: args.idempotencyKey, order });
+  }
+
+  private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
+    const orderId = args.orderId as string;
+    if (!orderId) {
+      return { content: [{ type: 'text', text: 'orderId is required' }], isError: true };
+    }
+    return this.request('GET', `/orders/${encodeURIComponent(orderId)}`);
+  }
+
+  private async searchOrders(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {};
+    if (args.locationIds) body.location_ids = args.locationIds;
+    if (args.cursor) body.cursor = args.cursor;
+    if (args.limit) body.limit = args.limit;
+
+    const filter: Record<string, unknown> = {};
+    if (args.stateFilter) filter.state_filter = { states: args.stateFilter };
+    if (args.customerId) filter.customer_filter = { customer_ids: [args.customerId] };
+    if (Object.keys(filter).length > 0) body.query = { filter };
+
+    return this.request('POST', '/orders/search', body);
+  }
+
+  private async listCatalog(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    if (args.types) params.set('types', args.types as string);
+    const qs = params.toString();
+    return this.request('GET', `/catalog/list${qs ? `?${qs}` : ''}`);
+  }
+
+  private async searchCatalog(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {};
+    if (args.textFilter) body.text_filter = { keyword: args.textFilter };
+    if (args.objectTypes) body.object_types = args.objectTypes;
+    if (args.cursor) body.cursor = args.cursor;
+    if (args.limit) body.limit = args.limit;
+    return this.request('POST', '/catalog/search', body);
+  }
+
+  private async listInvoices(args: Record<string, unknown>): Promise<ToolResult> {
+    const locationId = args.locationId as string;
+    if (!locationId) {
+      return { content: [{ type: 'text', text: 'locationId is required' }], isError: true };
+    }
+    const params = new URLSearchParams({ location_id: locationId });
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    return this.request('GET', `/invoices?${params}`);
+  }
+
+  private async createInvoice(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.orderId || !args.idempotencyKey) {
+      return {
+        content: [{ type: 'text', text: 'orderId and idempotencyKey are required' }],
+        isError: true,
+      };
+    }
+    const invoice: Record<string, unknown> = {
+      order_id: args.orderId,
+    };
+    if (args.primaryRecipient) invoice.primary_recipient = args.primaryRecipient;
+    if (args.paymentRequests) invoice.payment_requests = args.paymentRequests;
+    if (args.deliveryMethod) invoice.delivery_method = args.deliveryMethod;
+    return this.request('POST', '/invoices', { idempotency_key: args.idempotencyKey, invoice });
+  }
+
+  private async listDisputes(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.cursor) params.set('cursor', args.cursor as string);
+    if (args.states) params.set('states', args.states as string);
+    if (args.locationId) params.set('location_id', args.locationId as string);
+    const qs = params.toString();
+    return this.request('GET', `/disputes${qs ? `?${qs}` : ''}`);
   }
 }

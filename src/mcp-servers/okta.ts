@@ -4,18 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/okta/okta-mcp-server — 15+ tools (actively maintained, supports Device Auth Grant + Private Key JWT; build this adapter for API-token / Bearer use cases)
+// Official MCP: https://github.com/okta/okta-mcp-server — transport: stdio, auth: Device Auth Grant or Private Key JWT
+// Vendor MCP covers: full Okta API — users, groups, apps, policies, factors, and more (CRUD + lifecycle).
+//   Destructive operations prompt for confirmation via MCP Elicitation API.
+// Our adapter covers: 18 tools (REST v1 API surface using SSWS token or Bearer — for API-token deployments).
+// Recommendation: Use vendor MCP for interactive AI agent workflows with OAuth 2.0.
+//   Use this adapter for automated server-side integrations with SSWS API tokens or Bearer access tokens.
+//
+// Base URL: https://{yourOktaDomain} (caller supplies org domain, no trailing slash)
+// Auth: SSWS API token (legacy) or OAuth 2.0 Bearer token. SSWS is prepended automatically if token
+//   does not start with "SSWS " or "Bearer ". Okta recommends OAuth 2.0 for new integrations.
+// Docs: https://developer.okta.com/docs/reference/core-okta-api/
+// Rate limits: Varies by endpoint and tier; typically 600 req/min for most management endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
 
-// Auth: Okta supports both the legacy SSWS API token scheme and OAuth 2.0 Bearer tokens.
-// If apiToken already begins with "SSWS " or "Bearer " it is used verbatim; otherwise
-// "SSWS " is prepended. Okta recommends OAuth 2.0 Bearer tokens for new integrations.
-// Base URL: https://{yourOktaDomain} — caller supplies their org domain (no trailing slash).
-
 interface OktaConfig {
-  orgUrl: string;   // e.g. https://your-org.okta.com
-  apiToken: string; // SSWS <token>  OR  Bearer <access_token>  OR  raw token value
+  orgUrl: string;    // e.g. https://your-org.okta.com (no trailing slash)
+  apiToken: string;  // Raw token, "SSWS <token>", or "Bearer <access_token>"
 }
 
 export class OktaMCPServer {
@@ -24,31 +30,215 @@ export class OktaMCPServer {
 
   constructor(config: OktaConfig) {
     this.orgUrl = config.orgUrl.replace(/\/$/, '');
+    // Prepend "SSWS " if the token is not already prefixed
     this.authHeader =
       config.apiToken.startsWith('SSWS ') || config.apiToken.startsWith('Bearer ')
         ? config.apiToken
         : `SSWS ${config.apiToken}`;
   }
 
+  static catalog() {
+    return {
+      name: 'okta',
+      displayName: 'Okta',
+      version: '1.0.0',
+      category: 'identity' as const,
+      keywords: ['okta', 'identity', 'iam', 'sso', 'mfa', 'user', 'group', 'application', 'policy', 'factor', 'lifecycle', 'audit', 'log', 'provisioning', 'deprovisioning'],
+      toolNames: [
+        'list_users',
+        'get_user',
+        'create_user',
+        'update_user',
+        'delete_user',
+        'user_lifecycle',
+        'reset_user_password',
+        'list_groups',
+        'get_group',
+        'create_group',
+        'add_user_to_group',
+        'remove_user_from_group',
+        'list_group_members',
+        'list_apps',
+        'get_app',
+        'assign_user_to_app',
+        'list_user_factors',
+        'get_system_logs',
+      ],
+      description: 'Okta identity management: CRUD users and groups, lifecycle transitions, MFA factors, application assignments, and audit log queries.',
+      author: 'protectnil',
+    };
+  }
+
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_users',
-        description: 'List users in the Okta org with optional search, filter, and pagination.',
+        description: 'List users in the Okta org with optional SCIM filter, search expression, and pagination',
         inputSchema: {
           type: 'object',
           properties: {
             search: {
               type: 'string',
-              description: 'SCIM filter expression (e.g. status eq "ACTIVE" or profile.email sw "alice")',
+              description: 'SCIM filter expression (e.g. status eq "ACTIVE" or profile.email sw "alice") — preferred over filter',
             },
             filter: {
               type: 'string',
-              description: 'Legacy filter expression. Prefer search for new integrations.',
+              description: 'Legacy Okta filter expression (e.g. status eq "LOCKED_OUT")',
             },
             limit: {
               type: 'number',
-              description: 'Maximum results (max 200, default 200)',
+              description: 'Maximum results to return (max 200, default: 200)',
+            },
+            after: {
+              type: 'string',
+              description: 'Pagination cursor from the Link header of a previous response',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_user',
+        description: 'Retrieve a single Okta user by user ID, login name, or email address',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID (e.g. 00u1abc123xyz) or login/email address',
+            },
+          },
+          required: ['user_id'],
+        },
+      },
+      {
+        name: 'create_user',
+        description: 'Create a new Okta user with profile attributes; optionally send an activation email immediately',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            first_name: {
+              type: 'string',
+              description: 'User first name',
+            },
+            last_name: {
+              type: 'string',
+              description: 'User last name',
+            },
+            email: {
+              type: 'string',
+              description: 'Primary email address (used as login unless login is provided)',
+            },
+            login: {
+              type: 'string',
+              description: 'Login name — defaults to email if omitted',
+            },
+            mobile_phone: {
+              type: 'string',
+              description: 'Mobile phone number (optional)',
+            },
+            activate: {
+              type: 'boolean',
+              description: 'Send activation email immediately after creation (default: true)',
+            },
+            password: {
+              type: 'string',
+              description: 'Set an initial password (optional; requires activate=false to skip email)',
+            },
+          },
+          required: ['first_name', 'last_name', 'email'],
+        },
+      },
+      {
+        name: 'update_user',
+        description: 'Update profile attributes on an existing Okta user (partial update — only provided fields are changed)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID or login',
+            },
+            first_name: { type: 'string', description: 'Updated first name' },
+            last_name: { type: 'string', description: 'Updated last name' },
+            email: { type: 'string', description: 'Updated primary email' },
+            mobile_phone: { type: 'string', description: 'Updated mobile phone number' },
+            department: { type: 'string', description: 'Updated department' },
+            title: { type: 'string', description: 'Updated job title' },
+          },
+          required: ['user_id'],
+        },
+      },
+      {
+        name: 'delete_user',
+        description: 'Delete an Okta user. The user must be deactivated first. Sends the user to the DELETED state (irreversible).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID or login to delete',
+            },
+          },
+          required: ['user_id'],
+        },
+      },
+      {
+        name: 'user_lifecycle',
+        description: 'Perform a lifecycle transition on an Okta user: activate, deactivate, suspend, unsuspend, unlock, or reactivate',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID or login',
+            },
+            action: {
+              type: 'string',
+              description: 'Lifecycle action: activate | deactivate | suspend | unsuspend | unlock | reactivate',
+            },
+            send_email: {
+              type: 'boolean',
+              description: 'Send notification email (applies to activate, deactivate, reactivate; default: false)',
+            },
+          },
+          required: ['user_id', 'action'],
+        },
+      },
+      {
+        name: 'reset_user_password',
+        description: 'Trigger a password reset for an Okta user, optionally sending a reset email',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID or login',
+            },
+            send_email: {
+              type: 'boolean',
+              description: 'Send password reset email to the user (default: true)',
+            },
+          },
+          required: ['user_id'],
+        },
+      },
+      {
+        name: 'list_groups',
+        description: 'List groups in the Okta org with optional name prefix search and pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            q: {
+              type: 'string',
+              description: 'Prefix search on the group name',
+            },
+            search: {
+              type: 'string',
+              description: 'SCIM filter expression for groups (e.g. type eq "APP_GROUP")',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum results (max 200, default: 200)',
             },
             after: {
               type: 'string',
@@ -58,112 +248,177 @@ export class OktaMCPServer {
         },
       },
       {
-        name: 'get_user',
-        description: 'Fetch a single Okta user by user ID or login (email).',
+        name: 'get_group',
+        description: 'Retrieve a single Okta group by group ID including profile and type',
         inputSchema: {
           type: 'object',
           properties: {
-            userId: {
+            group_id: {
               type: 'string',
-              description: 'Okta user ID (e.g. 00u1abc123) or login (email address)',
+              description: 'Okta group ID (e.g. 00g1abc123xyz)',
             },
           },
-          required: ['userId'],
+          required: ['group_id'],
         },
       },
       {
-        name: 'create_user',
-        description: 'Create a new Okta user. Set activate=true to trigger the activation email.',
+        name: 'create_group',
+        description: 'Create a new Okta group with a name and optional description',
         inputSchema: {
           type: 'object',
           properties: {
-            firstName: { type: 'string', description: 'First name' },
-            lastName: { type: 'string', description: 'Last name' },
-            email: { type: 'string', description: 'Primary email address (used as login unless login is provided)' },
-            login: { type: 'string', description: 'Login name — defaults to email if omitted' },
-            mobilePhone: { type: 'string', description: 'Mobile phone number' },
-            activate: {
-              type: 'boolean',
-              description: 'Send activation email immediately (default: true)',
-            },
-          },
-          required: ['firstName', 'lastName', 'email'],
-        },
-      },
-      {
-        name: 'update_user',
-        description: 'Update profile attributes on an existing Okta user.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            userId: { type: 'string', description: 'Okta user ID or login' },
-            firstName: { type: 'string', description: 'Updated first name' },
-            lastName: { type: 'string', description: 'Updated last name' },
-            email: { type: 'string', description: 'Updated email' },
-            mobilePhone: { type: 'string', description: 'Updated mobile phone number' },
-          },
-          required: ['userId'],
-        },
-      },
-      {
-        name: 'user_lifecycle',
-        description: 'Perform a lifecycle transition on an Okta user: activate, deactivate, suspend, or unsuspend.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            userId: { type: 'string', description: 'Okta user ID or login' },
-            action: {
+            name: {
               type: 'string',
-              description: 'Lifecycle action: activate | deactivate | suspend | unsuspend',
+              description: 'Group name',
             },
-            sendEmail: {
-              type: 'boolean',
-              description: 'Send notification email (applies to activate and deactivate, default: false)',
+            description: {
+              type: 'string',
+              description: 'Group description (optional)',
             },
           },
-          required: ['userId', 'action'],
-        },
-      },
-      {
-        name: 'list_groups',
-        description: 'List groups in the Okta org with optional name prefix search.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            q: { type: 'string', description: 'Prefix search on the group name' },
-            limit: { type: 'number', description: 'Maximum results (max 200, default 200)' },
-            after: { type: 'string', description: 'Pagination cursor' },
-          },
+          required: ['name'],
         },
       },
       {
         name: 'add_user_to_group',
-        description: 'Add an Okta user to a group.',
+        description: 'Add an Okta user to a group by user ID and group ID',
         inputSchema: {
           type: 'object',
           properties: {
-            groupId: { type: 'string', description: 'Okta group ID' },
-            userId: { type: 'string', description: 'Okta user ID' },
+            group_id: {
+              type: 'string',
+              description: 'Okta group ID',
+            },
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID',
+            },
           },
-          required: ['groupId', 'userId'],
+          required: ['group_id', 'user_id'],
+        },
+      },
+      {
+        name: 'remove_user_from_group',
+        description: 'Remove an Okta user from a group',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            group_id: {
+              type: 'string',
+              description: 'Okta group ID',
+            },
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID',
+            },
+          },
+          required: ['group_id', 'user_id'],
+        },
+      },
+      {
+        name: 'list_group_members',
+        description: 'List all users who are members of a specific Okta group',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            group_id: {
+              type: 'string',
+              description: 'Okta group ID',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum results (max 1000, default: 200)',
+            },
+            after: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['group_id'],
         },
       },
       {
         name: 'list_apps',
-        description: 'List applications in the Okta org with optional filtering.',
+        description: 'List applications in the Okta org with optional name search, status filter, and pagination',
         inputSchema: {
           type: 'object',
           properties: {
-            q: { type: 'string', description: 'Prefix search on the application label' },
-            filter: { type: 'string', description: 'SCIM filter (e.g. status eq "ACTIVE")' },
-            limit: { type: 'number', description: 'Maximum results (max 200, default 200)' },
-            after: { type: 'string', description: 'Pagination cursor' },
+            q: {
+              type: 'string',
+              description: 'Prefix search on the application label',
+            },
+            filter: {
+              type: 'string',
+              description: 'SCIM filter expression (e.g. status eq "ACTIVE" or user.id eq "00u1abc")',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum results (max 200, default: 200)',
+            },
+            after: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
           },
         },
       },
       {
+        name: 'get_app',
+        description: 'Retrieve a single Okta application by application ID including settings and credentials',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            app_id: {
+              type: 'string',
+              description: 'Okta application ID (e.g. 0oa1abc123xyz)',
+            },
+          },
+          required: ['app_id'],
+        },
+      },
+      {
+        name: 'assign_user_to_app',
+        description: 'Assign an Okta user to an application with optional app-user profile override',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            app_id: {
+              type: 'string',
+              description: 'Okta application ID',
+            },
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID to assign',
+            },
+            scope: {
+              type: 'string',
+              description: 'Assignment scope: USER (default) — only USER is supported for direct assignment',
+            },
+            profile: {
+              type: 'object',
+              description: 'App-user profile overrides (optional, app-specific attributes)',
+            },
+          },
+          required: ['app_id', 'user_id'],
+        },
+      },
+      {
+        name: 'list_user_factors',
+        description: 'List all enrolled MFA factors for a specific Okta user including factor type and status',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'Okta user ID or login',
+            },
+          },
+          required: ['user_id'],
+        },
+      },
+      {
         name: 'get_system_logs',
-        description: 'Query the Okta System Log for audit and security events.',
+        description: 'Query the Okta System Log for audit and security events with optional time range, filter, and keyword search',
         inputSchema: {
           type: 'object',
           properties: {
@@ -179,8 +434,14 @@ export class OktaMCPServer {
               type: 'string',
               description: 'SCIM filter on log fields (e.g. eventType eq "user.session.start")',
             },
-            q: { type: 'string', description: 'Free-text keyword search across log fields' },
-            limit: { type: 'number', description: 'Maximum results (max 1000, default 100)' },
+            q: {
+              type: 'string',
+              description: 'Free-text keyword search across all log fields',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum results (max 1000, default: 100)',
+            },
           },
         },
       },
@@ -189,177 +450,48 @@ export class OktaMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: this.authHeader,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      };
-
       switch (name) {
-        case 'list_users': {
-          const params = new URLSearchParams();
-          if (args.search) params.set('search', args.search as string);
-          if (args.filter) params.set('filter', args.filter as string);
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.after) params.set('after', args.after as string);
-
-          const response = await fetch(`${this.orgUrl}/api/v1/users?${params.toString()}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list users: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_user': {
-          const userId = args.userId as string;
-          if (!userId) return { content: [{ type: 'text', text: 'userId is required' }], isError: true };
-
-          const response = await fetch(`${this.orgUrl}/api/v1/users/${encodeURIComponent(userId)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get user: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_user': {
-          const { firstName, lastName, email, login, mobilePhone, activate } = args as Record<string, unknown>;
-          if (!firstName || !lastName || !email) {
-            return { content: [{ type: 'text', text: 'firstName, lastName, and email are required' }], isError: true };
-          }
-
-          const profile: Record<string, unknown> = { firstName, lastName, email, login: login || email };
-          if (mobilePhone) profile.mobilePhone = mobilePhone;
-
-          const activateParam = typeof activate === 'boolean' ? activate : true;
-          const response = await fetch(`${this.orgUrl}/api/v1/users?activate=${activateParam}`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ profile }),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to create user: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'update_user': {
-          const userId = args.userId as string;
-          if (!userId) return { content: [{ type: 'text', text: 'userId is required' }], isError: true };
-
-          const profile: Record<string, unknown> = {};
-          if (args.firstName) profile.firstName = args.firstName;
-          if (args.lastName) profile.lastName = args.lastName;
-          if (args.email) profile.email = args.email;
-          if (args.mobilePhone) profile.mobilePhone = args.mobilePhone;
-
-          const response = await fetch(`${this.orgUrl}/api/v1/users/${encodeURIComponent(userId)}`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ profile }),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to update user: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'user_lifecycle': {
-          const userId = args.userId as string;
-          const action = (args.action as string | undefined)?.toLowerCase();
-          if (!userId || !action) return { content: [{ type: 'text', text: 'userId and action are required' }], isError: true };
-
-          const validActions = ['activate', 'deactivate', 'suspend', 'unsuspend'];
-          if (!validActions.includes(action)) {
-            return { content: [{ type: 'text', text: `Invalid action. Must be one of: ${validActions.join(', ')}` }], isError: true };
-          }
-
-          let url = `${this.orgUrl}/api/v1/users/${encodeURIComponent(userId)}/lifecycle/${action}`;
-          if ((action === 'activate' || action === 'deactivate') && typeof args.sendEmail === 'boolean') {
-            url += `?sendEmail=${args.sendEmail}`;
-          }
-
-          const response = await fetch(url, { method: 'POST', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to ${action} user: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          const text = await response.text();
-          const result = text.trim() ? JSON.parse(text) : { status: 'success', action };
-          return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], isError: false };
-        }
-
-        case 'list_groups': {
-          const params = new URLSearchParams();
-          if (args.q) params.set('q', args.q as string);
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.after) params.set('after', args.after as string);
-
-          const response = await fetch(`${this.orgUrl}/api/v1/groups?${params.toString()}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list groups: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'add_user_to_group': {
-          const groupId = args.groupId as string;
-          const userId = args.userId as string;
-          if (!groupId || !userId) return { content: [{ type: 'text', text: 'groupId and userId are required' }], isError: true };
-
-          const response = await fetch(
-            `${this.orgUrl}/api/v1/groups/${encodeURIComponent(groupId)}/users/${encodeURIComponent(userId)}`,
-            { method: 'PUT', headers }
-          );
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to add user to group: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          return { content: [{ type: 'text', text: JSON.stringify({ status: 'success', groupId, userId }) }], isError: false };
-        }
-
-        case 'list_apps': {
-          const params = new URLSearchParams();
-          if (args.q) params.set('q', args.q as string);
-          if (args.filter) params.set('filter', args.filter as string);
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.after) params.set('after', args.after as string);
-
-          const response = await fetch(`${this.orgUrl}/api/v1/apps?${params.toString()}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list apps: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_system_logs': {
-          const params = new URLSearchParams();
-          if (args.since) params.set('since', args.since as string);
-          if (args.until) params.set('until', args.until as string);
-          if (args.filter) params.set('filter', args.filter as string);
-          if (args.q) params.set('q', args.q as string);
-          params.set('limit', String(args.limit ?? 100));
-
-          const response = await fetch(`${this.orgUrl}/api/v1/logs?${params.toString()}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get system logs: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_users':
+          return await this.listUsers(args);
+        case 'get_user':
+          return await this.getUser(args);
+        case 'create_user':
+          return await this.createUser(args);
+        case 'update_user':
+          return await this.updateUser(args);
+        case 'delete_user':
+          return await this.deleteUser(args);
+        case 'user_lifecycle':
+          return await this.userLifecycle(args);
+        case 'reset_user_password':
+          return await this.resetUserPassword(args);
+        case 'list_groups':
+          return await this.listGroups(args);
+        case 'get_group':
+          return await this.getGroup(args);
+        case 'create_group':
+          return await this.createGroup(args);
+        case 'add_user_to_group':
+          return await this.addUserToGroup(args);
+        case 'remove_user_from_group':
+          return await this.removeUserFromGroup(args);
+        case 'list_group_members':
+          return await this.listGroupMembers(args);
+        case 'list_apps':
+          return await this.listApps(args);
+        case 'get_app':
+          return await this.getApp(args);
+        case 'assign_user_to_app':
+          return await this.assignUserToApp(args);
+        case 'list_user_factors':
+          return await this.listUserFactors(args);
+        case 'get_system_logs':
+          return await this.getSystemLogs(args);
         default:
-          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
+          return {
+            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+            isError: true,
+          };
       }
     } catch (error) {
       return {
@@ -367,5 +499,213 @@ export class OktaMCPServer {
         isError: true,
       };
     }
+  }
+
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: this.authHeader,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async get(path: string): Promise<ToolResult> {
+    const response = await fetch(`${this.orgUrl}${path}`, { method: 'GET', headers: this.headers });
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
+  }
+
+  private async post(path: string, body?: unknown): Promise<ToolResult> {
+    const response = await fetch(`${this.orgUrl}${path}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    let data: unknown;
+    try {
+      const text = await response.text();
+      data = text.trim() ? JSON.parse(text) : { status: 'success' };
+    } catch { data = { status: response.status, statusText: response.statusText }; }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
+  }
+
+  private async put(path: string): Promise<ToolResult> {
+    const response = await fetch(`${this.orgUrl}${path}`, {
+      method: 'PUT',
+      headers: this.headers,
+    });
+    let data: unknown;
+    try {
+      const text = await response.text();
+      data = text.trim() ? JSON.parse(text) : { status: 'success' };
+    } catch { data = { status: response.status, statusText: response.statusText }; }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
+  }
+
+  private async del(path: string): Promise<ToolResult> {
+    const response = await fetch(`${this.orgUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    if (response.status === 204) {
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }], isError: false };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
+  }
+
+  private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.search) params.set('search', args.search as string);
+    if (args.filter) params.set('filter', args.filter as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.after) params.set('after', args.after as string);
+    return this.get(`/api/v1/users?${params.toString()}`);
+  }
+
+  private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/api/v1/users/${encodeURIComponent(args.user_id as string)}`);
+  }
+
+  private async createUser(args: Record<string, unknown>): Promise<ToolResult> {
+    const profile: Record<string, unknown> = {
+      firstName: args.first_name,
+      lastName: args.last_name,
+      email: args.email,
+      login: args.login ?? args.email,
+    };
+    if (args.mobile_phone) profile.mobilePhone = args.mobile_phone;
+
+    const body: Record<string, unknown> = { profile };
+    if (args.password) {
+      body.credentials = { password: { value: args.password } };
+    }
+
+    const activateParam = args.activate !== false;
+    return this.post(`/api/v1/users?activate=${activateParam}`, body);
+  }
+
+  private async updateUser(args: Record<string, unknown>): Promise<ToolResult> {
+    const profile: Record<string, unknown> = {};
+    if (args.first_name) profile.firstName = args.first_name;
+    if (args.last_name) profile.lastName = args.last_name;
+    if (args.email) profile.email = args.email;
+    if (args.mobile_phone) profile.mobilePhone = args.mobile_phone;
+    if (args.department) profile.department = args.department;
+    if (args.title) profile.title = args.title;
+
+    const response = await fetch(`${this.orgUrl}/api/v1/users/${encodeURIComponent(args.user_id as string)}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({ profile }),
+    });
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
+  }
+
+  private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.del(`/api/v1/users/${encodeURIComponent(args.user_id as string)}`);
+  }
+
+  private async userLifecycle(args: Record<string, unknown>): Promise<ToolResult> {
+    const action = (args.action as string).toLowerCase();
+    const validActions = ['activate', 'deactivate', 'suspend', 'unsuspend', 'unlock', 'reactivate'];
+    if (!validActions.includes(action)) {
+      return {
+        content: [{ type: 'text', text: `Invalid action "${action}". Must be one of: ${validActions.join(', ')}` }],
+        isError: true,
+      };
+    }
+
+    let path = `/api/v1/users/${encodeURIComponent(args.user_id as string)}/lifecycle/${action}`;
+    const emailActions = ['activate', 'deactivate', 'reactivate'];
+    if (emailActions.includes(action) && typeof args.send_email === 'boolean') {
+      path += `?sendEmail=${args.send_email}`;
+    }
+    return this.post(path);
+  }
+
+  private async resetUserPassword(args: Record<string, unknown>): Promise<ToolResult> {
+    const sendEmail = args.send_email !== false;
+    return this.post(`/api/v1/users/${encodeURIComponent(args.user_id as string)}/lifecycle/reset_password?sendEmail=${sendEmail}`);
+  }
+
+  private async listGroups(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.q) params.set('q', args.q as string);
+    if (args.search) params.set('search', args.search as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.after) params.set('after', args.after as string);
+    return this.get(`/api/v1/groups?${params.toString()}`);
+  }
+
+  private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/api/v1/groups/${encodeURIComponent(args.group_id as string)}`);
+  }
+
+  private async createGroup(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {
+      profile: { name: args.name },
+    };
+    if (args.description) (body.profile as Record<string, unknown>).description = args.description;
+    return this.post('/api/v1/groups', body);
+  }
+
+  private async addUserToGroup(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.put(`/api/v1/groups/${encodeURIComponent(args.group_id as string)}/users/${encodeURIComponent(args.user_id as string)}`);
+  }
+
+  private async removeUserFromGroup(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.del(`/api/v1/groups/${encodeURIComponent(args.group_id as string)}/users/${encodeURIComponent(args.user_id as string)}`);
+  }
+
+  private async listGroupMembers(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.after) params.set('after', args.after as string);
+    return this.get(`/api/v1/groups/${encodeURIComponent(args.group_id as string)}/users?${params.toString()}`);
+  }
+
+  private async listApps(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.q) params.set('q', args.q as string);
+    if (args.filter) params.set('filter', args.filter as string);
+    if (args.limit) params.set('limit', String(args.limit));
+    if (args.after) params.set('after', args.after as string);
+    return this.get(`/api/v1/apps?${params.toString()}`);
+  }
+
+  private async getApp(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/api/v1/apps/${encodeURIComponent(args.app_id as string)}`);
+  }
+
+  private async assignUserToApp(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {
+      id: args.user_id,
+      scope: (args.scope as string) ?? 'USER',
+    };
+    if (args.profile) body.profile = args.profile;
+    return this.post(`/api/v1/apps/${encodeURIComponent(args.app_id as string)}/users`, body);
+  }
+
+  private async listUserFactors(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/api/v1/users/${encodeURIComponent(args.user_id as string)}/factors`);
+  }
+
+  private async getSystemLogs(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.since) params.set('since', args.since as string);
+    if (args.until) params.set('until', args.until as string);
+    if (args.filter) params.set('filter', args.filter as string);
+    if (args.q) params.set('q', args.q as string);
+    params.set('limit', String((args.limit as number) ?? 100));
+    return this.get(`/api/v1/logs?${params.toString()}`);
   }
 }

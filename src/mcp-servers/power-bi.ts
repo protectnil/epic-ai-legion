@@ -4,10 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/microsoft/powerbi-modeling-mcp — local desktop only, covers semantic
-// modeling (DAX, measures, relationships) via Tabular Object Model. Does NOT expose the cloud REST API.
-// This adapter covers the Power BI REST API (api.powerbi.com) for cloud automation: reports, datasets,
-// workspaces, refresh operations, and dashboards.
+// Official MCP: https://github.com/microsoft/powerbi-modeling-mcp — transport: stdio, local desktop only.
+//   Covers semantic modeling (DAX, measures, relationships) via Tabular Object Model. Does NOT expose
+//   the cloud REST API. No vendor MCP covers the cloud REST API as of 2026-03.
+// Our adapter covers: 18 tools (cloud REST API — reports, datasets, workspaces, dashboards, dataflows,
+//   pipelines, refresh operations). Vendor MCP covers: semantic modeling only (no cloud operations).
+// Recommendation: Use this adapter for all Power BI cloud automation. Use vendor MCP for DAX/modeling.
+//
+// Base URL: https://api.powerbi.com/v1.0/myorg
+// Auth: Azure AD / Microsoft Entra Bearer token — obtain via OAuth2 client credentials flow:
+//   POST https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+//   scope: https://analysis.windows.net/powerbi/api/.default
+// Docs: https://learn.microsoft.com/en-us/rest/api/power-bi/
+// Rate limits: Not formally documented; Microsoft recommends ≤200 requests/hour for dataset refreshes;
+//   general REST calls are throttled at service level per tenant
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -32,48 +42,68 @@ export class PowerBIMCPServer {
 
   constructor(config: PowerBIConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = (config.baseUrl || 'https://api.powerbi.com/v1.0/myorg').replace(/\/$/, '');
+    this.baseUrl = (config.baseUrl ?? 'https://api.powerbi.com/v1.0/myorg').replace(/\/$/, '');
+  }
+
+  static catalog() {
+    return {
+      name: 'power-bi',
+      displayName: 'Power BI',
+      version: '1.0.0',
+      category: 'data' as const,
+      keywords: ['power-bi', 'powerbi', 'microsoft', 'report', 'dataset', 'dashboard', 'workspace', 'dataflow', 'pipeline', 'bi', 'analytics', 'refresh'],
+      toolNames: [
+        'list_workspaces', 'list_reports', 'get_report', 'clone_report',
+        'list_datasets', 'get_dataset', 'refresh_dataset', 'get_refresh_history', 'get_dataset_tables',
+        'list_dashboards', 'list_dashboard_tiles',
+        'list_dataflows', 'refresh_dataflow',
+        'list_pipelines', 'get_pipeline', 'deploy_pipeline_stage',
+        'get_capacity', 'list_apps',
+      ],
+      description: 'Manage Power BI cloud resources: reports, datasets, dashboards, dataflows, deployment pipelines, and scheduled refreshes.',
+      author: 'protectnil',
+    };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_workspaces',
-        description: 'List all Power BI workspaces (groups) the service principal has access to',
+        description: 'List all Power BI workspaces (groups) the service principal has access to, with optional OData filter and pagination',
         inputSchema: {
           type: 'object',
           properties: {
             filter: {
               type: 'string',
-              description: 'OData filter expression (e.g. "type eq \'Workspace\'")',
+              description: "OData $filter expression (e.g. \"type eq 'Workspace'\")",
             },
             top: {
               type: 'number',
-              description: 'Maximum number of workspaces to return',
+              description: 'Maximum number of workspaces to return ($top)',
             },
             skip: {
               type: 'number',
-              description: 'Number of workspaces to skip for pagination',
+              description: 'Number of workspaces to skip for pagination ($skip)',
             },
           },
         },
       },
       {
         name: 'list_reports',
-        description: 'List reports in a workspace, or all reports in My workspace if no workspaceId provided',
+        description: 'List reports in a workspace, or all reports in My workspace if no workspaceId is provided',
         inputSchema: {
           type: 'object',
           properties: {
             workspaceId: {
               type: 'string',
-              description: 'The workspace (group) ID. Omit to list reports in My workspace.',
+              description: 'The workspace (group) ID (GUID). Omit to list reports in My workspace.',
             },
           },
         },
       },
       {
         name: 'get_report',
-        description: 'Get details of a specific report by ID',
+        description: 'Get metadata and configuration details of a specific Power BI report by ID',
         inputSchema: {
           type: 'object',
           properties: {
@@ -90,8 +120,38 @@ export class PowerBIMCPServer {
         },
       },
       {
+        name: 'clone_report',
+        description: 'Clone a Power BI report to another workspace or dataset, creating an independent copy',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            reportId: {
+              type: 'string',
+              description: 'The source report ID (GUID) to clone',
+            },
+            workspaceId: {
+              type: 'string',
+              description: 'The workspace ID containing the source report. Omit for My workspace.',
+            },
+            name: {
+              type: 'string',
+              description: 'Name for the cloned report',
+            },
+            targetWorkspaceId: {
+              type: 'string',
+              description: 'Target workspace ID to clone the report into (optional, defaults to same workspace)',
+            },
+            targetDatasetId: {
+              type: 'string',
+              description: 'Target dataset ID to rebind the cloned report to (optional)',
+            },
+          },
+          required: ['reportId', 'name'],
+        },
+      },
+      {
         name: 'list_datasets',
-        description: 'List datasets in a workspace, or all datasets in My workspace if no workspaceId provided',
+        description: 'List datasets (semantic models) in a workspace, or all datasets in My workspace if no workspaceId is provided',
         inputSchema: {
           type: 'object',
           properties: {
@@ -104,7 +164,7 @@ export class PowerBIMCPServer {
       },
       {
         name: 'get_dataset',
-        description: 'Get details of a specific dataset by ID',
+        description: 'Get metadata and configuration details of a specific Power BI dataset (semantic model)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -122,7 +182,7 @@ export class PowerBIMCPServer {
       },
       {
         name: 'refresh_dataset',
-        description: 'Trigger an on-demand refresh for a dataset. Returns HTTP 202 Accepted on success.',
+        description: 'Trigger an on-demand refresh for a Power BI dataset. Returns 202 Accepted on success.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -136,7 +196,7 @@ export class PowerBIMCPServer {
             },
             notifyOption: {
               type: 'string',
-              description: 'Notification option: "MailOnCompletion", "MailOnFailure", or "NoNotification" (default)',
+              description: 'Notification option: MailOnCompletion, MailOnFailure, or NoNotification (default: NoNotification)',
             },
           },
           required: ['datasetId'],
@@ -144,7 +204,7 @@ export class PowerBIMCPServer {
       },
       {
         name: 'get_refresh_history',
-        description: 'Get the refresh history for a dataset',
+        description: 'Get the refresh history for a Power BI dataset including status and timestamps of recent refreshes',
         inputSchema: {
           type: 'object',
           properties: {
@@ -158,7 +218,25 @@ export class PowerBIMCPServer {
             },
             top: {
               type: 'number',
-              description: 'Maximum number of refresh records to return',
+              description: 'Maximum number of refresh history records to return ($top)',
+            },
+          },
+          required: ['datasetId'],
+        },
+      },
+      {
+        name: 'get_dataset_tables',
+        description: 'List tables in a push or streaming dataset to inspect schema and column definitions',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            datasetId: {
+              type: 'string',
+              description: 'The dataset ID (GUID)',
+            },
+            workspaceId: {
+              type: 'string',
+              description: 'The workspace ID containing the dataset. Omit for My workspace.',
             },
           },
           required: ['datasetId'],
@@ -166,7 +244,7 @@ export class PowerBIMCPServer {
       },
       {
         name: 'list_dashboards',
-        description: 'List dashboards in a workspace, or all dashboards in My workspace if no workspaceId provided',
+        description: 'List dashboards in a workspace, or all dashboards in My workspace if no workspaceId is provided',
         inputSchema: {
           type: 'object',
           properties: {
@@ -179,7 +257,7 @@ export class PowerBIMCPServer {
       },
       {
         name: 'list_dashboard_tiles',
-        description: 'List tiles on a specific dashboard',
+        description: 'List all tiles on a specific Power BI dashboard with their datasource info',
         inputSchema: {
           type: 'object',
           properties: {
@@ -195,254 +273,144 @@ export class PowerBIMCPServer {
           required: ['dashboardId'],
         },
       },
+      {
+        name: 'list_dataflows',
+        description: 'List dataflows in a Power BI workspace including their schedule and datasource configurations',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            workspaceId: {
+              type: 'string',
+              description: 'The workspace (group) ID to list dataflows from',
+            },
+          },
+          required: ['workspaceId'],
+        },
+      },
+      {
+        name: 'refresh_dataflow',
+        description: 'Trigger an on-demand refresh for a Power BI dataflow in a workspace',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            workspaceId: {
+              type: 'string',
+              description: 'The workspace ID containing the dataflow',
+            },
+            dataflowId: {
+              type: 'string',
+              description: 'The dataflow ID (GUID) to refresh',
+            },
+            notifyOption: {
+              type: 'string',
+              description: 'Notification option: MailOnCompletion, MailOnFailure, or NoNotification (default: NoNotification)',
+            },
+          },
+          required: ['workspaceId', 'dataflowId'],
+        },
+      },
+      {
+        name: 'list_pipelines',
+        description: 'List all deployment pipelines the user has access to for promoting content between dev/test/production',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_pipeline',
+        description: 'Get details and stage configuration for a specific Power BI deployment pipeline',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            pipelineId: {
+              type: 'string',
+              description: 'The deployment pipeline ID (GUID)',
+            },
+          },
+          required: ['pipelineId'],
+        },
+      },
+      {
+        name: 'deploy_pipeline_stage',
+        description: 'Deploy content from one pipeline stage to the next (e.g. dev to test, or test to production)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            pipelineId: {
+              type: 'string',
+              description: 'The deployment pipeline ID (GUID)',
+            },
+            sourceStageOrder: {
+              type: 'number',
+              description: 'Source stage order: 0=development, 1=test, 2=production',
+            },
+            isBackwardDeployment: {
+              type: 'boolean',
+              description: 'Deploy backward from a higher stage to a lower stage (default: false)',
+            },
+          },
+          required: ['pipelineId', 'sourceStageOrder'],
+        },
+      },
+      {
+        name: 'get_capacity',
+        description: 'List all Power BI Premium and Fabric capacities the user has access to',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'list_apps',
+        description: 'List all Power BI apps installed for the authenticated user',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
     ];
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-      };
-
       switch (name) {
-        case 'list_workspaces': {
-          let url = `${this.baseUrl}/groups`;
-          const params: string[] = [];
-          if (args.filter) params.push(`$filter=${encodeURIComponent(args.filter as string)}`);
-          if (args.top) params.push(`$top=${args.top as number}`);
-          if (args.skip) params.push(`$skip=${args.skip as number}`);
-          if (params.length > 0) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list workspaces: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_reports': {
-          const workspaceId = args.workspaceId as string | undefined;
-          const url = workspaceId
-            ? `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/reports`
-            : `${this.baseUrl}/reports`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list reports: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_report': {
-          const reportId = args.reportId as string;
-
-          if (!reportId) {
-            return {
-              content: [{ type: 'text', text: 'reportId is required' }],
-              isError: true,
-            };
-          }
-
-          const workspaceId = args.workspaceId as string | undefined;
-          const url = workspaceId
-            ? `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/reports/${encodeURIComponent(reportId)}`
-            : `${this.baseUrl}/reports/${encodeURIComponent(reportId)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get report: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_datasets': {
-          const workspaceId = args.workspaceId as string | undefined;
-          const url = workspaceId
-            ? `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/datasets`
-            : `${this.baseUrl}/datasets`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list datasets: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_dataset': {
-          const datasetId = args.datasetId as string;
-
-          if (!datasetId) {
-            return {
-              content: [{ type: 'text', text: 'datasetId is required' }],
-              isError: true,
-            };
-          }
-
-          const workspaceId = args.workspaceId as string | undefined;
-          const url = workspaceId
-            ? `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/datasets/${encodeURIComponent(datasetId)}`
-            : `${this.baseUrl}/datasets/${encodeURIComponent(datasetId)}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get dataset: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'refresh_dataset': {
-          const datasetId = args.datasetId as string;
-
-          if (!datasetId) {
-            return {
-              content: [{ type: 'text', text: 'datasetId is required' }],
-              isError: true,
-            };
-          }
-
-          const workspaceId = args.workspaceId as string | undefined;
-          const url = workspaceId
-            ? `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/datasets/${encodeURIComponent(datasetId)}/refreshes`
-            : `${this.baseUrl}/datasets/${encodeURIComponent(datasetId)}/refreshes`;
-
-          const body: Record<string, unknown> = {};
-          if (args.notifyOption) body.notifyOption = args.notifyOption;
-
-          const response = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to refresh dataset: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          // POST /refreshes returns 202 Accepted with no body on success
-          return {
-            content: [{ type: 'text', text: `Dataset refresh triggered successfully (HTTP ${response.status})` }],
-            isError: false,
-          };
-        }
-
-        case 'get_refresh_history': {
-          const datasetId = args.datasetId as string;
-
-          if (!datasetId) {
-            return {
-              content: [{ type: 'text', text: 'datasetId is required' }],
-              isError: true,
-            };
-          }
-
-          const workspaceId = args.workspaceId as string | undefined;
-          let url = workspaceId
-            ? `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/datasets/${encodeURIComponent(datasetId)}/refreshes`
-            : `${this.baseUrl}/datasets/${encodeURIComponent(datasetId)}/refreshes`;
-          if (args.top) url += `?$top=${args.top as number}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get refresh history: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_dashboards': {
-          const workspaceId = args.workspaceId as string | undefined;
-          const url = workspaceId
-            ? `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/dashboards`
-            : `${this.baseUrl}/dashboards`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list dashboards: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_dashboard_tiles': {
-          const dashboardId = args.dashboardId as string;
-
-          if (!dashboardId) {
-            return {
-              content: [{ type: 'text', text: 'dashboardId is required' }],
-              isError: true,
-            };
-          }
-
-          const workspaceId = args.workspaceId as string | undefined;
-          const url = workspaceId
-            ? `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/dashboards/${encodeURIComponent(dashboardId)}/tiles`
-            : `${this.baseUrl}/dashboards/${encodeURIComponent(dashboardId)}/tiles`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list dashboard tiles: HTTP ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_workspaces':
+          return await this.listWorkspaces(args);
+        case 'list_reports':
+          return await this.listReports(args);
+        case 'get_report':
+          return await this.getReport(args);
+        case 'clone_report':
+          return await this.cloneReport(args);
+        case 'list_datasets':
+          return await this.listDatasets(args);
+        case 'get_dataset':
+          return await this.getDataset(args);
+        case 'refresh_dataset':
+          return await this.refreshDataset(args);
+        case 'get_refresh_history':
+          return await this.getRefreshHistory(args);
+        case 'get_dataset_tables':
+          return await this.getDatasetTables(args);
+        case 'list_dashboards':
+          return await this.listDashboards(args);
+        case 'list_dashboard_tiles':
+          return await this.listDashboardTiles(args);
+        case 'list_dataflows':
+          return await this.listDataflows(args);
+        case 'refresh_dataflow':
+          return await this.refreshDataflow(args);
+        case 'list_pipelines':
+          return await this.listPipelines();
+        case 'get_pipeline':
+          return await this.getPipeline(args);
+        case 'deploy_pipeline_stage':
+          return await this.deployPipelineStage(args);
+        case 'get_capacity':
+          return await this.getCapacity();
+        case 'list_apps':
+          return await this.listApps();
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -455,5 +423,181 @@ export class PowerBIMCPServer {
         isError: true,
       };
     }
+  }
+
+  private get authHeaders(): Record<string, string> {
+    return {
+      'Authorization': `Bearer ${this.accessToken}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async fetchJSON(url: string, options?: RequestInit): Promise<ToolResult> {
+    const response = await fetch(url, { headers: this.authHeaders, ...options });
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      return {
+        content: [{ type: 'text', text: `Power BI API error: HTTP ${response.status} ${response.statusText}${body ? ` — ${body.slice(0, 500)}` : ''}` }],
+        isError: true,
+      };
+    }
+    // Some Power BI operations return 202/204 with no body
+    if (response.status === 202 || response.status === 204) {
+      return { content: [{ type: 'text', text: `Operation accepted (HTTP ${response.status})` }], isError: false };
+    }
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`Power BI returned non-JSON response (HTTP ${response.status})`);
+    }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private groupPath(workspaceId?: string): string {
+    return workspaceId ? `/groups/${encodeURIComponent(workspaceId)}` : '';
+  }
+
+  private async listWorkspaces(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: string[] = [];
+    if (args.filter) params.push(`$filter=${encodeURIComponent(args.filter as string)}`);
+    if (args.top) params.push(`$top=${args.top as number}`);
+    if (args.skip) params.push(`$skip=${args.skip as number}`);
+    const qs = params.length ? `?${params.join('&')}` : '';
+    return this.fetchJSON(`${this.baseUrl}/groups${qs}`);
+  }
+
+  private async listReports(args: Record<string, unknown>): Promise<ToolResult> {
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    return this.fetchJSON(`${this.baseUrl}${prefix}/reports`);
+  }
+
+  private async getReport(args: Record<string, unknown>): Promise<ToolResult> {
+    const reportId = args.reportId as string;
+    if (!reportId) return { content: [{ type: 'text', text: 'reportId is required' }], isError: true };
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    return this.fetchJSON(`${this.baseUrl}${prefix}/reports/${encodeURIComponent(reportId)}`);
+  }
+
+  private async cloneReport(args: Record<string, unknown>): Promise<ToolResult> {
+    const reportId = args.reportId as string;
+    const name = args.name as string;
+    if (!reportId || !name) return { content: [{ type: 'text', text: 'reportId and name are required' }], isError: true };
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    const body: Record<string, unknown> = { name };
+    if (args.targetWorkspaceId) body.targetWorkspaceId = args.targetWorkspaceId;
+    if (args.targetDatasetId) body.targetModelId = args.targetDatasetId;
+    return this.fetchJSON(
+      `${this.baseUrl}${prefix}/reports/${encodeURIComponent(reportId)}/Clone`,
+      { method: 'POST', body: JSON.stringify(body) },
+    );
+  }
+
+  private async listDatasets(args: Record<string, unknown>): Promise<ToolResult> {
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    return this.fetchJSON(`${this.baseUrl}${prefix}/datasets`);
+  }
+
+  private async getDataset(args: Record<string, unknown>): Promise<ToolResult> {
+    const datasetId = args.datasetId as string;
+    if (!datasetId) return { content: [{ type: 'text', text: 'datasetId is required' }], isError: true };
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    return this.fetchJSON(`${this.baseUrl}${prefix}/datasets/${encodeURIComponent(datasetId)}`);
+  }
+
+  private async refreshDataset(args: Record<string, unknown>): Promise<ToolResult> {
+    const datasetId = args.datasetId as string;
+    if (!datasetId) return { content: [{ type: 'text', text: 'datasetId is required' }], isError: true };
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    const body: Record<string, unknown> = {};
+    if (args.notifyOption) body.notifyOption = args.notifyOption as string;
+    return this.fetchJSON(
+      `${this.baseUrl}${prefix}/datasets/${encodeURIComponent(datasetId)}/refreshes`,
+      { method: 'POST', body: JSON.stringify(body) },
+    );
+  }
+
+  private async getRefreshHistory(args: Record<string, unknown>): Promise<ToolResult> {
+    const datasetId = args.datasetId as string;
+    if (!datasetId) return { content: [{ type: 'text', text: 'datasetId is required' }], isError: true };
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    const qs = args.top ? `?$top=${args.top as number}` : '';
+    return this.fetchJSON(`${this.baseUrl}${prefix}/datasets/${encodeURIComponent(datasetId)}/refreshes${qs}`);
+  }
+
+  private async getDatasetTables(args: Record<string, unknown>): Promise<ToolResult> {
+    const datasetId = args.datasetId as string;
+    if (!datasetId) return { content: [{ type: 'text', text: 'datasetId is required' }], isError: true };
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    return this.fetchJSON(`${this.baseUrl}${prefix}/datasets/${encodeURIComponent(datasetId)}/tables`);
+  }
+
+  private async listDashboards(args: Record<string, unknown>): Promise<ToolResult> {
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    return this.fetchJSON(`${this.baseUrl}${prefix}/dashboards`);
+  }
+
+  private async listDashboardTiles(args: Record<string, unknown>): Promise<ToolResult> {
+    const dashboardId = args.dashboardId as string;
+    if (!dashboardId) return { content: [{ type: 'text', text: 'dashboardId is required' }], isError: true };
+    const prefix = this.groupPath(args.workspaceId as string | undefined);
+    return this.fetchJSON(`${this.baseUrl}${prefix}/dashboards/${encodeURIComponent(dashboardId)}/tiles`);
+  }
+
+  private async listDataflows(args: Record<string, unknown>): Promise<ToolResult> {
+    const workspaceId = args.workspaceId as string;
+    if (!workspaceId) return { content: [{ type: 'text', text: 'workspaceId is required' }], isError: true };
+    return this.fetchJSON(`${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/dataflows`);
+  }
+
+  private async refreshDataflow(args: Record<string, unknown>): Promise<ToolResult> {
+    const workspaceId = args.workspaceId as string;
+    const dataflowId = args.dataflowId as string;
+    if (!workspaceId || !dataflowId) return { content: [{ type: 'text', text: 'workspaceId and dataflowId are required' }], isError: true };
+    const body: Record<string, unknown> = {};
+    if (args.notifyOption) body.notifyOption = args.notifyOption as string;
+    return this.fetchJSON(
+      `${this.baseUrl}/groups/${encodeURIComponent(workspaceId)}/dataflows/${encodeURIComponent(dataflowId)}/refreshes`,
+      { method: 'POST', body: JSON.stringify(body) },
+    );
+  }
+
+  private async listPipelines(): Promise<ToolResult> {
+    return this.fetchJSON(`${this.baseUrl}/pipelines`);
+  }
+
+  private async getPipeline(args: Record<string, unknown>): Promise<ToolResult> {
+    const pipelineId = args.pipelineId as string;
+    if (!pipelineId) return { content: [{ type: 'text', text: 'pipelineId is required' }], isError: true };
+    return this.fetchJSON(`${this.baseUrl}/pipelines/${encodeURIComponent(pipelineId)}`);
+  }
+
+  private async deployPipelineStage(args: Record<string, unknown>): Promise<ToolResult> {
+    const pipelineId = args.pipelineId as string;
+    const sourceStageOrder = args.sourceStageOrder as number;
+    if (!pipelineId || sourceStageOrder === undefined) {
+      return { content: [{ type: 'text', text: 'pipelineId and sourceStageOrder are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = { sourceStageOrder };
+    if (args.isBackwardDeployment !== undefined) body.isBackwardDeployment = args.isBackwardDeployment as boolean;
+    return this.fetchJSON(
+      `${this.baseUrl}/pipelines/${encodeURIComponent(pipelineId)}/deploy`,
+      { method: 'POST', body: JSON.stringify(body) },
+    );
+  }
+
+  private async getCapacity(): Promise<ToolResult> {
+    return this.fetchJSON(`${this.baseUrl}/capacities`);
+  }
+
+  private async listApps(): Promise<ToolResult> {
+    return this.fetchJSON(`${this.baseUrl}/apps`);
   }
 }

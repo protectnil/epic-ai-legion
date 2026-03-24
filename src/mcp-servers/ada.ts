@@ -4,7 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found
+// Official MCP: None found as of 2026-03
+// The adasupport/ada-skills GitHub repo is agent skills for the Ada platform, not a REST API MCP server.
+// No official ada.cx MCP server exposing the REST API was found on GitHub as of March 2026.
+//
+// Base URL: https://{handle}.ada.support/api/v2 (handle is your Ada bot subdomain)
+// Auth: Authorization: Bearer {apiKey}
+//   API key generated in Ada dashboard: Settings > Integrations > API
+// Docs: https://docs.ada.cx/reference/introduction/overview
+// Rate limits: Not publicly documented; use cursor-based pagination
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -19,7 +27,6 @@ export class AdaMCPServer {
   private readonly baseUrl: string;
 
   constructor(config: AdaConfig) {
-    // Base URL: https://{handle}.ada.support/api/v2 — confirmed via docs.ada.cx
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || `https://${config.handle}.ada.support/api/v2`;
   }
@@ -28,7 +35,7 @@ export class AdaMCPServer {
     return [
       {
         name: 'list_conversations',
-        description: 'List conversations (chat sessions) in Ada',
+        description: 'List conversations (chat sessions) in Ada with optional date range and cursor pagination.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -53,7 +60,21 @@ export class AdaMCPServer {
       },
       {
         name: 'get_conversation',
-        description: 'Get details of a specific Ada conversation by ID',
+        description: 'Get full details of a specific Ada conversation by ID, including metadata and status.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            conversation_id: {
+              type: 'string',
+              description: 'Ada conversation ID',
+            },
+          },
+          required: ['conversation_id'],
+        },
+      },
+      {
+        name: 'get_conversation_messages',
+        description: 'Get the full message transcript for a conversation, including all bot and user turns.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -67,7 +88,7 @@ export class AdaMCPServer {
       },
       {
         name: 'list_articles',
-        description: 'List knowledge base articles in Ada',
+        description: 'List knowledge base articles in Ada with optional language filter and cursor pagination.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -88,7 +109,7 @@ export class AdaMCPServer {
       },
       {
         name: 'get_article',
-        description: 'Get a specific knowledge base article by ID',
+        description: 'Get a specific knowledge base article by ID, including title, body, and metadata.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -101,8 +122,66 @@ export class AdaMCPServer {
         },
       },
       {
+        name: 'create_article',
+        description: 'Create a new knowledge base article in Ada with title, body, and optional language.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: 'Title of the knowledge base article',
+            },
+            body: {
+              type: 'string',
+              description: 'Body content of the article (HTML or plain text)',
+            },
+            language: {
+              type: 'string',
+              description: 'Language code for the article (default: en)',
+            },
+          },
+          required: ['title', 'body'],
+        },
+      },
+      {
+        name: 'update_article',
+        description: 'Update an existing knowledge base article in Ada by ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            article_id: {
+              type: 'string',
+              description: 'Ada article ID to update',
+            },
+            title: {
+              type: 'string',
+              description: 'Updated title of the article',
+            },
+            body: {
+              type: 'string',
+              description: 'Updated body content of the article',
+            },
+          },
+          required: ['article_id'],
+        },
+      },
+      {
+        name: 'delete_article',
+        description: 'Delete a knowledge base article from Ada by ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            article_id: {
+              type: 'string',
+              description: 'Ada article ID to delete',
+            },
+          },
+          required: ['article_id'],
+        },
+      },
+      {
         name: 'list_chatter',
-        description: 'List chatter (bot response blocks) in the Ada bot',
+        description: 'List chatter (bot response blocks) in the Ada bot with cursor pagination.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -118,22 +197,8 @@ export class AdaMCPServer {
         },
       },
       {
-        name: 'get_handoff_transcript',
-        description: 'Get the full message transcript for a conversation, useful for agent handoff reviews',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            conversation_id: {
-              type: 'string',
-              description: 'Ada conversation ID',
-            },
-          },
-          required: ['conversation_id'],
-        },
-      },
-      {
         name: 'list_variables',
-        description: 'List all bot variables defined in the Ada bot configuration',
+        description: 'List all bot variables defined in the Ada bot configuration with cursor pagination.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -148,122 +213,102 @@ export class AdaMCPServer {
           },
         },
       },
+      {
+        name: 'list_end_users',
+        description: 'List end users (chatter profiles) in Ada with cursor pagination.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of end users to return (default: 25)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_end_user',
+        description: 'Get the profile and metadata for a specific Ada end user by ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            end_user_id: {
+              type: 'string',
+              description: 'Ada end user ID',
+            },
+          },
+          required: ['end_user_id'],
+        },
+      },
+      {
+        name: 'delete_end_user',
+        description: 'Delete personal data for an Ada end user (Data Compliance API — GDPR/CCPA deletion).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            email: {
+              type: 'string',
+              description: 'Email address of the end user whose data should be deleted',
+            },
+          },
+          required: ['email'],
+        },
+      },
+      {
+        name: 'list_integrations',
+        description: 'List integrations connected to the Ada bot, including external app connections and their status.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of integrations to return (default: 25)',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+        },
+      },
     ];
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      };
-
       switch (name) {
-        case 'list_conversations': {
-          const params = new URLSearchParams();
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.cursor) params.set('cursor', args.cursor as string);
-          if (args.start_date) params.set('start_date', args.start_date as string);
-          if (args.end_date) params.set('end_date', args.end_date as string);
-          const url = `${this.baseUrl}/conversations${params.toString() ? '?' + params.toString() : ''}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list conversations: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_conversation': {
-          const conversation_id = args.conversation_id as string;
-          if (!conversation_id) {
-            return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get conversation: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_articles': {
-          const params = new URLSearchParams();
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.cursor) params.set('cursor', args.cursor as string);
-          if (args.language) params.set('language', args.language as string);
-          const url = `${this.baseUrl}/articles${params.toString() ? '?' + params.toString() : ''}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list articles: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_article': {
-          const article_id = args.article_id as string;
-          if (!article_id) {
-            return { content: [{ type: 'text', text: 'article_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/articles/${encodeURIComponent(article_id)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get article: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_chatter': {
-          const params = new URLSearchParams();
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.cursor) params.set('cursor', args.cursor as string);
-          const url = `${this.baseUrl}/chatter${params.toString() ? '?' + params.toString() : ''}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list chatter: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_handoff_transcript': {
-          const conversation_id = args.conversation_id as string;
-          if (!conversation_id) {
-            return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
-          }
-          const response = await fetch(`${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/messages`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get transcript: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_variables': {
-          const params = new URLSearchParams();
-          if (args.limit) params.set('limit', String(args.limit));
-          if (args.cursor) params.set('cursor', args.cursor as string);
-          const url = `${this.baseUrl}/variables${params.toString() ? '?' + params.toString() : ''}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list variables: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_conversations':
+          return await this.listConversations(args);
+        case 'get_conversation':
+          return await this.getConversation(args);
+        case 'get_conversation_messages':
+          return await this.getConversationMessages(args);
+        case 'list_articles':
+          return await this.listArticles(args);
+        case 'get_article':
+          return await this.getArticle(args);
+        case 'create_article':
+          return await this.createArticle(args);
+        case 'update_article':
+          return await this.updateArticle(args);
+        case 'delete_article':
+          return await this.deleteArticle(args);
+        case 'list_chatter':
+          return await this.listChatter(args);
+        case 'list_variables':
+          return await this.listVariables(args);
+        case 'list_end_users':
+          return await this.listEndUsers(args);
+        case 'get_end_user':
+          return await this.getEndUser(args);
+        case 'delete_end_user':
+          return await this.deleteEndUser(args);
+        case 'list_integrations':
+          return await this.listIntegrations(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -273,5 +318,166 @@ export class AdaMCPServer {
         isError: true,
       };
     }
+  }
+
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.apiKey}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
+      : text;
+  }
+
+  private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
+    const qs = new URLSearchParams(params).toString();
+    const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Ada API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async post(path: string, body: unknown): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Ada API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async patch(path: string, body: unknown): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PATCH',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Ada API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Ada returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async del(path: string): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Ada API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    return { content: [{ type: 'text', text: JSON.stringify({ deleted: true }) }], isError: false };
+  }
+
+  private async listConversations(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string> = {};
+    if (args.limit) params['limit'] = String(args.limit);
+    if (args.cursor) params['cursor'] = args.cursor as string;
+    if (args.start_date) params['start_date'] = args.start_date as string;
+    if (args.end_date) params['end_date'] = args.end_date as string;
+    return this.get('/conversations', params);
+  }
+
+  private async getConversation(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
+    return this.get(`/conversations/${encodeURIComponent(id)}`);
+  }
+
+  private async getConversationMessages(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.conversation_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
+    return this.get(`/conversations/${encodeURIComponent(id)}/messages`);
+  }
+
+  private async listArticles(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string> = {};
+    if (args.limit) params['limit'] = String(args.limit);
+    if (args.cursor) params['cursor'] = args.cursor as string;
+    if (args.language) params['language'] = args.language as string;
+    return this.get('/articles', params);
+  }
+
+  private async getArticle(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.article_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'article_id is required' }], isError: true };
+    return this.get(`/articles/${encodeURIComponent(id)}`);
+  }
+
+  private async createArticle(args: Record<string, unknown>): Promise<ToolResult> {
+    const title = args.title as string;
+    const body = args.body as string;
+    if (!title || !body) return { content: [{ type: 'text', text: 'title and body are required' }], isError: true };
+    const payload: Record<string, unknown> = { title, body };
+    if (args.language) payload['language'] = args.language;
+    return this.post('/articles', payload);
+  }
+
+  private async updateArticle(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.article_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'article_id is required' }], isError: true };
+    const payload: Record<string, unknown> = {};
+    if (args.title) payload['title'] = args.title;
+    if (args.body) payload['body'] = args.body;
+    return this.patch(`/articles/${encodeURIComponent(id)}`, payload);
+  }
+
+  private async deleteArticle(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.article_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'article_id is required' }], isError: true };
+    return this.del(`/articles/${encodeURIComponent(id)}`);
+  }
+
+  private async listChatter(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string> = {};
+    if (args.limit) params['limit'] = String(args.limit);
+    if (args.cursor) params['cursor'] = args.cursor as string;
+    return this.get('/chatter', params);
+  }
+
+  private async listVariables(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string> = {};
+    if (args.limit) params['limit'] = String(args.limit);
+    if (args.cursor) params['cursor'] = args.cursor as string;
+    return this.get('/variables', params);
+  }
+
+  private async listEndUsers(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string> = {};
+    if (args.limit) params['limit'] = String(args.limit);
+    if (args.cursor) params['cursor'] = args.cursor as string;
+    return this.get('/end-users', params);
+  }
+
+  private async getEndUser(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.end_user_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'end_user_id is required' }], isError: true };
+    return this.get(`/end-users/${encodeURIComponent(id)}`);
+  }
+
+  private async deleteEndUser(args: Record<string, unknown>): Promise<ToolResult> {
+    const email = args.email as string;
+    if (!email) return { content: [{ type: 'text', text: 'email is required' }], isError: true };
+    return this.post('/data-compliance/delete', { email });
+  }
+
+  private async listIntegrations(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string> = {};
+    if (args.limit) params['limit'] = String(args.limit);
+    if (args.cursor) params['cursor'] = args.cursor as string;
+    return this.get('/integrations', params);
   }
 }

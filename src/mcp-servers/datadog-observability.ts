@@ -1,20 +1,63 @@
-/** Datadog Observability MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
+/**
+ * Datadog Observability MCP Adapter
+ * Built on the Epic AI® Intelligence Platform
+ * Copyright 2026 protectNIL Inc. Apache-2.0
+ */
+
+// Official MCP: https://github.com/DataDog/datadog-mcp-server — transport: stdio, auth: DD-API-KEY
+// Our adapter covers: 18 tools (core observability). Vendor MCP covers: broader surface area.
+// Recommendation: Use vendor MCP for full tool parity. Use this adapter for air-gapped deployments.
+//
+// Base URL: https://api.{site}  (site examples: datadoghq.com, datadoghq.eu, us3.datadoghq.com)
+// Auth: DD-API-KEY + DD-APPLICATION-KEY headers (Application Key required for most read operations)
+// Docs: https://docs.datadoghq.com/api/latest/
+// Rate limits: Varies by endpoint; metrics query ~300 req/hour; logs search ~300 req/hour
+
 import { ToolDefinition, ToolResult } from './types.js';
+
+interface DatadogObservabilityConfig {
+  apiKey: string;
+  applicationKey: string;
+  /** Datadog site (default: datadoghq.com). Examples: datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com */
+  site?: string;
+}
 
 export class DatadogObservabilityMCPServer {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
 
-  constructor(config: {
-    apiKey: string;
-    applicationKey: string;
-    site?: string;
-  }) {
-    this.baseUrl = `https://api.${config.site || 'datadoghq.com'}`;
+  constructor(config: DatadogObservabilityConfig) {
+    this.baseUrl = `https://api.${config.site ?? 'datadoghq.com'}`;
     this.headers = {
       'DD-API-KEY': config.apiKey,
       'DD-APPLICATION-KEY': config.applicationKey,
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+  }
+
+  static catalog() {
+    return {
+      name: 'datadog-observability',
+      displayName: 'Datadog Observability',
+      version: '1.0.0',
+      category: 'observability',
+      keywords: [
+        'datadog', 'metrics', 'monitor', 'alert', 'dashboard', 'log', 'incident',
+        'downtime', 'slo', 'service level objective', 'host', 'event', 'trace', 'apm',
+      ],
+      toolNames: [
+        'query_metrics', 'list_metrics',
+        'list_monitors', 'get_monitor', 'mute_monitor', 'unmute_monitor',
+        'search_logs', 'list_dashboards', 'get_dashboard',
+        'list_incidents', 'get_incident',
+        'list_downtimes',
+        'list_hosts', 'get_host_totals',
+        'list_events', 'query_events',
+        'list_slos', 'get_slo_history',
+      ],
+      description: 'Datadog observability: query metrics, search logs, manage monitors, dashboards, SLOs, incidents, hosts, and events.',
+      author: 'protectnil',
     };
   }
 
@@ -22,39 +65,52 @@ export class DatadogObservabilityMCPServer {
     return [
       {
         name: 'query_metrics',
-        description: 'Query time-series metric data from Datadog',
+        description: 'Query time-series metric data from Datadog for a given query string and time window',
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'Datadog metrics query (e.g., "avg:system.cpu.user{*}")',
+              description: 'Datadog metrics query string (e.g. "avg:system.cpu.user{env:prod}")',
             },
             from: {
               type: 'number',
-              description: 'Start of the query window as Unix epoch seconds',
+              description: 'Start of query window as Unix epoch seconds',
             },
             to: {
               type: 'number',
-              description: 'End of the query window as Unix epoch seconds',
+              description: 'End of query window as Unix epoch seconds',
             },
           },
           required: ['query', 'from', 'to'],
         },
       },
       {
+        name: 'list_metrics',
+        description: 'List all metric names available in Datadog, optionally filtered by a name prefix',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            q: {
+              type: 'string',
+              description: 'Prefix or substring to filter metric names (e.g. "system.cpu")',
+            },
+          },
+        },
+      },
+      {
         name: 'list_monitors',
-        description: 'List monitors configured in Datadog',
+        description: 'List Datadog monitors with optional filters for name, tags, and pagination',
         inputSchema: {
           type: 'object',
           properties: {
             name: {
               type: 'string',
-              description: 'Filter monitors by name substring',
+              description: 'Filter monitors whose name contains this substring',
             },
             tags: {
               type: 'string',
-              description: 'Comma-separated list of tags to filter by (e.g., "env:prod,team:sre")',
+              description: 'Comma-separated monitor tags to filter by (e.g. "env:prod,team:sre")',
             },
             page: {
               type: 'number',
@@ -69,13 +125,49 @@ export class DatadogObservabilityMCPServer {
       },
       {
         name: 'get_monitor',
-        description: 'Get full details for a specific Datadog monitor',
+        description: 'Get full configuration, state, and alert history for a specific Datadog monitor by ID',
         inputSchema: {
           type: 'object',
           properties: {
             monitor_id: {
               type: 'number',
-              description: 'The numeric monitor ID',
+              description: 'Numeric monitor ID',
+            },
+          },
+          required: ['monitor_id'],
+        },
+      },
+      {
+        name: 'mute_monitor',
+        description: 'Mute a Datadog monitor to suppress alerts, with optional end time and scope',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            monitor_id: {
+              type: 'number',
+              description: 'Numeric monitor ID to mute',
+            },
+            end: {
+              type: 'number',
+              description: 'Unix epoch seconds when mute should expire (default: indefinite)',
+            },
+            scope: {
+              type: 'string',
+              description: 'Optional scope to restrict muting to specific group tags (e.g. "env:prod")',
+            },
+          },
+          required: ['monitor_id'],
+        },
+      },
+      {
+        name: 'unmute_monitor',
+        description: 'Remove an active mute from a Datadog monitor to resume alert notifications',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            monitor_id: {
+              type: 'number',
+              description: 'Numeric monitor ID to unmute',
             },
           },
           required: ['monitor_id'],
@@ -83,17 +175,17 @@ export class DatadogObservabilityMCPServer {
       },
       {
         name: 'search_logs',
-        description: 'Search logs in Datadog using a query string',
+        description: 'Search Datadog logs using a query string with optional time range and result limit',
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'Log query string (e.g., "service:api status:error")',
+              description: 'Log search query (e.g. "service:api status:error @http.status_code:500")',
             },
             from: {
               type: 'number',
-              description: 'Start timestamp in milliseconds (default: 24 h ago)',
+              description: 'Start timestamp in milliseconds (default: 24 hours ago)',
             },
             to: {
               type: 'number',
@@ -101,7 +193,7 @@ export class DatadogObservabilityMCPServer {
             },
             limit: {
               type: 'number',
-              description: 'Maximum number of logs to return (default: 100)',
+              description: 'Maximum number of logs to return (default: 100, max: 1000)',
             },
           },
           required: ['query'],
@@ -109,17 +201,17 @@ export class DatadogObservabilityMCPServer {
       },
       {
         name: 'list_dashboards',
-        description: 'List dashboards available in Datadog',
+        description: 'List Datadog dashboards with optional filters for shared status and deleted state',
         inputSchema: {
           type: 'object',
           properties: {
             filter_shared: {
               type: 'boolean',
-              description: 'When true, only return shared custom created or cloned dashboards',
+              description: 'When true, only return shared/public dashboards',
             },
             filter_deleted: {
               type: 'boolean',
-              description: 'When true, return only soft-deleted dashboards (incompatible with filter_shared)',
+              description: 'When true, return only soft-deleted dashboards',
             },
             count: {
               type: 'number',
@@ -127,14 +219,28 @@ export class DatadogObservabilityMCPServer {
             },
             start: {
               type: 'number',
-              description: 'Offset to use as the beginning of the returned response',
+              description: 'Offset to start the returned list from (default: 0)',
             },
           },
         },
       },
       {
+        name: 'get_dashboard',
+        description: 'Retrieve the full widget layout and definition of a specific Datadog dashboard by ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            dashboard_id: {
+              type: 'string',
+              description: 'Dashboard ID string (e.g. "abc-def-123")',
+            },
+          },
+          required: ['dashboard_id'],
+        },
+      },
+      {
         name: 'list_incidents',
-        description: 'List incidents in Datadog (requires Incident Management)',
+        description: 'List Datadog Incident Management incidents with pagination and optional related-object includes',
         inputSchema: {
           type: 'object',
           properties: {
@@ -144,59 +250,219 @@ export class DatadogObservabilityMCPServer {
             },
             page_offset: {
               type: 'number',
-              description: 'Offset to use as the beginning of the returned page (default: 0)',
+              description: 'Pagination offset (default: 0)',
             },
             include: {
               type: 'string',
-              description: 'Comma-separated related object types to include in the response (e.g., "users")',
+              description: 'Comma-separated related object types to include (e.g. "users,teams")',
             },
           },
+        },
+      },
+      {
+        name: 'get_incident',
+        description: 'Get full details, timeline, and responders for a specific Datadog incident by incident ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            incident_id: {
+              type: 'string',
+              description: 'Incident ID (UUID string)',
+            },
+          },
+          required: ['incident_id'],
+        },
+      },
+      {
+        name: 'list_downtimes',
+        description: 'List all active and scheduled downtimes in Datadog, optionally filtered by current status',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            current_only: {
+              type: 'boolean',
+              description: 'When true, only return currently active downtimes (default: false)',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_hosts',
+        description: 'List all hosts reporting to Datadog with optional filter, sort, and pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            filter: {
+              type: 'string',
+              description: 'Filter hosts by hostname, tag, or alias (e.g. "env:prod")',
+            },
+            sort_field: {
+              type: 'string',
+              description: 'Field to sort by: status, apps, cpu, iowait, load (default: status)',
+            },
+            sort_dir: {
+              type: 'string',
+              description: 'Sort direction: asc or desc (default: desc)',
+            },
+            count: {
+              type: 'number',
+              description: 'Maximum number of hosts to return (default: 100)',
+            },
+            start: {
+              type: 'number',
+              description: 'Offset for pagination (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_host_totals',
+        description: 'Get total counts of active hosts reporting to Datadog over the last 2 hours',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'list_events',
+        description: 'List Datadog events stream with filters for time range, priority, and tags',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            start: {
+              type: 'number',
+              description: 'Start of time window as Unix epoch seconds',
+            },
+            end: {
+              type: 'number',
+              description: 'End of time window as Unix epoch seconds',
+            },
+            priority: {
+              type: 'string',
+              description: 'Filter by priority: normal or low',
+            },
+            tags: {
+              type: 'string',
+              description: 'Comma-separated tags to filter events by (e.g. "env:prod,service:api")',
+            },
+          },
+        },
+      },
+      {
+        name: 'query_events',
+        description: 'Search the Datadog event stream using a query string with optional time range and pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Event search query (e.g. "source:kubernetes priority:normal")',
+            },
+            from: {
+              type: 'number',
+              description: 'Start timestamp in Unix milliseconds (default: 24 hours ago)',
+            },
+            to: {
+              type: 'number',
+              description: 'End timestamp in Unix milliseconds (default: now)',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of events to return (default: 100)',
+            },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        name: 'list_slos',
+        description: 'List all Service Level Objectives (SLOs) with optional filter by name, tags, or IDs',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Filter SLOs by name substring',
+            },
+            tags_query: {
+              type: 'string',
+              description: 'Filter SLOs by tag (e.g. "service:checkout")',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of SLOs to return (default: 20)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Pagination offset (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_slo_history',
+        description: 'Get the SLO status history and error budget remaining for a specific SLO over a time window',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            slo_id: {
+              type: 'string',
+              description: 'SLO ID (string)',
+            },
+            from_ts: {
+              type: 'number',
+              description: 'Start of time window as Unix epoch seconds',
+            },
+            to_ts: {
+              type: 'number',
+              description: 'End of time window as Unix epoch seconds',
+            },
+          },
+          required: ['slo_id', 'from_ts', 'to_ts'],
         },
       },
     ];
   }
 
-  async callTool(
-    name: string,
-    args: Record<string, unknown>
-  ): Promise<ToolResult> {
+  async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
         case 'query_metrics':
-          return await this.queryMetrics(
-            args.query as string,
-            args.from as number,
-            args.to as number
-          );
+          return await this.queryMetrics(args);
+        case 'list_metrics':
+          return await this.listMetrics(args);
         case 'list_monitors':
-          return await this.listMonitors(
-            args.name as string | undefined,
-            args.tags as string | undefined,
-            args.page as number | undefined,
-            args.page_size as number | undefined
-          );
+          return await this.listMonitors(args);
         case 'get_monitor':
-          return await this.getMonitor(args.monitor_id as number);
+          return await this.getMonitor(args);
+        case 'mute_monitor':
+          return await this.muteMonitor(args);
+        case 'unmute_monitor':
+          return await this.unmuteMonitor(args);
         case 'search_logs':
-          return await this.searchLogs(
-            args.query as string,
-            args.from as number | undefined,
-            args.to as number | undefined,
-            args.limit as number | undefined
-          );
+          return await this.searchLogs(args);
         case 'list_dashboards':
-          return await this.listDashboards(
-            args.filter_shared as boolean | undefined,
-            args.filter_deleted as boolean | undefined,
-            args.count as number | undefined,
-            args.start as number | undefined
-          );
+          return await this.listDashboards(args);
+        case 'get_dashboard':
+          return await this.getDashboard(args);
         case 'list_incidents':
-          return await this.listIncidents(
-            args.page_size as number | undefined,
-            args.page_offset as number | undefined,
-            args.include as string | undefined
-          );
+          return await this.listIncidents(args);
+        case 'get_incident':
+          return await this.getIncident(args);
+        case 'list_downtimes':
+          return await this.listDowntimes(args);
+        case 'list_hosts':
+          return await this.listHosts(args);
+        case 'get_host_totals':
+          return await this.getHostTotals();
+        case 'list_events':
+          return await this.listEvents(args);
+        case 'query_events':
+          return await this.queryEvents(args);
+        case 'list_slos':
+          return await this.listSlos(args);
+        case 'get_slo_history':
+          return await this.getSloHistory(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -205,156 +471,231 @@ export class DatadogObservabilityMCPServer {
       }
     } catch (error) {
       return {
-        content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }],
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }
   }
 
-  private async queryMetrics(
-    query: string,
-    from: number,
-    to: number
-  ): Promise<ToolResult> {
-    const params = new URLSearchParams({
-      query,
-      from: String(from),
-      to: String(to),
-    });
+  // ── Response helper ───────────────────────────────────────────────────────────
 
-    const response = await fetch(
-      `${this.baseUrl}/api/v1/query?${params}`,
-      { method: 'GET', headers: this.headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Datadog API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Datadog returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  private truncate(data: unknown): ToolResult {
+    const text = JSON.stringify(data, null, 2);
+    const truncated = text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+    return { content: [{ type: 'text', text: truncated }], isError: false };
   }
 
-  private async listMonitors(
-    name?: string,
-    tags?: string,
-    page?: number,
-    pageSize?: number
-  ): Promise<ToolResult> {
+  private async jsonOrError(res: Response, context: string): Promise<unknown> {
+    if (!res.ok) throw new Error(`Datadog API error (${context}): ${res.status} ${res.statusText}`);
+    try {
+      return await res.json();
+    } catch {
+      throw new Error(`Datadog returned non-JSON response for ${context} (HTTP ${res.status})`);
+    }
+  }
+
+  // ── Tool implementations ──────────────────────────────────────────────────────
+
+  private async queryMetrics(args: Record<string, unknown>): Promise<ToolResult> {
+    const query = args.query as string;
+    const from = args.from as number;
+    const to = args.to as number;
+    if (!query) throw new Error('query is required');
+    if (from === undefined) throw new Error('from is required');
+    if (to === undefined) throw new Error('to is required');
+
+    const params = new URLSearchParams({ query, from: String(from), to: String(to) });
+    const res = await fetch(`${this.baseUrl}/api/v1/query?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'query_metrics'));
+  }
+
+  private async listMetrics(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
-    if (name) params.append('name', name);
-    if (tags) params.append('monitor_tags', tags);
-    params.append('page', String(page || 0));
-    params.append('page_size', String(pageSize || 100));
-
-    const response = await fetch(
-      `${this.baseUrl}/api/v1/monitor?${params}`,
-      { method: 'GET', headers: this.headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Datadog API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Datadog returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    // q param acts as a prefix/substring filter on metric names
+    if (args.q) params.set('q', args.q as string);
+    const res = await fetch(`${this.baseUrl}/api/v1/metrics?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_metrics'));
   }
 
-  private async getMonitor(monitorId: number): Promise<ToolResult> {
-    const response = await fetch(
-      `${this.baseUrl}/api/v1/monitor/${monitorId}`,
-      { method: 'GET', headers: this.headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Datadog API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Datadog returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  private async listMonitors(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.name) params.set('name', args.name as string);
+    if (args.tags) params.set('monitor_tags', args.tags as string);
+    params.set('page', String((args.page as number) ?? 0));
+    params.set('page_size', String((args.page_size as number) ?? 100));
+    const res = await fetch(`${this.baseUrl}/api/v1/monitor?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_monitors'));
   }
 
-  private async searchLogs(
-    query: string,
-    from?: number,
-    to?: number,
-    limit?: number
-  ): Promise<ToolResult> {
+  private async getMonitor(args: Record<string, unknown>): Promise<ToolResult> {
+    const monitor_id = args.monitor_id as number;
+    if (!monitor_id) throw new Error('monitor_id is required');
+    const res = await fetch(`${this.baseUrl}/api/v1/monitor/${monitor_id}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'get_monitor'));
+  }
+
+  private async muteMonitor(args: Record<string, unknown>): Promise<ToolResult> {
+    const monitor_id = args.monitor_id as number;
+    if (!monitor_id) throw new Error('monitor_id is required');
+    const body: Record<string, unknown> = {};
+    if (args.end !== undefined) body.end = args.end;
+    if (args.scope) body.scope = args.scope;
+    const res = await fetch(`${this.baseUrl}/api/v1/monitor/${monitor_id}/mute`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    return this.truncate(await this.jsonOrError(res, 'mute_monitor'));
+  }
+
+  private async unmuteMonitor(args: Record<string, unknown>): Promise<ToolResult> {
+    const monitor_id = args.monitor_id as number;
+    if (!monitor_id) throw new Error('monitor_id is required');
+    const res = await fetch(`${this.baseUrl}/api/v1/monitor/${monitor_id}/unmute`, {
+      method: 'POST',
+      headers: this.headers,
+    });
+    return this.truncate(await this.jsonOrError(res, 'unmute_monitor'));
+  }
+
+  private async searchLogs(args: Record<string, unknown>): Promise<ToolResult> {
+    const query = args.query as string;
+    if (!query) throw new Error('query is required');
     const now = Date.now();
     const body = {
       filter: {
         query,
-        from: from || now - 24 * 60 * 60 * 1000,
-        to: to || now,
+        from: String(new Date((args.from as number) ?? now - 86_400_000).toISOString()),
+        to: String(new Date((args.to as number) ?? now).toISOString()),
       },
       options: { timezone: 'UTC' },
-      page: { limit: limit || 100 },
+      page: { limit: (args.limit as number) ?? 100 },
     };
-
-    const response = await fetch(
-      `${this.baseUrl}/api/v2/logs/events/search`,
-      { method: 'POST', headers: this.headers, body: JSON.stringify(body) }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Datadog API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Datadog returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    const res = await fetch(`${this.baseUrl}/api/v2/logs/events/search`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    return this.truncate(await this.jsonOrError(res, 'search_logs'));
   }
 
-  private async listDashboards(
-    filterShared?: boolean,
-    filterDeleted?: boolean,
-    count?: number,
-    start?: number
-  ): Promise<ToolResult> {
+  private async listDashboards(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
-    if (filterShared !== undefined) params.append('filter[shared]', String(filterShared));
-    if (filterDeleted !== undefined) params.append('filter[deleted]', String(filterDeleted));
-    if (count !== undefined) params.append('count', String(count));
-    if (start !== undefined) params.append('start', String(start));
-
-    const response = await fetch(
-      `${this.baseUrl}/api/v1/dashboard?${params}`,
-      { method: 'GET', headers: this.headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Datadog API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Datadog returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    if (args.filter_shared !== undefined) params.set('filter[shared]', String(args.filter_shared));
+    if (args.filter_deleted !== undefined) params.set('filter[deleted]', String(args.filter_deleted));
+    if (args.count !== undefined) params.set('count', String(args.count));
+    if (args.start !== undefined) params.set('start', String(args.start));
+    const res = await fetch(`${this.baseUrl}/api/v1/dashboard?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_dashboards'));
   }
 
-  private async listIncidents(
-    pageSize?: number,
-    pageOffset?: number,
-    include?: string
-  ): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (pageSize !== undefined) params.append('page[size]', String(pageSize));
-    if (pageOffset !== undefined) params.append('page[offset]', String(pageOffset));
-    if (include) params.append('include', include);
-
-    const response = await fetch(
-      `${this.baseUrl}/api/v2/incidents?${params}`,
-      { method: 'GET', headers: this.headers }
+  private async getDashboard(args: Record<string, unknown>): Promise<ToolResult> {
+    const dashboard_id = args.dashboard_id as string;
+    if (!dashboard_id) throw new Error('dashboard_id is required');
+    const res = await fetch(
+      `${this.baseUrl}/api/v1/dashboard/${encodeURIComponent(dashboard_id)}`,
+      { headers: this.headers },
     );
+    return this.truncate(await this.jsonOrError(res, 'get_dashboard'));
+  }
 
-    if (!response.ok) {
-      throw new Error(`Datadog API error: ${response.status} ${response.statusText}`);
-    }
+  private async listIncidents(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.page_size !== undefined) params.set('page[size]', String(args.page_size));
+    if (args.page_offset !== undefined) params.set('page[offset]', String(args.page_offset));
+    if (args.include) params.set('include', args.include as string);
+    const res = await fetch(`${this.baseUrl}/api/v2/incidents?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_incidents'));
+  }
 
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Datadog returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  private async getIncident(args: Record<string, unknown>): Promise<ToolResult> {
+    const incident_id = args.incident_id as string;
+    if (!incident_id) throw new Error('incident_id is required');
+    const res = await fetch(
+      `${this.baseUrl}/api/v2/incidents/${encodeURIComponent(incident_id)}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'get_incident'));
+  }
+
+  private async listDowntimes(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.current_only !== undefined) params.set('current_only', String(args.current_only));
+    const res = await fetch(`${this.baseUrl}/api/v2/downtime?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_downtimes'));
+  }
+
+  private async listHosts(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.filter) params.set('filter', args.filter as string);
+    if (args.sort_field) params.set('sort_field', args.sort_field as string);
+    if (args.sort_dir) params.set('sort_dir', args.sort_dir as string);
+    if (args.count !== undefined) params.set('count', String(args.count));
+    if (args.start !== undefined) params.set('start', String(args.start));
+    const res = await fetch(`${this.baseUrl}/api/v1/hosts?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_hosts'));
+  }
+
+  private async getHostTotals(): Promise<ToolResult> {
+    const res = await fetch(`${this.baseUrl}/api/v1/hosts/totals`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'get_host_totals'));
+  }
+
+  private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.start !== undefined) params.set('start', String(args.start));
+    if (args.end !== undefined) params.set('end', String(args.end));
+    if (args.priority) params.set('priority', args.priority as string);
+    if (args.tags) params.set('tags', args.tags as string);
+    const res = await fetch(`${this.baseUrl}/api/v1/events?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_events'));
+  }
+
+  private async queryEvents(args: Record<string, unknown>): Promise<ToolResult> {
+    const query = args.query as string;
+    if (!query) throw new Error('query is required');
+    const now = Date.now();
+    const body = {
+      filter: {
+        query,
+        from: new Date((args.from as number) ?? now - 86_400_000).toISOString(),
+        to: new Date((args.to as number) ?? now).toISOString(),
+      },
+      page: { limit: (args.limit as number) ?? 100 },
+    };
+    const res = await fetch(`${this.baseUrl}/api/v2/events/search`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    return this.truncate(await this.jsonOrError(res, 'query_events'));
+  }
+
+  private async listSlos(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.query) params.set('query', args.query as string);
+    if (args.tags_query) params.set('tags_query', args.tags_query as string);
+    if (args.limit !== undefined) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    const res = await fetch(`${this.baseUrl}/api/v1/slo?${params}`, { headers: this.headers });
+    return this.truncate(await this.jsonOrError(res, 'list_slos'));
+  }
+
+  private async getSloHistory(args: Record<string, unknown>): Promise<ToolResult> {
+    const slo_id = args.slo_id as string;
+    const from_ts = args.from_ts as number;
+    const to_ts = args.to_ts as number;
+    if (!slo_id) throw new Error('slo_id is required');
+    if (from_ts === undefined) throw new Error('from_ts is required');
+    if (to_ts === undefined) throw new Error('to_ts is required');
+
+    const params = new URLSearchParams({ from_ts: String(from_ts), to_ts: String(to_ts) });
+    const res = await fetch(
+      `${this.baseUrl}/api/v1/slo/${encodeURIComponent(slo_id)}/history?${params}`,
+      { headers: this.headers },
+    );
+    return this.truncate(await this.jsonOrError(res, 'get_slo_history'));
   }
 }

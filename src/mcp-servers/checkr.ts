@@ -4,7 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://docs.checkr.com/mcp/ — hosted-only cloud bridge at mcp.checkr.com. This adapter serves the self-hosted API-key use case with full endpoint coverage.
+// Official MCP: https://docs.checkr.com/mcp/ — hosted-only cloud bridge at mcp.checkr.com.
+// Transport: hosted remote (not stdio). Requires cloud connectivity to Checkr's MCP endpoint.
+// Our adapter covers REST API v1 directly — preferred for self-hosted, air-gapped, or
+// custom-credential deployments where mcp.checkr.com is not reachable.
+//
+// Base URL: https://api.checkr.com/v1
+// Auth: HTTP Basic — API key as username, empty password (Base64 encoded)
+// Docs: https://docs.checkr.com/
+// Rate limits: Not publicly documented; Checkr applies per-account throttling
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -28,7 +36,7 @@ export class CheckrMCPServer {
     return [
       {
         name: 'create_candidate',
-        description: 'Create a new candidate in Checkr to begin the background check process',
+        description: 'Create a new candidate record in Checkr to begin the background check process',
         inputSchema: {
           type: 'object',
           properties: {
@@ -42,7 +50,7 @@ export class CheckrMCPServer {
             },
             email: {
               type: 'string',
-              description: 'Candidate email address',
+              description: 'Candidate email address (used for invitation delivery)',
             },
             phone: {
               type: 'string',
@@ -54,16 +62,16 @@ export class CheckrMCPServer {
             },
             driver_license_number: {
               type: 'string',
-              description: 'Candidate driver license number (required for MVR screenings)',
+              description: 'Driver license number (required for MVR screenings)',
             },
             driver_license_state: {
               type: 'string',
-              description: 'Two-letter state code for the driver license',
+              description: 'Two-letter US state code for the driver license',
             },
             work_locations: {
               type: 'array',
-              description: 'Array of work location objects with country, state, and city',
               items: { type: 'object' },
+              description: 'Array of work location objects with country, state, and city fields',
             },
           },
           required: ['first_name', 'last_name', 'email'],
@@ -71,7 +79,7 @@ export class CheckrMCPServer {
       },
       {
         name: 'get_candidate',
-        description: 'Retrieve details for a specific candidate by their Checkr candidate ID',
+        description: 'Retrieve full details for a specific candidate by their Checkr candidate ID',
         inputSchema: {
           type: 'object',
           properties: {
@@ -85,7 +93,7 @@ export class CheckrMCPServer {
       },
       {
         name: 'list_candidates',
-        description: 'List all candidates in the account with optional filtering',
+        description: 'List all candidates in the account with optional filtering by email and pagination',
         inputSchema: {
           type: 'object',
           properties: {
@@ -106,21 +114,21 @@ export class CheckrMCPServer {
       },
       {
         name: 'create_report',
-        description: 'Create a background check report for a candidate using a specified package',
+        description: 'Create a background check report for a candidate using a specified screening package',
         inputSchema: {
           type: 'object',
           properties: {
             candidate_id: {
               type: 'string',
-              description: 'The Checkr candidate ID',
+              description: 'The Checkr candidate ID to run the report for',
             },
             package: {
               type: 'string',
-              description: 'The background check package slug (e.g. tasker_standard, driver_pro)',
+              description: 'Background check package slug (e.g. tasker_standard, driver_pro)',
             },
             node: {
               type: 'string',
-              description: 'The node (work location) custom ID for the report',
+              description: 'Node (work location) custom ID — required for compliance in multi-location accounts',
             },
           },
           required: ['candidate_id', 'package'],
@@ -128,7 +136,7 @@ export class CheckrMCPServer {
       },
       {
         name: 'get_report',
-        description: 'Retrieve the status and results of a specific background check report',
+        description: 'Retrieve the current status and results of a specific background check report',
         inputSchema: {
           type: 'object',
           properties: {
@@ -142,7 +150,7 @@ export class CheckrMCPServer {
       },
       {
         name: 'list_reports',
-        description: 'List background check reports with optional filtering by candidate or status',
+        description: 'List background check reports with optional filters for candidate ID or report status',
         inputSchema: {
           type: 'object',
           properties: {
@@ -167,7 +175,7 @@ export class CheckrMCPServer {
       },
       {
         name: 'list_packages',
-        description: 'List all background check packages available in the account',
+        description: 'List all background check packages available in the account with their included screenings',
         inputSchema: {
           type: 'object',
           properties: {
@@ -184,20 +192,159 @@ export class CheckrMCPServer {
       },
       {
         name: 'create_invitation',
-        description: 'Create a candidate invitation so the candidate can submit their own information for a background check',
+        description: 'Send a candidate invitation email for self-service background check data collection',
         inputSchema: {
           type: 'object',
           properties: {
             candidate_id: {
               type: 'string',
-              description: 'The Checkr candidate ID',
+              description: 'The Checkr candidate ID to invite',
             },
             package: {
               type: 'string',
-              description: 'The background check package slug',
+              description: 'Background check package slug for the invitation',
             },
           },
           required: ['candidate_id', 'package'],
+        },
+      },
+      {
+        name: 'get_invitation',
+        description: 'Retrieve the current status of a specific candidate invitation by its ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            invitation_id: {
+              type: 'string',
+              description: 'The Checkr invitation ID to retrieve',
+            },
+          },
+          required: ['invitation_id'],
+        },
+      },
+      {
+        name: 'list_invitations',
+        description: 'List candidate invitations with optional filters for candidate ID and status',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            candidate_id: {
+              type: 'string',
+              description: 'Filter invitations by candidate ID',
+            },
+            status: {
+              type: 'string',
+              description: 'Filter by invitation status: pending, completed, expired',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+            },
+            per_page: {
+              type: 'number',
+              description: 'Number of results per page (max: 100, default: 25)',
+            },
+          },
+        },
+      },
+      {
+        name: 'create_geo',
+        description: 'Create a geo (work location) to enforce state-specific adverse action compliance requirements',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Display name for the geo (e.g. "California Warehouse")',
+            },
+            country: {
+              type: 'string',
+              description: 'ISO 3166-1 alpha-2 country code (e.g. US)',
+            },
+            state: {
+              type: 'string',
+              description: 'Two-letter US state code (e.g. CA)',
+            },
+            city: {
+              type: 'string',
+              description: 'City name for the work location',
+            },
+          },
+          required: ['name', 'country'],
+        },
+      },
+      {
+        name: 'list_geos',
+        description: 'List all geos (work locations) defined in the account for compliance routing',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+            },
+            per_page: {
+              type: 'number',
+              description: 'Number of results per page (default: 25)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_geo',
+        description: 'Retrieve details of a specific geo (work location) by its ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            geo_id: {
+              type: 'string',
+              description: 'The Checkr geo ID to retrieve',
+            },
+          },
+          required: ['geo_id'],
+        },
+      },
+      {
+        name: 'list_adverse_actions',
+        description: 'List adverse action records with optional filters for candidate ID and current status',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            candidate_id: {
+              type: 'string',
+              description: 'Filter adverse actions by candidate ID',
+            },
+            status: {
+              type: 'string',
+              description: 'Filter by adverse action status: pre_notice, post_notice, dispute',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+            },
+            per_page: {
+              type: 'number',
+              description: 'Number of results per page (default: 25)',
+            },
+          },
+        },
+      },
+      {
+        name: 'create_adverse_action',
+        description: 'Initiate a pre-adverse or post-adverse action notice against a candidate report',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            report_id: {
+              type: 'string',
+              description: 'The Checkr report ID to initiate adverse action on',
+            },
+            post_notice_scheduled_at: {
+              type: 'string',
+              description: 'ISO 8601 datetime to schedule automatic post-notice delivery (optional)',
+            },
+          },
+          required: ['report_id'],
         },
       },
     ];
@@ -205,210 +352,37 @@ export class CheckrMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: this.authHeader,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      };
-
       switch (name) {
-        case 'create_candidate': {
-          if (!args.first_name || !args.last_name || !args.email) {
-            return {
-              content: [{ type: 'text', text: 'first_name, last_name, and email are required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(`${this.baseUrl}/candidates`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(args),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to create candidate: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_candidate': {
-          const candidateId = args.candidate_id as string;
-          if (!candidateId) {
-            return { content: [{ type: 'text', text: 'candidate_id is required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/candidates/${encodeURIComponent(candidateId)}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get candidate: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_candidates': {
-          const params = new URLSearchParams();
-          if (args.page) params.set('page', String(args.page));
-          if (args.per_page) params.set('per_page', String(args.per_page));
-          if (args.email) params.set('email', args.email as string);
-          const qs = params.toString();
-          const url = `${this.baseUrl}/candidates${qs ? `?${qs}` : ''}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list candidates: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_report': {
-          const candidateId = args.candidate_id as string;
-          const pkg = args.package as string;
-          if (!candidateId || !pkg) {
-            return {
-              content: [{ type: 'text', text: 'candidate_id and package are required' }],
-              isError: true,
-            };
-          }
-
-          const body: Record<string, unknown> = { candidate_id: candidateId, package: pkg };
-          if (args.node) body.node = args.node;
-
-          const response = await fetch(`${this.baseUrl}/reports`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to create report: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_report': {
-          const reportId = args.report_id as string;
-          if (!reportId) {
-            return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/reports/${encodeURIComponent(reportId)}`, {
-            method: 'GET',
-            headers,
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to get report: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_reports': {
-          const params = new URLSearchParams();
-          if (args.candidate_id) params.set('candidate_id', args.candidate_id as string);
-          if (args.status) params.set('status', args.status as string);
-          if (args.page) params.set('page', String(args.page));
-          if (args.per_page) params.set('per_page', String(args.per_page));
-          const qs = params.toString();
-          const url = `${this.baseUrl}/reports${qs ? `?${qs}` : ''}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list reports: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_packages': {
-          const params = new URLSearchParams();
-          if (args.page) params.set('page', String(args.page));
-          if (args.per_page) params.set('per_page', String(args.per_page));
-          const qs = params.toString();
-          const url = `${this.baseUrl}/packages${qs ? `?${qs}` : ''}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to list packages: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_invitation': {
-          const candidateId = args.candidate_id as string;
-          const pkg = args.package as string;
-          if (!candidateId || !pkg) {
-            return {
-              content: [{ type: 'text', text: 'candidate_id and package are required' }],
-              isError: true,
-            };
-          }
-
-          const response = await fetch(`${this.baseUrl}/invitations`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ candidate_id: candidateId, package: pkg }),
-          });
-
-          if (!response.ok) {
-            return {
-              content: [{ type: 'text', text: `Failed to create invitation: ${response.status} ${response.statusText}` }],
-              isError: true,
-            };
-          }
-
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'create_candidate':
+          return await this.createCandidate(args);
+        case 'get_candidate':
+          return await this.getCandidate(args);
+        case 'list_candidates':
+          return await this.listCandidates(args);
+        case 'create_report':
+          return await this.createReport(args);
+        case 'get_report':
+          return await this.getReport(args);
+        case 'list_reports':
+          return await this.listReports(args);
+        case 'list_packages':
+          return await this.listPackages(args);
+        case 'create_invitation':
+          return await this.createInvitation(args);
+        case 'get_invitation':
+          return await this.getInvitation(args);
+        case 'list_invitations':
+          return await this.listInvitations(args);
+        case 'create_geo':
+          return await this.createGeo(args);
+        case 'list_geos':
+          return await this.listGeos(args);
+        case 'get_geo':
+          return await this.getGeo(args);
+        case 'list_adverse_actions':
+          return await this.listAdverseActions(args);
+        case 'create_adverse_action':
+          return await this.createAdverseAction(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -421,5 +395,183 @@ export class CheckrMCPServer {
         isError: true,
       };
     }
+  }
+
+  private get reqHeaders(): Record<string, string> {
+    return {
+      Authorization: this.authHeader,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async checkrGet(path: string): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.reqHeaders });
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `Checkr API error (HTTP ${response.status}): ${response.statusText}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async checkrPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: this.reqHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `Checkr API error (HTTP ${response.status}): ${response.statusText}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Checkr returned non-JSON (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private buildQueryString(params: Record<string, string | number | undefined>): string {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined) qs.set(k, String(v));
+    }
+    const s = qs.toString();
+    return s ? `?${s}` : '';
+  }
+
+  private async createCandidate(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.first_name || !args.last_name || !args.email) {
+      return { content: [{ type: 'text', text: 'first_name, last_name, and email are required' }], isError: true };
+    }
+    return this.checkrPost('/candidates', args as Record<string, unknown>);
+  }
+
+  private async getCandidate(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.candidate_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'candidate_id is required' }], isError: true };
+    return this.checkrGet(`/candidates/${encodeURIComponent(id)}`);
+  }
+
+  private async listCandidates(args: Record<string, unknown>): Promise<ToolResult> {
+    const qs = this.buildQueryString({
+      page: args.page as number,
+      per_page: args.per_page as number,
+      email: args.email as string,
+    });
+    return this.checkrGet(`/candidates${qs}`);
+  }
+
+  private async createReport(args: Record<string, unknown>): Promise<ToolResult> {
+    const candidateId = args.candidate_id as string;
+    const pkg = args.package as string;
+    if (!candidateId || !pkg) {
+      return { content: [{ type: 'text', text: 'candidate_id and package are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = { candidate_id: candidateId, package: pkg };
+    if (args.node) body.node = args.node;
+    return this.checkrPost('/reports', body);
+  }
+
+  private async getReport(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.report_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
+    return this.checkrGet(`/reports/${encodeURIComponent(id)}`);
+  }
+
+  private async listReports(args: Record<string, unknown>): Promise<ToolResult> {
+    const qs = this.buildQueryString({
+      candidate_id: args.candidate_id as string,
+      status: args.status as string,
+      page: args.page as number,
+      per_page: args.per_page as number,
+    });
+    return this.checkrGet(`/reports${qs}`);
+  }
+
+  private async listPackages(args: Record<string, unknown>): Promise<ToolResult> {
+    const qs = this.buildQueryString({
+      page: args.page as number,
+      per_page: args.per_page as number,
+    });
+    return this.checkrGet(`/packages${qs}`);
+  }
+
+  private async createInvitation(args: Record<string, unknown>): Promise<ToolResult> {
+    const candidateId = args.candidate_id as string;
+    const pkg = args.package as string;
+    if (!candidateId || !pkg) {
+      return { content: [{ type: 'text', text: 'candidate_id and package are required' }], isError: true };
+    }
+    return this.checkrPost('/invitations', { candidate_id: candidateId, package: pkg });
+  }
+
+  private async getInvitation(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.invitation_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'invitation_id is required' }], isError: true };
+    return this.checkrGet(`/invitations/${encodeURIComponent(id)}`);
+  }
+
+  private async listInvitations(args: Record<string, unknown>): Promise<ToolResult> {
+    const qs = this.buildQueryString({
+      candidate_id: args.candidate_id as string,
+      status: args.status as string,
+      page: args.page as number,
+      per_page: args.per_page as number,
+    });
+    return this.checkrGet(`/invitations${qs}`);
+  }
+
+  private async createGeo(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.name || !args.country) {
+      return { content: [{ type: 'text', text: 'name and country are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = { name: args.name, country: args.country };
+    if (args.state) body.state = args.state;
+    if (args.city) body.city = args.city;
+    return this.checkrPost('/geos', body);
+  }
+
+  private async listGeos(args: Record<string, unknown>): Promise<ToolResult> {
+    const qs = this.buildQueryString({
+      page: args.page as number,
+      per_page: args.per_page as number,
+    });
+    return this.checkrGet(`/geos${qs}`);
+  }
+
+  private async getGeo(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.geo_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'geo_id is required' }], isError: true };
+    return this.checkrGet(`/geos/${encodeURIComponent(id)}`);
+  }
+
+  private async listAdverseActions(args: Record<string, unknown>): Promise<ToolResult> {
+    const qs = this.buildQueryString({
+      candidate_id: args.candidate_id as string,
+      status: args.status as string,
+      page: args.page as number,
+      per_page: args.per_page as number,
+    });
+    return this.checkrGet(`/adverse_actions${qs}`);
+  }
+
+  private async createAdverseAction(args: Record<string, unknown>): Promise<ToolResult> {
+    const reportId = args.report_id as string;
+    if (!reportId) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
+    const body: Record<string, unknown> = { report_id: reportId };
+    if (args.post_notice_scheduled_at) body.post_notice_scheduled_at = args.post_notice_scheduled_at;
+    return this.checkrPost('/adverse_actions', body);
   }
 }

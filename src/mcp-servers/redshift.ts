@@ -4,18 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/awslabs/mcp/tree/main/src/redshift-mcp-server — official AWS Labs
-// implementation (Python-based). That server requires a Python runtime and AWS SDK installation.
-// This adapter serves the TypeScript/self-hosted use case. Uses the Redshift Data API via HTTP
-// with AWS Signature Version 4 signing handled by the caller-supplied pre-signed or SigV4 token.
-
-// Redshift Data API base URL: https://redshift-data.{region}.amazonaws.com
-// Auth: AWS Signature Version 4 (SigV4). This adapter accepts a pre-signed Authorization header
-//   string so it can integrate with any SigV4 signing library (e.g. @aws-sdk/signature-v4).
-//   Alternatively, pass AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY via environment and use the
-//   aws4 npm package to sign requests before calling callTool.
-// All operations are HTTP POST to the regional endpoint with X-Amz-Target header.
-// Ref: https://docs.aws.amazon.com/redshift-data/latest/APIReference/Welcome.html
+// Official MCP: https://github.com/awslabs/mcp/tree/main/src/redshift-mcp-server
+// AWS Labs Python-based MCP server. Requires Python runtime + AWS SDK installation.
+// Our adapter provides the TypeScript/self-hosted path. Uses the Redshift Data API
+// (HTTP POST to regional endpoint) with caller-supplied SigV4 signed headers.
+// Transport: stdio (vendor MCP) / HTTP POST (this adapter)
+// Recommendation: Use the vendor MCP for full coverage in Python environments.
+//                 Use this adapter for TypeScript/Node environments or air-gapped deployments.
+//
+// Base URL: https://redshift-data.{region}.amazonaws.com
+// Auth: AWS Signature Version 4 (SigV4). The adapter accepts a signRequest callback
+//       so callers supply their own SigV4 signer (e.g. @aws-sdk/signature-v4, aws4).
+//       All requests POST to the regional endpoint with X-Amz-Target header.
+// Docs: https://docs.aws.amazon.com/redshift-data/latest/APIReference/Welcome.html
+// Rate limits: Not publicly documented; subject to AWS service limits per account/region.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -23,9 +25,9 @@ interface RedshiftConfig {
   /** AWS region, e.g. "us-east-1" */
   region: string;
   /**
-   * A function that returns signed headers for a given request body and target action.
-   * This decouples SigV4 signing from the adapter — callers supply their own signer
-   * (e.g. aws4, @aws-sdk/signature-v4, or a pre-signed token for testing).
+   * Caller-supplied SigV4 signer. Returns headers needed for a signed request.
+   * target: X-Amz-Target action string (e.g. "RedshiftData.ExecuteStatement")
+   * body: JSON-serialized request body string
    */
   signRequest: (target: string, body: string) => Promise<Record<string, string>>;
 }
@@ -39,54 +41,46 @@ export class RedshiftMCPServer {
     this.signRequest = config.signRequest;
   }
 
-  private async post(target: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const bodyStr = JSON.stringify(body);
-    const sigHeaders = await this.signRequest(target, bodyStr);
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/x-amz-json-1.1',
-      'X-Amz-Target': target,
-      Accept: 'application/json',
-      ...sigHeaders,
+  static catalog() {
+    return {
+      name: 'redshift',
+      displayName: 'AWS Redshift',
+      version: '1.0.0',
+      category: 'data' as const,
+      keywords: [
+        'redshift', 'aws', 'data-warehouse', 'sql', 'analytics', 'serverless',
+        'database', 'query', 'schema', 'table', 'cluster', 'workgroup',
+      ],
+      toolNames: [
+        'list_databases', 'list_schemas', 'list_tables', 'describe_table',
+        'execute_statement', 'batch_execute_statement', 'describe_statement',
+        'get_statement_result', 'get_statement_result_v2',
+        'list_statements', 'cancel_statement',
+      ],
+      description: 'AWS Redshift Data API: execute SQL, inspect schemas and tables, manage statement lifecycle on provisioned clusters and Redshift Serverless workgroups.',
+      author: 'protectnil',
     };
-
-    const response = await fetch(this.endpoint, {
-      method: 'POST',
-      headers,
-      body: bodyStr,
-    });
-
-    if (!response.ok) {
-      return {
-        content: [{ type: 'text', text: `Redshift Data API error: HTTP ${response.status} ${response.statusText}` }],
-        isError: true,
-      };
-    }
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Redshift returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_databases',
-        description: 'List the databases in a Redshift cluster or serverless workgroup.',
+        description: 'List all databases in a Redshift provisioned cluster or serverless workgroup',
         inputSchema: {
           type: 'object',
           properties: {
             ClusterIdentifier: {
               type: 'string',
-              description: 'Provisioned cluster identifier. Provide either this or WorkgroupName.',
+              description: 'Provisioned cluster identifier. Provide this OR WorkgroupName, not both.',
             },
             WorkgroupName: {
               type: 'string',
-              description: 'Serverless workgroup name. Provide either this or ClusterIdentifier.',
+              description: 'Serverless workgroup name. Provide this OR ClusterIdentifier, not both.',
             },
             Database: {
               type: 'string',
-              description: 'Name of the database to connect to when listing.',
+              description: 'Database to connect to when listing (required for Serverless).',
             },
             SecretArn: {
               type: 'string',
@@ -94,11 +88,11 @@ export class RedshiftMCPServer {
             },
             DbUser: {
               type: 'string',
-              description: 'Database user name (used with temporary credentials, not SecretArn).',
+              description: 'Database user name for temporary credentials (provisioned clusters only).',
             },
             MaxResults: {
               type: 'number',
-              description: 'Maximum number of databases to return.',
+              description: 'Maximum number of databases to return (default: 20, max: 60).',
             },
             NextToken: {
               type: 'string',
@@ -109,21 +103,21 @@ export class RedshiftMCPServer {
       },
       {
         name: 'list_schemas',
-        description: 'List the schemas in a Redshift database.',
+        description: 'List schemas in a Redshift database, with optional SQL LIKE pattern filter',
         inputSchema: {
           type: 'object',
           properties: {
-            ClusterIdentifier: {
-              type: 'string',
-              description: 'Provisioned cluster identifier. Provide either this or WorkgroupName.',
-            },
-            WorkgroupName: {
-              type: 'string',
-              description: 'Serverless workgroup name. Provide either this or ClusterIdentifier.',
-            },
             Database: {
               type: 'string',
               description: 'Name of the database whose schemas to list.',
+            },
+            ClusterIdentifier: {
+              type: 'string',
+              description: 'Provisioned cluster identifier.',
+            },
+            WorkgroupName: {
+              type: 'string',
+              description: 'Serverless workgroup name.',
             },
             SecretArn: {
               type: 'string',
@@ -135,11 +129,11 @@ export class RedshiftMCPServer {
             },
             SchemaPattern: {
               type: 'string',
-              description: 'Filter pattern for schema names (SQL LIKE syntax).',
+              description: 'SQL LIKE pattern to filter schema names (e.g. public, sales%).',
             },
             MaxResults: {
               type: 'number',
-              description: 'Maximum number of schemas to return.',
+              description: 'Maximum number of schemas to return (default: 20, max: 60).',
             },
             NextToken: {
               type: 'string',
@@ -151,29 +145,75 @@ export class RedshiftMCPServer {
       },
       {
         name: 'list_tables',
-        description: 'List tables in a Redshift database and schema.',
+        description: 'List tables in a Redshift database and optional schema with SQL LIKE pattern filter',
         inputSchema: {
           type: 'object',
           properties: {
-            ClusterIdentifier: {
-              type: 'string',
-              description: 'Provisioned cluster identifier. Provide either this or WorkgroupName.',
-            },
-            WorkgroupName: {
-              type: 'string',
-              description: 'Serverless workgroup name. Provide either this or ClusterIdentifier.',
-            },
             Database: {
               type: 'string',
               description: 'Name of the database.',
             },
+            ClusterIdentifier: {
+              type: 'string',
+              description: 'Provisioned cluster identifier.',
+            },
+            WorkgroupName: {
+              type: 'string',
+              description: 'Serverless workgroup name.',
+            },
+            SecretArn: {
+              type: 'string',
+              description: 'ARN of the Secrets Manager secret.',
+            },
+            DbUser: {
+              type: 'string',
+              description: 'Database user name for temporary credentials.',
+            },
             SchemaPattern: {
               type: 'string',
-              description: 'Filter pattern for schema names.',
+              description: 'SQL LIKE pattern to filter by schema name.',
             },
             TablePattern: {
               type: 'string',
-              description: 'Filter pattern for table names (SQL LIKE syntax).',
+              description: 'SQL LIKE pattern to filter by table name.',
+            },
+            MaxResults: {
+              type: 'number',
+              description: 'Maximum number of tables to return (default: 20, max: 60).',
+            },
+            NextToken: {
+              type: 'string',
+              description: 'Pagination token from a previous response.',
+            },
+          },
+          required: ['Database'],
+        },
+      },
+      {
+        name: 'describe_table',
+        description: 'Retrieve detailed column metadata for a specific table in a Redshift database',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            Database: {
+              type: 'string',
+              description: 'Name of the database.',
+            },
+            Table: {
+              type: 'string',
+              description: 'Name of the table to describe.',
+            },
+            Schema: {
+              type: 'string',
+              description: 'Schema containing the table (default: public).',
+            },
+            ClusterIdentifier: {
+              type: 'string',
+              description: 'Provisioned cluster identifier.',
+            },
+            WorkgroupName: {
+              type: 'string',
+              description: 'Serverless workgroup name.',
             },
             SecretArn: {
               type: 'string',
@@ -185,7 +225,7 @@ export class RedshiftMCPServer {
             },
             MaxResults: {
               type: 'number',
-              description: 'Maximum number of tables to return.',
+              description: 'Maximum number of columns to return.',
             },
             NextToken: {
               type: 'string',
@@ -197,25 +237,25 @@ export class RedshiftMCPServer {
       },
       {
         name: 'execute_statement',
-        description: 'Execute a SQL statement against a Redshift cluster or serverless workgroup. Returns a statement ID — use describe_statement and get_statement_result to retrieve results.',
+        description: 'Execute a single SQL statement (DML or DDL) against Redshift. Returns a statement ID — use describe_statement to poll status, get_statement_result to fetch rows.',
         inputSchema: {
           type: 'object',
           properties: {
-            ClusterIdentifier: {
-              type: 'string',
-              description: 'Provisioned cluster identifier. Provide either this or WorkgroupName.',
-            },
-            WorkgroupName: {
-              type: 'string',
-              description: 'Serverless workgroup name. Provide either this or ClusterIdentifier.',
-            },
             Database: {
               type: 'string',
-              description: 'Name of the database to run the statement against.',
+              description: 'Database to run the statement against.',
             },
             Sql: {
               type: 'string',
-              description: 'SQL statement to execute.',
+              description: 'SQL statement to execute (single statement only).',
+            },
+            ClusterIdentifier: {
+              type: 'string',
+              description: 'Provisioned cluster identifier.',
+            },
+            WorkgroupName: {
+              type: 'string',
+              description: 'Serverless workgroup name.',
             },
             SecretArn: {
               type: 'string',
@@ -227,25 +267,76 @@ export class RedshiftMCPServer {
             },
             StatementName: {
               type: 'string',
-              description: 'Optional label for the statement to aid identification.',
+              description: 'Optional human-readable label for the statement.',
             },
             WithEvent: {
               type: 'boolean',
-              description: 'If true, send an event to EventBridge when the statement finishes.',
+              description: 'If true, emit an EventBridge event when the statement finishes.',
+            },
+            ClientToken: {
+              type: 'string',
+              description: 'Idempotency token to prevent duplicate submissions.',
             },
           },
           required: ['Database', 'Sql'],
         },
       },
       {
+        name: 'batch_execute_statement',
+        description: 'Execute multiple SQL statements as a single transaction. Statements run serially in order; all succeed or all roll back.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            Database: {
+              type: 'string',
+              description: 'Database to run the batch against.',
+            },
+            Sqls: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of SQL statements to execute in order within a single transaction.',
+            },
+            ClusterIdentifier: {
+              type: 'string',
+              description: 'Provisioned cluster identifier.',
+            },
+            WorkgroupName: {
+              type: 'string',
+              description: 'Serverless workgroup name.',
+            },
+            SecretArn: {
+              type: 'string',
+              description: 'ARN of the Secrets Manager secret.',
+            },
+            DbUser: {
+              type: 'string',
+              description: 'Database user name for temporary credentials.',
+            },
+            StatementName: {
+              type: 'string',
+              description: 'Optional label for the batch statement.',
+            },
+            WithEvent: {
+              type: 'boolean',
+              description: 'If true, emit an EventBridge event on completion.',
+            },
+            ClientToken: {
+              type: 'string',
+              description: 'Idempotency token.',
+            },
+          },
+          required: ['Database', 'Sqls'],
+        },
+      },
+      {
         name: 'describe_statement',
-        description: 'Retrieve the metadata and execution status of a previously submitted SQL statement.',
+        description: 'Retrieve the execution status and metadata of a previously submitted SQL statement by its ID',
         inputSchema: {
           type: 'object',
           properties: {
             Id: {
               type: 'string',
-              description: 'Statement ID returned by execute_statement.',
+              description: 'Statement ID returned by execute_statement or batch_execute_statement.',
             },
           },
           required: ['Id'],
@@ -253,7 +344,7 @@ export class RedshiftMCPServer {
       },
       {
         name: 'get_statement_result',
-        description: 'Fetch the result rows of a completed SQL statement execution.',
+        description: 'Fetch result rows of a completed SQL statement execution. Returns column metadata and row data.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -269,103 +360,101 @@ export class RedshiftMCPServer {
           required: ['Id'],
         },
       },
+      {
+        name: 'get_statement_result_v2',
+        description: 'Fetch result rows of a completed SQL statement in CSV format (V2 API). More efficient for large result sets.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            Id: {
+              type: 'string',
+              description: 'Statement ID of the completed execution.',
+            },
+            NextToken: {
+              type: 'string',
+              description: 'Pagination token to retrieve the next page of results.',
+            },
+          },
+          required: ['Id'],
+        },
+      },
+      {
+        name: 'list_statements',
+        description: 'List previously executed SQL statements with optional filters by status, name, and time range',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            Status: {
+              type: 'string',
+              description: 'Filter by status: SUBMITTED, PICKED, STARTED, FINISHED, ABORTED, FAILED, ALL (default: ALL)',
+            },
+            StatementName: {
+              type: 'string',
+              description: 'Filter by statement label (exact match).',
+            },
+            MaxResults: {
+              type: 'number',
+              description: 'Maximum number of statements to return (default: 100, max: 100).',
+            },
+            NextToken: {
+              type: 'string',
+              description: 'Pagination token from a previous response.',
+            },
+            RoleLevel: {
+              type: 'boolean',
+              description: 'If true, list statements for all users with the same IAM role.',
+            },
+          },
+        },
+      },
+      {
+        name: 'cancel_statement',
+        description: 'Cancel a running or queued Redshift Data API SQL statement by its ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            Id: {
+              type: 'string',
+              description: 'Statement ID to cancel.',
+            },
+          },
+          required: ['Id'],
+        },
+      },
     ];
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'list_databases': {
-          const body: Record<string, unknown> = {};
-          if (args.ClusterIdentifier) body.ClusterIdentifier = args.ClusterIdentifier;
-          if (args.WorkgroupName) body.WorkgroupName = args.WorkgroupName;
-          if (args.Database) body.Database = args.Database;
-          if (args.SecretArn) body.SecretArn = args.SecretArn;
-          if (args.DbUser) body.DbUser = args.DbUser;
-          if (args.MaxResults) body.MaxResults = args.MaxResults;
-          if (args.NextToken) body.NextToken = args.NextToken;
-
-          return this.post('RedshiftData.ListDatabases', body);
-        }
-
-        case 'list_schemas': {
-          const database = args.Database as string;
-          if (!database) {
-            return { content: [{ type: 'text', text: 'Database is required' }], isError: true };
-          }
-
-          const body: Record<string, unknown> = { Database: database };
-          if (args.ClusterIdentifier) body.ClusterIdentifier = args.ClusterIdentifier;
-          if (args.WorkgroupName) body.WorkgroupName = args.WorkgroupName;
-          if (args.SecretArn) body.SecretArn = args.SecretArn;
-          if (args.DbUser) body.DbUser = args.DbUser;
-          if (args.SchemaPattern) body.SchemaPattern = args.SchemaPattern;
-          if (args.MaxResults) body.MaxResults = args.MaxResults;
-          if (args.NextToken) body.NextToken = args.NextToken;
-
-          return this.post('RedshiftData.ListSchemas', body);
-        }
-
-        case 'list_tables': {
-          const database = args.Database as string;
-          if (!database) {
-            return { content: [{ type: 'text', text: 'Database is required' }], isError: true };
-          }
-
-          const body: Record<string, unknown> = { Database: database };
-          if (args.ClusterIdentifier) body.ClusterIdentifier = args.ClusterIdentifier;
-          if (args.WorkgroupName) body.WorkgroupName = args.WorkgroupName;
-          if (args.SecretArn) body.SecretArn = args.SecretArn;
-          if (args.DbUser) body.DbUser = args.DbUser;
-          if (args.SchemaPattern) body.SchemaPattern = args.SchemaPattern;
-          if (args.TablePattern) body.TablePattern = args.TablePattern;
-          if (args.MaxResults) body.MaxResults = args.MaxResults;
-          if (args.NextToken) body.NextToken = args.NextToken;
-
-          return this.post('RedshiftData.ListTables', body);
-        }
-
-        case 'execute_statement': {
-          const database = args.Database as string;
-          const sql = args.Sql as string;
-          if (!database || !sql) {
-            return { content: [{ type: 'text', text: 'Database and Sql are required' }], isError: true };
-          }
-
-          const body: Record<string, unknown> = { Database: database, Sql: sql };
-          if (args.ClusterIdentifier) body.ClusterIdentifier = args.ClusterIdentifier;
-          if (args.WorkgroupName) body.WorkgroupName = args.WorkgroupName;
-          if (args.SecretArn) body.SecretArn = args.SecretArn;
-          if (args.DbUser) body.DbUser = args.DbUser;
-          if (args.StatementName) body.StatementName = args.StatementName;
-          if (typeof args.WithEvent === 'boolean') body.WithEvent = args.WithEvent;
-
-          return this.post('RedshiftData.ExecuteStatement', body);
-        }
-
+        case 'list_databases':
+          return await this.post('RedshiftData.ListDatabases', this.buildCommonBody(args, []));
+        case 'list_schemas':
+          return await this.post('RedshiftData.ListSchemas', this.buildCommonBody(args, ['Database', 'SchemaPattern']));
+        case 'list_tables':
+          return await this.post('RedshiftData.ListTables', this.buildCommonBody(args, ['Database', 'SchemaPattern', 'TablePattern']));
+        case 'describe_table':
+          return await this.post('RedshiftData.DescribeTable', this.buildCommonBody(args, ['Database', 'Table', 'Schema']));
+        case 'execute_statement':
+          return await this.post('RedshiftData.ExecuteStatement', this.buildStatementBody(args));
+        case 'batch_execute_statement':
+          return await this.post('RedshiftData.BatchExecuteStatement', this.buildBatchBody(args));
         case 'describe_statement': {
-          const id = args.Id as string;
-          if (!id) {
-            return { content: [{ type: 'text', text: 'Id is required' }], isError: true };
-          }
-          return this.post('RedshiftData.DescribeStatement', { Id: id });
+          if (!args.Id) return { content: [{ type: 'text', text: 'Id is required' }], isError: true };
+          return await this.post('RedshiftData.DescribeStatement', { Id: args.Id });
         }
-
-        case 'get_statement_result': {
-          const id = args.Id as string;
-          if (!id) {
-            return { content: [{ type: 'text', text: 'Id is required' }], isError: true };
-          }
-          const body: Record<string, unknown> = { Id: id };
-          if (args.NextToken) body.NextToken = args.NextToken;
-          return this.post('RedshiftData.GetStatementResult', body);
+        case 'get_statement_result':
+          return await this.post('RedshiftData.GetStatementResult', this.buildPaginatedBody(args));
+        case 'get_statement_result_v2':
+          return await this.post('RedshiftData.GetStatementResultV2', this.buildPaginatedBody(args));
+        case 'list_statements':
+          return await this.post('RedshiftData.ListStatements', this.buildListStatementsBody(args));
+        case 'cancel_statement': {
+          if (!args.Id) return { content: [{ type: 'text', text: 'Id is required' }], isError: true };
+          return await this.post('RedshiftData.CancelStatement', { Id: args.Id });
         }
-
         default:
-          return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-            isError: true,
-          };
+          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
     } catch (error) {
       return {
@@ -373,5 +462,77 @@ export class RedshiftMCPServer {
         isError: true,
       };
     }
+  }
+
+  private async post(target: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const bodyStr = JSON.stringify(body);
+    const sigHeaders = await this.signRequest(target, bodyStr);
+
+    const response = await fetch(this.endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-amz-json-1.1',
+        'X-Amz-Target': target,
+        Accept: 'application/json',
+        ...sigHeaders,
+      },
+      body: bodyStr,
+    });
+
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `Redshift Data API error: HTTP ${response.status} ${response.statusText}` }],
+        isError: true,
+      };
+    }
+
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Redshift returned non-JSON response (HTTP ${response.status})`); }
+    const text = JSON.stringify(data, null, 2);
+    const truncated = text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+    return { content: [{ type: 'text', text: truncated }], isError: false };
+  }
+
+  /** Build body including common cluster/workgroup/credentials fields plus any extras */
+  private buildCommonBody(args: Record<string, unknown>, extras: string[]): Record<string, unknown> {
+    const body: Record<string, unknown> = {};
+    const common = ['ClusterIdentifier', 'WorkgroupName', 'Database', 'SecretArn', 'DbUser', 'MaxResults', 'NextToken'];
+    for (const key of [...common, ...extras]) {
+      if (args[key] !== undefined && args[key] !== null && args[key] !== '') {
+        body[key] = args[key];
+      }
+    }
+    return body;
+  }
+
+  private buildStatementBody(args: Record<string, unknown>): Record<string, unknown> {
+    const body = this.buildCommonBody(args, ['Sql', 'StatementName', 'ClientToken']);
+    if (typeof args.WithEvent === 'boolean') body.WithEvent = args.WithEvent;
+    return body;
+  }
+
+  private buildBatchBody(args: Record<string, unknown>): Record<string, unknown> {
+    const body = this.buildCommonBody(args, ['Sqls', 'StatementName', 'ClientToken']);
+    if (typeof args.WithEvent === 'boolean') body.WithEvent = args.WithEvent;
+    return body;
+  }
+
+  private buildPaginatedBody(args: Record<string, unknown>): Record<string, unknown> {
+    if (!args.Id) throw new Error('Id is required');
+    const body: Record<string, unknown> = { Id: args.Id };
+    if (args.NextToken) body.NextToken = args.NextToken;
+    return body;
+  }
+
+  private buildListStatementsBody(args: Record<string, unknown>): Record<string, unknown> {
+    const body: Record<string, unknown> = {};
+    if (args.Status) body.Status = args.Status;
+    if (args.StatementName) body.StatementName = args.StatementName;
+    if (args.MaxResults) body.MaxResults = args.MaxResults;
+    if (args.NextToken) body.NextToken = args.NextToken;
+    if (typeof args.RoleLevel === 'boolean') body.RoleLevel = args.RoleLevel;
+    return body;
   }
 }

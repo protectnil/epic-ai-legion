@@ -1,89 +1,357 @@
-/** Splunk MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
+/**
+ * Splunk MCP Adapter
+ * Built on the Epic AI® Intelligence Platform
+ * Copyright 2026 protectNIL Inc. Apache-2.0
+ */
+
+// Official MCP: None from Splunk Inc. as of 2026-03.
+//   Community implementations exist (e.g. github.com/jpierson/mcp-splunk) but are not
+//   officially maintained by Splunk. No vendor-official MCP server found.
+// Our adapter covers: 14 tools (search, jobs, alerts, indexes, saved searches, KV Store,
+//   apps, users, roles) against the Splunk Enterprise/Cloud REST API on port 8089.
+//
+// Base URL: https://{host}:8089 (Splunk REST API management port)
+// Auth: Basic authentication (username + password) or Bearer token (Splunk auth token)
+// Docs: https://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTprolog
+// Rate limits: Not publicly documented; governed by instance resource limits
+
 import { ToolDefinition, ToolResult } from './types.js';
+
+interface SplunkConfig {
+  host: string;
+  username?: string;
+  password?: string;
+  /** Splunk auth token as alternative to username/password Basic auth */
+  token?: string;
+  /** Management port (default: 8089) */
+  port?: number;
+}
 
 export class SplunkMCPServer {
   private readonly baseUrl: string;
-  private readonly headers: Record<string, string>;
+  private readonly authHeader: string;
 
-  constructor(config: { host: string; username: string; password: string }) {
-    this.baseUrl = `https://${config.host}:8089`;
-    const credentials = Buffer.from(`${config.username}:${config.password}`).toString('base64');
-    this.headers = {
-      Authorization: `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
+  constructor(config: SplunkConfig) {
+    const port = config.port ?? 8089;
+    this.baseUrl = `https://${config.host}:${port}`;
+    if (config.token) {
+      this.authHeader = `Bearer ${config.token}`;
+    } else if (config.username && config.password) {
+      this.authHeader = `Basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`;
+    } else {
+      throw new Error('SplunkConfig requires either token or username+password');
+    }
+  }
+
+  static catalog() {
+    return {
+      name: 'splunk',
+      displayName: 'Splunk',
+      version: '1.0.0',
+      category: 'cybersecurity' as const,
+      keywords: ['splunk', 'siem', 'spl', 'search', 'logs', 'events', 'alerts', 'notable', 'enterprise security', 'index', 'saved search', 'kv store', 'observability'],
+      toolNames: [
+        'create_search_job', 'get_search_job_status', 'get_search_results', 'get_search_events',
+        'list_alerts', 'get_notable_events',
+        'list_saved_searches', 'get_saved_search', 'run_saved_search',
+        'list_indexes', 'get_index',
+        'list_kvstore_collections', 'query_kvstore_collection',
+        'list_apps',
+      ],
+      description: 'Splunk Enterprise/Cloud SIEM: create and run SPL searches, retrieve results and events, manage alerts and notable events, query saved searches, indexes, KV Store, and apps.',
+      author: 'protectnil' as const,
     };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
-        name: 'search_jobs',
-        description: 'Create a new search job in Splunk',
+        name: 'create_search_job',
+        description: 'Create and run a new SPL search job in Splunk, returning the job SID for result retrieval',
         inputSchema: {
           type: 'object',
           properties: {
-            search: { type: 'string', description: 'The SPL search query' },
-            earliest_time: { type: 'string', description: 'Earliest time (e.g., "-24h")' },
-            latest_time: { type: 'string', description: 'Latest time (e.g., "now")' },
-            count: { type: 'number', description: 'Maximum results (default: 100)' },
+            search: {
+              type: 'string',
+              description: 'SPL search query string (must start with "search" or a generating command)',
+            },
+            earliest_time: {
+              type: 'string',
+              description: 'Earliest time bound for the search (e.g. -24h, -7d, 2025-01-01T00:00:00, default: -24h)',
+            },
+            latest_time: {
+              type: 'string',
+              description: 'Latest time bound for the search (e.g. now, -1h, default: now)',
+            },
+            count: {
+              type: 'number',
+              description: 'Maximum number of results to return (default: 100, max: 50000)',
+            },
+            app: {
+              type: 'string',
+              description: 'Splunk app context for the search (default: search)',
+            },
           },
           required: ['search'],
         },
       },
       {
-        name: 'get_search_results',
-        description: 'Retrieve results from a completed search job',
+        name: 'get_search_job_status',
+        description: 'Poll the status of a running search job to check if it is queued, running, or done',
         inputSchema: {
           type: 'object',
           properties: {
-            search_id: { type: 'string', description: 'Search job ID' },
-            offset: { type: 'number', description: 'Starting offset (default: 0)' },
-            count: { type: 'number', description: 'Number of results (default: 100)' },
+            sid: {
+              type: 'string',
+              description: 'Search job ID (SID) returned by create_search_job',
+            },
           },
-          required: ['search_id'],
+          required: ['sid'],
+        },
+      },
+      {
+        name: 'get_search_results',
+        description: 'Retrieve final results from a completed Splunk search job in JSON format',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            sid: {
+              type: 'string',
+              description: 'Search job ID (SID) for a completed search',
+            },
+            offset: {
+              type: 'number',
+              description: 'Number of results to skip for pagination (default: 0)',
+            },
+            count: {
+              type: 'number',
+              description: 'Maximum number of results to return (default: 100, max: 50000)',
+            },
+          },
+          required: ['sid'],
+        },
+      },
+      {
+        name: 'get_search_events',
+        description: 'Retrieve raw events from a running or completed search job — available before the job finishes unlike get_search_results',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            sid: {
+              type: 'string',
+              description: 'Search job ID (SID)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Number of events to skip for pagination (default: 0)',
+            },
+            count: {
+              type: 'number',
+              description: 'Maximum number of events to return (default: 100)',
+            },
+          },
+          required: ['sid'],
         },
       },
       {
         name: 'list_alerts',
-        description: 'List fired alert instances from Splunk',
+        description: 'List fired alert instances from Splunk — shows all alerts that have triggered, with owner and trigger count',
         inputSchema: {
           type: 'object',
           properties: {
-            count: { type: 'number', description: 'Maximum alerts (default: 100)' },
-            owner: { type: 'string', description: 'Filter by owner username' },
+            count: {
+              type: 'number',
+              description: 'Maximum number of fired alerts to return (default: 100)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Number of alerts to skip for pagination (default: 0)',
+            },
+            owner: {
+              type: 'string',
+              description: 'Filter fired alerts by owner username',
+            },
+            app: {
+              type: 'string',
+              description: 'Filter by Splunk app name (default: all apps)',
+            },
           },
         },
       },
       {
         name: 'get_notable_events',
-        description: 'Retrieve notable events from Splunk Enterprise Security',
+        description: 'Search notable events from Splunk Enterprise Security index=notable with optional SPL filter and time range',
         inputSchema: {
           type: 'object',
           properties: {
-            search_query: { type: 'string', description: 'Optional SPL filter (no pipe characters)' },
-            count: { type: 'number', description: 'Maximum events (default: 100)' },
+            filter: {
+              type: 'string',
+              description: 'Additional SPL filter expression appended after the base notable search (no pipe characters)',
+            },
+            earliest_time: {
+              type: 'string',
+              description: 'Earliest time for notable events search (default: -7d)',
+            },
+            latest_time: {
+              type: 'string',
+              description: 'Latest time for notable events search (default: now)',
+            },
+            count: {
+              type: 'number',
+              description: 'Maximum number of notable events to return (default: 100)',
+            },
           },
         },
       },
       {
         name: 'list_saved_searches',
-        description: 'List all saved searches',
+        description: 'List saved searches and reports with their schedule, owner, and alert configuration',
         inputSchema: {
           type: 'object',
           properties: {
-            count: { type: 'number', description: 'Maximum searches (default: 100)' },
-            app: { type: 'string', description: 'Filter by Splunk app name' },
+            count: {
+              type: 'number',
+              description: 'Maximum number of saved searches to return (default: 100)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Number of saved searches to skip for pagination (default: 0)',
+            },
+            app: {
+              type: 'string',
+              description: 'Filter by Splunk app name',
+            },
+            owner: {
+              type: 'string',
+              description: 'Filter by owner username',
+            },
           },
         },
       },
       {
-        name: 'get_indexes',
-        description: 'List all configured Splunk indexes',
+        name: 'get_saved_search',
+        description: 'Get full configuration for a specific saved search including SPL query, schedule, and alert actions',
         inputSchema: {
           type: 'object',
           properties: {
-            count: { type: 'number', description: 'Maximum indexes to return (default: 100)' },
-            summarize: { type: 'boolean', description: 'Return summarized fields only (default: false)' },
+            name: {
+              type: 'string',
+              description: 'Name of the saved search to retrieve',
+            },
+            app: {
+              type: 'string',
+              description: 'App context the saved search belongs to (default: search)',
+            },
+          },
+          required: ['name'],
+        },
+      },
+      {
+        name: 'run_saved_search',
+        description: 'Immediately dispatch a saved search and return the SID for result retrieval',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Name of the saved search to run',
+            },
+            app: {
+              type: 'string',
+              description: 'App context the saved search belongs to (default: search)',
+            },
+          },
+          required: ['name'],
+        },
+      },
+      {
+        name: 'list_indexes',
+        description: 'List all Splunk indexes with size, event count, and data retention configuration',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            count: {
+              type: 'number',
+              description: 'Maximum number of indexes to return (default: 100)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Number of indexes to skip for pagination (default: 0)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_index',
+        description: 'Get detailed configuration and statistics for a specific Splunk index',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Index name to retrieve details for',
+            },
+          },
+          required: ['name'],
+        },
+      },
+      {
+        name: 'list_kvstore_collections',
+        description: 'List KV Store collections available in a Splunk app',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            app: {
+              type: 'string',
+              description: 'Splunk app to list KV Store collections from (default: search)',
+            },
+          },
+        },
+      },
+      {
+        name: 'query_kvstore_collection',
+        description: 'Query records from a KV Store collection with optional filter, limit, and skip',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            app: {
+              type: 'string',
+              description: 'Splunk app the KV Store collection belongs to (default: search)',
+            },
+            collection: {
+              type: 'string',
+              description: 'KV Store collection name to query',
+            },
+            query: {
+              type: 'string',
+              description: 'JSON query filter object (e.g. {"status":"open"}) — omit to return all records',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of records to return (default: 100)',
+            },
+            skip: {
+              type: 'number',
+              description: 'Number of records to skip for pagination (default: 0)',
+            },
+          },
+          required: ['collection'],
+        },
+      },
+      {
+        name: 'list_apps',
+        description: 'List installed Splunk apps with version, status, and visibility information',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            count: {
+              type: 'number',
+              description: 'Maximum number of apps to return (default: 100)',
+            },
+            offset: {
+              type: 'number',
+              description: 'Number of apps to skip for pagination (default: 0)',
+            },
           },
         },
       },
@@ -93,134 +361,336 @@ export class SplunkMCPServer {
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'search_jobs':
-          return await this.searchJobs(args.search as string, args.earliest_time as string | undefined, args.latest_time as string | undefined, args.count as number | undefined);
+        case 'create_search_job':
+          return await this.createSearchJob(args);
+        case 'get_search_job_status':
+          return await this.getSearchJobStatus(args);
         case 'get_search_results':
-          return await this.getSearchResults(args.search_id as string, args.offset as number | undefined, args.count as number | undefined);
+          return await this.getSearchResults(args);
+        case 'get_search_events':
+          return await this.getSearchEvents(args);
         case 'list_alerts':
-          return await this.listAlerts(args.count as number | undefined, args.owner as string | undefined);
+          return await this.listAlerts(args);
         case 'get_notable_events':
-          return await this.getNotableEvents(args.search_query as string | undefined, args.count as number | undefined);
+          return await this.getNotableEvents(args);
         case 'list_saved_searches':
-          return await this.listSavedSearches(args.count as number | undefined, args.app as string | undefined);
-        case 'get_indexes':
-          return await this.getIndexes(args.count as number | undefined, args.summarize as boolean | undefined);
+          return await this.listSavedSearches(args);
+        case 'get_saved_search':
+          return await this.getSavedSearch(args);
+        case 'run_saved_search':
+          return await this.runSavedSearch(args);
+        case 'list_indexes':
+          return await this.listIndexes(args);
+        case 'get_index':
+          return await this.getIndex(args);
+        case 'list_kvstore_collections':
+          return await this.listKvstoreCollections(args);
+        case 'query_kvstore_collection':
+          return await this.queryKvstoreCollection(args);
+        case 'list_apps':
+          return await this.listApps(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
     } catch (error) {
-      return { content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }], isError: true };
+      return {
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
+        isError: true,
+      };
     }
   }
 
-  private async searchJobs(search: string, earliestTime?: string, latestTime?: string, count?: number): Promise<ToolResult> {
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: this.authHeader,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async createSearchJob(args: Record<string, unknown>): Promise<ToolResult> {
+    const search = args.search as string;
+    if (!search) {
+      return { content: [{ type: 'text', text: 'search is required' }], isError: true };
+    }
     const params = new URLSearchParams({
       search,
-      earliest_time: earliestTime || '-24h',
-      latest_time: latestTime || 'now',
-      count: String(count || 100),
+      earliest_time: (args.earliest_time as string) ?? '-24h',
+      latest_time: (args.latest_time as string) ?? 'now',
+      count: String((args.count as number) ?? 100),
+      output_mode: 'json',
     });
+    if (args.app) params.set('app', args.app as string);
 
     const response = await fetch(`${this.baseUrl}/services/search/jobs`, {
       method: 'POST',
       headers: this.headers,
       body: params.toString(),
     });
-
-    if (!response.ok) throw new Error(`Splunk API error: ${response.status} ${response.statusText}`);
-
-    const xml = await response.text();
-    return { content: [{ type: 'text', text: JSON.stringify({ raw: xml, message: 'Search job created' }, null, 2) }], isError: false };
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to create search job: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async getSearchResults(searchId: string, offset?: number, count?: number): Promise<ToolResult> {
-    const params = new URLSearchParams({ output_mode: 'json', offset: String(offset || 0), count: String(count || 100) });
+  private async getSearchJobStatus(args: Record<string, unknown>): Promise<ToolResult> {
+    const sid = args.sid as string;
+    if (!sid) {
+      return { content: [{ type: 'text', text: 'sid is required' }], isError: true };
+    }
+    const response = await fetch(
+      `${this.baseUrl}/services/search/jobs/${encodeURIComponent(sid)}?output_mode=json`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get search job status: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
-    const response = await fetch(`${this.baseUrl}/services/search/jobs/${encodeURIComponent(searchId)}/results?${params}`, {
-      method: 'GET',
-      headers: this.headers,
+  private async getSearchResults(args: Record<string, unknown>): Promise<ToolResult> {
+    const sid = args.sid as string;
+    if (!sid) {
+      return { content: [{ type: 'text', text: 'sid is required' }], isError: true };
+    }
+    const params = new URLSearchParams({
+      output_mode: 'json',
+      offset: String((args.offset as number) ?? 0),
+      count: String((args.count as number) ?? 100),
     });
-
-    if (!response.ok) throw new Error(`Splunk API error: ${response.status} ${response.statusText}`);
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Splunk returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    const response = await fetch(
+      `${this.baseUrl}/services/search/jobs/${encodeURIComponent(sid)}/results?${params}`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get search results: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async listAlerts(count?: number, owner?: string): Promise<ToolResult> {
-    const params = new URLSearchParams({ output_mode: 'json', count: String(count || 100) });
-    if (owner) params.append('owner', owner);
+  private async getSearchEvents(args: Record<string, unknown>): Promise<ToolResult> {
+    const sid = args.sid as string;
+    if (!sid) {
+      return { content: [{ type: 'text', text: 'sid is required' }], isError: true };
+    }
+    const params = new URLSearchParams({
+      output_mode: 'json',
+      offset: String((args.offset as number) ?? 0),
+      count: String((args.count as number) ?? 100),
+    });
+    const response = await fetch(
+      `${this.baseUrl}/services/search/jobs/${encodeURIComponent(sid)}/events?${params}`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get search events: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams({
+      output_mode: 'json',
+      count: String((args.count as number) ?? 100),
+      offset: String((args.offset as number) ?? 0),
+    });
+    if (args.owner) params.set('owner', args.owner as string);
+    if (args.app) params.set('app', args.app as string);
 
     const response = await fetch(`${this.baseUrl}/services/alerts/fired_alerts?${params}`, {
       method: 'GET',
       headers: this.headers,
     });
-
-    if (!response.ok) throw new Error(`Splunk API error: ${response.status} ${response.statusText}`);
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Splunk returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list alerts: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async getNotableEvents(searchQuery?: string, count?: number): Promise<ToolResult> {
-    // Reject queries with pipe characters to prevent SPL injection.
-    if (searchQuery && searchQuery.includes('|')) {
-      return { content: [{ type: 'text', text: 'search_query must not contain pipe characters' }], isError: true };
+  private async getNotableEvents(args: Record<string, unknown>): Promise<ToolResult> {
+    const filter = args.filter as string | undefined;
+    // Reject pipe characters to prevent SPL injection
+    if (filter && filter.includes('|')) {
+      return { content: [{ type: 'text', text: 'filter must not contain pipe characters' }], isError: true };
     }
 
+    const baseSearch = filter
+      ? `search index=notable ${filter}`
+      : 'search index=notable';
+
     const params = new URLSearchParams({
-      search: 'search index=notable',
-      earliest_time: '-7d',
-      latest_time: 'now',
-      count: String(count || 100),
+      search: baseSearch,
+      earliest_time: (args.earliest_time as string) ?? '-7d',
+      latest_time: (args.latest_time as string) ?? 'now',
+      count: String((args.count as number) ?? 100),
       output_mode: 'json',
     });
-    if (searchQuery) params.append('search_filter', searchQuery);
 
     const response = await fetch(`${this.baseUrl}/services/search/jobs`, {
       method: 'POST',
       headers: this.headers,
       body: params.toString(),
     });
-
-    if (!response.ok) throw new Error(`Splunk API error: ${response.status} ${response.statusText}`);
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Splunk returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get notable events: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async listSavedSearches(count?: number, app?: string): Promise<ToolResult> {
-    const params = new URLSearchParams({ output_mode: 'json', count: String(count || 100) });
-    if (app) params.append('app', app);
+  private async listSavedSearches(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams({
+      output_mode: 'json',
+      count: String((args.count as number) ?? 100),
+      offset: String((args.offset as number) ?? 0),
+    });
+    if (args.app) params.set('app', args.app as string);
+    if (args.owner) params.set('owner', args.owner as string);
 
     const response = await fetch(`${this.baseUrl}/services/saved/searches?${params}`, {
       method: 'GET',
       headers: this.headers,
     });
-
-    if (!response.ok) throw new Error(`Splunk API error: ${response.status} ${response.statusText}`);
-
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Splunk returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list saved searches: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async getIndexes(count?: number, summarize?: boolean): Promise<ToolResult> {
-    const params = new URLSearchParams({ output_mode: 'json', count: String(count || 100) });
-    if (summarize) params.append('summarize', 'true');
+  private async getSavedSearch(args: Record<string, unknown>): Promise<ToolResult> {
+    const name = args.name as string;
+    if (!name) {
+      return { content: [{ type: 'text', text: 'name is required' }], isError: true };
+    }
+    const app = (args.app as string) ?? 'search';
+    const response = await fetch(
+      `${this.baseUrl}/servicesNS/-/${encodeURIComponent(app)}/saved/searches/${encodeURIComponent(name)}?output_mode=json`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get saved search: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
+  private async runSavedSearch(args: Record<string, unknown>): Promise<ToolResult> {
+    const name = args.name as string;
+    if (!name) {
+      return { content: [{ type: 'text', text: 'name is required' }], isError: true };
+    }
+    const app = (args.app as string) ?? 'search';
+    const response = await fetch(
+      `${this.baseUrl}/servicesNS/-/${encodeURIComponent(app)}/saved/searches/${encodeURIComponent(name)}/dispatch`,
+      {
+        method: 'POST',
+        headers: this.headers,
+        body: 'output_mode=json',
+      },
+    );
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to run saved search: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listIndexes(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams({
+      output_mode: 'json',
+      count: String((args.count as number) ?? 100),
+      offset: String((args.offset as number) ?? 0),
+    });
     const response = await fetch(`${this.baseUrl}/services/data/indexes?${params}`, {
       method: 'GET',
       headers: this.headers,
     });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list indexes: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
-    if (!response.ok) throw new Error(`Splunk API error: ${response.status} ${response.statusText}`);
+  private async getIndex(args: Record<string, unknown>): Promise<ToolResult> {
+    const name = args.name as string;
+    if (!name) {
+      return { content: [{ type: 'text', text: 'name is required' }], isError: true };
+    }
+    const response = await fetch(
+      `${this.baseUrl}/services/data/indexes/${encodeURIComponent(name)}?output_mode=json`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to get index: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
 
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Splunk returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  private async listKvstoreCollections(args: Record<string, unknown>): Promise<ToolResult> {
+    const app = (args.app as string) ?? 'search';
+    const response = await fetch(
+      `${this.baseUrl}/servicesNS/-/${encodeURIComponent(app)}/storage/collections/config?output_mode=json`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list KV store collections: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async queryKvstoreCollection(args: Record<string, unknown>): Promise<ToolResult> {
+    const collection = args.collection as string;
+    if (!collection) {
+      return { content: [{ type: 'text', text: 'collection is required' }], isError: true };
+    }
+    const app = (args.app as string) ?? 'search';
+    const params = new URLSearchParams({
+      output_mode: 'json',
+      limit: String((args.limit as number) ?? 100),
+      skip: String((args.skip as number) ?? 0),
+    });
+    if (args.query) params.set('query', args.query as string);
+
+    const response = await fetch(
+      `${this.baseUrl}/servicesNS/-/${encodeURIComponent(app)}/storage/collections/data/${encodeURIComponent(collection)}?${params}`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to query KV store collection: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listApps(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams({
+      output_mode: 'json',
+      count: String((args.count as number) ?? 100),
+      offset: String((args.offset as number) ?? 0),
+    });
+    const response = await fetch(`${this.baseUrl}/services/apps/local?${params}`, {
+      method: 'GET',
+      headers: this.headers,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Failed to list apps: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 }

@@ -1,96 +1,293 @@
-/** Reddit MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
+/**
+ * Reddit MCP Adapter
+ * Built on the Epic AI® Intelligence Platform
+ * Copyright 2026 protectNIL Inc. Apache-2.0
+ */
+
+// Official MCP: None found as of 2026-03
+// No official Reddit MCP server was found on GitHub as of March 2026.
+// Reddit's API is OAuth2-based; this adapter uses the oauth.reddit.com base
+// with a pre-obtained Bearer access token.
+//
+// Base URL: https://oauth.reddit.com
+// Auth: OAuth2 Bearer token (obtained via client_credentials or authorization_code flow)
+// Docs: https://www.reddit.com/dev/api/oauth
+// Rate limits: 100 requests/min per OAuth client ID (averaged over 10-minute window)
+
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface RedditConfig {
+  /** OAuth2 Bearer access token from https://www.reddit.com/api/v1/access_token */
   accessToken: string;
+  /** Required by Reddit API: e.g. "MyApp/1.0 by u/myuser" */
   userAgent: string;
+  baseUrl?: string;
 }
 
 export class RedditMCPServer {
-  private readonly baseUrl = 'https://oauth.reddit.com';
-  private readonly headers: Record<string, string>;
+  private readonly token: string;
+  private readonly userAgent: string;
+  private readonly baseUrl: string;
 
   constructor(config: RedditConfig) {
-    this.headers = {
-      Authorization: `Bearer ${config.accessToken}`,
-      'User-Agent': config.userAgent,
-      'Content-Type': 'application/json',
+    this.token = config.accessToken;
+    this.userAgent = config.userAgent;
+    this.baseUrl = config.baseUrl ?? 'https://oauth.reddit.com';
+  }
+
+  static catalog() {
+    return {
+      name: 'reddit',
+      displayName: 'Reddit',
+      version: '1.0.0',
+      category: 'social' as const,
+      keywords: ['reddit', 'subreddit', 'post', 'comment', 'vote', 'flair', 'search', 'community', 'social', 'upvote'],
+      toolNames: [
+        'search_posts', 'get_subreddit_posts', 'get_subreddit_info', 'get_post',
+        'get_comments', 'get_user_profile', 'get_user_posts', 'get_user_comments',
+        'submit_post', 'submit_comment', 'vote', 'save_post', 'unsave_post',
+        'subscribe_subreddit', 'get_my_profile', 'get_my_subreddits',
+        'get_subreddit_rules', 'search_subreddits',
+      ],
+      description: 'Reddit social platform: search posts, browse subreddits, read and submit posts and comments, vote, subscribe, and manage user profile.',
+      author: 'protectnil',
     };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
-        name: 'search',
-        description: 'Search Reddit posts across all subreddits or within a specific subreddit',
+        name: 'search_posts',
+        description: 'Search Reddit posts across all subreddits or within a specific subreddit by keyword with sort and time filters',
         inputSchema: {
           type: 'object',
           properties: {
-            q: { type: 'string', description: 'Search query' },
-            subreddit: { type: 'string', description: 'Limit search to this subreddit' },
-            sort: { type: 'string', description: 'Sort order: relevance, hot, top, new, comments' },
-            time: { type: 'string', description: 'Time filter: hour, day, week, month, year, all' },
-            limit: { type: 'number', description: 'Number of results (max: 100)' },
-            after: { type: 'string', description: 'Fullname of item for pagination' },
-            type: { type: 'string', description: 'Result type: link, sr, user' },
+            q: { type: 'string', description: 'Search query string' },
+            subreddit: { type: 'string', description: 'Restrict search to this subreddit name (without r/)' },
+            sort: { type: 'string', description: 'Sort order: relevance, hot, top, new, comments (default: relevance)' },
+            time: { type: 'string', description: 'Time filter: hour, day, week, month, year, all (default: all)' },
+            type: { type: 'string', description: 'Result type: link, sr, user (default: link)' },
+            limit: { type: 'number', description: 'Max results to return (1–100, default: 25)' },
+            after: { type: 'string', description: 'Fullname of last item for forward pagination (e.g. t3_abc123)' },
+            before: { type: 'string', description: 'Fullname of first item for backward pagination' },
           },
           required: ['q'],
         },
       },
       {
-        name: 'get_subreddit',
-        description: 'Get information and hot posts for a subreddit',
+        name: 'get_subreddit_posts',
+        description: 'List posts from a subreddit sorted by hot, new, top, rising, or controversial',
         inputSchema: {
           type: 'object',
           properties: {
             subreddit: { type: 'string', description: 'Subreddit name (without r/)' },
-            sort: { type: 'string', description: 'Post sort: hot, new, top, rising' },
-            limit: { type: 'number', description: 'Number of posts to return (max: 100)' },
-            after: { type: 'string', description: 'Fullname of item for pagination' },
-            t: { type: 'string', description: 'Time filter for top: hour, day, week, month, year, all' },
+            sort: { type: 'string', description: 'Post sort: hot, new, top, rising, controversial (default: hot)' },
+            t: { type: 'string', description: 'Time filter for top/controversial: hour, day, week, month, year, all' },
+            limit: { type: 'number', description: 'Max posts to return (1–100, default: 25)' },
+            after: { type: 'string', description: 'Fullname for forward pagination' },
+            before: { type: 'string', description: 'Fullname for backward pagination' },
+          },
+          required: ['subreddit'],
+        },
+      },
+      {
+        name: 'get_subreddit_info',
+        description: 'Retrieve metadata about a subreddit: description, subscriber count, rules, and moderators',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            subreddit: { type: 'string', description: 'Subreddit name (without r/)' },
           },
           required: ['subreddit'],
         },
       },
       {
         name: 'get_post',
-        description: 'Get a Reddit post by its ID or URL path',
+        description: 'Retrieve a single Reddit post by its ID, including title, body, score, and metadata',
         inputSchema: {
           type: 'object',
           properties: {
-            post_id: { type: 'string', description: 'Reddit post ID (t3_ prefix optional)' },
-            subreddit: { type: 'string', description: 'Subreddit the post belongs to' },
+            post_id: { type: 'string', description: 'Reddit post ID (t3_ prefix optional, e.g. abc123 or t3_abc123)' },
+            subreddit: { type: 'string', description: 'Subreddit the post belongs to (improves routing)' },
           },
           required: ['post_id'],
         },
       },
       {
         name: 'get_comments',
-        description: 'Get comments for a Reddit post',
+        description: 'Retrieve the comment tree for a Reddit post with optional sort and depth controls',
         inputSchema: {
           type: 'object',
           properties: {
-            post_id: { type: 'string', description: 'Reddit post ID' },
+            post_id: { type: 'string', description: 'Reddit post ID (t3_ prefix optional)' },
             subreddit: { type: 'string', description: 'Subreddit the post belongs to' },
-            sort: { type: 'string', description: 'Comment sort: confidence, top, new, controversial, old' },
-            limit: { type: 'number', description: 'Number of comments to return (max: 500)' },
-            depth: { type: 'number', description: 'Max depth of comment tree to retrieve' },
+            sort: { type: 'string', description: 'Comment sort: confidence, top, new, controversial, old, qa (default: confidence)' },
+            limit: { type: 'number', description: 'Max top-level comments to return (default: 100, max: 500)' },
+            depth: { type: 'number', description: 'Max depth of comment tree (default: 5)' },
           },
-          required: ['post_id', 'subreddit'],
+          required: ['post_id'],
         },
       },
       {
-        name: 'get_user',
-        description: 'Get Reddit user profile and recent posts/comments',
+        name: 'get_user_profile',
+        description: 'Retrieve a Reddit user public profile: karma, account age, trophies, and biography',
         inputSchema: {
           type: 'object',
           properties: {
             username: { type: 'string', description: 'Reddit username (without u/)' },
-            include_posts: { type: 'boolean', description: 'Include recent submitted posts' },
-            include_comments: { type: 'boolean', description: 'Include recent comments' },
-            limit: { type: 'number', description: 'Number of posts/comments (max: 100)' },
           },
           required: ['username'],
+        },
+      },
+      {
+        name: 'get_user_posts',
+        description: 'List posts submitted by a Reddit user with optional sort and time filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', description: 'Reddit username (without u/)' },
+            sort: { type: 'string', description: 'Sort: hot, new, top, controversial (default: new)' },
+            t: { type: 'string', description: 'Time filter for top/controversial: hour, day, week, month, year, all' },
+            limit: { type: 'number', description: 'Max posts to return (1–100, default: 25)' },
+            after: { type: 'string', description: 'Fullname for forward pagination' },
+          },
+        },
+      },
+      {
+        name: 'get_user_comments',
+        description: 'List comments posted by a Reddit user with optional sort and time filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', description: 'Reddit username (without u/)' },
+            sort: { type: 'string', description: 'Sort: hot, new, top, controversial (default: new)' },
+            t: { type: 'string', description: 'Time filter for top/controversial: hour, day, week, month, year, all' },
+            limit: { type: 'number', description: 'Max comments to return (1–100, default: 25)' },
+            after: { type: 'string', description: 'Fullname for forward pagination' },
+          },
+        },
+      },
+      {
+        name: 'submit_post',
+        description: 'Submit a new text (self) or link post to a subreddit. Requires submit OAuth2 scope.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            subreddit: { type: 'string', description: 'Subreddit name to post to (without r/)' },
+            title: { type: 'string', description: 'Post title (required)' },
+            kind: { type: 'string', description: 'Post type: self (text post) or link (URL post) (default: self)' },
+            text: { type: 'string', description: 'Post body in Markdown (for kind=self)' },
+            url: { type: 'string', description: 'URL to submit (for kind=link)' },
+            nsfw: { type: 'boolean', description: 'Mark post as NSFW (default: false)' },
+            spoiler: { type: 'boolean', description: 'Mark post as spoiler (default: false)' },
+            flair_id: { type: 'string', description: 'Flair template ID to apply to the post' },
+            flair_text: { type: 'string', description: 'Custom flair text (if subreddit allows)' },
+          },
+          required: ['subreddit', 'title'],
+        },
+      },
+      {
+        name: 'submit_comment',
+        description: 'Post a reply comment to a post or another comment. Requires submit OAuth2 scope.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            parent_id: { type: 'string', description: 'Fullname of parent: post (t3_xxx) or comment (t1_xxx) to reply to' },
+            text: { type: 'string', description: 'Comment body in Markdown' },
+          },
+          required: ['parent_id', 'text'],
+        },
+      },
+      {
+        name: 'vote',
+        description: 'Cast an upvote, downvote, or remove vote on a post or comment. Requires vote OAuth2 scope.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'Fullname of post (t3_xxx) or comment (t1_xxx) to vote on' },
+            dir: { type: 'number', description: 'Vote direction: 1 (upvote), -1 (downvote), 0 (remove vote)' },
+          },
+          required: ['id', 'dir'],
+        },
+      },
+      {
+        name: 'save_post',
+        description: 'Save a post or comment to the authenticated user saved list. Requires save OAuth2 scope.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'Fullname of post (t3_xxx) or comment (t1_xxx) to save' },
+            category: { type: 'string', description: 'Optional category label for the saved item' },
+          },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'unsave_post',
+        description: 'Remove a post or comment from the authenticated user saved list. Requires save OAuth2 scope.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'Fullname of post (t3_xxx) or comment (t1_xxx) to unsave' },
+          },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'subscribe_subreddit',
+        description: 'Subscribe to or unsubscribe from a subreddit. Requires subscribe OAuth2 scope.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            subreddit: { type: 'string', description: 'Subreddit name (without r/)' },
+            action: { type: 'string', description: 'Action: sub (subscribe) or unsub (unsubscribe) (default: sub)' },
+          },
+          required: ['subreddit'],
+        },
+      },
+      {
+        name: 'get_my_profile',
+        description: 'Get the authenticated user profile, karma breakdown, and account settings. Requires identity OAuth2 scope.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_my_subreddits',
+        description: 'List subreddits the authenticated user is subscribed to, a moderator of, or a contributor in',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            where: { type: 'string', description: 'Filter: subscriber, contributor, moderator, streams (default: subscriber)' },
+            limit: { type: 'number', description: 'Max results to return (1–100, default: 25)' },
+            after: { type: 'string', description: 'Fullname for forward pagination' },
+          },
+        },
+      },
+      {
+        name: 'get_subreddit_rules',
+        description: 'Retrieve the rules and posting guidelines for a subreddit',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            subreddit: { type: 'string', description: 'Subreddit name (without r/)' },
+          },
+          required: ['subreddit'],
+        },
+      },
+      {
+        name: 'search_subreddits',
+        description: 'Search for subreddits by keyword, returning community names, descriptions, and subscriber counts',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            q: { type: 'string', description: 'Search query for subreddit name or topic' },
+            sort: { type: 'string', description: 'Sort: relevance or activity (default: relevance)' },
+            limit: { type: 'number', description: 'Max results to return (1–100, default: 25)' },
+            after: { type: 'string', description: 'Fullname for forward pagination' },
+          },
+          required: ['q'],
         },
       },
     ];
@@ -99,54 +296,130 @@ export class RedditMCPServer {
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'search':
-          return await this.search(args);
-        case 'get_subreddit':
-          return await this.getSubreddit(args);
+        case 'search_posts':
+          return await this.searchPosts(args);
+        case 'get_subreddit_posts':
+          return await this.getSubredditPosts(args);
+        case 'get_subreddit_info':
+          return await this.getSubredditInfo(args);
         case 'get_post':
           return await this.getPost(args);
         case 'get_comments':
           return await this.getComments(args);
-        case 'get_user':
-          return await this.getUser(args);
+        case 'get_user_profile':
+          return await this.getUserProfile(args);
+        case 'get_user_posts':
+          return await this.getUserContent(args, 'submitted');
+        case 'get_user_comments':
+          return await this.getUserContent(args, 'comments');
+        case 'submit_post':
+          return await this.submitPost(args);
+        case 'submit_comment':
+          return await this.submitComment(args);
+        case 'vote':
+          return await this.vote(args);
+        case 'save_post':
+          return await this.saveItem(args, 'save');
+        case 'unsave_post':
+          return await this.saveItem(args, 'unsave');
+        case 'subscribe_subreddit':
+          return await this.subscribeSubreddit(args);
+        case 'get_my_profile':
+          return await this.getMyProfile();
+        case 'get_my_subreddits':
+          return await this.getMySubreddits(args);
+        case 'get_subreddit_rules':
+          return await this.getSubredditRules(args);
+        case 'search_subreddits':
+          return await this.searchSubreddits(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
     } catch (error) {
       return {
-        content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }],
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }
   }
 
-  private async search(args: Record<string, unknown>): Promise<ToolResult> {
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.token}`,
+      'User-Agent': this.userAgent,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async get(path: string, params?: URLSearchParams): Promise<ToolResult> {
+    const url = params
+      ? `${this.baseUrl}${path}?${params.toString()}`
+      : `${this.baseUrl}${path}`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `Reddit API error: ${response.status} ${response.statusText}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const form = new URLSearchParams();
+    for (const [k, v] of Object.entries(body)) {
+      if (v !== undefined && v !== null) form.append(k, String(v));
+    }
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: { ...this.headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `Reddit API error: ${response.status} ${response.statusText}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async searchPosts(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({ q: args.q as string });
     if (args.sort) params.append('sort', args.sort as string);
     if (args.time) params.append('t', args.time as string);
+    if (args.type) params.append('type', args.type as string);
     if (args.limit) params.append('limit', String(args.limit));
     if (args.after) params.append('after', args.after as string);
-    if (args.type) params.append('type', args.type as string);
+    if (args.before) params.append('before', args.before as string);
     const path = args.subreddit ? `/r/${args.subreddit}/search` : '/search';
     if (args.subreddit) params.append('restrict_sr', 'true');
-    const response = await fetch(`${this.baseUrl}${path}?${params}`, { method: 'GET', headers: this.headers });
-    if (!response.ok) throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return this.get(path, params);
   }
 
-  private async getSubreddit(args: Record<string, unknown>): Promise<ToolResult> {
-    const sort = (args.sort as string | undefined) ?? 'hot';
+  private async getSubredditPosts(args: Record<string, unknown>): Promise<ToolResult> {
+    const sort = (args.sort as string) ?? 'hot';
     const params = new URLSearchParams();
     if (args.limit) params.append('limit', String(args.limit));
     if (args.after) params.append('after', args.after as string);
+    if (args.before) params.append('before', args.before as string);
     if (args.t) params.append('t', args.t as string);
-    const response = await fetch(`${this.baseUrl}/r/${args.subreddit}/${sort}?${params}`, { method: 'GET', headers: this.headers });
-    if (!response.ok) throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return this.get(`/r/${args.subreddit}/${sort}`, params);
+  }
+
+  private async getSubredditInfo(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/r/${args.subreddit}/about`);
   }
 
   private async getPost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -155,54 +428,98 @@ export class RedditMCPServer {
       ? `/r/${args.subreddit}/comments/${postId}`
       : `/comments/${postId}`;
     const params = new URLSearchParams({ limit: '1', depth: '0' });
-    const response = await fetch(`${this.baseUrl}${path}?${params}`, { method: 'GET', headers: this.headers });
-    if (!response.ok) throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return this.get(path, params);
   }
 
   private async getComments(args: Record<string, unknown>): Promise<ToolResult> {
     const postId = (args.post_id as string).replace(/^t3_/, '');
+    const subreddit = (args.subreddit as string | undefined) ?? 'all';
     const params = new URLSearchParams();
     if (args.sort) params.append('sort', args.sort as string);
     if (args.limit) params.append('limit', String(args.limit));
     if (args.depth) params.append('depth', String(args.depth));
-    const response = await fetch(`${this.baseUrl}/r/${args.subreddit}/comments/${postId}?${params}`, { method: 'GET', headers: this.headers });
-    if (!response.ok) throw new Error(`Reddit API error: ${response.status} ${response.statusText}`);
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return this.get(`/r/${subreddit}/comments/${postId}`, params);
   }
 
-  private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
-    const aboutResponse = await fetch(`${this.baseUrl}/user/${args.username}/about`, { method: 'GET', headers: this.headers });
-    if (!aboutResponse.ok) throw new Error(`Reddit API error: ${aboutResponse.status} ${aboutResponse.statusText}`);
-    let about: unknown;
-    try { about = await aboutResponse.json(); } catch { throw new Error(`Non-JSON response (HTTP ${aboutResponse.status})`); }
+  private async getUserProfile(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/user/${args.username}/about`);
+  }
 
-    const result: Record<string, unknown> = { about };
+  private async getUserContent(args: Record<string, unknown>, section: 'submitted' | 'comments'): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.sort) params.append('sort', args.sort as string);
+    if (args.t) params.append('t', args.t as string);
+    if (args.limit) params.append('limit', String(args.limit));
+    if (args.after) params.append('after', args.after as string);
+    return this.get(`/user/${args.username}/${section}`, params);
+  }
 
-    if (args.include_posts) {
-      const params = new URLSearchParams({ limit: String(args.limit ?? 25) });
-      const postsResponse = await fetch(`${this.baseUrl}/user/${args.username}/submitted?${params}`, { method: 'GET', headers: this.headers });
-      if (postsResponse.ok) {
-        let posts: unknown;
-        try { posts = await postsResponse.json(); } catch { throw new Error(`Non-JSON response (HTTP ${postsResponse.status})`); }
-        result.posts = posts;
-      }
-    }
+  private async submitPost(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {
+      sr: args.subreddit,
+      title: args.title,
+      kind: (args.kind as string) ?? 'self',
+      api_type: 'json',
+    };
+    if (args.text) body.text = args.text;
+    if (args.url) body.url = args.url;
+    if (args.nsfw) body.nsfw = 'true';
+    if (args.spoiler) body.spoiler = 'true';
+    if (args.flair_id) body.flair_id = args.flair_id;
+    if (args.flair_text) body.flair_text = args.flair_text;
+    return this.post('/api/submit', body);
+  }
 
-    if (args.include_comments) {
-      const params = new URLSearchParams({ limit: String(args.limit ?? 25) });
-      const commentsResponse = await fetch(`${this.baseUrl}/user/${args.username}/comments?${params}`, { method: 'GET', headers: this.headers });
-      if (commentsResponse.ok) {
-        let comments: unknown;
-        try { comments = await commentsResponse.json(); } catch { throw new Error(`Non-JSON response (HTTP ${commentsResponse.status})`); }
-        result.comments = comments;
-      }
-    }
+  private async submitComment(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.post('/api/comment', {
+      parent: args.parent_id,
+      text: args.text,
+      api_type: 'json',
+    });
+  }
 
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], isError: false };
+  private async vote(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.post('/api/vote', {
+      id: args.id,
+      dir: args.dir,
+    });
+  }
+
+  private async saveItem(args: Record<string, unknown>, action: 'save' | 'unsave'): Promise<ToolResult> {
+    const body: Record<string, unknown> = { id: args.id };
+    if (action === 'save' && args.category) body.category = args.category;
+    return this.post(`/api/${action}`, body);
+  }
+
+  private async subscribeSubreddit(args: Record<string, unknown>): Promise<ToolResult> {
+    const action = (args.action as string) ?? 'sub';
+    return this.post('/api/subscribe', {
+      sr_name: args.subreddit,
+      action,
+    });
+  }
+
+  private async getMyProfile(): Promise<ToolResult> {
+    return this.get('/api/v1/me');
+  }
+
+  private async getMySubreddits(args: Record<string, unknown>): Promise<ToolResult> {
+    const where = (args.where as string) ?? 'subscriber';
+    const params = new URLSearchParams();
+    if (args.limit) params.append('limit', String(args.limit));
+    if (args.after) params.append('after', args.after as string);
+    return this.get(`/subreddits/mine/${where}`, params);
+  }
+
+  private async getSubredditRules(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/r/${args.subreddit}/about/rules`);
+  }
+
+  private async searchSubreddits(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams({ q: args.q as string });
+    if (args.sort) params.append('sort', args.sort as string);
+    if (args.limit) params.append('limit', String(args.limit));
+    if (args.after) params.append('after', args.after as string);
+    return this.get('/subreddits/search', params);
   }
 }

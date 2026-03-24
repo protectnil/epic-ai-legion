@@ -4,14 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found
-
-// Auth: OAuth2 client_credentials.
-// Token endpoint: POST https://api.tipalti.com/oauth2/token
-//   Body (x-www-form-urlencoded): grant_type=client_credentials, client_id, client_secret
-// Production API base URL: https://api.tipalti.com
-// Sandbox API base URL:    https://api.sandbox.tipalti.com
-// Source: https://developer.tipalti.com/ and https://apiworx.com/diy-developer-guide-building-custom-integrations-for-tipalti/
+// Official MCP: None found as of 2026-03
+// No official Tipalti MCP server was found on GitHub or npm as of March 2026.
+//
+// Base URL: https://api.tipalti.com  (sandbox: https://api.sandbox.tipalti.com)
+// Auth: OAuth2 client_credentials — POST /oauth2/token with client_id + client_secret
+//   Token endpoint returns access_token + expires_in; refresh 60 seconds early.
+// Docs: https://help.tipalti.com/hc/en-us/articles/30718248220823-Procurement-REST-API-documentation
+//       https://developer.tipalti.com/
+// Rate limits: Not publicly documented; recommended max 120 req/min per OAuth2 token
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -25,220 +26,293 @@ export class TipaltiMCPServer {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
-  private cachedToken: string | null = null;
-  private tokenExpiresAt: number = 0;
+  private bearerToken: string | null = null;
+  private tokenExpiry: number = 0;
 
   constructor(config: TipaltiConfig) {
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
-    this.baseUrl = config.baseUrl || 'https://api.tipalti.com';
+    this.baseUrl = (config.baseUrl ?? 'https://api.tipalti.com').replace(/\/$/, '');
   }
 
-  private async getAccessToken(): Promise<string> {
-    if (this.cachedToken && Date.now() < this.tokenExpiresAt) {
-      return this.cachedToken;
+  static catalog() {
+    return {
+      name: 'tipalti',
+      displayName: 'Tipalti',
+      version: '2.0.0',
+      category: 'finance' as const,
+      keywords: [
+        'tipalti', 'accounts payable', 'AP', 'payee', 'vendor', 'supplier',
+        'bill', 'invoice', 'payment', 'payout', 'mass payment', 'global payment',
+        'tax', 'W-9', 'W-8', 'onboarding', 'procurement', 'ERP',
+      ],
+      toolNames: [
+        'list_payees', 'get_payee', 'create_payee', 'update_payee',
+        'get_payee_payment_method',
+        'list_bills', 'get_bill', 'create_bill', 'approve_bill', 'void_bill',
+        'list_payments', 'get_payment',
+        'list_payment_orders', 'get_payment_order',
+        'get_payee_tax_forms',
+      ],
+      description: 'Accounts payable automation: manage payees, bills, payments, and payout orders through the Tipalti REST API.',
+      author: 'protectnil' as const,
+    };
+  }
+
+  // ──────────────────────────────────────────────
+  // OAuth2 client credentials
+  // ──────────────────────────────────────────────
+  private async getOrRefreshToken(): Promise<string> {
+    const now = Date.now();
+    if (this.bearerToken && this.tokenExpiry > now) {
+      return this.bearerToken;
     }
-    const tokenUrl = `${this.baseUrl}/oauth2/token`;
-    const body = new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: this.clientId,
-      client_secret: this.clientSecret,
-    });
-    const response = await fetch(tokenUrl, {
+    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+      }).toString(),
     });
     if (!response.ok) {
       throw new Error(`Tipalti OAuth2 token request failed: ${response.status} ${response.statusText}`);
     }
     const data = await response.json() as { access_token: string; expires_in: number };
-    this.cachedToken = data.access_token;
-    this.tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000;
-    return this.cachedToken;
+    this.bearerToken = data.access_token;
+    this.tokenExpiry = now + (data.expires_in - 60) * 1000;
+    return this.bearerToken;
+  }
+
+  // ──────────────────────────────────────────────
+  // HTTP helper — throws on non-OK
+  // ──────────────────────────────────────────────
+  private async req(path: string, method = 'GET', body?: unknown): Promise<unknown> {
+    const token = await this.getOrRefreshToken();
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      throw new Error(`Tipalti API error ${response.status}: ${errText}`);
+    }
+    const text = await response.text();
+    return text ? JSON.parse(text) : { ok: true };
+  }
+
+  // ──────────────────────────────────────────────
+  // Truncation helper
+  // ──────────────────────────────────────────────
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
   }
 
   get tools(): ToolDefinition[] {
     return [
+      // ── Payees ───────────────────────────────────
       {
         name: 'list_payees',
-        description: 'List all payees (vendors/suppliers) registered in Tipalti',
+        description: 'List all payees (vendors/suppliers/contractors) registered in Tipalti with optional status and pagination filters',
         inputSchema: {
           type: 'object',
           properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of payees to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
-            status: {
-              type: 'string',
-              description: 'Filter by payee status: active, inactive, pending',
-            },
+            status: { type: 'string', description: 'Filter by payee status: active, inactive, pending (default: all)' },
+            limit: { type: 'number', description: 'Maximum payees to return (default: 50)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
           },
         },
       },
       {
         name: 'get_payee',
-        description: 'Retrieve details for a single payee by their Tipalti payee ID',
+        description: 'Retrieve full profile details for a single payee by their Tipalti payee ID',
         inputSchema: {
           type: 'object',
           properties: {
-            payee_id: {
-              type: 'string',
-              description: 'Tipalti payee ID',
-            },
+            payee_id: { type: 'string', description: 'Tipalti payee ID (alphanumeric identifier)' },
           },
           required: ['payee_id'],
         },
       },
       {
         name: 'create_payee',
-        description: 'Create a new payee in Tipalti',
+        description: 'Onboard a new payee in Tipalti with name, email, currency preference, and country',
         inputSchema: {
           type: 'object',
           properties: {
-            name: {
-              type: 'string',
-              description: 'Payee legal name',
-            },
-            email: {
-              type: 'string',
-              description: 'Payee email address',
-            },
-            currency: {
-              type: 'string',
-              description: 'Preferred payment currency code (e.g. USD, EUR)',
-            },
-            country: {
-              type: 'string',
-              description: 'ISO 3166-1 alpha-2 country code (e.g. US, GB)',
-            },
+            name: { type: 'string', description: 'Payee legal name (individual or company)' },
+            email: { type: 'string', description: 'Payee primary email address for onboarding invitations' },
+            currency: { type: 'string', description: 'Preferred payment currency code (e.g., USD, EUR, GBP)' },
+            country: { type: 'string', description: 'ISO 3166-1 alpha-2 country code (e.g., US, GB, DE)' },
+            type: { type: 'string', description: 'Payee type: individual, company (default: individual)' },
           },
           required: ['name', 'email'],
         },
       },
       {
-        name: 'list_bills',
-        description: 'List bills (vendor invoices) in Tipalti',
+        name: 'update_payee',
+        description: 'Update an existing payee record — name, email, currency, or country',
         inputSchema: {
           type: 'object',
           properties: {
-            payee_id: {
-              type: 'string',
-              description: 'Filter bills by payee ID',
-            },
-            status: {
-              type: 'string',
-              description: 'Filter by bill status: pending, approved, paid, rejected',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of bills to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
+            payee_id: { type: 'string', description: 'Tipalti payee ID to update' },
+            name: { type: 'string', description: 'Updated legal name' },
+            email: { type: 'string', description: 'Updated email address' },
+            currency: { type: 'string', description: 'Updated preferred currency code' },
+            country: { type: 'string', description: 'Updated ISO 3166-1 alpha-2 country code' },
+          },
+          required: ['payee_id'],
+        },
+      },
+      {
+        name: 'get_payee_payment_method',
+        description: 'Retrieve the configured payment method (bank account, PayPal, wire) registered for a payee',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            payee_id: { type: 'string', description: 'Tipalti payee ID' },
+          },
+          required: ['payee_id'],
+        },
+      },
+      // ── Bills ────────────────────────────────────
+      {
+        name: 'list_bills',
+        description: 'List vendor invoices (bills) in Tipalti with optional payee, status, and date filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            payee_id: { type: 'string', description: 'Filter bills for a specific payee ID' },
+            status: { type: 'string', description: 'Filter by bill status: pending, approved, paid, rejected, voided' },
+            from_date: { type: 'string', description: 'Filter bills created on or after this date (YYYY-MM-DD)' },
+            to_date: { type: 'string', description: 'Filter bills created on or before this date (YYYY-MM-DD)' },
+            limit: { type: 'number', description: 'Maximum bills to return (default: 50)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
           },
         },
       },
       {
         name: 'get_bill',
-        description: 'Retrieve details for a single bill by bill ID',
+        description: 'Retrieve full details for a single bill by its Tipalti bill ID',
         inputSchema: {
           type: 'object',
           properties: {
-            bill_id: {
-              type: 'string',
-              description: 'Tipalti bill ID',
-            },
+            bill_id: { type: 'string', description: 'Tipalti bill ID' },
           },
           required: ['bill_id'],
         },
       },
       {
         name: 'create_bill',
-        description: 'Create a new bill (vendor invoice) in Tipalti for AP processing',
+        description: 'Create a new vendor invoice (bill) in Tipalti for AP processing and payment scheduling',
         inputSchema: {
           type: 'object',
           properties: {
-            payee_id: {
-              type: 'string',
-              description: 'Tipalti payee ID for the vendor',
-            },
-            amount: {
-              type: 'number',
-              description: 'Bill amount in the specified currency',
-            },
-            currency: {
-              type: 'string',
-              description: 'Currency code for the bill amount (e.g. USD)',
-            },
-            description: {
-              type: 'string',
-              description: 'Description or memo for the bill',
-            },
-            due_date: {
-              type: 'string',
-              description: 'Bill due date in YYYY-MM-DD format',
-            },
-            reference_code: {
-              type: 'string',
-              description: 'External reference code for reconciliation',
+            payee_id: { type: 'string', description: 'Tipalti payee ID for the vendor being billed' },
+            amount: { type: 'number', description: 'Bill amount (positive number, no currency symbols)' },
+            currency: { type: 'string', description: 'ISO 4217 currency code (e.g., USD, EUR)' },
+            description: { type: 'string', description: 'Description or memo for this invoice' },
+            due_date: { type: 'string', description: 'Payment due date in YYYY-MM-DD format' },
+            reference_code: { type: 'string', description: 'External reference/PO number for reconciliation' },
+            line_items: {
+              type: 'array',
+              description: 'Optional array of line items: [{description, amount, quantity}]',
+              items: { type: 'object' },
             },
           },
           required: ['payee_id', 'amount', 'currency'],
         },
       },
       {
-        name: 'list_payments',
-        description: 'List payment batches processed through Tipalti',
+        name: 'approve_bill',
+        description: 'Approve a pending bill to advance it through the AP workflow for payment',
         inputSchema: {
           type: 'object',
           properties: {
-            status: {
-              type: 'string',
-              description: 'Filter by payment status: pending, processing, completed, failed',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of payments to return',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset',
-            },
+            bill_id: { type: 'string', description: 'Tipalti bill ID to approve' },
+          },
+          required: ['bill_id'],
+        },
+      },
+      {
+        name: 'void_bill',
+        description: 'Void (cancel) a pending or approved bill before it is paid',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            bill_id: { type: 'string', description: 'Tipalti bill ID to void' },
+            reason: { type: 'string', description: 'Reason for voiding the bill (for audit trail)' },
+          },
+          required: ['bill_id'],
+        },
+      },
+      // ── Payments ─────────────────────────────────
+      {
+        name: 'list_payments',
+        description: 'List processed payment batches in Tipalti with optional status and date filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', description: 'Filter by payment status: pending, processing, completed, failed' },
+            from_date: { type: 'string', description: 'Filter payments on or after this date (YYYY-MM-DD)' },
+            to_date: { type: 'string', description: 'Filter payments on or before this date (YYYY-MM-DD)' },
+            limit: { type: 'number', description: 'Maximum payments to return (default: 50)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
           },
         },
       },
       {
         name: 'get_payment',
-        description: 'Retrieve details for a single payment by payment ID',
+        description: 'Retrieve full details for a single payment by its Tipalti payment ID',
         inputSchema: {
           type: 'object',
           properties: {
-            payment_id: {
-              type: 'string',
-              description: 'Tipalti payment ID',
-            },
+            payment_id: { type: 'string', description: 'Tipalti payment ID' },
           },
           required: ['payment_id'],
         },
       },
+      // ── Payment Orders ───────────────────────────
       {
-        name: 'get_payee_payment_method',
-        description: 'Retrieve the payment method details registered for a payee',
+        name: 'list_payment_orders',
+        description: 'List payment orders submitted for execution with optional status filter and pagination',
         inputSchema: {
           type: 'object',
           properties: {
-            payee_id: {
-              type: 'string',
-              description: 'Tipalti payee ID',
-            },
+            status: { type: 'string', description: 'Filter by order status: pending, submitted, completed, failed' },
+            limit: { type: 'number', description: 'Maximum payment orders to return (default: 50)' },
+            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
+          },
+        },
+      },
+      {
+        name: 'get_payment_order',
+        description: 'Retrieve details for a specific payment order by its ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            order_id: { type: 'string', description: 'Tipalti payment order ID' },
+          },
+          required: ['order_id'],
+        },
+      },
+      // ── Tax Forms ────────────────────────────────
+      {
+        name: 'get_payee_tax_forms',
+        description: 'Retrieve the tax form status and collected W-9/W-8 data for a payee (required for US tax compliance)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            payee_id: { type: 'string', description: 'Tipalti payee ID' },
           },
           required: ['payee_id'],
         },
@@ -248,174 +322,22 @@ export class TipaltiMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const accessToken = await this.getAccessToken();
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      };
-
       switch (name) {
-        case 'list_payees': {
-          const params = new URLSearchParams();
-          if (args.limit !== undefined) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          if (args.status) params.set('status', args.status as string);
-          let url = `${this.baseUrl}/api/payees`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list payees: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_payee': {
-          const payeeId = args.payee_id as string;
-          if (!payeeId) {
-            return { content: [{ type: 'text', text: 'payee_id is required' }], isError: true };
-          }
-          const url = `${this.baseUrl}/api/payees/${encodeURIComponent(payeeId)}`;
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get payee: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_payee': {
-          const name = args.name as string;
-          const email = args.email as string;
-          if (!name || !email) {
-            return { content: [{ type: 'text', text: 'name and email are required' }], isError: true };
-          }
-          const body: Record<string, unknown> = { name, email };
-          if (args.currency) body.currency = args.currency;
-          if (args.country) body.country = args.country;
-
-          const response = await fetch(`${this.baseUrl}/api/payees`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to create payee: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_bills': {
-          const params = new URLSearchParams();
-          if (args.payee_id) params.set('payee_id', args.payee_id as string);
-          if (args.status) params.set('status', args.status as string);
-          if (args.limit !== undefined) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          let url = `${this.baseUrl}/api/bills`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list bills: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_bill': {
-          const billId = args.bill_id as string;
-          if (!billId) {
-            return { content: [{ type: 'text', text: 'bill_id is required' }], isError: true };
-          }
-          const url = `${this.baseUrl}/api/bills/${encodeURIComponent(billId)}`;
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get bill: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_bill': {
-          const payeeId = args.payee_id as string;
-          const amount = args.amount as number;
-          const currency = args.currency as string;
-          if (!payeeId || amount === undefined || !currency) {
-            return { content: [{ type: 'text', text: 'payee_id, amount, and currency are required' }], isError: true };
-          }
-          const body: Record<string, unknown> = { payee_id: payeeId, amount, currency };
-          if (args.description) body.description = args.description;
-          if (args.due_date) body.due_date = args.due_date;
-          if (args.reference_code) body.reference_code = args.reference_code;
-
-          const response = await fetch(`${this.baseUrl}/api/bills`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to create bill: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_payments': {
-          const params = new URLSearchParams();
-          if (args.status) params.set('status', args.status as string);
-          if (args.limit !== undefined) params.set('limit', String(args.limit));
-          if (args.offset !== undefined) params.set('offset', String(args.offset));
-          let url = `${this.baseUrl}/api/payments`;
-          if (params.toString()) url += `?${params.toString()}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list payments: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_payment': {
-          const paymentId = args.payment_id as string;
-          if (!paymentId) {
-            return { content: [{ type: 'text', text: 'payment_id is required' }], isError: true };
-          }
-          const url = `${this.baseUrl}/api/payments/${encodeURIComponent(paymentId)}`;
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get payment: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_payee_payment_method': {
-          const payeeId = args.payee_id as string;
-          if (!payeeId) {
-            return { content: [{ type: 'text', text: 'payee_id is required' }], isError: true };
-          }
-          const url = `${this.baseUrl}/api/payees/${encodeURIComponent(payeeId)}/payment-method`;
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get payee payment method: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Tipalti returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_payees':             return await this.listPayees(args);
+        case 'get_payee':               return await this.getPayee(args);
+        case 'create_payee':            return await this.createPayee(args);
+        case 'update_payee':            return await this.updatePayee(args);
+        case 'get_payee_payment_method': return await this.getPayeePaymentMethod(args);
+        case 'list_bills':              return await this.listBills(args);
+        case 'get_bill':                return await this.getBill(args);
+        case 'create_bill':             return await this.createBill(args);
+        case 'approve_bill':            return await this.approveBill(args);
+        case 'void_bill':               return await this.voidBill(args);
+        case 'list_payments':           return await this.listPayments(args);
+        case 'get_payment':             return await this.getPayment(args);
+        case 'list_payment_orders':     return await this.listPaymentOrders(args);
+        case 'get_payment_order':       return await this.getPaymentOrder(args);
+        case 'get_payee_tax_forms':     return await this.getPayeeTaxForms(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -425,5 +347,130 @@ export class TipaltiMCPServer {
         isError: true,
       };
     }
+  }
+
+  // ── Private tool methods ──────────────────────
+
+  private async listPayees(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.status) params.set('status', args.status as string);
+    if (args.limit !== undefined) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    const qs = params.toString() ? `?${params}` : '';
+    const data = await this.req(`/api/payees${qs}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getPayee(args: Record<string, unknown>): Promise<ToolResult> {
+    const data = await this.req(`/api/payees/${encodeURIComponent(args.payee_id as string)}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async createPayee(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = { name: args.name, email: args.email };
+    if (args.currency) body.currency = args.currency;
+    if (args.country) body.country = args.country;
+    if (args.type) body.type = args.type;
+    const data = await this.req('/api/payees', 'POST', body);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async updatePayee(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.payee_id as string;
+    const body: Record<string, unknown> = {};
+    if (args.name) body.name = args.name;
+    if (args.email) body.email = args.email;
+    if (args.currency) body.currency = args.currency;
+    if (args.country) body.country = args.country;
+    const data = await this.req(`/api/payees/${encodeURIComponent(id)}`, 'PUT', body);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getPayeePaymentMethod(args: Record<string, unknown>): Promise<ToolResult> {
+    const data = await this.req(`/api/payees/${encodeURIComponent(args.payee_id as string)}/payment-method`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listBills(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.payee_id) params.set('payee_id', args.payee_id as string);
+    if (args.status) params.set('status', args.status as string);
+    if (args.from_date) params.set('from_date', args.from_date as string);
+    if (args.to_date) params.set('to_date', args.to_date as string);
+    if (args.limit !== undefined) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    const qs = params.toString() ? `?${params}` : '';
+    const data = await this.req(`/api/bills${qs}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getBill(args: Record<string, unknown>): Promise<ToolResult> {
+    const data = await this.req(`/api/bills/${encodeURIComponent(args.bill_id as string)}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async createBill(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {
+      payee_id: args.payee_id,
+      amount: args.amount,
+      currency: args.currency,
+    };
+    if (args.description) body.description = args.description;
+    if (args.due_date) body.due_date = args.due_date;
+    if (args.reference_code) body.reference_code = args.reference_code;
+    if (args.line_items) body.line_items = args.line_items;
+    const data = await this.req('/api/bills', 'POST', body);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async approveBill(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.bill_id as string;
+    const data = await this.req(`/api/bills/${encodeURIComponent(id)}/approve`, 'POST');
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async voidBill(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.bill_id as string;
+    const body: Record<string, unknown> = {};
+    if (args.reason) body.reason = args.reason;
+    const data = await this.req(`/api/bills/${encodeURIComponent(id)}/void`, 'POST', body);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listPayments(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.status) params.set('status', args.status as string);
+    if (args.from_date) params.set('from_date', args.from_date as string);
+    if (args.to_date) params.set('to_date', args.to_date as string);
+    if (args.limit !== undefined) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    const qs = params.toString() ? `?${params}` : '';
+    const data = await this.req(`/api/payments${qs}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getPayment(args: Record<string, unknown>): Promise<ToolResult> {
+    const data = await this.req(`/api/payments/${encodeURIComponent(args.payment_id as string)}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listPaymentOrders(args: Record<string, unknown>): Promise<ToolResult> {
+    const params = new URLSearchParams();
+    if (args.status) params.set('status', args.status as string);
+    if (args.limit !== undefined) params.set('limit', String(args.limit));
+    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    const qs = params.toString() ? `?${params}` : '';
+    const data = await this.req(`/api/payment-orders${qs}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getPaymentOrder(args: Record<string, unknown>): Promise<ToolResult> {
+    const data = await this.req(`/api/payment-orders/${encodeURIComponent(args.order_id as string)}`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getPayeeTaxForms(args: Record<string, unknown>): Promise<ToolResult> {
+    const data = await this.req(`/api/payees/${encodeURIComponent(args.payee_id as string)}/tax-forms`);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 }

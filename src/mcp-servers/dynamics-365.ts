@@ -4,21 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found — community implementation exists (srikanth-paladugula/mcp-dynamics365-server) but no Microsoft-published MCP server for Dynamics 365 CRM
-
-// Dynamics 365 Web API v9.2 implements OData v4.
-// Base URL format: https://{org}.crm.dynamics.com/api/data/v9.2
-// The exact hostname varies by region:
-//   North America:  {org}.crm.dynamics.com
-//   Europe:         {org}.crm4.dynamics.com
-//   Asia Pacific:   {org}.crm5.dynamics.com
-//   Oceania:        {org}.crm6.dynamics.com
-//   Japan:          {org}.crm7.dynamics.com
-//   India:          {org}.crm8.dynamics.com
-//   Canada:         {org}.crm3.dynamics.com
-//   South America:  {org}.crm2.dynamics.com
-//   UK:             {org}.crm11.dynamics.com
+// Official MCP: None — no Microsoft-published MCP server for Dynamics 365 CRM/Sales.
+// Community implementations exist (srikanth-paladugula/mcp-dynamics365-server, knowall-ai/mcp-business-central)
+// but none are vendor-published or actively maintained with 10+ tools.
+// microsoft/mcp catalog does not include a Dynamics 365 CRM entry as of 2026-03.
+//
+// Base URL: https://{org}.crm.dynamics.com/api/data/v9.2
+// Regional variants: crm.dynamics.com (NA), crm4 (EU), crm5 (APAC), crm6 (OCE),
+//   crm7 (Japan), crm8 (India), crm3 (Canada), crm2 (SA), crm11 (UK)
 // Auth: OAuth2 Bearer token from Microsoft Entra ID (Azure AD)
+// Docs: https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/overview
+// Rate limits: 6,000 req/5 min per user; 50 concurrent connections per user
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -33,55 +29,77 @@ export class Dynamics365MCPServer {
 
   constructor(config: Dynamics365Config) {
     this.accessToken = config.accessToken;
-    // Strip trailing slash and append Web API path
     const orgUrl = config.organizationUrl.replace(/\/$/, '');
     this.baseUrl = `${orgUrl}/api/data/v9.2`;
+  }
+
+  static catalog() {
+    return {
+      name: 'dynamics-365',
+      displayName: 'Microsoft Dynamics 365',
+      version: '1.0.0',
+      category: 'crm' as const,
+      keywords: [
+        'dynamics', 'dynamics365', 'd365', 'microsoft', 'crm', 'dataverse',
+        'account', 'contact', 'lead', 'opportunity', 'case', 'quote',
+        'order', 'invoice', 'activity', 'task', 'appointment', 'sales',
+        'odata', 'power-platform',
+      ],
+      toolNames: [
+        'list_accounts', 'list_contacts', 'list_leads', 'list_opportunities',
+        'list_cases', 'list_quotes', 'list_orders', 'list_invoices',
+        'list_tasks', 'list_appointments', 'get_record', 'create_record',
+        'update_record', 'delete_record', 'execute_fetch_xml',
+      ],
+      description: 'Microsoft Dynamics 365 CRM and Dataverse: manage accounts, contacts, leads, opportunities, cases, quotes, orders, invoices, activities, and execute custom OData/FetchXML queries.',
+      author: 'protectnil' as const,
+    };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_accounts',
-        description: 'List account records from Dynamics 365. Accounts represent companies or organizations.',
+        description: 'List Dynamics 365 account records (companies/organizations) with optional OData filter, select, orderby, and pagination via skiptoken',
         inputSchema: {
           type: 'object',
           properties: {
             select: {
               type: 'string',
-              description: 'Comma-separated OData $select fields (e.g. name,accountnumber,telephone1,emailaddress1)',
+              description: 'Comma-separated OData $select fields (e.g. name,accountnumber,telephone1,emailaddress1,revenue)',
             },
             filter: {
               type: 'string',
-              description: 'OData $filter expression (e.g. statecode eq 0)',
+              description: 'OData $filter expression (e.g. statecode eq 0 for active accounts)',
             },
             orderby: {
               type: 'string',
-              description: 'OData $orderby clause (e.g. name asc)',
+              description: 'OData $orderby clause (e.g. name asc, createdon desc)',
             },
             top: {
               type: 'number',
-              description: 'Maximum number of records to return (default: 50)',
+              description: 'Maximum records to return (default: 50, max: 5000)',
             },
             skiptoken: {
               type: 'string',
-              description: 'OData @odata.nextLink skiptoken for pagination',
+              description: 'OData @odata.nextLink skiptoken value for pagination',
             },
           },
         },
       },
       {
         name: 'list_contacts',
-        description: 'List contact records from Dynamics 365. Contacts represent individual people.',
+        description: 'List Dynamics 365 contact records (individual people) with optional OData filter, select, orderby, and pagination',
         inputSchema: {
           type: 'object',
           properties: {
             select: {
               type: 'string',
-              description: 'Comma-separated OData $select fields (e.g. fullname,emailaddress1,telephone1)',
+              description: 'Comma-separated OData $select fields (e.g. fullname,emailaddress1,telephone1,jobtitle)',
             },
             filter: {
               type: 'string',
-              description: 'OData $filter expression (e.g. statecode eq 0)',
+              description: 'OData $filter expression (e.g. statecode eq 0 for active contacts)',
             },
             orderby: {
               type: 'string',
@@ -89,7 +107,7 @@ export class Dynamics365MCPServer {
             },
             top: {
               type: 'number',
-              description: 'Maximum number of records to return (default: 50)',
+              description: 'Maximum records to return (default: 50)',
             },
             skiptoken: {
               type: 'string',
@@ -100,13 +118,13 @@ export class Dynamics365MCPServer {
       },
       {
         name: 'list_leads',
-        description: 'List lead records from Dynamics 365. Leads are potential customers not yet qualified.',
+        description: 'List Dynamics 365 lead records (unqualified prospects) with optional OData filter, select, and pagination',
         inputSchema: {
           type: 'object',
           properties: {
             select: {
               type: 'string',
-              description: 'Comma-separated OData $select fields (e.g. fullname,emailaddress1,subject,statuscode)',
+              description: 'Comma-separated OData $select fields (e.g. fullname,emailaddress1,subject,statuscode,leadsourcecode)',
             },
             filter: {
               type: 'string',
@@ -114,11 +132,11 @@ export class Dynamics365MCPServer {
             },
             orderby: {
               type: 'string',
-              description: 'OData $orderby clause',
+              description: 'OData $orderby clause (e.g. createdon desc)',
             },
             top: {
               type: 'number',
-              description: 'Maximum number of records to return (default: 50)',
+              description: 'Maximum records to return (default: 50)',
             },
             skiptoken: {
               type: 'string',
@@ -129,13 +147,13 @@ export class Dynamics365MCPServer {
       },
       {
         name: 'list_opportunities',
-        description: 'List opportunity records from Dynamics 365. Opportunities are qualified sales prospects.',
+        description: 'List Dynamics 365 opportunity records (qualified sales prospects) with optional filter for stage, probability, and estimated value',
         inputSchema: {
           type: 'object',
           properties: {
             select: {
               type: 'string',
-              description: 'Comma-separated OData $select fields (e.g. name,estimatedvalue,statecode,stepname,closeprobability)',
+              description: 'Comma-separated OData $select fields (e.g. name,estimatedvalue,statecode,stepname,closeprobability,estimatedclosedate)',
             },
             filter: {
               type: 'string',
@@ -143,11 +161,185 @@ export class Dynamics365MCPServer {
             },
             orderby: {
               type: 'string',
-              description: 'OData $orderby clause',
+              description: 'OData $orderby clause (e.g. estimatedvalue desc)',
             },
             top: {
               type: 'number',
-              description: 'Maximum number of records to return (default: 50)',
+              description: 'Maximum records to return (default: 50)',
+            },
+            skiptoken: {
+              type: 'string',
+              description: 'OData @odata.nextLink skiptoken for pagination',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_cases',
+        description: 'List Dynamics 365 customer service case (incident) records with optional filter for status, priority, and customer',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            select: {
+              type: 'string',
+              description: 'Comma-separated OData $select fields (e.g. title,ticketnumber,statecode,prioritycode,createdon)',
+            },
+            filter: {
+              type: 'string',
+              description: 'OData $filter expression (e.g. statecode eq 0 for active cases)',
+            },
+            orderby: {
+              type: 'string',
+              description: 'OData $orderby clause (e.g. createdon desc)',
+            },
+            top: {
+              type: 'number',
+              description: 'Maximum records to return (default: 50)',
+            },
+            skiptoken: {
+              type: 'string',
+              description: 'OData @odata.nextLink skiptoken for pagination',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_quotes',
+        description: 'List Dynamics 365 quote records (sales quotations) with optional OData filter and pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            select: {
+              type: 'string',
+              description: 'Comma-separated OData $select fields (e.g. name,quotenumber,statecode,totalamount,effectivefrom)',
+            },
+            filter: {
+              type: 'string',
+              description: 'OData $filter expression (e.g. statecode eq 0 for draft quotes)',
+            },
+            orderby: {
+              type: 'string',
+              description: 'OData $orderby clause (e.g. createdon desc)',
+            },
+            top: {
+              type: 'number',
+              description: 'Maximum records to return (default: 50)',
+            },
+            skiptoken: {
+              type: 'string',
+              description: 'OData @odata.nextLink skiptoken for pagination',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_orders',
+        description: 'List Dynamics 365 sales order records with optional OData filter and pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            select: {
+              type: 'string',
+              description: 'Comma-separated OData $select fields (e.g. name,ordernumber,statecode,totalamount,submitdate)',
+            },
+            filter: {
+              type: 'string',
+              description: 'OData $filter expression (e.g. statecode eq 0 for active orders)',
+            },
+            orderby: {
+              type: 'string',
+              description: 'OData $orderby clause (e.g. createdon desc)',
+            },
+            top: {
+              type: 'number',
+              description: 'Maximum records to return (default: 50)',
+            },
+            skiptoken: {
+              type: 'string',
+              description: 'OData @odata.nextLink skiptoken for pagination',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_invoices',
+        description: 'List Dynamics 365 invoice records with optional OData filter and pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            select: {
+              type: 'string',
+              description: 'Comma-separated OData $select fields (e.g. name,invoicenumber,statecode,totalamount,duedate)',
+            },
+            filter: {
+              type: 'string',
+              description: 'OData $filter expression (e.g. statecode eq 2 for paid invoices)',
+            },
+            orderby: {
+              type: 'string',
+              description: 'OData $orderby clause (e.g. duedate asc)',
+            },
+            top: {
+              type: 'number',
+              description: 'Maximum records to return (default: 50)',
+            },
+            skiptoken: {
+              type: 'string',
+              description: 'OData @odata.nextLink skiptoken for pagination',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_tasks',
+        description: 'List Dynamics 365 task activity records with optional filter for status, due date, and owner',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            select: {
+              type: 'string',
+              description: 'Comma-separated OData $select fields (e.g. subject,description,statecode,scheduledend,prioritycode)',
+            },
+            filter: {
+              type: 'string',
+              description: 'OData $filter expression (e.g. statecode eq 0 for open tasks)',
+            },
+            orderby: {
+              type: 'string',
+              description: 'OData $orderby clause (e.g. scheduledend asc)',
+            },
+            top: {
+              type: 'number',
+              description: 'Maximum records to return (default: 50)',
+            },
+            skiptoken: {
+              type: 'string',
+              description: 'OData @odata.nextLink skiptoken for pagination',
+            },
+          },
+        },
+      },
+      {
+        name: 'list_appointments',
+        description: 'List Dynamics 365 appointment activity records with optional filter for status and scheduled time',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            select: {
+              type: 'string',
+              description: 'Comma-separated OData $select fields (e.g. subject,statecode,scheduledstart,scheduledend,location)',
+            },
+            filter: {
+              type: 'string',
+              description: 'OData $filter expression (e.g. statecode eq 0 for open appointments)',
+            },
+            orderby: {
+              type: 'string',
+              description: 'OData $orderby clause (e.g. scheduledstart asc)',
+            },
+            top: {
+              type: 'number',
+              description: 'Maximum records to return (default: 50)',
             },
             skiptoken: {
               type: 'string',
@@ -158,17 +350,17 @@ export class Dynamics365MCPServer {
       },
       {
         name: 'get_record',
-        description: 'Retrieve a single record by entity set name and GUID',
+        description: 'Retrieve a single Dynamics 365 record by entity set name and GUID, with optional field selection and related record expansion',
         inputSchema: {
           type: 'object',
           properties: {
             entity_set: {
               type: 'string',
-              description: 'OData entity set name (e.g. accounts, contacts, leads, opportunities, tasks)',
+              description: 'OData entity set name (e.g. accounts, contacts, leads, opportunities, incidents, quotes, salesorders, invoices, tasks)',
             },
             id: {
               type: 'string',
-              description: 'Record GUID',
+              description: 'Record GUID (e.g. 00000000-0000-0000-0000-000000000000)',
             },
             select: {
               type: 'string',
@@ -176,7 +368,7 @@ export class Dynamics365MCPServer {
             },
             expand: {
               type: 'string',
-              description: 'OData $expand clause for related records (e.g. contact_customer_accounts)',
+              description: 'OData $expand clause for related records (e.g. contact_customer_accounts($select=fullname,emailaddress1))',
             },
           },
           required: ['entity_set', 'id'],
@@ -184,17 +376,21 @@ export class Dynamics365MCPServer {
       },
       {
         name: 'create_record',
-        description: 'Create a new record in any Dynamics 365 entity (accounts, contacts, leads, opportunities, tasks)',
+        description: 'Create a new record in any Dynamics 365 entity (accounts, contacts, leads, opportunities, incidents, tasks, etc.)',
         inputSchema: {
           type: 'object',
           properties: {
             entity_set: {
               type: 'string',
-              description: 'OData entity set name (e.g. accounts, contacts, leads, opportunities, tasks)',
+              description: 'OData entity set name (e.g. accounts, contacts, leads, opportunities, incidents, tasks)',
             },
             data: {
               type: 'object',
-              description: 'Record field values as key-value pairs using OData logical field names',
+              description: 'Record fields as key-value pairs using OData logical field names (e.g. {"name":"Acme Corp","telephone1":"555-1234"})',
+            },
+            return_representation: {
+              type: 'boolean',
+              description: 'If true, returns the created record body (uses Prefer: return=representation header). Default: false returns only the entity ID.',
             },
           },
           required: ['entity_set', 'data'],
@@ -202,13 +398,13 @@ export class Dynamics365MCPServer {
       },
       {
         name: 'update_record',
-        description: 'Update an existing Dynamics 365 record by entity set name and GUID using PATCH',
+        description: 'Update an existing Dynamics 365 record by entity set name and GUID using PATCH (partial update)',
         inputSchema: {
           type: 'object',
           properties: {
             entity_set: {
               type: 'string',
-              description: 'OData entity set name (e.g. accounts, contacts, leads, opportunities, tasks)',
+              description: 'OData entity set name (e.g. accounts, contacts, leads, opportunities, incidents)',
             },
             id: {
               type: 'string',
@@ -216,39 +412,46 @@ export class Dynamics365MCPServer {
             },
             data: {
               type: 'object',
-              description: 'Fields to update as key-value pairs. Only include fields you want to change.',
+              description: 'Fields to update as key-value pairs — only include fields you want to change',
             },
           },
           required: ['entity_set', 'id', 'data'],
         },
       },
       {
-        name: 'list_tasks',
-        description: 'List task activity records from Dynamics 365',
+        name: 'delete_record',
+        description: 'Delete a Dynamics 365 record by entity set name and GUID',
         inputSchema: {
           type: 'object',
           properties: {
-            select: {
+            entity_set: {
               type: 'string',
-              description: 'Comma-separated OData $select fields (e.g. subject,description,statecode,scheduledend)',
+              description: 'OData entity set name (e.g. accounts, contacts, leads, tasks)',
             },
-            filter: {
+            id: {
               type: 'string',
-              description: 'OData $filter expression (e.g. statecode eq 0 for open tasks)',
-            },
-            orderby: {
-              type: 'string',
-              description: 'OData $orderby clause',
-            },
-            top: {
-              type: 'number',
-              description: 'Maximum number of records to return (default: 50)',
-            },
-            skiptoken: {
-              type: 'string',
-              description: 'OData @odata.nextLink skiptoken for pagination',
+              description: 'Record GUID to delete',
             },
           },
+          required: ['entity_set', 'id'],
+        },
+      },
+      {
+        name: 'execute_fetch_xml',
+        description: 'Execute a FetchXML query against Dynamics 365 for advanced multi-entity queries with aggregates, joins, and grouping',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            entity_set: {
+              type: 'string',
+              description: 'Primary entity set name to query (e.g. accounts, contacts, opportunities)',
+            },
+            fetch_xml: {
+              type: 'string',
+              description: 'URL-encoded FetchXML query string (e.g. <fetch><entity name="account"><attribute name="name"/></entity></fetch>)',
+            },
+          },
+          required: ['entity_set', 'fetch_xml'],
         },
       },
     ];
@@ -256,143 +459,42 @@ export class Dynamics365MCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'OData-MaxVersion': '4.0',
-        'OData-Version': '4.0',
-        'Prefer': 'odata.maxpagesize=100',
-      };
-
-      const buildListUrl = (entitySet: string, args: Record<string, unknown>): string => {
-        const params = new URLSearchParams();
-        if (args.select) params.set('$select', args.select as string);
-        if (args.filter) params.set('$filter', args.filter as string);
-        if (args.orderby) params.set('$orderby', args.orderby as string);
-        params.set('$top', String((args.top as number) || 50));
-        if (args.skiptoken) params.set('$skiptoken', args.skiptoken as string);
-        return `${this.baseUrl}/${entitySet}?${params.toString()}`;
-      };
-
       switch (name) {
-        case 'list_accounts': {
-          const response = await fetch(buildListUrl('accounts', args), { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list accounts: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_contacts': {
-          const response = await fetch(buildListUrl('contacts', args), { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list contacts: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_leads': {
-          const response = await fetch(buildListUrl('leads', args), { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list leads: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_opportunities': {
-          const response = await fetch(buildListUrl('opportunities', args), { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list opportunities: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_record': {
-          const entity_set = args.entity_set as string;
-          const id = args.id as string;
-          if (!entity_set || !id) {
-            return { content: [{ type: 'text', text: 'entity_set and id are required' }], isError: true };
-          }
-
-          const params = new URLSearchParams();
-          if (args.select) params.set('$select', args.select as string);
-          if (args.expand) params.set('$expand', args.expand as string);
-          const qs = params.toString() ? `?${params.toString()}` : '';
-
-          const response = await fetch(`${this.baseUrl}/${encodeURIComponent(entity_set)}(${encodeURIComponent(id)})${qs}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get record: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_record': {
-          const entity_set = args.entity_set as string;
-          const data = args.data as Record<string, unknown>;
-          if (!entity_set || !data) {
-            return { content: [{ type: 'text', text: 'entity_set and data are required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/${encodeURIComponent(entity_set)}`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(data),
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to create record: ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          // 204 No Content on success — return location header
-          const location = response.headers.get('OData-EntityId') || response.headers.get('Location') || '';
-          return { content: [{ type: 'text', text: JSON.stringify({ success: true, entityId: location }) }], isError: false };
-        }
-
-        case 'update_record': {
-          const entity_set = args.entity_set as string;
-          const id = args.id as string;
-          const data = args.data as Record<string, unknown>;
-          if (!entity_set || !id || !data) {
-            return { content: [{ type: 'text', text: 'entity_set, id, and data are required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/${encodeURIComponent(entity_set)}(${encodeURIComponent(id)})`, {
-            method: 'PATCH',
-            headers,
-            body: JSON.stringify(data),
-          });
-
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to update record: ${response.status} ${response.statusText}` }], isError: true };
-          }
-
-          // 204 No Content on success
-          return { content: [{ type: 'text', text: JSON.stringify({ success: true, updated_id: id }) }], isError: false };
-        }
-
-        case 'list_tasks': {
-          const response = await fetch(buildListUrl('tasks', args), { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list tasks: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_accounts':
+          return await this.listEntitySet('accounts', args);
+        case 'list_contacts':
+          return await this.listEntitySet('contacts', args);
+        case 'list_leads':
+          return await this.listEntitySet('leads', args);
+        case 'list_opportunities':
+          return await this.listEntitySet('opportunities', args);
+        case 'list_cases':
+          return await this.listEntitySet('incidents', args);
+        case 'list_quotes':
+          return await this.listEntitySet('quotes', args);
+        case 'list_orders':
+          return await this.listEntitySet('salesorders', args);
+        case 'list_invoices':
+          return await this.listEntitySet('invoices', args);
+        case 'list_tasks':
+          return await this.listEntitySet('tasks', args);
+        case 'list_appointments':
+          return await this.listEntitySet('appointments', args);
+        case 'get_record':
+          return await this.getRecord(args);
+        case 'create_record':
+          return await this.createRecord(args);
+        case 'update_record':
+          return await this.updateRecord(args);
+        case 'delete_record':
+          return await this.deleteRecord(args);
+        case 'execute_fetch_xml':
+          return await this.executeFetchXml(args);
         default:
-          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
+          return {
+            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+            isError: true,
+          };
       }
     } catch (error) {
       return {
@@ -400,5 +502,181 @@ export class Dynamics365MCPServer {
         isError: true,
       };
     }
+  }
+
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.accessToken}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'OData-MaxVersion': '4.0',
+      'OData-Version': '4.0',
+      Prefer: 'odata.maxpagesize=100',
+    };
+  }
+
+  private buildListUrl(entitySet: string, args: Record<string, unknown>): string {
+    const params = new URLSearchParams();
+    if (args.select) params.set('$select', args.select as string);
+    if (args.filter) params.set('$filter', args.filter as string);
+    if (args.orderby) params.set('$orderby', args.orderby as string);
+    params.set('$top', String((args.top as number) ?? 50));
+    if (args.skiptoken) params.set('$skiptoken', args.skiptoken as string);
+    return `${this.baseUrl}/${entitySet}?${params.toString()}`;
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async listEntitySet(entitySet: string, args: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(this.buildListUrl(entitySet, args), {
+      method: 'GET',
+      headers: this.headers,
+    });
+    if (!response.ok) {
+      let errBody = '';
+      try { errBody = await response.text(); } catch { /* ignore */ }
+      return {
+        content: [{ type: 'text', text: `Failed to list ${entitySet}: ${response.status} ${response.statusText}${errBody ? ' — ' + errBody.slice(0, 500) : ''}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch {
+      throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`);
+    }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getRecord(args: Record<string, unknown>): Promise<ToolResult> {
+    const entity_set = args.entity_set as string;
+    const id = args.id as string;
+    if (!entity_set || !id) {
+      return { content: [{ type: 'text', text: 'entity_set and id are required' }], isError: true };
+    }
+    const params = new URLSearchParams();
+    if (args.select) params.set('$select', args.select as string);
+    if (args.expand) params.set('$expand', args.expand as string);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${this.baseUrl}/${encodeURIComponent(entity_set)}(${encodeURIComponent(id)})${qs}`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `Failed to get record: ${response.status} ${response.statusText}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch {
+      throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`);
+    }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async createRecord(args: Record<string, unknown>): Promise<ToolResult> {
+    const entity_set = args.entity_set as string;
+    const data = args.data as Record<string, unknown>;
+    if (!entity_set || !data) {
+      return { content: [{ type: 'text', text: 'entity_set and data are required' }], isError: true };
+    }
+    const headers = { ...this.headers };
+    if (args.return_representation) {
+      headers['Prefer'] = 'return=representation';
+    }
+    const response = await fetch(`${this.baseUrl}/${encodeURIComponent(entity_set)}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      let errBody = '';
+      try { errBody = await response.text(); } catch { /* ignore */ }
+      return {
+        content: [{ type: 'text', text: `Failed to create record: ${response.status} ${response.statusText}${errBody ? ' — ' + errBody.slice(0, 500) : ''}` }],
+        isError: true,
+      };
+    }
+    if (response.status === 204 || !args.return_representation) {
+      const entityId = response.headers.get('OData-EntityId') ?? response.headers.get('Location') ?? '';
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true, entityId }) }], isError: false };
+    }
+    let responseData: unknown;
+    try { responseData = await response.json(); } catch {
+      throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`);
+    }
+    return { content: [{ type: 'text', text: this.truncate(responseData) }], isError: false };
+  }
+
+  private async updateRecord(args: Record<string, unknown>): Promise<ToolResult> {
+    const entity_set = args.entity_set as string;
+    const id = args.id as string;
+    const data = args.data as Record<string, unknown>;
+    if (!entity_set || !id || !data) {
+      return { content: [{ type: 'text', text: 'entity_set, id, and data are required' }], isError: true };
+    }
+    const response = await fetch(
+      `${this.baseUrl}/${encodeURIComponent(entity_set)}(${encodeURIComponent(id)})`,
+      { method: 'PATCH', headers: this.headers, body: JSON.stringify(data) },
+    );
+    if (!response.ok) {
+      let errBody = '';
+      try { errBody = await response.text(); } catch { /* ignore */ }
+      return {
+        content: [{ type: 'text', text: `Failed to update record: ${response.status} ${response.statusText}${errBody ? ' — ' + errBody.slice(0, 500) : ''}` }],
+        isError: true,
+      };
+    }
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, updated_id: id }) }], isError: false };
+  }
+
+  private async deleteRecord(args: Record<string, unknown>): Promise<ToolResult> {
+    const entity_set = args.entity_set as string;
+    const id = args.id as string;
+    if (!entity_set || !id) {
+      return { content: [{ type: 'text', text: 'entity_set and id are required' }], isError: true };
+    }
+    const response = await fetch(
+      `${this.baseUrl}/${encodeURIComponent(entity_set)}(${encodeURIComponent(id)})`,
+      { method: 'DELETE', headers: this.headers },
+    );
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `Failed to delete record: ${response.status} ${response.statusText}` }],
+        isError: true,
+      };
+    }
+    return { content: [{ type: 'text', text: JSON.stringify({ success: true, deleted_id: id }) }], isError: false };
+  }
+
+  private async executeFetchXml(args: Record<string, unknown>): Promise<ToolResult> {
+    const entity_set = args.entity_set as string;
+    const fetch_xml = args.fetch_xml as string;
+    if (!entity_set || !fetch_xml) {
+      return { content: [{ type: 'text', text: 'entity_set and fetch_xml are required' }], isError: true };
+    }
+    const encoded = encodeURIComponent(fetch_xml);
+    const response = await fetch(
+      `${this.baseUrl}/${encodeURIComponent(entity_set)}?fetchXml=${encoded}`,
+      { method: 'GET', headers: this.headers },
+    );
+    if (!response.ok) {
+      let errBody = '';
+      try { errBody = await response.text(); } catch { /* ignore */ }
+      return {
+        content: [{ type: 'text', text: `FetchXML query failed: ${response.status} ${response.statusText}${errBody ? ' — ' + errBody.slice(0, 500) : ''}` }],
+        isError: true,
+      };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch {
+      throw new Error(`Dynamics 365 returned non-JSON response (HTTP ${response.status})`);
+    }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 }

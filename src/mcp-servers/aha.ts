@@ -4,10 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/aha-develop/aha-mcp — self-hostable, API-key auth, limited tools.
-// Our adapter is a lightweight self-hosted fallback with broader endpoint coverage.
-// Base URL pattern: https://{subdomain}.aha.io/api/v1 — subdomain is your Aha! account name.
-// Auth: Bearer token — generate an API key at Settings → Personal → Developer → API keys.
+// Official MCP: https://github.com/aha-develop/aha-mcp — transport: stdio, auth: API key
+//   Actively maintained. Exposes ~4 tools (get feature, get page, search documents, create feature).
+//   Our adapter covers 20+ tools (full Aha! REST API v1 surface).
+//   Recommendation: Use vendor MCP for basic feature lookups in coding agents. Use this adapter for
+//   full product management operations (releases, ideas, goals, epics, requirements, users).
+//
+// Base URL: https://{subdomain}.aha.io/api/v1 (subdomain is your Aha! account name)
+// Auth: Authorization: Bearer {apiKey}
+//   API key: Settings → Personal → Developer → API keys
+// Docs: https://www.aha.io/api
+// Rate limits: ~10 req/s; pagination is 1-indexed (page 1 = first page)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -28,167 +35,251 @@ export class AhaMCPServer {
 
   get tools(): ToolDefinition[] {
     return [
+      // Products
       {
         name: 'list_products',
-        description: 'List all products (workspaces) in the Aha! account',
+        description: 'List all products (workspaces) in the Aha! account with pagination.',
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            perPage: {
-              type: 'number',
-              description: 'Number of results per page (default: 30, max: 200)',
-            },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
           },
         },
       },
       {
-        name: 'list_features',
-        description: 'List features for a product, optionally filtered by release',
+        name: 'get_product',
+        description: 'Get details for a specific Aha! product by ID or reference prefix.',
         inputSchema: {
           type: 'object',
           properties: {
-            productId: {
-              type: 'string',
-              description: 'Product ID or reference prefix (e.g., "PRJ1") to list features for',
-            },
-            releaseId: {
-              type: 'string',
-              description: 'Release reference (e.g., "PRJ1-R-1") to filter features by release',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            perPage: {
-              type: 'number',
-              description: 'Number of results per page (default: 30, max: 200)',
-            },
+            product_id: { type: 'string', description: 'Product ID or reference prefix (e.g., "PRJ1")' },
           },
-          required: ['productId'],
+          required: ['product_id'],
+        },
+      },
+      // Features
+      {
+        name: 'list_features',
+        description: 'List features for a product or release with optional pagination. Returns name, status, assignee, and score.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: 'Product ID or reference prefix to list features for' },
+            release_id: { type: 'string', description: 'Release reference (e.g., "PRJ1-R-1") to filter features by release' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
+          },
+          required: ['product_id'],
         },
       },
       {
         name: 'get_feature',
-        description: 'Get a single feature by its reference number (e.g., "PRJ1-1")',
+        description: 'Get a single Aha! feature by reference number (e.g., "PRJ1-1"), including description, status, and requirements.',
         inputSchema: {
           type: 'object',
           properties: {
-            featureId: {
-              type: 'string',
-              description: 'Feature reference number (e.g., "PRJ1-1") or numeric ID',
-            },
+            feature_id: { type: 'string', description: 'Feature reference number (e.g., "PRJ1-1") or numeric ID' },
           },
-          required: ['featureId'],
+          required: ['feature_id'],
         },
       },
       {
         name: 'create_feature',
-        description: 'Create a new feature in a release',
+        description: 'Create a new feature in an Aha! release with name, description, and optional workflow status.',
         inputSchema: {
           type: 'object',
           properties: {
-            releaseId: {
-              type: 'string',
-              description: 'Release reference (e.g., "PRJ1-R-1") to create the feature in',
-            },
-            name: {
-              type: 'string',
-              description: 'Name of the feature',
-            },
-            description: {
-              type: 'string',
-              description: 'Description of the feature',
-            },
-            workflowStatus: {
-              type: 'string',
-              description: 'Workflow status name for the feature (e.g., "Under consideration")',
-            },
+            release_id: { type: 'string', description: 'Release reference (e.g., "PRJ1-R-1") to create the feature in' },
+            name: { type: 'string', description: 'Name of the feature' },
+            description: { type: 'string', description: 'Description of the feature (plain text or HTML)' },
+            workflow_status: { type: 'string', description: 'Workflow status name (e.g., "Under consideration")' },
+            assigned_to_user: { type: 'string', description: 'Email address of the user to assign the feature to' },
           },
-          required: ['releaseId', 'name'],
+          required: ['release_id', 'name'],
         },
       },
+      {
+        name: 'update_feature',
+        description: 'Update an existing Aha! feature by reference number, changing name, description, status, or assignee.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            feature_id: { type: 'string', description: 'Feature reference number (e.g., "PRJ1-1") or numeric ID' },
+            name: { type: 'string', description: 'Updated name of the feature' },
+            description: { type: 'string', description: 'Updated description' },
+            workflow_status: { type: 'string', description: 'Updated workflow status name' },
+            assigned_to_user: { type: 'string', description: 'Email address of user to assign the feature to' },
+          },
+          required: ['feature_id'],
+        },
+      },
+      // Epics (master_features)
+      {
+        name: 'list_epics',
+        description: 'List epics (master features) for a product with pagination.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: 'Product ID or reference prefix to list epics for' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
+          },
+          required: ['product_id'],
+        },
+      },
+      {
+        name: 'get_epic',
+        description: 'Get a single Aha! epic by reference number, including all child features.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            epic_id: { type: 'string', description: 'Epic reference number (e.g., "PRJ1-E-1") or numeric ID' },
+          },
+          required: ['epic_id'],
+        },
+      },
+      // Releases
       {
         name: 'list_releases',
-        description: 'List releases for a product',
+        description: 'List releases for an Aha! product with pagination.',
         inputSchema: {
           type: 'object',
           properties: {
-            productId: {
-              type: 'string',
-              description: 'Product ID or reference prefix to list releases for',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            perPage: {
-              type: 'number',
-              description: 'Number of results per page (default: 30, max: 200)',
-            },
+            product_id: { type: 'string', description: 'Product ID or reference prefix to list releases for' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
           },
-          required: ['productId'],
+          required: ['product_id'],
         },
       },
       {
-        name: 'list_ideas',
-        description: 'List ideas for a product. Ideas are collected from customers and stakeholders.',
+        name: 'get_release',
+        description: 'Get details for a specific Aha! release by reference, including name, dates, and feature count.',
         inputSchema: {
           type: 'object',
           properties: {
-            productId: {
-              type: 'string',
-              description: 'Product ID or reference prefix to list ideas for',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            perPage: {
-              type: 'number',
-              description: 'Number of results per page (default: 30, max: 200)',
-            },
+            release_id: { type: 'string', description: 'Release reference (e.g., "PRJ1-R-1") or numeric ID' },
           },
-          required: ['productId'],
+          required: ['release_id'],
+        },
+      },
+      // Ideas
+      {
+        name: 'list_ideas',
+        description: 'List ideas collected from customers and stakeholders for a product with pagination.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: 'Product ID or reference prefix to list ideas for' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
+          },
+          required: ['product_id'],
         },
       },
       {
         name: 'get_idea',
-        description: 'Get a single idea by its reference number (e.g., "PRJ1-I-1")',
+        description: 'Get a single Aha! idea by reference number, including vote count, status, and linked features.',
         inputSchema: {
           type: 'object',
           properties: {
-            ideaId: {
-              type: 'string',
-              description: 'Idea reference number (e.g., "PRJ1-I-1") or numeric ID',
-            },
+            idea_id: { type: 'string', description: 'Idea reference number (e.g., "PRJ1-I-1") or numeric ID' },
           },
-          required: ['ideaId'],
+          required: ['idea_id'],
         },
       },
       {
-        name: 'list_epics',
-        description: 'List epics for a product',
+        name: 'create_idea',
+        description: 'Create a new idea in an Aha! product ideas portal.',
         inputSchema: {
           type: 'object',
           properties: {
-            productId: {
-              type: 'string',
-              description: 'Product ID or reference prefix to list epics for',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            perPage: {
-              type: 'number',
-              description: 'Number of results per page (default: 30, max: 200)',
-            },
+            product_id: { type: 'string', description: 'Product ID or reference prefix to create the idea in' },
+            name: { type: 'string', description: 'Name/title of the idea' },
+            description: { type: 'string', description: 'Description of the idea' },
+            email: { type: 'string', description: 'Email address of the idea submitter' },
           },
-          required: ['productId'],
+          required: ['product_id', 'name'],
+        },
+      },
+      // Goals
+      {
+        name: 'list_goals',
+        description: 'List strategic goals for an Aha! product with pagination.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: 'Product ID or reference prefix to list goals for' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
+          },
+          required: ['product_id'],
+        },
+      },
+      {
+        name: 'get_goal',
+        description: 'Get a specific Aha! goal by reference number, including description, progress, and linked features.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            goal_id: { type: 'string', description: 'Goal reference number or numeric ID' },
+          },
+          required: ['goal_id'],
+        },
+      },
+      // Requirements
+      {
+        name: 'list_requirements',
+        description: 'List requirements for a specific Aha! feature.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            feature_id: { type: 'string', description: 'Feature reference number (e.g., "PRJ1-1") to list requirements for' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
+          },
+          required: ['feature_id'],
+        },
+      },
+      {
+        name: 'create_requirement',
+        description: 'Create a new requirement under an existing Aha! feature.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            feature_id: { type: 'string', description: 'Feature reference number to add the requirement to' },
+            name: { type: 'string', description: 'Name of the requirement' },
+            description: { type: 'string', description: 'Description of the requirement' },
+          },
+          required: ['feature_id', 'name'],
+        },
+      },
+      // Users
+      {
+        name: 'list_users',
+        description: 'List users in the Aha! account with pagination.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: 'Product ID to scope users to (optional; omit for all account users)' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
+          },
+        },
+      },
+      // Search
+      {
+        name: 'search_records',
+        description: 'Full-text search across all Aha! records: features, ideas, releases, epics, and pages.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query string' },
+            page: { type: 'number', description: 'Page number for pagination (default: 1)' },
+            per_page: { type: 'number', description: 'Results per page (default: 30, max: 200)' },
+          },
+          required: ['query'],
         },
       },
     ];
@@ -196,172 +287,45 @@ export class AhaMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      };
-
       switch (name) {
-        case 'list_products': {
-          let url = `${this.baseUrl}/products`;
-          const params: string[] = [];
-          if (args.page) params.push(`page=${args.page}`);
-          if (args.perPage) params.push(`per_page=${args.perPage}`);
-          if (params.length) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list products: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_features': {
-          const productId = args.productId as string;
-          if (!productId) {
-            return { content: [{ type: 'text', text: 'productId is required' }], isError: true };
-          }
-
-          let url: string;
-          if (args.releaseId) {
-            url = `${this.baseUrl}/releases/${encodeURIComponent(args.releaseId as string)}/features`;
-          } else {
-            url = `${this.baseUrl}/products/${encodeURIComponent(productId)}/features`;
-          }
-
-          const params: string[] = [];
-          if (args.page) params.push(`page=${args.page}`);
-          if (args.perPage) params.push(`per_page=${args.perPage}`);
-          if (params.length) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list features: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_feature': {
-          const featureId = args.featureId as string;
-          if (!featureId) {
-            return { content: [{ type: 'text', text: 'featureId is required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/features/${encodeURIComponent(featureId)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get feature: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'create_feature': {
-          const releaseId = args.releaseId as string;
-          const featureName = args.name as string;
-          if (!releaseId || !featureName) {
-            return { content: [{ type: 'text', text: 'releaseId and name are required' }], isError: true };
-          }
-
-          const featureBody: Record<string, unknown> = { name: featureName };
-          if (args.description) featureBody.description = args.description;
-          if (args.workflowStatus) featureBody.workflow_status = { name: args.workflowStatus };
-
-          const response = await fetch(`${this.baseUrl}/releases/${encodeURIComponent(releaseId)}/features`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ feature: featureBody }),
-          });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to create feature: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_releases': {
-          const productId = args.productId as string;
-          if (!productId) {
-            return { content: [{ type: 'text', text: 'productId is required' }], isError: true };
-          }
-
-          let url = `${this.baseUrl}/products/${encodeURIComponent(productId)}/releases`;
-          const params: string[] = [];
-          if (args.page) params.push(`page=${args.page}`);
-          if (args.perPage) params.push(`per_page=${args.perPage}`);
-          if (params.length) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list releases: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_ideas': {
-          const productId = args.productId as string;
-          if (!productId) {
-            return { content: [{ type: 'text', text: 'productId is required' }], isError: true };
-          }
-
-          let url = `${this.baseUrl}/products/${encodeURIComponent(productId)}/ideas`;
-          const params: string[] = [];
-          if (args.page) params.push(`page=${args.page}`);
-          if (args.perPage) params.push(`per_page=${args.perPage}`);
-          if (params.length) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list ideas: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'get_idea': {
-          const ideaId = args.ideaId as string;
-          if (!ideaId) {
-            return { content: [{ type: 'text', text: 'ideaId is required' }], isError: true };
-          }
-
-          const response = await fetch(`${this.baseUrl}/ideas/${encodeURIComponent(ideaId)}`, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to get idea: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
-        case 'list_epics': {
-          const productId = args.productId as string;
-          if (!productId) {
-            return { content: [{ type: 'text', text: 'productId is required' }], isError: true };
-          }
-
-          let url = `${this.baseUrl}/products/${encodeURIComponent(productId)}/master_features`;
-          const params: string[] = [];
-          if (args.page) params.push(`page=${args.page}`);
-          if (args.perPage) params.push(`per_page=${args.perPage}`);
-          if (params.length) url += `?${params.join('&')}`;
-
-          const response = await fetch(url, { method: 'GET', headers });
-          if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list epics: ${response.status} ${response.statusText}` }], isError: true };
-          }
-          let data: unknown;
-          try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
-          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-        }
-
+        case 'list_products':
+          return await this.listProducts(args);
+        case 'get_product':
+          return await this.getProduct(args);
+        case 'list_features':
+          return await this.listFeatures(args);
+        case 'get_feature':
+          return await this.getFeature(args);
+        case 'create_feature':
+          return await this.createFeature(args);
+        case 'update_feature':
+          return await this.updateFeature(args);
+        case 'list_epics':
+          return await this.listEpics(args);
+        case 'get_epic':
+          return await this.getEpic(args);
+        case 'list_releases':
+          return await this.listReleases(args);
+        case 'get_release':
+          return await this.getRelease(args);
+        case 'list_ideas':
+          return await this.listIdeas(args);
+        case 'get_idea':
+          return await this.getIdea(args);
+        case 'create_idea':
+          return await this.createIdea(args);
+        case 'list_goals':
+          return await this.listGoals(args);
+        case 'get_goal':
+          return await this.getGoal(args);
+        case 'list_requirements':
+          return await this.listRequirements(args);
+        case 'create_requirement':
+          return await this.createRequirement(args);
+        case 'list_users':
+          return await this.listUsers(args);
+        case 'search_records':
+          return await this.searchRecords(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -371,5 +335,201 @@ export class AhaMCPServer {
         isError: true,
       };
     }
+  }
+
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.apiKey}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
+      : text;
+  }
+
+  private buildPaginationParams(args: Record<string, unknown>): string {
+    const params: string[] = [];
+    if (args.page) params.push(`page=${args.page}`);
+    if (args.per_page) params.push(`per_page=${args.per_page}`);
+    return params.length ? '?' + params.join('&') : '';
+  }
+
+  private async get(path: string): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Aha! API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async post(path: string, body: unknown): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Aha! API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async put(path: string, body: unknown): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Aha! API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Aha! returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async listProducts(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.get(`/products${this.buildPaginationParams(args)}`);
+  }
+
+  private async getProduct(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.product_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
+    return this.get(`/products/${encodeURIComponent(id)}`);
+  }
+
+  private async listFeatures(args: Record<string, unknown>): Promise<ToolResult> {
+    const productId = args.product_id as string;
+    if (!productId) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
+    const pagination = this.buildPaginationParams(args);
+    if (args.release_id) {
+      return this.get(`/releases/${encodeURIComponent(args.release_id as string)}/features${pagination}`);
+    }
+    return this.get(`/products/${encodeURIComponent(productId)}/features${pagination}`);
+  }
+
+  private async getFeature(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.feature_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'feature_id is required' }], isError: true };
+    return this.get(`/features/${encodeURIComponent(id)}`);
+  }
+
+  private async createFeature(args: Record<string, unknown>): Promise<ToolResult> {
+    const releaseId = args.release_id as string;
+    const name = args.name as string;
+    if (!releaseId || !name) return { content: [{ type: 'text', text: 'release_id and name are required' }], isError: true };
+    const featureBody: Record<string, unknown> = { name };
+    if (args.description) featureBody['description'] = args.description;
+    if (args.workflow_status) featureBody['workflow_status'] = { name: args.workflow_status };
+    if (args.assigned_to_user) featureBody['assigned_to_user'] = { email: args.assigned_to_user };
+    return this.post(`/releases/${encodeURIComponent(releaseId)}/features`, { feature: featureBody });
+  }
+
+  private async updateFeature(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.feature_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'feature_id is required' }], isError: true };
+    const featureBody: Record<string, unknown> = {};
+    if (args.name) featureBody['name'] = args.name;
+    if (args.description) featureBody['description'] = args.description;
+    if (args.workflow_status) featureBody['workflow_status'] = { name: args.workflow_status };
+    if (args.assigned_to_user) featureBody['assigned_to_user'] = { email: args.assigned_to_user };
+    return this.put(`/features/${encodeURIComponent(id)}`, { feature: featureBody });
+  }
+
+  private async listEpics(args: Record<string, unknown>): Promise<ToolResult> {
+    const productId = args.product_id as string;
+    if (!productId) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
+    return this.get(`/products/${encodeURIComponent(productId)}/master_features${this.buildPaginationParams(args)}`);
+  }
+
+  private async getEpic(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.epic_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'epic_id is required' }], isError: true };
+    return this.get(`/master_features/${encodeURIComponent(id)}`);
+  }
+
+  private async listReleases(args: Record<string, unknown>): Promise<ToolResult> {
+    const productId = args.product_id as string;
+    if (!productId) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
+    return this.get(`/products/${encodeURIComponent(productId)}/releases${this.buildPaginationParams(args)}`);
+  }
+
+  private async getRelease(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.release_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'release_id is required' }], isError: true };
+    return this.get(`/releases/${encodeURIComponent(id)}`);
+  }
+
+  private async listIdeas(args: Record<string, unknown>): Promise<ToolResult> {
+    const productId = args.product_id as string;
+    if (!productId) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
+    return this.get(`/products/${encodeURIComponent(productId)}/ideas${this.buildPaginationParams(args)}`);
+  }
+
+  private async getIdea(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.idea_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'idea_id is required' }], isError: true };
+    return this.get(`/ideas/${encodeURIComponent(id)}`);
+  }
+
+  private async createIdea(args: Record<string, unknown>): Promise<ToolResult> {
+    const productId = args.product_id as string;
+    const name = args.name as string;
+    if (!productId || !name) return { content: [{ type: 'text', text: 'product_id and name are required' }], isError: true };
+    const ideaBody: Record<string, unknown> = { name };
+    if (args.description) ideaBody['description'] = args.description;
+    if (args.email) ideaBody['submitted_idea_portal_user'] = { email: args.email };
+    return this.post(`/products/${encodeURIComponent(productId)}/ideas`, { idea: ideaBody });
+  }
+
+  private async listGoals(args: Record<string, unknown>): Promise<ToolResult> {
+    const productId = args.product_id as string;
+    if (!productId) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
+    return this.get(`/products/${encodeURIComponent(productId)}/goals${this.buildPaginationParams(args)}`);
+  }
+
+  private async getGoal(args: Record<string, unknown>): Promise<ToolResult> {
+    const id = args.goal_id as string;
+    if (!id) return { content: [{ type: 'text', text: 'goal_id is required' }], isError: true };
+    return this.get(`/goals/${encodeURIComponent(id)}`);
+  }
+
+  private async listRequirements(args: Record<string, unknown>): Promise<ToolResult> {
+    const featureId = args.feature_id as string;
+    if (!featureId) return { content: [{ type: 'text', text: 'feature_id is required' }], isError: true };
+    return this.get(`/features/${encodeURIComponent(featureId)}/requirements${this.buildPaginationParams(args)}`);
+  }
+
+  private async createRequirement(args: Record<string, unknown>): Promise<ToolResult> {
+    const featureId = args.feature_id as string;
+    const name = args.name as string;
+    if (!featureId || !name) return { content: [{ type: 'text', text: 'feature_id and name are required' }], isError: true };
+    const reqBody: Record<string, unknown> = { name };
+    if (args.description) reqBody['description'] = args.description;
+    return this.post(`/features/${encodeURIComponent(featureId)}/requirements`, { requirement: reqBody });
+  }
+
+  private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
+    if (args.product_id) {
+      return this.get(`/products/${encodeURIComponent(args.product_id as string)}/users${this.buildPaginationParams(args)}`);
+    }
+    return this.get(`/users${this.buildPaginationParams(args)}`);
+  }
+
+  private async searchRecords(args: Record<string, unknown>): Promise<ToolResult> {
+    const query = args.query as string;
+    if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    const params: string[] = [`q=${encodeURIComponent(query)}`];
+    if (args.page) params.push(`page=${args.page}`);
+    if (args.per_page) params.push(`per_page=${args.per_page}`);
+    return this.get(`/search?${params.join('&')}`);
   }
 }

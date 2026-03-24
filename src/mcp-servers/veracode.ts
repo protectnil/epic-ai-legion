@@ -4,23 +4,37 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/dipsylala/veracode-mcp — 15 tools (alpha, actively maintained)
-// Note: The official MCP wraps the Veracode CLI for pipeline scans. This adapter targets the
-// Veracode Platform REST API directly with HMAC-SHA-256 signing — suitable for server-side,
-// air-gapped, or CI/CD integrations that need credential-only access without a local CLI.
+// Official MCP: https://github.com/dipsylala/veracode-mcp — transport: stdio, auth: API ID + key (HMAC)
+// Our adapter covers: 14 tools (applications, findings, sandboxes, policies, dynamic analyses,
+//   SCA workspaces and projects, pipeline scan findings, identity users/teams, mitigations, reports).
+// Vendor MCP covers: ~15 tools (alpha, wraps Veracode CLI for pipeline scans). Our adapter targets
+//   the Veracode Platform REST API directly with HMAC-SHA-256 signing — no local CLI dependency.
+// Recommendation: Use this adapter for CI/CD and server-side integrations. Vendor MCP useful for
+//   developer workstations where the Veracode CLI is already installed.
 //
-// Auth: VERACODE-HMAC-SHA-256 per-request signing (id + api_key).
-// Base URLs (specify via baseUrl config):
+// Base URLs:
 //   Commercial (US): https://api.veracode.com  (default)
 //   European:        https://api.veracode.eu
+// Auth: VERACODE-HMAC-SHA-256 per-request signing using API ID and API key.
+//   Signing spec: docs.veracode.com/r/c_hmac_signing_example
+// Docs: https://docs.veracode.com/r/Veracode_APIs
+// Rate limits: Not publicly documented. Recommend <10 concurrent requests.
 //
-// Verified endpoints (docs.veracode.com):
-//   /appsec/v1/applications
-//   /appsec/v2/applications/{guid}/findings
-//   /appsec/v1/applications/{guid}/sandboxes
-//   /appsec/v1/applications/{guid}/policy
-//   /dae/v2/analyses
-//   /srcclr/v3/workspaces
+// Verified REST API endpoint paths (docs.veracode.com):
+//   GET  /appsec/v1/applications
+//   GET  /appsec/v1/applications/{guid}
+//   GET  /appsec/v2/applications/{guid}/findings
+//   GET  /appsec/v1/applications/{guid}/sandboxes
+//   GET  /appsec/v1/applications/{guid}/policy
+//   GET  /appsec/v1/policies
+//   GET  /dae/v2/analyses
+//   GET  /srcclr/v3/workspaces
+//   GET  /srcclr/v3/workspaces/{workspaceGuid}/projects
+//   POST /appsec/v2/applications/{guid}/findings/{issueId}/annotations
+//   GET  /pipeline_scan/v1/scans/{scan_id}/findings
+//   GET  /api/4.0/getreportinfo.do  (Summary Report, XML wrapped in JSON)
+//   GET  /appsec/v1/users
+//   GET  /appsec/v1/teams
 
 import { createHmac, randomBytes } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
@@ -57,201 +71,198 @@ export class VericodeMCPServer {
   constructor(config: VeracodeConfig) {
     this.apiId = config.apiId;
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || 'https://api.veracode.com';
+    this.baseUrl = config.baseUrl ?? 'https://api.veracode.com';
+  }
+
+  static catalog() {
+    return {
+      name: 'veracode',
+      displayName: 'Veracode',
+      version: '1.0.0',
+      category: 'cybersecurity' as const,
+      keywords: ['veracode', 'sast', 'dast', 'sca', 'appsec', 'finding', 'vulnerability', 'static analysis', 'dynamic analysis', 'software composition', 'pipeline scan', 'sandbox', 'policy', 'mitigation'],
+      toolNames: [
+        'list_applications', 'get_application', 'get_findings', 'list_sandboxes',
+        'get_policy', 'list_policies', 'get_dynamic_analyses', 'submit_mitigation',
+        'list_sca_workspaces', 'list_sca_projects', 'get_pipeline_scan_findings',
+        'list_users', 'list_teams', 'get_summary_report',
+      ],
+      description: 'Veracode application security: SAST, DAST, SCA, and manual findings across applications and sandboxes. Manage policies, mitigations, users, and teams.',
+      author: 'protectnil' as const,
+    };
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'list_applications',
-        description: 'List all applications in the Veracode portfolio with their policy and scan status',
+        description: 'List all applications in the Veracode portfolio with their policy compliance status, last scan date, and security score.',
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
-              type: 'number',
-              description: 'Zero-based page number for pagination (default: 0)',
-            },
-            size: {
-              type: 'number',
-              description: 'Results per page (max 500, default: 50)',
-            },
-            name: {
-              type: 'string',
-              description: 'Filter applications by name (partial match)',
-            },
+            page: { type: 'number', description: 'Zero-based page number (default: 0)' },
+            size: { type: 'number', description: 'Results per page (default: 50, max: 500)' },
+            name: { type: 'string', description: 'Filter by application name (partial match)' },
           },
         },
       },
       {
         name: 'get_application',
-        description: 'Get profile and policy details for a specific Veracode application by GUID',
+        description: 'Get the full profile and policy compliance details for a specific Veracode application by GUID.',
         inputSchema: {
           type: 'object',
           properties: {
-            application_guid: {
-              type: 'string',
-              description: 'The GUID of the application to retrieve',
-            },
+            application_guid: { type: 'string', description: 'Application GUID (UUID format)' },
           },
           required: ['application_guid'],
         },
       },
       {
         name: 'get_findings',
-        description: 'Retrieve security findings (SAST, DAST, SCA, manual) for a Veracode application. Returns CWE, severity, file location, and remediation status.',
+        description: 'Retrieve security findings for a Veracode application. Covers SAST, DAST, Manual Penetration Testing, and SCA. Returns CWE, severity, file, line number, and remediation status.',
         inputSchema: {
           type: 'object',
           properties: {
-            application_guid: {
-              type: 'string',
-              description: 'The GUID of the application to retrieve findings for',
-            },
-            scan_type: {
-              type: 'string',
-              description: 'Filter by scan type: STATIC, DYNAMIC, MANUAL, SCA (comma-separated)',
-            },
-            violates_policy: {
-              type: 'boolean',
-              description: 'If true, return only findings that violate the security policy',
-            },
-            severity: {
-              type: 'string',
-              description: 'Comma-separated severity levels 0 (informational) through 5 (very high)',
-            },
-            page: {
-              type: 'number',
-              description: 'Zero-based page number (default: 0)',
-            },
-            size: {
-              type: 'number',
-              description: 'Results per page (max 500, default: 50)',
-            },
+            application_guid: { type: 'string', description: 'Application GUID' },
+            scan_type: { type: 'string', description: 'Filter by scan type (comma-separated): STATIC, DYNAMIC, MANUAL, SCA' },
+            violates_policy: { type: 'boolean', description: 'If true, return only findings that violate the security policy' },
+            severity: { type: 'string', description: 'Comma-separated severity levels: 0 (informational) through 5 (very high)' },
+            status: { type: 'string', description: 'Filter by status: OPEN, CLOSED' },
+            page: { type: 'number', description: 'Zero-based page number (default: 0)' },
+            size: { type: 'number', description: 'Results per page (default: 50, max: 500)' },
           },
           required: ['application_guid'],
         },
       },
       {
         name: 'list_sandboxes',
-        description: 'List all development sandboxes for a Veracode application. Sandboxes allow scanning feature branches without affecting policy evaluation.',
+        description: 'List all development sandboxes for a Veracode application. Sandboxes allow scanning feature branches without affecting production policy evaluation.',
         inputSchema: {
           type: 'object',
           properties: {
-            application_guid: {
-              type: 'string',
-              description: 'The GUID of the application whose sandboxes to list',
-            },
+            application_guid: { type: 'string', description: 'Application GUID' },
           },
           required: ['application_guid'],
         },
       },
       {
         name: 'get_policy',
-        description: 'Retrieve the security policy for a Veracode application, including pass/fail thresholds and grace period settings',
+        description: 'Retrieve the security policy assigned to a Veracode application, including pass/fail severity thresholds, SCA policy, and grace period settings.',
         inputSchema: {
           type: 'object',
           properties: {
-            application_guid: {
-              type: 'string',
-              description: 'The GUID of the application whose policy to retrieve',
-            },
+            application_guid: { type: 'string', description: 'Application GUID' },
           },
           required: ['application_guid'],
         },
       },
       {
-        name: 'get_dynamic_analyses',
-        description: 'List Dynamic Analysis (DAST) scan configurations, schedules, and their current status',
+        name: 'list_policies',
+        description: 'List all security policies defined in the Veracode platform with their severity thresholds and grace period configurations.',
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
-              type: 'number',
-              description: 'Zero-based page number (default: 0)',
-            },
-            size: {
-              type: 'number',
-              description: 'Results per page (max 500, default: 50)',
-            },
+            page: { type: 'number', description: 'Zero-based page number (default: 0)' },
+            size: { type: 'number', description: 'Results per page (default: 50, max: 500)' },
+            name: { type: 'string', description: 'Filter by policy name (partial match)' },
+          },
+        },
+      },
+      {
+        name: 'get_dynamic_analyses',
+        description: 'List Dynamic Analysis (DAST) scan configurations, URLs under test, schedules, and their current execution status.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page: { type: 'number', description: 'Zero-based page number (default: 0)' },
+            size: { type: 'number', description: 'Results per page (default: 50, max: 500)' },
           },
         },
       },
       {
         name: 'submit_mitigation',
-        description: 'Submit a mitigation or annotation for a finding (e.g., accept risk, mark false positive, mark remediated). Requires Reviewer or Security Lead role.',
+        description: 'Submit a mitigation or annotation for a specific finding — accept risk, mark false positive, or mark remediated. Requires Reviewer or Security Lead role.',
         inputSchema: {
           type: 'object',
           properties: {
-            application_guid: {
-              type: 'string',
-              description: 'The GUID of the application containing the finding',
-            },
-            issue_id: {
-              type: 'number',
-              description: 'The numeric issue ID of the finding to annotate',
-            },
-            action: {
-              type: 'string',
-              description: 'Action: APPDESIGN, NETENV, OSENV, LIBRARY, ACCEPTRISK, NOACTIONREQUIRED, REMEDIATED, REJECTED, ACCEPTED',
-            },
-            comment: {
-              type: 'string',
-              description: 'Justification comment for the mitigation (required for most actions)',
-            },
+            application_guid: { type: 'string', description: 'Application GUID containing the finding' },
+            issue_id: { type: 'number', description: 'Numeric issue ID of the finding to annotate' },
+            action: { type: 'string', description: 'Mitigation action: APPDESIGN, NETENV, OSENV, LIBRARY, ACCEPTRISK, NOACTIONREQUIRED, REMEDIATED, REJECTED, ACCEPTED' },
+            comment: { type: 'string', description: 'Justification comment for the mitigation (required for most actions)' },
           },
           required: ['application_guid', 'issue_id', 'action'],
         },
       },
       {
         name: 'list_sca_workspaces',
-        description: 'List Software Composition Analysis (SCA) workspaces for open-source vulnerability tracking and license compliance',
+        description: 'List Software Composition Analysis (SCA) workspaces for open-source vulnerability tracking, license compliance, and dependency management.',
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
-              type: 'number',
-              description: 'Zero-based page number (default: 0)',
-            },
-            size: {
-              type: 'number',
-              description: 'Results per page (max 500, default: 50)',
-            },
+            page: { type: 'number', description: 'Zero-based page number (default: 0)' },
+            size: { type: 'number', description: 'Results per page (default: 50, max: 500)' },
           },
         },
       },
+      {
+        name: 'list_sca_projects',
+        description: 'List projects within an SCA workspace, showing their last scan date, vulnerability counts, and license issues.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            workspace_guid: { type: 'string', description: 'SCA workspace GUID' },
+            page: { type: 'number', description: 'Zero-based page number (default: 0)' },
+            size: { type: 'number', description: 'Results per page (default: 50, max: 500)' },
+          },
+          required: ['workspace_guid'],
+        },
+      },
+      {
+        name: 'get_pipeline_scan_findings',
+        description: 'Retrieve findings from a completed Pipeline Scan (CI/CD static analysis) by scan ID. Returns flaw details and policy compliance results.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            scan_id: { type: 'string', description: 'Pipeline scan ID returned when the scan was initiated' },
+          },
+          required: ['scan_id'],
+        },
+      },
+      {
+        name: 'list_users',
+        description: 'List all users in the Veracode platform with their roles, teams, and API credentials status.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page: { type: 'number', description: 'Zero-based page number (default: 0)' },
+            size: { type: 'number', description: 'Results per page (default: 50, max: 500)' },
+            user_name: { type: 'string', description: 'Filter by username (partial match)' },
+          },
+        },
+      },
+      {
+        name: 'list_teams',
+        description: 'List teams configured in the Veracode platform with their members and associated application permissions.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page: { type: 'number', description: 'Zero-based page number (default: 0)' },
+            size: { type: 'number', description: 'Results per page (default: 50, max: 500)' },
+          },
+        },
+      },
+      {
+        name: 'get_summary_report',
+        description: 'Get the detailed summary report for the latest completed policy scan of an application. Returns flaw categories, severity breakdown, and policy evaluation result.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            app_id: { type: 'string', description: 'Numeric application ID (not GUID) as shown in the Veracode platform' },
+          },
+          required: ['app_id'],
+        },
+      },
     ];
-  }
-
-  private async request(path: string, method: string, body?: unknown): Promise<ToolResult> {
-    const url = `${this.baseUrl}${path}`;
-    const authHeader = buildVeracodeAuthHeader(this.apiId, this.apiKey, path, method);
-
-    const headers: Record<string, string> = {
-      Authorization: authHeader,
-      'Content-Type': 'application/json',
-    };
-
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-
-    if (!response.ok) {
-      const errText = await response.text().catch(() => response.statusText);
-      return {
-        content: [{ type: 'text', text: `Veracode API error ${response.status}: ${errText}` }],
-        isError: true,
-      };
-    }
-
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`Veracode returned non-JSON response (HTTP ${response.status})`);
-    }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
@@ -284,6 +295,7 @@ export class VericodeMCPServer {
           if (args.scan_type) path += `&scan_type=${encodeURIComponent(args.scan_type as string)}`;
           if (typeof args.violates_policy === 'boolean') path += `&violates_policy=${args.violates_policy}`;
           if (args.severity) path += `&severity=${encodeURIComponent(args.severity as string)}`;
+          if (args.status) path += `&status=${encodeURIComponent(args.status as string)}`;
           return await this.request(path, 'GET');
         }
 
@@ -301,6 +313,14 @@ export class VericodeMCPServer {
             return { content: [{ type: 'text', text: 'application_guid is required' }], isError: true };
           }
           return await this.request(`/appsec/v1/applications/${encodeURIComponent(guid)}/policy`, 'GET');
+        }
+
+        case 'list_policies': {
+          const page = (args.page as number) ?? 0;
+          const size = (args.size as number) ?? 50;
+          let path = `/appsec/v1/policies?page=${page}&size=${size}`;
+          if (args.name) path += `&name=${encodeURIComponent(args.name as string)}`;
+          return await this.request(path, 'GET');
         }
 
         case 'get_dynamic_analyses': {
@@ -331,6 +351,46 @@ export class VericodeMCPServer {
           return await this.request(`/srcclr/v3/workspaces?page=${page}&size=${size}`, 'GET');
         }
 
+        case 'list_sca_projects': {
+          const workspaceGuid = args.workspace_guid as string;
+          if (!workspaceGuid) {
+            return { content: [{ type: 'text', text: 'workspace_guid is required' }], isError: true };
+          }
+          const page = (args.page as number) ?? 0;
+          const size = (args.size as number) ?? 50;
+          return await this.request(`/srcclr/v3/workspaces/${encodeURIComponent(workspaceGuid)}/projects?page=${page}&size=${size}`, 'GET');
+        }
+
+        case 'get_pipeline_scan_findings': {
+          const scanId = args.scan_id as string;
+          if (!scanId) {
+            return { content: [{ type: 'text', text: 'scan_id is required' }], isError: true };
+          }
+          return await this.request(`/pipeline_scan/v1/scans/${encodeURIComponent(scanId)}/findings`, 'GET');
+        }
+
+        case 'list_users': {
+          const page = (args.page as number) ?? 0;
+          const size = (args.size as number) ?? 50;
+          let path = `/appsec/v1/users?page=${page}&size=${size}`;
+          if (args.user_name) path += `&user_name=${encodeURIComponent(args.user_name as string)}`;
+          return await this.request(path, 'GET');
+        }
+
+        case 'list_teams': {
+          const page = (args.page as number) ?? 0;
+          const size = (args.size as number) ?? 50;
+          return await this.request(`/appsec/v1/teams?page=${page}&size=${size}`, 'GET');
+        }
+
+        case 'get_summary_report': {
+          const appId = args.app_id as string;
+          if (!appId) {
+            return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
+          }
+          return await this.request(`/api/4.0/getreportinfo.do?app_id=${encodeURIComponent(appId)}`, 'GET');
+        }
+
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -340,5 +400,37 @@ export class VericodeMCPServer {
         isError: true,
       };
     }
+  }
+
+  private async request(path: string, method: string, body?: unknown): Promise<ToolResult> {
+    const authHeader = buildVeracodeAuthHeader(this.apiId, this.apiKey, path, method);
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method,
+      headers: {
+        Authorization: authHeader,
+        'Content-Type': 'application/json',
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `Veracode API error ${response.status}: ${errText}` }], isError: true };
+    }
+
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`Veracode returned non-JSON response (HTTP ${response.status})`);
+    }
+
+    const text = JSON.stringify(data, null, 2);
+    const truncated = text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+
+    return { content: [{ type: 'text', text: truncated }], isError: false };
   }
 }

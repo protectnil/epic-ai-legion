@@ -4,27 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found
+// Official MCP: None found as of 2026-03
 // No official Abnormal Security MCP server was found on GitHub as of March 2026.
 //
-// Auth: Authorization header with "Bearer {access_token}".
-//   Token retrieved from Abnormal portal: Settings > Integrations > Abnormal REST API.
+// Base URL: https://api.abnormalplatform.com (default; may vary by tenant region)
+// Auth: Authorization: Bearer {access_token}
+//   Token retrieved from Abnormal portal: Settings > Integrations > Abnormal REST API
 //   Verified from: abnormalsecurity.my.site.com/knowledgebase, app.swaggerhub.com/apis/abnormal-security/abx
-//
-// Base URL: https://api.abnormalplatform.com  (default)
-//   The base URL may vary by tenant region. Pass the correct URL via baseUrl config.
-//
-// API version: v1
-//
-// Verified endpoints (SwaggerHub abnormal-security/abx v1.4.1, docs.d3security.com, Cortex XSOAR integration):
-//   GET  /v1/threats
-//   GET  /v1/threats/{threatId}
-//   POST /v1/threats/{threatId}/actions    — remediate/unremediate
-//   GET  /v1/cases
-//   GET  /v1/cases/{caseId}
-//   POST /v1/cases/{caseId}/actions        — acknowledge/close
-//   GET  /v1/audit-logs
-//   GET  /v1/employees
+// Docs: https://app.swaggerhub.com/apis-docs/abnormal-security/abx/1.4.1
+// Rate limits: Not publicly documented; use pagination and avoid polling
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -46,7 +34,7 @@ export class AbnormalSecurityMCPServer {
     return [
       {
         name: 'list_threats',
-        description: 'List email threats detected by Abnormal Security AI. Returns attack type, sender, recipients, and remediation status.',
+        description: 'List email threats detected by Abnormal Security AI with optional OData filter. Returns attack type, sender, recipients, and remediation status.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -67,7 +55,7 @@ export class AbnormalSecurityMCPServer {
       },
       {
         name: 'get_threat',
-        description: 'Get detailed information about a specific email threat by ID, including message metadata, attack indicators, and AI analysis',
+        description: 'Get detailed information about a specific email threat by ID, including message metadata, attack indicators, and AI analysis.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -81,7 +69,7 @@ export class AbnormalSecurityMCPServer {
       },
       {
         name: 'take_threat_action',
-        description: 'Take a remediation action on a threat: remove detected messages from inboxes or restore previously removed messages',
+        description: 'Remediate or unremediate a threat: remove detected messages from inboxes or restore previously removed messages.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -99,7 +87,7 @@ export class AbnormalSecurityMCPServer {
       },
       {
         name: 'list_cases',
-        description: 'List Abnormal Security Cases — groups of related threats and behavioral signals associated with a specific attacker or campaign',
+        description: 'List Abnormal Security Cases — groups of related threats and behavioral signals associated with a specific attacker or campaign.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -120,7 +108,7 @@ export class AbnormalSecurityMCPServer {
       },
       {
         name: 'get_case',
-        description: 'Get full details for a specific Abnormal Security case, including associated threats, affected users, and timeline',
+        description: 'Get full details for a specific Abnormal Security case, including associated threats, affected users, and timeline.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -134,7 +122,7 @@ export class AbnormalSecurityMCPServer {
       },
       {
         name: 'take_case_action',
-        description: 'Take an action on a case: acknowledge (mark as reviewed) or close (mark as resolved)',
+        description: 'Take an action on a case: acknowledge (mark as reviewed) or close (mark as resolved).',
         inputSchema: {
           type: 'object',
           properties: {
@@ -152,7 +140,7 @@ export class AbnormalSecurityMCPServer {
       },
       {
         name: 'get_audit_logs',
-        description: 'Retrieve Abnormal Security portal audit logs — API calls, message actions, and administrative activity',
+        description: 'Retrieve Abnormal Security portal audit logs — API calls, message actions, and administrative activity with optional OData filter.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -173,7 +161,7 @@ export class AbnormalSecurityMCPServer {
       },
       {
         name: 'list_employees',
-        description: 'List employees and their email security risk profiles from the Abnormal Security identity graph',
+        description: 'List employees and their email security risk profiles from the Abnormal Security identity graph.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -188,7 +176,111 @@ export class AbnormalSecurityMCPServer {
           },
         },
       },
+      {
+        name: 'get_employee',
+        description: 'Get the email security risk profile and identity details for a specific employee by email address.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            email_address: {
+              type: 'string',
+              description: 'The employee email address to look up',
+            },
+          },
+          required: ['email_address'],
+        },
+      },
+      {
+        name: 'list_vendor_cases',
+        description: 'List vendor email compromise (VEC) cases — suspicious vendor communications flagged by Abnormal Security AI.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            filter: {
+              type: 'string',
+              description: 'OData-style filter string (e.g., "lastModifiedTime gte 2024-01-01T00:00:00Z")',
+            },
+            page_size: {
+              type: 'number',
+              description: 'Number of vendor cases per page (default: 100)',
+            },
+            page_number: {
+              type: 'number',
+              description: 'Page number (1-based, default: 1)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_vendor_case',
+        description: 'Get full details for a specific vendor email compromise (VEC) case by case ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            case_id: {
+              type: 'string',
+              description: 'The unique vendor case ID',
+            },
+          },
+          required: ['case_id'],
+        },
+      },
+      {
+        name: 'list_detection_rules',
+        description: 'List custom detection rules configured in Abnormal Security for tuning threat detection behavior.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            page_size: {
+              type: 'number',
+              description: 'Number of rules per page (default: 100)',
+            },
+            page_number: {
+              type: 'number',
+              description: 'Page number (1-based, default: 1)',
+            },
+          },
+        },
+      },
     ];
+  }
+
+  async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+    try {
+      switch (name) {
+        case 'list_threats':
+          return await this.listThreats(args);
+        case 'get_threat':
+          return await this.getThreat(args);
+        case 'take_threat_action':
+          return await this.takeThreatAction(args);
+        case 'list_cases':
+          return await this.listCases(args);
+        case 'get_case':
+          return await this.getCase(args);
+        case 'take_case_action':
+          return await this.takeCaseAction(args);
+        case 'get_audit_logs':
+          return await this.getAuditLogs(args);
+        case 'list_employees':
+          return await this.listEmployees(args);
+        case 'get_employee':
+          return await this.getEmployee(args);
+        case 'list_vendor_cases':
+          return await this.listVendorCases(args);
+        case 'get_vendor_case':
+          return await this.getVendorCase(args);
+        case 'list_detection_rules':
+          return await this.listDetectionRules(args);
+        default:
+          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
+      }
+    } catch (error) {
+      return {
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
+        isError: true,
+      };
+    }
   }
 
   private async request(path: string, method: string, body?: unknown): Promise<ToolResult> {
@@ -218,84 +310,106 @@ export class AbnormalSecurityMCPServer {
     } catch {
       throw new Error(`Abnormal Security returned non-JSON response (HTTP ${response.status})`);
     }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+
+    const text = JSON.stringify(data, null, 2);
+    const truncated = text.length > 10_000
+      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
+      : text;
+
+    return { content: [{ type: 'text', text: truncated }], isError: false };
   }
 
-  async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
-    try {
-      switch (name) {
-        case 'list_threats': {
-          const pageSize = (args.page_size as number) ?? 100;
-          const pageNumber = (args.page_number as number) ?? 1;
-          let path = `/v1/threats?pageSize=${pageSize}&pageNumber=${pageNumber}`;
-          if (args.filter) path += `&filter=${encodeURIComponent(args.filter as string)}`;
-          return await this.request(path, 'GET');
-        }
+  private async listThreats(args: Record<string, unknown>): Promise<ToolResult> {
+    const pageSize = (args.page_size as number) ?? 100;
+    const pageNumber = (args.page_number as number) ?? 1;
+    let path = `/v1/threats?pageSize=${pageSize}&pageNumber=${pageNumber}`;
+    if (args.filter) path += `&filter=${encodeURIComponent(args.filter as string)}`;
+    return this.request(path, 'GET');
+  }
 
-        case 'get_threat': {
-          const threatId = args.threat_id as string;
-          if (!threatId) {
-            return { content: [{ type: 'text', text: 'threat_id is required' }], isError: true };
-          }
-          return await this.request(`/v1/threats/${encodeURIComponent(threatId)}`, 'GET');
-        }
-
-        case 'take_threat_action': {
-          const threatId = args.threat_id as string;
-          const action = args.action as string;
-          if (!threatId || !action) {
-            return { content: [{ type: 'text', text: 'threat_id and action are required' }], isError: true };
-          }
-          return await this.request(`/v1/threats/${encodeURIComponent(threatId)}/actions`, 'POST', { action });
-        }
-
-        case 'list_cases': {
-          const pageSize = (args.page_size as number) ?? 100;
-          const pageNumber = (args.page_number as number) ?? 1;
-          let path = `/v1/cases?pageSize=${pageSize}&pageNumber=${pageNumber}`;
-          if (args.filter) path += `&filter=${encodeURIComponent(args.filter as string)}`;
-          return await this.request(path, 'GET');
-        }
-
-        case 'get_case': {
-          const caseId = args.case_id as string;
-          if (!caseId) {
-            return { content: [{ type: 'text', text: 'case_id is required' }], isError: true };
-          }
-          return await this.request(`/v1/cases/${encodeURIComponent(caseId)}`, 'GET');
-        }
-
-        case 'take_case_action': {
-          const caseId = args.case_id as string;
-          const action = args.action as string;
-          if (!caseId || !action) {
-            return { content: [{ type: 'text', text: 'case_id and action are required' }], isError: true };
-          }
-          return await this.request(`/v1/cases/${encodeURIComponent(caseId)}/actions`, 'POST', { action });
-        }
-
-        case 'get_audit_logs': {
-          const pageSize = (args.page_size as number) ?? 100;
-          const pageNumber = (args.page_number as number) ?? 1;
-          let path = `/v1/audit-logs?pageSize=${pageSize}&pageNumber=${pageNumber}`;
-          if (args.filter) path += `&filter=${encodeURIComponent(args.filter as string)}`;
-          return await this.request(path, 'GET');
-        }
-
-        case 'list_employees': {
-          const pageSize = (args.page_size as number) ?? 100;
-          const pageNumber = (args.page_number as number) ?? 1;
-          return await this.request(`/v1/employees?pageSize=${pageSize}&pageNumber=${pageNumber}`, 'GET');
-        }
-
-        default:
-          return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
-      }
-    } catch (error) {
-      return {
-        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
-        isError: true,
-      };
+  private async getThreat(args: Record<string, unknown>): Promise<ToolResult> {
+    const threatId = args.threat_id as string;
+    if (!threatId) {
+      return { content: [{ type: 'text', text: 'threat_id is required' }], isError: true };
     }
+    return this.request(`/v1/threats/${encodeURIComponent(threatId)}`, 'GET');
+  }
+
+  private async takeThreatAction(args: Record<string, unknown>): Promise<ToolResult> {
+    const threatId = args.threat_id as string;
+    const action = args.action as string;
+    if (!threatId || !action) {
+      return { content: [{ type: 'text', text: 'threat_id and action are required' }], isError: true };
+    }
+    return this.request(`/v1/threats/${encodeURIComponent(threatId)}/actions`, 'POST', { action });
+  }
+
+  private async listCases(args: Record<string, unknown>): Promise<ToolResult> {
+    const pageSize = (args.page_size as number) ?? 100;
+    const pageNumber = (args.page_number as number) ?? 1;
+    let path = `/v1/cases?pageSize=${pageSize}&pageNumber=${pageNumber}`;
+    if (args.filter) path += `&filter=${encodeURIComponent(args.filter as string)}`;
+    return this.request(path, 'GET');
+  }
+
+  private async getCase(args: Record<string, unknown>): Promise<ToolResult> {
+    const caseId = args.case_id as string;
+    if (!caseId) {
+      return { content: [{ type: 'text', text: 'case_id is required' }], isError: true };
+    }
+    return this.request(`/v1/cases/${encodeURIComponent(caseId)}`, 'GET');
+  }
+
+  private async takeCaseAction(args: Record<string, unknown>): Promise<ToolResult> {
+    const caseId = args.case_id as string;
+    const action = args.action as string;
+    if (!caseId || !action) {
+      return { content: [{ type: 'text', text: 'case_id and action are required' }], isError: true };
+    }
+    return this.request(`/v1/cases/${encodeURIComponent(caseId)}/actions`, 'POST', { action });
+  }
+
+  private async getAuditLogs(args: Record<string, unknown>): Promise<ToolResult> {
+    const pageSize = (args.page_size as number) ?? 100;
+    const pageNumber = (args.page_number as number) ?? 1;
+    let path = `/v1/audit-logs?pageSize=${pageSize}&pageNumber=${pageNumber}`;
+    if (args.filter) path += `&filter=${encodeURIComponent(args.filter as string)}`;
+    return this.request(path, 'GET');
+  }
+
+  private async listEmployees(args: Record<string, unknown>): Promise<ToolResult> {
+    const pageSize = (args.page_size as number) ?? 100;
+    const pageNumber = (args.page_number as number) ?? 1;
+    return this.request(`/v1/employees?pageSize=${pageSize}&pageNumber=${pageNumber}`, 'GET');
+  }
+
+  private async getEmployee(args: Record<string, unknown>): Promise<ToolResult> {
+    const email = args.email_address as string;
+    if (!email) {
+      return { content: [{ type: 'text', text: 'email_address is required' }], isError: true };
+    }
+    return this.request(`/v1/employees/${encodeURIComponent(email)}`, 'GET');
+  }
+
+  private async listVendorCases(args: Record<string, unknown>): Promise<ToolResult> {
+    const pageSize = (args.page_size as number) ?? 100;
+    const pageNumber = (args.page_number as number) ?? 1;
+    let path = `/v1/vendor-cases?pageSize=${pageSize}&pageNumber=${pageNumber}`;
+    if (args.filter) path += `&filter=${encodeURIComponent(args.filter as string)}`;
+    return this.request(path, 'GET');
+  }
+
+  private async getVendorCase(args: Record<string, unknown>): Promise<ToolResult> {
+    const caseId = args.case_id as string;
+    if (!caseId) {
+      return { content: [{ type: 'text', text: 'case_id is required' }], isError: true };
+    }
+    return this.request(`/v1/vendor-cases/${encodeURIComponent(caseId)}`, 'GET');
+  }
+
+  private async listDetectionRules(args: Record<string, unknown>): Promise<ToolResult> {
+    const pageSize = (args.page_size as number) ?? 100;
+    const pageNumber = (args.page_number as number) ?? 1;
+    return this.request(`/v1/detection-rules?pageSize=${pageSize}&pageNumber=${pageNumber}`, 'GET');
   }
 }
