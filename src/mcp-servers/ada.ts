@@ -480,4 +480,17 @@ export class AdaMCPServer {
     if (args.cursor) params['cursor'] = args.cursor as string;
     return this.get('/integrations', params);
   }
+
+  static catalog() {
+    return {
+      name: 'ada',
+      displayName: 'Ada',
+      version: '1.0.0',
+      category: 'crm' as const,
+      keywords: ['ada'],
+      toolNames: ['list_conversations', 'get_conversation', 'get_conversation_messages', 'list_articles', 'get_article', 'create_article', 'update_article', 'delete_article', 'list_chatter', 'list_variables', 'list_end_users', 'get_end_user', 'delete_end_user', 'list_integrations'],
+      description: 'Ada adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

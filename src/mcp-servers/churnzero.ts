@@ -688,4 +688,17 @@ export class ChurnZeroMCPServer {
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
+
+  static catalog() {
+    return {
+      name: 'churnzero',
+      displayName: 'Churn Zero',
+      version: '1.0.0',
+      category: 'crm' as const,
+      keywords: ['churnzero'],
+      toolNames: ['list_accounts', 'get_account', 'create_account', 'update_account', 'list_contacts', 'get_contact', 'create_contact', 'list_events', 'track_event', 'list_tasks', 'create_task', 'list_segments', 'get_segment_members'],
+      description: 'Churn Zero adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

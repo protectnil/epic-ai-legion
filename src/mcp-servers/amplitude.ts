@@ -591,4 +591,17 @@ export class AmplitudeMCPServer {
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
+
+  static catalog() {
+    return {
+      name: 'amplitude',
+      displayName: 'Amplitude',
+      version: '1.0.0',
+      category: 'data' as const,
+      keywords: ['amplitude'],
+      toolNames: ['track_events', 'identify_users', 'get_active_users', 'get_event_segmentation', 'get_funnel', 'get_retention', 'get_user_activity', 'get_user_search', 'list_cohorts', 'get_cohort', 'list_event_types', 'get_event_type', 'list_user_properties', 'list_event_properties', 'export_events', 'delete_user_data', 'get_deletion_job'],
+      description: 'Amplitude adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

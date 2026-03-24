@@ -541,4 +541,17 @@ export class AnsibleMCPServer {
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
     return this.apiGet(this.buildPagedUrl('/api/v2/users/', args));
   }
+
+  static catalog() {
+    return {
+      name: 'ansible',
+      displayName: 'Ansible',
+      version: '1.0.0',
+      category: 'devops' as const,
+      keywords: ['ansible'],
+      toolNames: ['list_job_templates', 'get_job_template', 'launch_job_template', 'list_jobs', 'get_job', 'cancel_job', 'get_job_stdout', 'list_workflow_job_templates', 'launch_workflow_job', 'list_workflow_jobs', 'list_inventories', 'get_inventory', 'list_hosts', 'list_groups', 'list_projects', 'sync_project', 'list_credentials', 'get_credential', 'list_schedules', 'list_organizations', 'list_users'],
+      description: 'Ansible adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

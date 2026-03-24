@@ -525,4 +525,17 @@ export class AirbyteMCPServer {
     }
     return { content: [{ type: 'text', text: JSON.stringify({ success: true, message: `Job ${jobId} cancelled` }) }], isError: false };
   }
+
+  static catalog() {
+    return {
+      name: 'airbyte',
+      displayName: 'Airbyte',
+      version: '1.0.0',
+      category: 'data' as const,
+      keywords: ['airbyte'],
+      toolNames: ['list_workspaces', 'get_workspace', 'list_sources', 'get_source', 'create_source', 'delete_source', 'list_destinations', 'get_destination', 'create_destination', 'delete_destination', 'list_connections', 'get_connection', 'create_connection', 'update_connection', 'delete_connection', 'list_jobs', 'get_job', 'trigger_sync', 'cancel_job'],
+      description: 'Airbyte adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

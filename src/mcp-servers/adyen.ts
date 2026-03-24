@@ -675,4 +675,17 @@ export class AdyenMCPServer {
     try { data = await response.json(); } catch { throw new Error(`Adyen returned non-JSON response (HTTP ${response.status})`); }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
+
+  static catalog() {
+    return {
+      name: 'adyen',
+      displayName: 'Adyen',
+      version: '1.0.0',
+      category: 'commerce' as const,
+      keywords: ['adyen'],
+      toolNames: ['create_payment_session', 'get_payment_session_result', 'get_payment_methods', 'create_payment', 'get_payment_details', 'capture_payment', 'refund_payment', 'cancel_payment', 'reverse_payment', 'create_payment_link', 'get_payment_link', 'update_payment_link', 'list_disputes', 'get_dispute', 'defend_dispute'],
+      description: 'Adyen adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

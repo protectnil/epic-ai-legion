@@ -412,4 +412,17 @@ export class AbnormalSecurityMCPServer {
     const pageNumber = (args.page_number as number) ?? 1;
     return this.request(`/v1/detection-rules?pageSize=${pageSize}&pageNumber=${pageNumber}`, 'GET');
   }
+
+  static catalog() {
+    return {
+      name: 'abnormal-security',
+      displayName: 'Abnormal Security',
+      version: '1.0.0',
+      category: 'cybersecurity' as const,
+      keywords: ['abnormal-security', 'abnormal', 'security'],
+      toolNames: ['list_threats', 'get_threat', 'take_threat_action', 'list_cases', 'get_case', 'take_case_action', 'get_audit_logs', 'list_employees', 'get_employee', 'list_vendor_cases', 'get_vendor_case', 'list_detection_rules'],
+      description: 'Abnormal Security adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

@@ -532,4 +532,17 @@ export class AhaMCPServer {
     if (args.per_page) params.push(`per_page=${args.per_page}`);
     return this.get(`/search?${params.join('&')}`);
   }
+
+  static catalog() {
+    return {
+      name: 'aha',
+      displayName: 'Aha',
+      version: '1.0.0',
+      category: 'collaboration' as const,
+      keywords: ['aha'],
+      toolNames: ['list_products', 'get_product', 'list_features', 'get_feature', 'create_feature', 'update_feature', 'list_epics', 'get_epic', 'list_releases', 'get_release', 'list_ideas', 'get_idea', 'create_idea', 'list_goals', 'get_goal', 'list_requirements', 'create_requirement', 'list_users', 'search_records'],
+      description: 'Aha adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

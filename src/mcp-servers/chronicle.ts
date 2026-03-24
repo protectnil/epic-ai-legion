@@ -536,4 +536,17 @@ export class ChronicleMCPServer {
     }
     return this.chroniclePost('/v2/unstructuredlogentries', { events });
   }
+
+  static catalog() {
+    return {
+      name: 'chronicle',
+      displayName: 'Chronicle',
+      version: '1.0.0',
+      category: 'cybersecurity' as const,
+      keywords: ['chronicle'],
+      toolNames: ['udm_search', 'get_event', 'list_alerts', 'list_rules', 'get_rule', 'create_rule', 'enable_rule', 'disable_rule', 'list_detections', 'search_iocs', 'list_ioc_details', 'list_assets', 'search_entities', 'ingest_udm_events'],
+      description: 'Chronicle adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

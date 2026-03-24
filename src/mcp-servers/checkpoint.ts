@@ -560,4 +560,17 @@ export class CheckPointMCPServer {
     this.tokenExpiry = 0;
     return result;
   }
+
+  static catalog() {
+    return {
+      name: 'checkpoint',
+      displayName: 'Check Point',
+      version: '1.0.0',
+      category: 'cybersecurity' as const,
+      keywords: ['checkpoint'],
+      toolNames: ['list_access_rules', 'get_access_rule', 'add_access_rule', 'delete_access_rule', 'publish', 'install_policy', 'get_policy', 'show_gateways', 'show_hosts', 'add_host', 'delete_host', 'show_network_objects', 'list_sessions', 'list_threat_logs', 'logout'],
+      description: 'Check Point adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

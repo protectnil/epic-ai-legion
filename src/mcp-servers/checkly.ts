@@ -618,4 +618,17 @@ export class ChecklyMCPServer {
   private async listLocations(): Promise<ToolResult> {
     return this.checklyGet('/locations');
   }
+
+  static catalog() {
+    return {
+      name: 'checkly',
+      displayName: 'Checkly',
+      version: '1.0.0',
+      category: 'observability' as const,
+      keywords: ['checkly'],
+      toolNames: ['list_checks', 'get_check', 'create_api_check', 'update_check', 'delete_check', 'list_check_results', 'get_check_result', 'list_check_statuses', 'list_check_groups', 'get_check_group', 'create_check_group', 'delete_check_group', 'list_alert_channels', 'get_alert_channel', 'list_snippets', 'list_environment_variables', 'list_maintenance_windows', 'list_locations'],
+      description: 'Checkly adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

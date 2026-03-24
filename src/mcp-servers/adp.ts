@@ -383,4 +383,17 @@ export class ADPMCPServer {
     if (!aoid) return { content: [{ type: 'text', text: 'aoid is required' }], isError: true };
     return this.fetch(`${this.baseUrl}/benefits/v2/workers/${encodeURIComponent(aoid)}/enrollments`);
   }
+
+  static catalog() {
+    return {
+      name: 'adp',
+      displayName: 'ADP',
+      version: '1.0.0',
+      category: 'finance' as const,
+      keywords: ['adp'],
+      toolNames: ['list_workers', 'get_worker', 'get_workers_meta', 'get_worker_time_off_requests', 'get_worker_leave_requests', 'get_payroll_data', 'list_pay_statements', 'list_organization_departments', 'list_job_classifications', 'list_worker_benefits'],
+      description: 'ADP adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

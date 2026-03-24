@@ -576,4 +576,17 @@ export class CircleCIMCPServer {
     }
     return this.get(`/project/${project_slug}/envvar`);
   }
+
+  static catalog() {
+    return {
+      name: 'circleci',
+      displayName: 'Circle CI',
+      version: '1.0.0',
+      category: 'devops' as const,
+      keywords: ['circleci'],
+      toolNames: ['list_pipelines', 'get_pipeline', 'trigger_pipeline', 'list_workflows', 'get_workflow', 'cancel_workflow', 'rerun_workflow', 'approve_job', 'list_jobs', 'get_job_details', 'cancel_job', 'get_job_artifacts', 'get_job_test_metadata', 'get_workflow_insights', 'list_project_schedules', 'list_contexts', 'list_environment_variables'],
+      description: '17 tools (full CRUD for pipelines, workflows, jobs, contexts, schedules, insights).',
+      author: 'protectnil' as const,
+    };
+  }
 }

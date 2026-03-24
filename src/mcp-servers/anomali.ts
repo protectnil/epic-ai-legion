@@ -497,4 +497,17 @@ export class AnomaliMCPServer {
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
+
+  static catalog() {
+    return {
+      name: 'anomali',
+      displayName: 'Anomali',
+      version: '1.0.0',
+      category: 'cybersecurity' as const,
+      keywords: ['anomali'],
+      toolNames: ['search_indicators', 'get_indicator', 'create_indicator', 'update_indicator', 'list_threat_bulletins', 'get_threat_bulletin', 'search_actors', 'get_actor', 'list_campaigns', 'get_campaign', 'search_vulnerabilities', 'get_vulnerability', 'list_intelligence_sources', 'list_tags', 'list_incidents', 'get_incident'],
+      description: 'Anomali adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

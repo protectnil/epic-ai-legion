@@ -755,4 +755,17 @@ export class ChargebeeMCPServer {
     if (args.status) params.set('status[is]', args.status as string);
     return this.chargebeeGet('/coupons', params);
   }
+
+  static catalog() {
+    return {
+      name: 'chargebee',
+      displayName: 'Chargebee',
+      version: '1.0.0',
+      category: 'commerce' as const,
+      keywords: ['chargebee'],
+      toolNames: ['list_subscriptions', 'get_subscription', 'create_subscription', 'update_subscription', 'cancel_subscription', 'pause_subscription', 'list_customers', 'get_customer', 'create_customer', 'update_customer', 'list_invoices', 'get_invoice', 'list_transactions', 'get_transaction', 'list_payment_sources', 'list_plans', 'list_items', 'list_coupons'],
+      description: 'Chargebee adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

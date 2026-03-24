@@ -523,4 +523,17 @@ export class CiscoSecureMCPServer {
     const data = await response.json().catch(() => { throw new Error(`Cisco Umbrella returned non-JSON (HTTP ${response.status})`); });
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
+
+  static catalog() {
+    return {
+      name: 'cisco-secure',
+      displayName: 'Cisco Secure',
+      version: '1.0.0',
+      category: 'cybersecurity' as const,
+      keywords: ['cisco-secure', 'cisco', 'secure'],
+      toolNames: ['list_computers', 'get_computer', 'get_computer_trajectory', 'isolate_computer', 'stop_isolation', 'list_events', 'list_event_types', 'list_groups', 'get_group', 'list_policies', 'list_file_lists', 'get_file_list', 'get_computer_vulnerabilities', 'list_audit_logs', 'query_umbrella_dns'],
+      description: 'Cisco Secure adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

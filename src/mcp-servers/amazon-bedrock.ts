@@ -847,4 +847,17 @@ export class AmazonBedrockMCPServer {
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     return this.signedGet(`${this.controlBase()}/model-invocation-job${qs}`);
   }
+
+  static catalog() {
+    return {
+      name: 'amazon-bedrock',
+      displayName: 'Amazon Bedrock',
+      version: '1.0.0',
+      category: 'ai-ml' as const,
+      keywords: ['amazon-bedrock', 'amazon', 'bedrock'],
+      toolNames: ['invoke_model', 'converse', 'count_tokens', 'start_async_invoke', 'get_async_invoke', 'list_async_invokes', 'list_foundation_models', 'get_foundation_model', 'list_inference_profiles', 'get_inference_profile', 'list_custom_models', 'get_custom_model', 'list_model_customization_jobs', 'get_model_customization_job', 'stop_model_customization_job', 'list_provisioned_throughputs', 'get_provisioned_throughput', 'list_guardrails', 'get_guardrail', 'apply_guardrail', 'list_knowledge_bases', 'get_knowledge_base', 'retrieve_from_knowledge_base', 'list_agents', 'get_agent', 'invoke_agent', 'create_model_invocation_job', 'get_model_invocation_job', 'list_model_invocation_jobs'],
+      description: 'Amazon Bedrock adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

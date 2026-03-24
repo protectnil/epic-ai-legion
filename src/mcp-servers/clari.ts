@@ -453,4 +453,17 @@ export class ClariMCPServer {
     const data = await response.json().catch(() => { throw new Error(`Clari Copilot returned non-JSON (HTTP ${response.status})`); });
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
+
+  static catalog() {
+    return {
+      name: 'clari',
+      displayName: 'Clari',
+      version: '1.0.0',
+      category: 'crm' as const,
+      keywords: ['clari'],
+      toolNames: ['export_forecast', 'get_export_job', 'list_export_jobs', 'list_calls', 'get_call_details', 'search_calls', 'get_call_topics', 'get_call_scorecards', 'create_call'],
+      description: 'Clari adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

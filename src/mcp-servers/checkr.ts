@@ -574,4 +574,17 @@ export class CheckrMCPServer {
     if (args.post_notice_scheduled_at) body.post_notice_scheduled_at = args.post_notice_scheduled_at;
     return this.checkrPost('/adverse_actions', body);
   }
+
+  static catalog() {
+    return {
+      name: 'checkr',
+      displayName: 'Checkr',
+      version: '1.0.0',
+      category: 'misc' as const,
+      keywords: ['checkr'],
+      toolNames: ['create_candidate', 'get_candidate', 'list_candidates', 'create_report', 'get_report', 'list_reports', 'list_packages', 'create_invitation', 'get_invitation', 'list_invitations', 'create_geo', 'list_geos', 'get_geo', 'list_adverse_actions', 'create_adverse_action'],
+      description: 'Checkr adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }

@@ -495,4 +495,17 @@ export class CiscoDuoMCPServer {
   private async getAccountSummary(): Promise<ToolResult> {
     return this.duoGet('/admin/v1/info/summary');
   }
+
+  static catalog() {
+    return {
+      name: 'cisco-duo',
+      displayName: 'Cisco Duo',
+      version: '1.0.0',
+      category: 'identity' as const,
+      keywords: ['cisco-duo', 'cisco', 'duo'],
+      toolNames: ['list_users', 'get_user', 'create_user', 'update_user', 'delete_user', 'list_groups', 'get_group', 'list_phones', 'get_phone', 'list_hardware_tokens', 'list_admins', 'list_integrations', 'get_authentication_logs', 'get_admin_logs', 'get_telephony_logs', 'bypass_user', 'get_account_summary'],
+      description: 'Cisco Duo adapter for the Epic AI Intelligence Platform',
+      author: 'protectnil' as const,
+    };
+  }
 }
