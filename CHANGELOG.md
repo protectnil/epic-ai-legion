@@ -7,11 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## 0.4.2 — 2026-03-24
+## 0.4.3 — 2026-03-24
 
 ### Fixed
-- All 243 adapters rewritten to ADAPTER-DEVELOPMENT-PROTOCOL — full tool coverage, MCP headers, static `catalog()` method on every adapter.
-- Integration tests probe gateway first (`localhost:8000`), fall back to Ollama — M5 Metal compatible.
+- Default timeout increased to 30s for inference backends.
+- Throughput test fix for concurrent request measurement.
+- Adapter catalog generation updated — 470 cataloged from 472 on disk (2 skipped due to constructor issues).
+
+## 0.4.2 — 2026-03-24
+
+### Changed
+- `provider: 'auto'` now probes `localhost:8080` (llama.cpp) as second priority, before Ollama fallback.
+- Clear error message with setup instructions when no inference backend is available.
+
+## 0.4.1 — 2026-03-24
+
+### Fixed
+- All adapters rewritten to ADAPTER-DEVELOPMENT-PROTOCOL — full tool coverage, MCP headers, static `catalog()` method on every adapter.
+- Integration tests probe gateway first (`localhost:8000`), fall back to llama.cpp (`localhost:8080`), then Ollama — M5 Metal compatible.
 
 ## 0.4.0 — 2026-03-24
 

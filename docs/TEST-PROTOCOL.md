@@ -1,7 +1,7 @@
 # Epic AI® IVA Core — Integration Test Protocol
 
 **Package:** `@epicai/core`
-**Version:** 0.2.x
+**Version:** 0.4.x
 
 ---
 
@@ -11,12 +11,34 @@ This document defines the complete test protocol for validating the Epic AI® IV
 
 ---
 
+## Inference Backend Setup
+
+The SDK uses `provider: 'auto'` which probes three endpoints in order:
+
+| Priority | URL | Backend | Notes |
+|----------|-----|---------|-------|
+| 1 | `http://localhost:8000` | Inference Gateway | Multi-backend router. Start with `npx epic-ai-gateway` |
+| 2 | `http://localhost:8080` | llama.cpp | Direct server. Start with `llama-server --model <file> --port 8080` |
+| 3 | `http://localhost:11434` | Ollama (legacy) | Deprecated. Broken on Apple M5 Metal. |
+
+**Recommended setup:**
+
+```bash
+brew install llama.cpp
+# Download a GGUF model (e.g., llama-3.1-8b-instruct)
+llama-server --model llama-3.1-8b-instruct.Q4_K_M.gguf --port 8080
+```
+
+The first endpoint that responds on `/v1/models` wins. Default model: `llama3.1:8b`.
+
+---
+
 ## Three Test Lanes
 
 | Lane | Command | Runner | External Dependencies | Purpose |
 |------|---------|--------|----------------------|---------|
 | 1 | `npm test` | Vitest | None | Unit tests — all layers, mock LLMs |
-| 2 | `npm run test:integration` | Vitest (separate config) | Ollama with model pulled | Air-gapped + hybrid LLM integration |
+| 2 | `npm run test:integration` | Vitest (separate config) | Local inference backend (llama.cpp or gateway) | Air-gapped + hybrid LLM integration |
 | 3 | `npm run test:harness` | Standalone tsx | None | Transport correctness (stdio, HTTP, API) |
 
 ---
@@ -26,7 +48,7 @@ This document defines the complete test protocol for validating the Epic AI® IV
 All test files in `tests/` excluding `tests/integration/`. Mock LLMs, in-memory adapters, no external services.
 
 - Expected: all tests pass in under 10 seconds on any hardware
-- No Ollama, no MongoDB, no Redis, no cloud API keys required
+- No inference backend, no MongoDB, no Redis, no cloud API keys required
 
 ---
 
@@ -34,19 +56,19 @@ All test files in `tests/` excluding `tests/integration/`. Mock LLMs, in-memory 
 
 ### Prerequisites
 
-- Ollama running (`ollama serve`)
-- Model pulled: `ollama pull qwen2.5:7b`
+- Local inference backend running (llama.cpp on port 8080 or gateway on port 8000)
+- Model loaded: `llama3.1:8b` (or equivalent GGUF)
 - For hybrid tests: `OPENAI_API_KEY` env var set (tests skip gracefully if absent)
 
 ### Test Structure
 
 ```
 tests/integration/
-├── ollama.test.ts                         # 2 basic provider tests
+├── ollama.test.ts                         # 2 basic provider tests (probes gateway first)
 ├── air-gapped/
-│   └── orchestrator-generator.test.ts     # 20 tests — Ollama both sides
+│   └── orchestrator-generator.test.ts     # 20 tests — local backend both sides
 └── hybrid/
-    └── cloud-handoff.test.ts              # 3 tests — Ollama + OpenAI
+    └── cloud-handoff.test.ts              # 3 tests — local backend + OpenAI
 ```
 
 ### Air-Gapped Tests (20 tests, ~35 LLM calls)
@@ -67,7 +89,7 @@ All inference stays local. Zero external API calls.
 
 Gated on `OPENAI_API_KEY`. Tests skip gracefully if absent. Cost per run: ~$0.01.
 
-| Test | Ollama Calls | Cloud LLM Calls | What It Validates |
+| Test | Local Calls | Cloud LLM Calls | What It Validates |
 |------|-------------|-----------------|-------------------|
 | Tool select → cloud synthesis | 1 | 1 | Orchestrator selects tool, generator produces actionable briefing |
 | Data sovereignty verification | 1 | 1 | Generator messages contain zero tool schema keywords; tool definitions stay local |
@@ -87,11 +109,11 @@ Runs `tests/harness-check.ts` via `npx tsx` — not Vitest. Spawns real MCP serv
 
 | Configuration | RAM | Recommended Model | Expected Performance |
 |---------------|-----|-------------------|---------------------|
-| Minimum | 16GB | qwen2.5:7b (Q4) | ~40 t/s — tool routing functional |
-| Recommended | 24GB | qwen2.5:7b or 14B | ~30-42 t/s — comfortable with IDE + Docker |
+| Minimum | 16GB | llama3.1:8b (Q4) | ~40 t/s — tool routing functional |
+| Recommended | 24GB | llama3.1:8b or 14B | ~30-42 t/s — comfortable with IDE + Docker |
 | Power | 32GB+ | 70B quantized | ~15 t/s — near cloud-quality responses |
 
-Apple Silicon (M4/M5) and NVIDIA GPUs (RTX 3060+) both supported via Ollama.
+Apple Silicon (M1–M4) and NVIDIA GPUs (RTX 3060+) supported via llama.cpp. **Apple M5:** Ollama is incompatible — use llama.cpp directly.
 
 ---
 
@@ -99,8 +121,8 @@ Apple Silicon (M4/M5) and NVIDIA GPUs (RTX 3060+) both supported via Ollama.
 
 ### Pre-flight
 
-1. Verify Ollama is running: `curl http://localhost:11434/api/version`
-2. Verify model is pulled: `ollama list`
+1. Verify inference backend is running: `curl http://localhost:8080/v1/models`
+2. Verify model is loaded (response should list at least one model)
 3. Verify Node.js >= 20: `node --version`
 4. Install dependencies: `npm ci`
 
@@ -110,7 +132,7 @@ Apple Silicon (M4/M5) and NVIDIA GPUs (RTX 3060+) both supported via Ollama.
 # Lane 1 — Unit tests (no dependencies)
 npm test
 
-# Lane 2 — Integration (requires Ollama)
+# Lane 2 — Integration (requires local inference backend)
 npm run test:integration
 
 # Lane 3 — Harness (standalone transport check)
@@ -125,7 +147,7 @@ OPENAI_API_KEY=sk-... npm run test:integration
 Record the following per run:
 
 - Hardware (chip, memory, GPU/CPU)
-- Ollama model and version
+- Inference backend and model (e.g., llama.cpp + llama-3.1-8b-instruct Q4_K_M)
 - Node.js version
 - `npm test` result (files, tests, duration)
 - `npm run test:integration` result (files, tests, duration, per-test latency)
@@ -139,11 +161,30 @@ Record the following per run:
 
 | Symptom | Likely Cause | Fix |
 |---------|-------------|-----|
-| Tool-call tests fail, throughput tests pass | Context window too small for tool schemas | Increase `num_ctx` in orchestrator config or use a model with larger default context |
-| Ollama connection refused | Ollama not running | `ollama serve` |
-| Model not found | Model not pulled | `ollama pull qwen2.5:7b` |
+| Tool-call tests fail, throughput tests pass | Model does not support structured tool calls | Use `--jinja` flag with llama.cpp or switch to functionary-small-v3.2 |
+| No inference backend available | No server running on probed ports | Start llama-server on port 8080 or gateway on port 8000 |
+| Connection refused on all ports | Backend not started or wrong port | `curl http://localhost:8080/v1/models` to verify |
+| Metal crash on M5 Mac | Ollama M5 incompatibility | Do not use Ollama on M5. Use llama.cpp directly |
 | Hybrid tests skip | No `OPENAI_API_KEY` | Set env var or accept skip |
 | Vitest hangs on collection | Integration tests included in main config | Verify `tests/integration/` excluded from main vitest.config |
+
+---
+
+## Known Issues
+
+### Llama 3.1 8B tool-calling through llama.cpp
+
+Llama 3.1 8B Instruct does not produce structured tool calls through llama.cpp's OpenAI-compatible `/v1/chat/completions` endpoint by default. The SDK works correctly — it sends tool schemas, logs the response, and falls back to text synthesis when no tool calls are returned. The model does not activate tool-calling behavior without specific llama.cpp configuration.
+
+**Workaround:** Start llama-server with the `--jinja` flag:
+
+```bash
+llama-server --model llama-3.1-8b-instruct.Q4_K_M.gguf --port 8080 --jinja
+```
+
+**Alternative:** Use `functionary-small-v3.2`, a model purpose-built for structured tool call output.
+
+This is a model/runtime compatibility issue, not an SDK bug.
 
 ---
 
