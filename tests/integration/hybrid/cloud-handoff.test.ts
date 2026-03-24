@@ -133,7 +133,7 @@ describe('Hybrid: Ollama Orchestrator → OpenAI Generator', { timeout: TIMEOUT_
     const orchestrator = createOrchestratorLLM({
       provider: 'auto',
       model: ORCHESTRATOR_MODEL,
-      baseUrl: GATEWAY_URL,
+      baseUrl: backend.baseUrl,
       timeoutMs: TIMEOUT_MS,
     });
 
@@ -182,7 +182,7 @@ describe('Hybrid: Ollama Orchestrator → OpenAI Generator', { timeout: TIMEOUT_
     const orchestrator = createOrchestratorLLM({
       provider: 'auto',
       model: ORCHESTRATOR_MODEL,
-      baseUrl: GATEWAY_URL,
+      baseUrl: backend.baseUrl,
       timeoutMs: TIMEOUT_MS,
     });
 
@@ -226,7 +226,7 @@ describe('Hybrid: Ollama Orchestrator → OpenAI Generator', { timeout: TIMEOUT_
     const orchestrator = createOrchestratorLLM({
       provider: 'auto',
       model: ORCHESTRATOR_MODEL,
-      baseUrl: GATEWAY_URL,
+      baseUrl: backend.baseUrl,
       timeoutMs: TIMEOUT_MS,
     });
 

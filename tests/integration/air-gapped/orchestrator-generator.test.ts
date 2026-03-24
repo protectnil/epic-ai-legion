@@ -141,11 +141,11 @@ const SECURITY_TOOLS: LLMToolDefinition[] = [
   },
 ];
 
-function createLLM(timeoutMs = TIMEOUT_MS) {
+function createLLM(baseUrl?: string, timeoutMs = TIMEOUT_MS) {
   return createOrchestratorLLM({
     provider: 'auto',
     model: MODEL,
-    baseUrl: GATEWAY_URL,
+    baseUrl: baseUrl ?? GATEWAY_URL,
     timeoutMs,
   });
 }
@@ -165,7 +165,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
 
   it('selects search_threats for a threat hunting query', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -182,7 +182,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
 
   it('selects check_identity for a user compromise query', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -206,7 +206,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
 
   it('selects list_endpoints for an EDR status query', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -223,7 +223,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
 
   it('selects query_vulnerabilities for a CVE lookup', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -245,7 +245,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
 
   it('selects get_network_flows for lateral movement detection', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -274,7 +274,7 @@ describe('Air-Gapped: Multi-Step Orchestrator Chaining', { timeout: TIMEOUT_MS *
 
   it('chains search_threats → check_identity when asked about a targeted user', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     // Step 1: Initial query — model should call search_threats or check_identity
     const step1 = await llm({
@@ -314,7 +314,7 @@ describe('Air-Gapped: Multi-Step Orchestrator Chaining', { timeout: TIMEOUT_MS *
 
   it('chains list_endpoints → isolate_endpoint for incident containment', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     const step1 = await llm({
       messages: [
@@ -346,7 +346,7 @@ describe('Air-Gapped: Multi-Step Orchestrator Chaining', { timeout: TIMEOUT_MS *
 
   it('chains three steps: search → correlate flows → respond', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     // Step 1
     const step1 = await llm({
@@ -401,7 +401,7 @@ describe('Air-Gapped: Argument Extraction', { timeout: TIMEOUT_MS }, () => {
 
   it('extracts severity enum from natural language', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -421,7 +421,7 @@ describe('Air-Gapped: Argument Extraction', { timeout: TIMEOUT_MS }, () => {
 
   it('extracts complex filter parameters for vulnerability queries', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -442,7 +442,7 @@ describe('Air-Gapped: Argument Extraction', { timeout: TIMEOUT_MS }, () => {
 
   it('extracts ticket priority and title from an incident description', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -471,7 +471,7 @@ describe('Air-Gapped: Stop Conditions', { timeout: TIMEOUT_MS }, () => {
 
   it('responds directly without tool calls for general knowledge questions', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -489,7 +489,7 @@ describe('Air-Gapped: Stop Conditions', { timeout: TIMEOUT_MS }, () => {
 
   it('stops after receiving a complete tool result instead of looping', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     // First call — should request a tool
     const step1 = await llm({
@@ -527,7 +527,7 @@ describe('Air-Gapped: Throughput & Latency', { timeout: TIMEOUT_MS * 3 }, () => 
 
   it('measures single inference latency (warm)', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     // Warm-up call
     await llm({
@@ -552,7 +552,7 @@ describe('Air-Gapped: Throughput & Latency', { timeout: TIMEOUT_MS * 3 }, () => 
 
   it('measures 5 concurrent requests (p50/p95)', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     // Warm up
     await llm({ messages: [{ role: 'user', content: 'Hello' }] });
@@ -643,7 +643,7 @@ describe('Air-Gapped: Long Context Handling', { timeout: TIMEOUT_MS * 2 }, () =>
 
   it('routes correctly with a large system prompt and conversation history', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     // Build a large system prompt (~2K tokens)
     const detailedPrompt = [
@@ -698,7 +698,7 @@ describe('Air-Gapped: Long Context Handling', { timeout: TIMEOUT_MS * 2 }, () =>
 
   it('handles large tool results without hallucinating', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     // Step 1: trigger a tool call
     const step1 = await llm({
@@ -741,7 +741,7 @@ describe('Air-Gapped: Adversarial Inputs', { timeout: TIMEOUT_MS }, () => {
 
   it('still evaluates tools when user query contains injection attempt', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
     const response = await llm({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -766,7 +766,7 @@ describe('Air-Gapped: Adversarial Inputs', { timeout: TIMEOUT_MS }, () => {
 
   it('selects semantically correct tool despite misleading keyword overlap', async () => {
     const backend = await detectBackend(); if (!backend) return;
-    const llm = createLLM();
+    const llm = createLLM(backend.baseUrl);
 
     // "check" appears in check_identity description, but this query is about vulnerabilities
     const response = await llm({

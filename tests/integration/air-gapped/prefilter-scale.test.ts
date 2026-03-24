@@ -77,9 +77,12 @@ const FULL_CATALOG: Tool[] = [
 
 describe('Pre-Filter Scale Test', () => {
   let available = false;
+  let backendUrl = GATEWAY_URL;
 
   beforeAll(async () => {
-    const detectedBackend = await detectBackend(); available = !!detectedBackend;
+    const detectedBackend = await detectBackend();
+    available = !!detectedBackend;
+    if (detectedBackend) backendUrl = detectedBackend.baseUrl;
   });
 
   it('pre-filter narrows 30 tools to ≤8 relevant ones', () => {
@@ -106,7 +109,7 @@ describe('Pre-Filter Scale Test', () => {
     const llm = createOrchestratorLLM({
       provider: 'auto',
       model: MODEL,
-      baseUrl: GATEWAY_URL,
+      baseUrl: backendUrl,
       timeoutMs: TIMEOUT_MS,
     });
 
@@ -149,7 +152,7 @@ describe('Pre-Filter Scale Test', () => {
     const llm = createOrchestratorLLM({
       provider: 'auto',
       model: MODEL,
-      baseUrl: GATEWAY_URL,
+      baseUrl: backendUrl,
       timeoutMs: TIMEOUT_MS,
     });
 
