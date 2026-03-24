@@ -45,6 +45,10 @@ Append-only logs are not audit trails. Epic AI® writes every agent action to a 
   npx epic-ai-gateway
   ```
 
+> **Model setup:** Download a GGUF model from [Hugging Face](https://huggingface.co/models) (search "llama 3.1 8B instruct GGUF", choose Q4_K_M quantization), then: `llama-server --model <path-to-file>.gguf --port 8080`
+
+> **Tool calling:** Llama 3.1 8B requires `--jinja` flag for structured tool calls via llama.cpp. For reliable tool calling, consider `functionary-small-v3.2`.
+
 > **Why not Ollama?** As of this release, Ollama and Apple M5 Metal are incompatible — confirmed crashes in GGML assertions, MLX bfloat16 kernel loading, and Metal library type mismatches ([#13867](https://github.com/ollama/ollama/issues/13867), [#13896](https://github.com/ollama/ollama/issues/13896), [#13460](https://github.com/ollama/ollama/issues/13460)) with no fix timeline from either vendor. Pre-M5 hardware is unaffected. This is why we deprecated Ollama from both the SDK runtime and the testing harnesses — the Inference Gateway with llama.cpp is the reliable path forward across all Apple Silicon generations.
 
 ## Quick Start
@@ -475,7 +479,7 @@ for await (const event of agent.stream('Identify all endpoints with active C2 be
 
 ### Inference Gateway
 
-`npx epic-ai-gateway` starts an OpenAI-compatible HTTP router that load-balances across all locally discovered inference backends — Ollama, vLLM, llama.cpp, and mlx-lm — with per-backend circuit breakers and health checks. A Redis-backed control plane enables consistent routing decisions across multi-replica deployments. The built-in Ollama shim provides drop-in compatibility for clients using the Ollama API format (deprecated, sunset 2026-12-31).
+`npx epic-ai-gateway` starts an OpenAI-compatible HTTP router that load-balances across all locally discovered inference backends — llama.cpp, vLLM, and mlx-lm — with per-backend circuit breakers and health checks. A Redis-backed control plane enables consistent routing decisions across multi-replica deployments. The built-in Ollama API shim is deprecated (sunset 2026-12-31); migrate to the Inference Gateway with llama.cpp.
 
 ### Three-Tier Tool Resolution
 
@@ -514,9 +518,9 @@ The trust layer includes `AuthMiddleware` for request authentication, `AccessPol
 
 | Field           | Type                                                | Description                              |
 |-----------------|-----------------------------------------------------|------------------------------------------|
-| `provider`      | `'auto' \| 'ollama' \| 'vllm' \| 'apple-foundation' \| 'custom'` | Orchestrator runtime          |
+| `provider`      | `'auto' \| 'vllm' \| 'apple-foundation' \| 'custom'` (~~`'ollama'`~~ deprecated) | Orchestrator runtime |
 | `model`         | `string`                                            | Model name (e.g., `'llama3.1:8b'`)        |
-| `baseUrl`       | `string`                                            | Base URL for Ollama or vLLM endpoints    |
+| `baseUrl`       | `string`                                            | Base URL for the Inference Gateway or vLLM endpoint |
 | `maxIterations` | `number`                                            | Max orchestrator loop iterations         |
 | `llm`           | `LLMFunction`                                       | Bring-your-own LLM function (custom)     |
 
@@ -524,7 +528,7 @@ The trust layer includes `AuthMiddleware` for request authentication, `AccessPol
 
 | Field      | Type                                        | Description                                       |
 |------------|---------------------------------------------|---------------------------------------------------|
-| `provider` | `'openai' \| 'anthropic' \| 'ollama' \| 'custom'` | Generator LLM provider                      |
+| `provider` | `'openai' \| 'anthropic' \| 'custom'` (~~`'ollama'`~~ deprecated) | Generator LLM provider |
 | `model`    | `string`                                    | Model name (e.g., `'gpt-4.1'`, `'claude-opus-4'`)|
 | `apiKey`   | `string`                                    | API key for the provider                          |
 | `maxTokens`| `number`                                    | Maximum tokens for generation                     |

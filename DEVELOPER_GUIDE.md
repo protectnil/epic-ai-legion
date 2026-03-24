@@ -50,6 +50,21 @@ npm install mongodb                   # Audit + memory persistence
 
 > **Ollama deprecation:** As of this release, Ollama and Apple M5 Metal are incompatible — confirmed crashes with no fix timeline from either vendor ([#13867](https://github.com/ollama/ollama/issues/13867), [#13896](https://github.com/ollama/ollama/issues/13896), [#13460](https://github.com/ollama/ollama/issues/13460)). Pre-M5 hardware is unaffected. The SDK and test harnesses have been migrated to the Inference Gateway (`npx epic-ai-gateway`) with llama.cpp as the default backend.
 
+### Model Download
+
+Download a GGUF model for llama.cpp:
+
+1. Visit [huggingface.co/models](https://huggingface.co/models) and search for "llama 3.1 8B instruct GGUF"
+2. Download a Q4_K_M quantization (good balance of quality and speed)
+3. Start the server:
+
+```bash
+brew install llama.cpp
+llama-server --model llama-3.1-8b-instruct.Q4_K_M.gguf --port 8080
+```
+
+> **Tool calling:** Llama 3.1 8B requires the `--jinja` flag for structured tool calls. For reliable tool calling out of the box, use `functionary-small-v3.2`.
+
 ## Quick Start
 
 ```typescript
@@ -165,7 +180,7 @@ Each variant is a separate interface (`PlanEvent`, `ActionEvent`, etc.) with a l
 `EpicAI.start()` validates all configuration and creates LLM functions **before** performing any side effects. The sequence is:
 
 1. Create orchestrator LLM
-2. Resolve generator LLM (or throw if missing and non-Ollama)
+2. Resolve generator LLM (or throw if missing and non-local)
 3. Connect MCP servers (`connectAll()`)
 4. Initialize audit trail (`auditTrail.init()`)
 
@@ -192,9 +207,9 @@ If configuration is invalid, the agent fails fast with no partial initialization
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `provider` | `'auto' \| 'ollama' \| 'vllm' \| 'llama.cpp' \| 'mlx-lm' \| 'apple-foundation' \| 'custom'` | Runtime (`'auto'` discovers Ollama, vLLM, llama.cpp, mlx-lm) |
+| `provider` | `'auto' \| 'ollama' \| 'vllm' \| 'llama.cpp' \| 'mlx-lm' \| 'apple-foundation' \| 'custom'` | Runtime (`'auto'` discovers the gateway, llama.cpp, vLLM, and Ollama (deprecated)) |
 | `model` | `string` | Model name (e.g., `'llama3.1:8b'`) |
-| `baseUrl` | `string` | Ollama/vLLM endpoint |
+| `baseUrl` | `string` | Inference backend endpoint |
 | `maxIterations` | `number` | Max tool-calling loop iterations |
 | `timeoutMs` | `number` | Per-call timeout (default: 5000) |
 | `llm` | `LLMFunction` | Bring-your-own LLM (for `'custom'` provider) |
@@ -1227,12 +1242,12 @@ The test suite is split into three lanes:
 | Command | What it runs | External dependencies |
 |---|---|---|
 | `npm test` | Unit tests + harness integration tests + MCP endpoint pings | None |
-| `npm run test:integration` | Ollama integration tests (`tests/integration/`) | Running Ollama with model pulled |
+| `npm run test:integration` | LLM integration tests (`tests/integration/`) | Running local inference backend with model pulled |
 | `npm run test:harness` | Standalone transport check (stdio, HTTP, API) | None |
 
 ```bash
 npm test                  # Default suite — all tests except integration/
-npm run test:integration  # Requires Ollama running locally
+npm run test:integration  # Requires local inference backend running
 npm run test:harness      # Standalone harness check (no vitest)
 npm run test:watch        # Watch mode (default suite)
 npm run build             # TypeScript compile
@@ -1240,21 +1255,21 @@ npm run build             # TypeScript compile
 
 ### Default suite (`npm test`)
 
-Runs via `vitest run`. Includes unit tests, harness transport tests, orchestrator integration tests, and MCP server endpoint pings. Does not require any external services. Excludes `tests/integration/**` because those tests require a running Ollama instance and will hang during vitest file collection if Ollama is not available.
+Runs via `vitest run`. Includes unit tests, harness transport tests, orchestrator integration tests, and MCP server endpoint pings. Does not require any external services. Excludes `tests/integration/**` because those tests require a running local inference backend and will hang during vitest file collection if one is not available.
 
 ### Integration suite (`npm run test:integration`)
 
-Runs all tests under `tests/integration/` against real LLM inference. Expects Ollama serving on `http://localhost:11434` with `llama3.1:8b` pulled. Tests skip gracefully if Ollama is not available, but the files must still be run in their own vitest invocation to avoid collection-phase hangs.
+Runs all tests under `tests/integration/` against real LLM inference. Expects a local inference backend (gateway on `http://localhost:8000` or llama.cpp on `http://localhost:8080`) with `llama3.1:8b` loaded. Tests skip gracefully if no backend is available, but the files must still be run in their own vitest invocation to avoid collection-phase hangs.
 
 The integration suite is organized into three directories:
 
-#### `tests/integration/ollama.test.ts` — Basic Provider Tests (2 tests)
+#### `tests/integration/llm.test.ts` — Basic Provider Tests (2 tests)
 
-Validates that `createOrchestratorLLM` can produce text responses and make tool calls against Ollama. Baseline smoke test for the provider abstraction.
+Validates that `createOrchestratorLLM` can produce text responses and make tool calls against a local inference backend. Baseline smoke test for the provider abstraction.
 
 #### `tests/integration/air-gapped/` — Air-Gapped Full-Stack Tests (20 tests, ~35 LLM calls)
 
-Exercises the orchestrator with Ollama on both sides (orchestrator AND generator). Zero external API calls — all inference stays on the local machine. Designed for environments where no data may leave the infrastructure.
+Exercises the orchestrator with a local inference backend on both sides (orchestrator AND generator). Zero external API calls — all inference stays on the local machine. Designed for environments where no data may leave the infrastructure.
 
 | Section | Tests | What it validates |
 |---|---|---|
@@ -1270,15 +1285,15 @@ Exercises the orchestrator with Ollama on both sides (orchestrator AND generator
 **GPU runtime:** Under 5 minutes on an H100.
 
 ```bash
-# Air-gapped only (requires Ollama, nothing else)
+# Air-gapped only (requires local inference backend, nothing else)
 npm run test:integration
 ```
 
 #### `tests/integration/hybrid/` — Hybrid Cloud Handoff Tests (3 tests)
 
-Tests the full orchestrator→generator handoff: local Ollama SLM selects tools, cloud OpenAI LLM synthesizes the response from curated tool results. Validates the core architectural claim that tool schemas never reach the cloud LLM.
+Tests the full orchestrator→generator handoff: local SLM selects tools, cloud OpenAI LLM synthesizes the response from curated tool results. Validates the core architectural claim that tool schemas never reach the cloud LLM.
 
-| Test | Ollama calls | OpenAI calls | What it validates |
+| Test | Local calls | OpenAI calls | What it validates |
 |---|---|---|---|
 | Tool select → cloud synthesis | 1 | 1 | Orchestrator selects tool, generator produces actionable briefing from tool result |
 | Data sovereignty verification | 1 | 1 | Generator messages contain zero tool schema keywords; tool definitions stay local |
@@ -1325,8 +1340,8 @@ npx epic-ai setup --force-config
 ```
 
 The wizard:
-1. Detects Ollama (probes `http://localhost:11434/api/version`)
-2. Checks/pulls the orchestrator model (default: `llama3.1:8b`)
+1. Detects local inference backend (probes gateway on `http://localhost:8000`, llama.cpp on `http://localhost:8080`, Ollama legacy on `http://localhost:11434`)
+2. Checks the orchestrator model is loaded (default: `llama3.1:8b`)
 3. Validates the model responds to a test prompt
 4. Generates `epic-ai.config.ts` template
 

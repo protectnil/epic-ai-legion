@@ -25,11 +25,11 @@ The SDK uses `provider: 'auto'` which probes three endpoints in order:
 
 ```bash
 brew install llama.cpp
-# Download a GGUF model (e.g., llama-3.1-8b-instruct)
-llama-server --model llama-3.1-8b-instruct.Q4_K_M.gguf --port 8080
+# Download a GGUF model from Hugging Face (e.g., bartowski/Meta-Llama-3.1-8B-Instruct-GGUF)
+llama-server --model llama-3.1-8b-instruct.Q4_K_M.gguf --port 8080 --jinja
 ```
 
-The first endpoint that responds on `/v1/models` wins. Default model: `llama3.1:8b`.
+The first endpoint that responds on `/v1/models` wins. Default model: `llama-3.1-8b-instruct.Q4_K_M.gguf` (or equivalent GGUF). Download GGUF files from [Hugging Face](https://huggingface.co/models?library=gguf).
 
 ---
 
@@ -57,14 +57,14 @@ All test files in `tests/` excluding `tests/integration/`. Mock LLMs, in-memory 
 ### Prerequisites
 
 - Local inference backend running (llama.cpp on port 8080 or gateway on port 8000)
-- Model loaded: `llama3.1:8b` (or equivalent GGUF)
+- Model loaded: a GGUF such as `llama-3.1-8b-instruct.Q4_K_M.gguf` (download from Hugging Face). Start with `--jinja` for tool-call support.
 - For hybrid tests: `OPENAI_API_KEY` env var set (tests skip gracefully if absent)
 
 ### Test Structure
 
 ```
 tests/integration/
-├── ollama.test.ts                         # 2 basic provider tests (probes gateway first)
+├── ollama.test.ts                         # 2 basic provider tests (probes gateway/llama.cpp — filename is legacy, Ollama not required)
 ├── air-gapped/
 │   └── orchestrator-generator.test.ts     # 20 tests — local backend both sides
 └── hybrid/
