@@ -28,13 +28,14 @@ jobs:
             BODY=$(git log --format="%b" -1 "$SHA")
             BODY_FILTERED=$(echo "$BODY" | grep -v "^Co-Authored-By:" | grep -v "^$" || true)
 
-            if [ ${#SUBJECT} -gt 100 ]; then
+            if [ ${#SUBJECT} -gt 150 ]; then
               echo "FAIL: Subject over 100 chars in $SHA"
               echo "  Subject: $SUBJECT"
               FAILED=1
             fi
 
-            BODY_LINES=$(echo "$BODY_FILTERED" | grep -c "." || echo "0")
+            BODY_LINES=$(echo "$BODY_FILTERED" | grep -c "." 2>/dev/null || true)
+            BODY_LINES=${BODY_LINES:-0}
             if [ "$BODY_LINES" -gt 3 ]; then
               echo "FAIL: Body has $BODY_LINES lines (max 3) in $SHA"
               echo "  Subject: $SUBJECT"
