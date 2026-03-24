@@ -12,7 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Default timeout increased to 30s for inference backends.
 - Throughput test fix for concurrent request measurement.
-- Adapter catalog generation updated — 470 cataloged from 472 on disk (2 skipped due to constructor issues).
+- All 472 adapters now have `static catalog()` — adapter-catalog.json contains 472 entries.
+- MCP registry (`mcp-registry.json`) ships with package — 472 entries, 223 vendor MCP configs, ready-to-connect.
+- `RegistryLoader` — one-line adapter loading with automatic credential resolution from env vars.
+- Adapter sync service — autonomous MongoDB-backed source of truth with MCP discovery, enumeration, and publishing.
 
 ## 0.4.2 — 2026-03-24
 
