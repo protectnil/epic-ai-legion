@@ -120,6 +120,16 @@ import { YouTubeMCPServer } from '../src/mcp-servers/youtube.js';
 import { ZendeskMCPServer } from '../src/mcp-servers/zendesk.js';
 import { ZoomMCPServer } from '../src/mcp-servers/zoom.js';
 import { ZscalerMCPServer } from '../src/mcp-servers/zscaler.js';
+import { DocuSignMCPServer } from '../src/mcp-servers/docusign.js';
+import { PandaDocMCPServer } from '../src/mcp-servers/pandadoc.js';
+import { FreshdeskMCPServer } from '../src/mcp-servers/freshdesk.js';
+import { IntercomMCPServer } from '../src/mcp-servers/intercom.js';
+import { HelpScoutMCPServer } from '../src/mcp-servers/help-scout.js';
+import { PipedriveMCPServer } from '../src/mcp-servers/pipedrive.js';
+import { ZohoCRMMCPServer } from '../src/mcp-servers/zoho-crm.js';
+import { Dynamics365MCPServer } from '../src/mcp-servers/dynamics-365.js';
+import { OutreachMCPServer } from '../src/mcp-servers/outreach.js';
+import { SalesloftMCPServer } from '../src/mcp-servers/salesloft.js';
 
 // Mock config that satisfies any adapter constructor
 const mockConfig: Record<string, unknown> = {
@@ -152,6 +162,9 @@ const mockConfig: Record<string, unknown> = {
   apiToken: 'test-token',
   connectorId: 'test-connector',
   appId: 'test-app',
+  basePath: 'na1.docusign.net',
+  domain: 'test',
+  organizationUrl: 'https://mock.crm.dynamics.com',
 };
 
 interface AdapterEntry {
@@ -273,6 +286,16 @@ const adapters: AdapterEntry[] = [
   { name: 'zendesk', factory: () => new ZendeskMCPServer(mockConfig as any) },
   { name: 'zoom', factory: () => new ZoomMCPServer(mockConfig as any) },
   { name: 'zscaler', factory: () => new ZscalerMCPServer(mockConfig as any) },
+  { name: 'docusign', factory: () => new DocuSignMCPServer(mockConfig as any) },
+  { name: 'pandadoc', factory: () => new PandaDocMCPServer(mockConfig as any) },
+  { name: 'freshdesk', factory: () => new FreshdeskMCPServer(mockConfig as any) },
+  { name: 'intercom', factory: () => new IntercomMCPServer(mockConfig as any) },
+  { name: 'help-scout', factory: () => new HelpScoutMCPServer(mockConfig as any) },
+  { name: 'pipedrive', factory: () => new PipedriveMCPServer(mockConfig as any) },
+  { name: 'zoho-crm', factory: () => new ZohoCRMMCPServer(mockConfig as any) },
+  { name: 'dynamics-365', factory: () => new Dynamics365MCPServer(mockConfig as any) },
+  { name: 'outreach', factory: () => new OutreachMCPServer(mockConfig as any) },
+  { name: 'salesloft', factory: () => new SalesloftMCPServer(mockConfig as any) },
 ];
 
 describe('Adapter Structure Validation (113 adapters)', () => {
