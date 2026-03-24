@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AnthropicApiMCPServer } from '../../src/mcp-servers/anthropic-api.js';
+import { AnthropicMCPServer } from '../../src/mcp-servers/anthropic-api.js';
 
-describe('AnthropicApiMCPServer', () => {
-  const adapter = new AnthropicApiMCPServer({ apiKey: 'test-key' });
+describe('AnthropicMCPServer', () => {
+  const adapter = new AnthropicMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { F5BigIPMCPServer } from '../../src/mcp-servers/f5-bigip.js';
 
 describe('F5BigIPMCPServer', () => {
-  const adapter = new F5BigIPMCPServer({ username: 'test', password: 'test' });
+  const adapter = new F5BigIPMCPServer({ host: 'test.example.com', username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

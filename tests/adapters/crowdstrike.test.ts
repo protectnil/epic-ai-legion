@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CrowdstrikeMCPServer } from '../../src/mcp-servers/crowdstrike.js';
+import { CrowdStrikeMCPServer } from '../../src/mcp-servers/crowdstrike.js';
 
-describe('CrowdstrikeMCPServer', () => {
-  const adapter = new CrowdstrikeMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('CrowdStrikeMCPServer', () => {
+  const adapter = new CrowdStrikeMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

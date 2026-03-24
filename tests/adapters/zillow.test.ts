@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ZillowMCPServer } from '../../src/mcp-servers/zillow.js';
 
 describe('ZillowMCPServer', () => {
-  const adapter = new ZillowMCPServer({ apiToken: 'test-token' });
+  const adapter = new ZillowMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

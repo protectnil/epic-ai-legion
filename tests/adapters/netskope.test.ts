@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { NetskopeMCPServer } from '../../src/mcp-servers/netskope.js';
 
 describe('NetskopeMCPServer', () => {
-  const adapter = new NetskopeMCPServer({ apiToken: 'test-token' });
+  const adapter = new NetskopeMCPServer({ apiToken: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

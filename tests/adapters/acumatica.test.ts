@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AcumaticaMCPServer } from '../../src/mcp-servers/acumatica.js';
 
 describe('AcumaticaMCPServer', () => {
-  const adapter = new AcumaticaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new AcumaticaMCPServer({ instanceUrl: 'https://test.example.com', clientId: 'test-id', clientSecret: 'test-secret', username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

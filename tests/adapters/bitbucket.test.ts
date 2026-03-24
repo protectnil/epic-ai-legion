@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BitbucketMCPServer } from '../../src/mcp-servers/bitbucket.js';
 
 describe('BitbucketMCPServer', () => {
-  const adapter = new BitbucketMCPServer({ username: 'test', password: 'test' });
+  const adapter = new BitbucketMCPServer({ username: 'test-name', appPassword: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

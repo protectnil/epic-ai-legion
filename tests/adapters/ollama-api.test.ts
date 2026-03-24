@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { OllamaApiMCPServer } from '../../src/mcp-servers/ollama-api.js';
+import { OllamaMCPServer } from '../../src/mcp-servers/ollama-api.js';
 
-describe('OllamaApiMCPServer', () => {
-  const adapter = new OllamaApiMCPServer({ apiToken: 'test-token' });
+describe('OllamaMCPServer', () => {
+  const adapter = new OllamaMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

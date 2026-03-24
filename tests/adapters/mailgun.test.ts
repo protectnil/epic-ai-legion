@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MailgunMCPServer } from '../../src/mcp-servers/mailgun.js';
 
 describe('MailgunMCPServer', () => {
-  const adapter = new MailgunMCPServer({ username: 'test', password: 'test' });
+  const adapter = new MailgunMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

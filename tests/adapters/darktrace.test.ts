@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DarktraceMCPServer } from '../../src/mcp-servers/darktrace.js';
 
 describe('DarktraceMCPServer', () => {
-  const adapter = new DarktraceMCPServer({ apiToken: 'test-token' });
+  const adapter = new DarktraceMCPServer({ publicToken: 'test-token', privateToken: 'test-token', instance: 'test-instance' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

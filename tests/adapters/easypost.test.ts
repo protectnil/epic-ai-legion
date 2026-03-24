@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { EasypostMCPServer } from '../../src/mcp-servers/easypost.js';
+import { EasyPostMCPServer } from '../../src/mcp-servers/easypost.js';
 
-describe('EasypostMCPServer', () => {
-  const adapter = new EasypostMCPServer({ username: 'test', password: 'test' });
+describe('EasyPostMCPServer', () => {
+  const adapter = new EasyPostMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

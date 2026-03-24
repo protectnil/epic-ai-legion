@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { NetsuiteMCPServer } from '../../src/mcp-servers/netsuite.js';
+import { NetSuiteMCPServer } from '../../src/mcp-servers/netsuite.js';
 
-describe('NetsuiteMCPServer', () => {
-  const adapter = new NetsuiteMCPServer({ apiToken: 'test-token' });
+describe('NetSuiteMCPServer', () => {
+  const adapter = new NetSuiteMCPServer({ accountId: 'test-id', consumerKey: 'test-key', consumerSecret: 'test-secret', tokenId: 'test-id', tokenSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

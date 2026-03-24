@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { JenkinsMCPServer } from '../../src/mcp-servers/jenkins.js';
 
 describe('JenkinsMCPServer', () => {
-  const adapter = new JenkinsMCPServer({ username: 'test', password: 'test' });
+  const adapter = new JenkinsMCPServer({ baseUrl: 'https://test.example.com', username: 'test-name', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ChronicleMCPServer } from '../../src/mcp-servers/chronicle.js';
 
 describe('ChronicleMCPServer', () => {
-  const adapter = new ChronicleMCPServer({ apiToken: 'test-token' });
+  const adapter = new ChronicleMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

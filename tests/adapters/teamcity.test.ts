@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { TeamcityMCPServer } from '../../src/mcp-servers/teamcity.js';
+import { TeamCityMCPServer } from '../../src/mcp-servers/teamcity.js';
 
-describe('TeamcityMCPServer', () => {
-  const adapter = new TeamcityMCPServer({ username: 'test', password: 'test' });
+describe('TeamCityMCPServer', () => {
+  const adapter = new TeamCityMCPServer({ token: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

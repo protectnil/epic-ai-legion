@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DelineaMCPServer } from '../../src/mcp-servers/delinea.js';
 
 describe('DelineaMCPServer', () => {
-  const adapter = new DelineaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new DelineaMCPServer({ username: 'test-name', password: 'test-pass', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

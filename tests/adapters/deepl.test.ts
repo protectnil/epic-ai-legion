@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { DeeplMCPServer } from '../../src/mcp-servers/deepl.js';
+import { DeepLMCPServer } from '../../src/mcp-servers/deepl.js';
 
-describe('DeeplMCPServer', () => {
-  const adapter = new DeeplMCPServer({ apiToken: 'test-token' });
+describe('DeepLMCPServer', () => {
+  const adapter = new DeepLMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

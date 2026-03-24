@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ArizeAiMCPServer } from '../../src/mcp-servers/arize-ai.js';
+import { ArizeAIMCPServer } from '../../src/mcp-servers/arize-ai.js';
 
-describe('ArizeAiMCPServer', () => {
-  const adapter = new ArizeAiMCPServer({ apiToken: 'test-token' });
+describe('ArizeAIMCPServer', () => {
+  const adapter = new ArizeAIMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

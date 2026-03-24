@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { StatuspageMCPServer } from '../../src/mcp-servers/statuspage.js';
 
 describe('StatuspageMCPServer', () => {
-  const adapter = new StatuspageMCPServer({ apiKey: 'test-key' });
+  const adapter = new StatuspageMCPServer({ apiKey: 'test-key', pageId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

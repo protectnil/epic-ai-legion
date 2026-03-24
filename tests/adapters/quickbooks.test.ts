@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { QuickbooksMCPServer } from '../../src/mcp-servers/quickbooks.js';
+import { QuickBooksMCPServer } from '../../src/mcp-servers/quickbooks.js';
 
-describe('QuickbooksMCPServer', () => {
-  const adapter = new QuickbooksMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('QuickBooksMCPServer', () => {
+  const adapter = new QuickBooksMCPServer({ accessToken: 'test-token', realmId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

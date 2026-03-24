@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RampMCPServer } from '../../src/mcp-servers/ramp.js';
 
 describe('RampMCPServer', () => {
-  const adapter = new RampMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new RampMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

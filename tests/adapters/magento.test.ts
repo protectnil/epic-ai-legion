@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MagentoMCPServer } from '../../src/mcp-servers/magento.js';
 
 describe('MagentoMCPServer', () => {
-  const adapter = new MagentoMCPServer({ apiToken: 'test-token' });
+  const adapter = new MagentoMCPServer({ accessToken: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

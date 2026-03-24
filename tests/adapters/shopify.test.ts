@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ShopifyMCPServer } from '../../src/mcp-servers/shopify.js';
 
 describe('ShopifyMCPServer', () => {
-  const adapter = new ShopifyMCPServer({ apiToken: 'test-token' });
+  const adapter = new ShopifyMCPServer({ store: 'test-value', accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

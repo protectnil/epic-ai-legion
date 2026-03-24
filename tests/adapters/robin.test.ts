@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RobinMCPServer } from '../../src/mcp-servers/robin.js';
 
 describe('RobinMCPServer', () => {
-  const adapter = new RobinMCPServer({ apiToken: 'test-token' });
+  const adapter = new RobinMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

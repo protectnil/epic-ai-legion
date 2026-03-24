@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YoutubeMCPServer } from '../../src/mcp-servers/youtube.js';
+import { YouTubeMCPServer } from '../../src/mcp-servers/youtube.js';
 
-describe('YoutubeMCPServer', () => {
-  const adapter = new YoutubeMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('YouTubeMCPServer', () => {
+  const adapter = new YouTubeMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

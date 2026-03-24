@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { HashicorpVaultMCPServer } from '../../src/mcp-servers/hashicorp-vault.js';
+import { HashiCorpVaultMCPServer } from '../../src/mcp-servers/hashicorp-vault.js';
 
-describe('HashicorpVaultMCPServer', () => {
-  const adapter = new HashicorpVaultMCPServer({ apiToken: 'test-token' });
+describe('HashiCorpVaultMCPServer', () => {
+  const adapter = new HashiCorpVaultMCPServer({ vaultAddr: 'test-value', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

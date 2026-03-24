@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ActivecampaignMCPServer } from '../../src/mcp-servers/activecampaign.js';
+import { ActiveCampaignMCPServer } from '../../src/mcp-servers/activecampaign.js';
 
-describe('ActivecampaignMCPServer', () => {
-  const adapter = new ActivecampaignMCPServer({ apiToken: 'test-token' });
+describe('ActiveCampaignMCPServer', () => {
+  const adapter = new ActiveCampaignMCPServer({ apiKey: 'test-key', accountUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MuxMCPServer } from '../../src/mcp-servers/mux.js';
 
 describe('MuxMCPServer', () => {
-  const adapter = new MuxMCPServer({ username: 'test', password: 'test' });
+  const adapter = new MuxMCPServer({ tokenId: 'test-id', tokenSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

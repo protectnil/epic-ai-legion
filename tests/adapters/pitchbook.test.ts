@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PitchbookMCPServer } from '../../src/mcp-servers/pitchbook.js';
+import { PitchBookMCPServer } from '../../src/mcp-servers/pitchbook.js';
 
-describe('PitchbookMCPServer', () => {
-  const adapter = new PitchbookMCPServer({ apiToken: 'test-token' });
+describe('PitchBookMCPServer', () => {
+  const adapter = new PitchBookMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

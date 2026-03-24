@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CanadaPostMCPServer } from '../../src/mcp-servers/canada-post.js';
 
 describe('CanadaPostMCPServer', () => {
-  const adapter = new CanadaPostMCPServer({ username: 'test', password: 'test' });
+  const adapter = new CanadaPostMCPServer({ apiUsername: 'test-name', apiPassword: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

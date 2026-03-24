@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GhostMCPServer } from '../../src/mcp-servers/ghost.js';
 
 describe('GhostMCPServer', () => {
-  const adapter = new GhostMCPServer({ apiToken: 'test-token' });
+  const adapter = new GhostMCPServer({ adminApiKey: 'abcdef1234567890:abcdef1234567890abcdef1234567890', baseUrl: 'https://test.ghost.io' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

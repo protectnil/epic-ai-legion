@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { InstanaMCPServer } from '../../src/mcp-servers/instana.js';
 
 describe('InstanaMCPServer', () => {
-  const adapter = new InstanaMCPServer({ apiToken: 'test-token' });
+  const adapter = new InstanaMCPServer({ baseUrl: 'https://test.example.com', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

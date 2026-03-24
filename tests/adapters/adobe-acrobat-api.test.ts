@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AdobeAcrobatApiMCPServer } from '../../src/mcp-servers/adobe-acrobat-api.js';
+import { AdobeAcrobatAPIMCPServer } from '../../src/mcp-servers/adobe-acrobat-api.js';
 
-describe('AdobeAcrobatApiMCPServer', () => {
-  const adapter = new AdobeAcrobatApiMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('AdobeAcrobatAPIMCPServer', () => {
+  const adapter = new AdobeAcrobatAPIMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

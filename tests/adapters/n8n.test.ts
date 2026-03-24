@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { N8nMCPServer } from '../../src/mcp-servers/n8n.js';
+import { N8NMCPServer } from '../../src/mcp-servers/n8n.js';
 
-describe('N8nMCPServer', () => {
-  const adapter = new N8nMCPServer({ apiKey: 'test-key' });
+describe('N8NMCPServer', () => {
+  const adapter = new N8NMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

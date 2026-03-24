@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PantherMCPServer } from '../../src/mcp-servers/panther.js';
 
 describe('PantherMCPServer', () => {
-  const adapter = new PantherMCPServer({ apiKey: 'test-key' });
+  const adapter = new PantherMCPServer({ apiToken: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

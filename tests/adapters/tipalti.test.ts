@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TipaltiMCPServer } from '../../src/mcp-servers/tipalti.js';
 
 describe('TipaltiMCPServer', () => {
-  const adapter = new TipaltiMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new TipaltiMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

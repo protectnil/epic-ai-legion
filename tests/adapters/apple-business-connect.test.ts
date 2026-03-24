@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AppleBusinessConnectMCPServer } from '../../src/mcp-servers/apple-business-connect.js';
 
 describe('AppleBusinessConnectMCPServer', () => {
-  const adapter = new AppleBusinessConnectMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new AppleBusinessConnectMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

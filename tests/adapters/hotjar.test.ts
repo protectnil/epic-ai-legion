@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HotjarMCPServer } from '../../src/mcp-servers/hotjar.js';
 
 describe('HotjarMCPServer', () => {
-  const adapter = new HotjarMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new HotjarMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

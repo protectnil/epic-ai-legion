@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GustoMCPServer } from '../../src/mcp-servers/gusto.js';
 
 describe('GustoMCPServer', () => {
-  const adapter = new GustoMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GustoMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

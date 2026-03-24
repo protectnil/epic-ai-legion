@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { BigcommerceMCPServer } from '../../src/mcp-servers/bigcommerce.js';
+import { BigCommerceMCPServer } from '../../src/mcp-servers/bigcommerce.js';
 
-describe('BigcommerceMCPServer', () => {
-  const adapter = new BigcommerceMCPServer({ apiToken: 'test-token' });
+describe('BigCommerceMCPServer', () => {
+  const adapter = new BigCommerceMCPServer({ apiToken: 'test-token', storeHash: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

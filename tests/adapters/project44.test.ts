@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Project44MCPServer } from '../../src/mcp-servers/project44.js';
 
 describe('Project44MCPServer', () => {
-  const adapter = new Project44MCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new Project44MCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

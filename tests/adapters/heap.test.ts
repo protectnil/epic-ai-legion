@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HeapMCPServer } from '../../src/mcp-servers/heap.js';
 
 describe('HeapMCPServer', () => {
-  const adapter = new HeapMCPServer({ apiToken: 'test-token' });
+  const adapter = new HeapMCPServer({ appId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

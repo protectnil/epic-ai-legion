@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RenderMCPServer } from '../../src/mcp-servers/render.js';
 
 describe('RenderMCPServer', () => {
-  const adapter = new RenderMCPServer({ apiToken: 'test-token' });
+  const adapter = new RenderMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

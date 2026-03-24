@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GoogleTranslateMCPServer } from '../../src/mcp-servers/google-translate.js';
 
 describe('GoogleTranslateMCPServer', () => {
-  const adapter = new GoogleTranslateMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GoogleTranslateMCPServer({ accessToken: 'test-token', projectId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

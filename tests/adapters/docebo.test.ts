@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DoceboMCPServer } from '../../src/mcp-servers/docebo.js';
 
 describe('DoceboMCPServer', () => {
-  const adapter = new DoceboMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new DoceboMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

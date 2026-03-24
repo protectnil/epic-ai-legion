@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { GrafanaApiMCPServer } from '../../src/mcp-servers/grafana-api.js';
+import { GrafanaAPIMCPServer } from '../../src/mcp-servers/grafana-api.js';
 
-describe('GrafanaApiMCPServer', () => {
-  const adapter = new GrafanaApiMCPServer({ apiToken: 'test-token' });
+describe('GrafanaAPIMCPServer', () => {
+  const adapter = new GrafanaAPIMCPServer({ serviceAccountToken: 'test-token', instance: 'test-instance' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

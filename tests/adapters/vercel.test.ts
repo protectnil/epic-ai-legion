@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { VercelMCPServer } from '../../src/mcp-servers/vercel.js';
 
 describe('VercelMCPServer', () => {
-  const adapter = new VercelMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new VercelMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LaceworkMCPServer } from '../../src/mcp-servers/lacework.js';
 
 describe('LaceworkMCPServer', () => {
-  const adapter = new LaceworkMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new LaceworkMCPServer({ account: 'test-account', keyId: 'test-id', secret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

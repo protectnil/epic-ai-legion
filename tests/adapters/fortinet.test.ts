@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FortinetMCPServer } from '../../src/mcp-servers/fortinet.js';
 
 describe('FortinetMCPServer', () => {
-  const adapter = new FortinetMCPServer({ apiToken: 'test-token' });
+  const adapter = new FortinetMCPServer({ baseUrl: 'https://test.example.com', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

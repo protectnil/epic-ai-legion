@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ClassyMCPServer } from '../../src/mcp-servers/classy.js';
 
 describe('ClassyMCPServer', () => {
-  const adapter = new ClassyMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ClassyMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

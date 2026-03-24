@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ZuoraMCPServer } from '../../src/mcp-servers/zuora.js';
 
 describe('ZuoraMCPServer', () => {
-  const adapter = new ZuoraMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ZuoraMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

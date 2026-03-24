@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AmplitudeMCPServer } from '../../src/mcp-servers/amplitude.js';
 
 describe('AmplitudeMCPServer', () => {
-  const adapter = new AmplitudeMCPServer({ username: 'test', password: 'test' });
+  const adapter = new AmplitudeMCPServer({ apiKey: 'test-key', secretKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

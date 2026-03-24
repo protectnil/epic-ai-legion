@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { DevtoMCPServer } from '../../src/mcp-servers/devto.js';
+import { DevToMCPServer } from '../../src/mcp-servers/devto.js';
 
-describe('DevtoMCPServer', () => {
-  const adapter = new DevtoMCPServer({ apiKey: 'test-key' });
+describe('DevToMCPServer', () => {
+  const adapter = new DevToMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PagerdutyMCPServer } from '../../src/mcp-servers/pagerduty.js';
+import { PagerDutyMCPServer } from '../../src/mcp-servers/pagerduty.js';
 
-describe('PagerdutyMCPServer', () => {
-  const adapter = new PagerdutyMCPServer({ apiToken: 'test-token' });
+describe('PagerDutyMCPServer', () => {
+  const adapter = new PagerDutyMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

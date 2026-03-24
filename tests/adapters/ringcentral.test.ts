@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { RingcentralMCPServer } from '../../src/mcp-servers/ringcentral.js';
+import { RingCentralMCPServer } from '../../src/mcp-servers/ringcentral.js';
 
-describe('RingcentralMCPServer', () => {
-  const adapter = new RingcentralMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('RingCentralMCPServer', () => {
+  const adapter = new RingCentralMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

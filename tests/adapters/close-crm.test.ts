@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CloseCrmMCPServer } from '../../src/mcp-servers/close-crm.js';
+import { CloseCRMMCPServer } from '../../src/mcp-servers/close-crm.js';
 
-describe('CloseCrmMCPServer', () => {
-  const adapter = new CloseCrmMCPServer({ username: 'test', password: 'test' });
+describe('CloseCRMMCPServer', () => {
+  const adapter = new CloseCRMMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

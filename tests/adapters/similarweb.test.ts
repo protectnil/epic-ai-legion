@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SimilarwebMCPServer } from '../../src/mcp-servers/similarweb.js';
 
 describe('SimilarwebMCPServer', () => {
-  const adapter = new SimilarwebMCPServer({ apiToken: 'test-token' });
+  const adapter = new SimilarwebMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

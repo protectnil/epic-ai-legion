@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CoingeckoMCPServer } from '../../src/mcp-servers/coingecko.js';
+import { CoinGeckoMCPServer } from '../../src/mcp-servers/coingecko.js';
 
-describe('CoingeckoMCPServer', () => {
-  const adapter = new CoingeckoMCPServer({ apiKey: 'test-key' });
+describe('CoinGeckoMCPServer', () => {
+  const adapter = new CoinGeckoMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

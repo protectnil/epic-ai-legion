@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SnowflakeMCPServer } from '../../src/mcp-servers/snowflake.js';
 
 describe('SnowflakeMCPServer', () => {
-  const adapter = new SnowflakeMCPServer({ apiToken: 'test-token' });
+  const adapter = new SnowflakeMCPServer({ account: 'test-account', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

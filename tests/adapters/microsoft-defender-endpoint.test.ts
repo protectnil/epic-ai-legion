@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MicrosoftDefenderEndpointMCPServer } from '../../src/mcp-servers/microsoft-defender-endpoint.js';
 
 describe('MicrosoftDefenderEndpointMCPServer', () => {
-  const adapter = new MicrosoftDefenderEndpointMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MicrosoftDefenderEndpointMCPServer({ tenantId: 'test-id', clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

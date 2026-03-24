@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { BeyondtrustMCPServer } from '../../src/mcp-servers/beyondtrust.js';
+import { BeyondTrustMCPServer } from '../../src/mcp-servers/beyondtrust.js';
 
-describe('BeyondtrustMCPServer', () => {
-  const adapter = new BeyondtrustMCPServer({ apiToken: 'test-token' });
+describe('BeyondTrustMCPServer', () => {
+  const adapter = new BeyondTrustMCPServer({ apiKey: 'test-key', username: 'test-name', password: 'test-pass', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

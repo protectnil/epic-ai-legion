@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TheGraphMCPServer } from '../../src/mcp-servers/the-graph.js';
 
 describe('TheGraphMCPServer', () => {
-  const adapter = new TheGraphMCPServer({ apiToken: 'test-token' });
+  const adapter = new TheGraphMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

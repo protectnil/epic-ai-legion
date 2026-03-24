@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LoomMCPServer } from '../../src/mcp-servers/loom.js';
 
 describe('LoomMCPServer', () => {
-  const adapter = new LoomMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new LoomMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

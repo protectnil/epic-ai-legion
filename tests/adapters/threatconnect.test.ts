@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ThreatconnectMCPServer } from '../../src/mcp-servers/threatconnect.js';
+import { ThreatConnectMCPServer } from '../../src/mcp-servers/threatconnect.js';
 
-describe('ThreatconnectMCPServer', () => {
-  const adapter = new ThreatconnectMCPServer({ apiToken: 'test-token' });
+describe('ThreatConnectMCPServer', () => {
+  const adapter = new ThreatConnectMCPServer({ accessId: 'test-id', secretKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

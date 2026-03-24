@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AutomoxMCPServer } from '../../src/mcp-servers/automox.js';
 
 describe('AutomoxMCPServer', () => {
-  const adapter = new AutomoxMCPServer({ apiToken: 'test-token' });
+  const adapter = new AutomoxMCPServer({ apiKey: 'test-key', orgId: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

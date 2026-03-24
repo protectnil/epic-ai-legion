@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AircallMCPServer } from '../../src/mcp-servers/aircall.js';
 
 describe('AircallMCPServer', () => {
-  const adapter = new AircallMCPServer({ username: 'test', password: 'test' });
+  const adapter = new AircallMCPServer({ apiId: 'test-id', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

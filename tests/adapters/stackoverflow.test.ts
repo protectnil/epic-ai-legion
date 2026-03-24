@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { StackoverflowMCPServer } from '../../src/mcp-servers/stackoverflow.js';
+import { StackOverflowMCPServer } from '../../src/mcp-servers/stackoverflow.js';
 
-describe('StackoverflowMCPServer', () => {
-  const adapter = new StackoverflowMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('StackOverflowMCPServer', () => {
+  const adapter = new StackOverflowMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

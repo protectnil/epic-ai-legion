@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PrismaCloudMCPServer } from '../../src/mcp-servers/prisma-cloud.js';
 
 describe('PrismaCloudMCPServer', () => {
-  const adapter = new PrismaCloudMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new PrismaCloudMCPServer({ username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

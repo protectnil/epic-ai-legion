@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { GithubMCPServer } from '../../src/mcp-servers/github.js';
+import { GitHubMCPServer } from '../../src/mcp-servers/github.js';
 
-describe('GithubMCPServer', () => {
-  const adapter = new GithubMCPServer({ apiToken: 'test-token' });
+describe('GitHubMCPServer', () => {
+  const adapter = new GitHubMCPServer({ token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

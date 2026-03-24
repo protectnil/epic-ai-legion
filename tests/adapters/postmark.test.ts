@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PostmarkMCPServer } from '../../src/mcp-servers/postmark.js';
 
 describe('PostmarkMCPServer', () => {
-  const adapter = new PostmarkMCPServer({ apiToken: 'test-token' });
+  const adapter = new PostmarkMCPServer({ serverToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

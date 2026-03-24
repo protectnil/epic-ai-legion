@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AmazonAdsMCPServer } from '../../src/mcp-servers/amazon-ads.js';
 
 describe('AmazonAdsMCPServer', () => {
-  const adapter = new AmazonAdsMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new AmazonAdsMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', refreshToken: 'test-token', profileId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

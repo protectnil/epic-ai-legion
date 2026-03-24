@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LeverMCPServer } from '../../src/mcp-servers/lever.js';
 
 describe('LeverMCPServer', () => {
-  const adapter = new LeverMCPServer({ username: 'test', password: 'test' });
+  const adapter = new LeverMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

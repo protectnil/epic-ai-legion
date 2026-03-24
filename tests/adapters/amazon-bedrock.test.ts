@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AmazonBedrockMCPServer } from '../../src/mcp-servers/amazon-bedrock.js';
 
 describe('AmazonBedrockMCPServer', () => {
-  const adapter = new AmazonBedrockMCPServer({ accessKeyId: 'test', secretAccessKey: 'test', region: 'us-east-1' });
+  const adapter = new AmazonBedrockMCPServer({ region: 'us-east-1', accessKeyId: 'test-id', secretAccessKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

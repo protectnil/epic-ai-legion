@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CourierMCPServer } from '../../src/mcp-servers/courier.js';
 
 describe('CourierMCPServer', () => {
-  const adapter = new CourierMCPServer({ apiToken: 'test-token' });
+  const adapter = new CourierMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

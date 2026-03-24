@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BizzaboMCPServer } from '../../src/mcp-servers/bizzabo.js';
 
 describe('BizzaboMCPServer', () => {
-  const adapter = new BizzaboMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new BizzaboMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

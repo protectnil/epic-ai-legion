@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Dynamics365MCPServer } from '../../src/mcp-servers/dynamics-365.js';
 
 describe('Dynamics365MCPServer', () => {
-  const adapter = new Dynamics365MCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new Dynamics365MCPServer({ accessToken: 'test-token', organizationUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

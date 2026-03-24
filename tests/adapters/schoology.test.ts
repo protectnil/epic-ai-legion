@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SchoologyMCPServer } from '../../src/mcp-servers/schoology.js';
 
 describe('SchoologyMCPServer', () => {
-  const adapter = new SchoologyMCPServer({ apiToken: 'test-token' });
+  const adapter = new SchoologyMCPServer({ consumerKey: 'test-key', consumerSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

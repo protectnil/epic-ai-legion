@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SalesforceMCPServer } from '../../src/mcp-servers/salesforce.js';
 
 describe('SalesforceMCPServer', () => {
-  const adapter = new SalesforceMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new SalesforceMCPServer({ accessToken: 'test-token', instance: 'test-instance' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

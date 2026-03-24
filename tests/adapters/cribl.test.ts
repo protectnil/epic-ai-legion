@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CriblMCPServer } from '../../src/mcp-servers/cribl.js';
 
 describe('CriblMCPServer', () => {
-  const adapter = new CriblMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new CriblMCPServer({ baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

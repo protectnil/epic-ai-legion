@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { QuicknodeMCPServer } from '../../src/mcp-servers/quicknode.js';
+import { QuickNodeMCPServer } from '../../src/mcp-servers/quicknode.js';
 
-describe('QuicknodeMCPServer', () => {
-  const adapter = new QuicknodeMCPServer({ apiKey: 'test-key' });
+describe('QuickNodeMCPServer', () => {
+  const adapter = new QuickNodeMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ServicenowGrcMCPServer } from '../../src/mcp-servers/servicenow-grc.js';
+import { ServiceNowGRCMCPServer } from '../../src/mcp-servers/servicenow-grc.js';
 
-describe('ServicenowGrcMCPServer', () => {
-  const adapter = new ServicenowGrcMCPServer({ username: 'test', password: 'test' });
+describe('ServiceNowGRCMCPServer', () => {
+  const adapter = new ServiceNowGRCMCPServer({ instance: 'test', bearerToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CventMCPServer } from '../../src/mcp-servers/cvent.js';
 
 describe('CventMCPServer', () => {
-  const adapter = new CventMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new CventMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

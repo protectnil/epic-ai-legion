@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MarqetaMCPServer } from '../../src/mcp-servers/marqeta.js';
 
 describe('MarqetaMCPServer', () => {
-  const adapter = new MarqetaMCPServer({ username: 'test', password: 'test' });
+  const adapter = new MarqetaMCPServer({ applicationToken: 'test-token', accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

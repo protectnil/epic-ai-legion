@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ProcoreMCPServer } from '../../src/mcp-servers/procore.js';
 
 describe('ProcoreMCPServer', () => {
-  const adapter = new ProcoreMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ProcoreMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

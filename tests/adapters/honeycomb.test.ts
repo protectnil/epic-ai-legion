@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HoneycombMCPServer } from '../../src/mcp-servers/honeycomb.js';
 
 describe('HoneycombMCPServer', () => {
-  const adapter = new HoneycombMCPServer({ apiToken: 'test-token' });
+  const adapter = new HoneycombMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

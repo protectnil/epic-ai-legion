@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SquareMCPServer } from '../../src/mcp-servers/square.js';
 
 describe('SquareMCPServer', () => {
-  const adapter = new SquareMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new SquareMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

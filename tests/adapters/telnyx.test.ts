@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TelnyxMCPServer } from '../../src/mcp-servers/telnyx.js';
 
 describe('TelnyxMCPServer', () => {
-  const adapter = new TelnyxMCPServer({ apiToken: 'test-token' });
+  const adapter = new TelnyxMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

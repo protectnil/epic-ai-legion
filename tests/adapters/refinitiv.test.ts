@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RefinitivMCPServer } from '../../src/mcp-servers/refinitiv.js';
 
 describe('RefinitivMCPServer', () => {
-  const adapter = new RefinitivMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new RefinitivMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

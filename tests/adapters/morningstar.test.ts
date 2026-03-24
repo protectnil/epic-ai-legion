@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MorningstarMCPServer } from '../../src/mcp-servers/morningstar.js';
 
 describe('MorningstarMCPServer', () => {
-  const adapter = new MorningstarMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MorningstarMCPServer({ username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

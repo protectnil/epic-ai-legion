@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { StripeMCPServer } from '../../src/mcp-servers/stripe.js';
 
 describe('StripeMCPServer', () => {
-  const adapter = new StripeMCPServer({ apiToken: 'test-token' });
+  const adapter = new StripeMCPServer({ secretKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

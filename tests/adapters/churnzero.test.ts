@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ChurnzeroMCPServer } from '../../src/mcp-servers/churnzero.js';
+import { ChurnZeroMCPServer } from '../../src/mcp-servers/churnzero.js';
 
-describe('ChurnzeroMCPServer', () => {
-  const adapter = new ChurnzeroMCPServer({ username: 'test', password: 'test' });
+describe('ChurnZeroMCPServer', () => {
+  const adapter = new ChurnZeroMCPServer({ instance: 'test-instance', email: 'test@example.com', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

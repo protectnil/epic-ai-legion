@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BrexMCPServer } from '../../src/mcp-servers/brex.js';
 
 describe('BrexMCPServer', () => {
-  const adapter = new BrexMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new BrexMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

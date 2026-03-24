@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TwitchMCPServer } from '../../src/mcp-servers/twitch.js';
 
 describe('TwitchMCPServer', () => {
-  const adapter = new TwitchMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new TwitchMCPServer({ clientId: 'test-id', accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

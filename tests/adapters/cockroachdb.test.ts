@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CockroachdbMCPServer } from '../../src/mcp-servers/cockroachdb.js';
+import { CockroachDBMCPServer } from '../../src/mcp-servers/cockroachdb.js';
 
-describe('CockroachdbMCPServer', () => {
-  const adapter = new CockroachdbMCPServer({ apiToken: 'test-token' });
+describe('CockroachDBMCPServer', () => {
+  const adapter = new CockroachDBMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

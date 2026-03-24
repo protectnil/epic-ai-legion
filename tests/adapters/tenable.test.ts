@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TenableMCPServer } from '../../src/mcp-servers/tenable.js';
 
 describe('TenableMCPServer', () => {
-  const adapter = new TenableMCPServer({ apiKey: 'test-key' });
+  const adapter = new TenableMCPServer({ accessKey: 'test-key', secretKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

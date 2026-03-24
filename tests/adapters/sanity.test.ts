@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SanityMCPServer } from '../../src/mcp-servers/sanity.js';
 
 describe('SanityMCPServer', () => {
-  const adapter = new SanityMCPServer({ apiToken: 'test-token' });
+  const adapter = new SanityMCPServer({ projectId: 'test-id', dataset: 'test-value', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

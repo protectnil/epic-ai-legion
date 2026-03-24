@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ToastMCPServer } from '../../src/mcp-servers/toast.js';
 
 describe('ToastMCPServer', () => {
-  const adapter = new ToastMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ToastMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

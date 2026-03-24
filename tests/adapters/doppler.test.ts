@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DopplerMCPServer } from '../../src/mcp-servers/doppler.js';
 
 describe('DopplerMCPServer', () => {
-  const adapter = new DopplerMCPServer({ apiToken: 'test-token' });
+  const adapter = new DopplerMCPServer({ token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

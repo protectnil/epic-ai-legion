@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GoogleCloudMCPServer } from '../../src/mcp-servers/google-cloud.js';
 
 describe('GoogleCloudMCPServer', () => {
-  const adapter = new GoogleCloudMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GoogleCloudMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

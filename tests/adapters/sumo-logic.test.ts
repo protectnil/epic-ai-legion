@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SumoLogicMCPServer } from '../../src/mcp-servers/sumo-logic.js';
 
 describe('SumoLogicMCPServer', () => {
-  const adapter = new SumoLogicMCPServer({ username: 'test', password: 'test' });
+  const adapter = new SumoLogicMCPServer({ accessId: 'test-id', accessKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

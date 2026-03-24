@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { FireworksAiMCPServer } from '../../src/mcp-servers/fireworks-ai.js';
+import { FireworksAIMCPServer } from '../../src/mcp-servers/fireworks-ai.js';
 
-describe('FireworksAiMCPServer', () => {
-  const adapter = new FireworksAiMCPServer({ apiToken: 'test-token' });
+describe('FireworksAIMCPServer', () => {
+  const adapter = new FireworksAIMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

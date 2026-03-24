@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { HibobMCPServer } from '../../src/mcp-servers/hibob.js';
+import { HiBobMCPServer } from '../../src/mcp-servers/hibob.js';
 
-describe('HibobMCPServer', () => {
-  const adapter = new HibobMCPServer({ username: 'test', password: 'test' });
+describe('HiBobMCPServer', () => {
+  const adapter = new HiBobMCPServer({ serviceUserId: 'test-id', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

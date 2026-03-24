@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { JumpcloudMCPServer } from '../../src/mcp-servers/jumpcloud.js';
+import { JumpCloudMCPServer } from '../../src/mcp-servers/jumpcloud.js';
 
-describe('JumpcloudMCPServer', () => {
-  const adapter = new JumpcloudMCPServer({ apiKey: 'test-key' });
+describe('JumpCloudMCPServer', () => {
+  const adapter = new JumpCloudMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

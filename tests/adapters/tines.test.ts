@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TinesMCPServer } from '../../src/mcp-servers/tines.js';
 
 describe('TinesMCPServer', () => {
-  const adapter = new TinesMCPServer({ apiToken: 'test-token' });
+  const adapter = new TinesMCPServer({ apiKey: 'test-key', tenantUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

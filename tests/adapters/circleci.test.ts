@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CircleciMCPServer } from '../../src/mcp-servers/circleci.js';
+import { CircleCIMCPServer } from '../../src/mcp-servers/circleci.js';
 
-describe('CircleciMCPServer', () => {
-  const adapter = new CircleciMCPServer({ apiToken: 'test-token' });
+describe('CircleCIMCPServer', () => {
+  const adapter = new CircleCIMCPServer({ circleToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

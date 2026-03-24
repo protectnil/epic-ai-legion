@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EquifaxMCPServer } from '../../src/mcp-servers/equifax.js';
 
 describe('EquifaxMCPServer', () => {
-  const adapter = new EquifaxMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new EquifaxMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

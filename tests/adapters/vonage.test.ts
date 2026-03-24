@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { VonageMCPServer } from '../../src/mcp-servers/vonage.js';
 
 describe('VonageMCPServer', () => {
-  const adapter = new VonageMCPServer({ username: 'test', password: 'test' });
+  const adapter = new VonageMCPServer({ apiKey: 'test-key', apiSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

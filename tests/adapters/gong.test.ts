@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GongMCPServer } from '../../src/mcp-servers/gong.js';
 
 describe('GongMCPServer', () => {
-  const adapter = new GongMCPServer({ username: 'test', password: 'test' });
+  const adapter = new GongMCPServer({ accessKey: 'test-key', accessKeySecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CoupaMCPServer } from '../../src/mcp-servers/coupa.js';
 
 describe('CoupaMCPServer', () => {
-  const adapter = new CoupaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new CoupaMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', instanceUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

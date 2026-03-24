@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ZapierMCPServer } from '../../src/mcp-servers/zapier.js';
 
 describe('ZapierMCPServer', () => {
-  const adapter = new ZapierMCPServer({ apiToken: 'test-token' });
+  const adapter = new ZapierMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

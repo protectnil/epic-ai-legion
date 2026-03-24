@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PandadocMCPServer } from '../../src/mcp-servers/pandadoc.js';
+import { PandaDocMCPServer } from '../../src/mcp-servers/pandadoc.js';
 
-describe('PandadocMCPServer', () => {
-  const adapter = new PandadocMCPServer({ apiToken: 'test-token' });
+describe('PandaDocMCPServer', () => {
+  const adapter = new PandaDocMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

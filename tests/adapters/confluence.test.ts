@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ConfluenceMCPServer } from '../../src/mcp-servers/confluence.js';
 
 describe('ConfluenceMCPServer', () => {
-  const adapter = new ConfluenceMCPServer({ username: 'test', password: 'test' });
+  const adapter = new ConfluenceMCPServer({ instance: 'test-instance', email: 'test@example.com', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

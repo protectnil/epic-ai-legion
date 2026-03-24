@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ModernTreasuryMCPServer } from '../../src/mcp-servers/modern-treasury.js';
 
 describe('ModernTreasuryMCPServer', () => {
-  const adapter = new ModernTreasuryMCPServer({ username: 'test', password: 'test' });
+  const adapter = new ModernTreasuryMCPServer({ organizationId: 'test-id', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

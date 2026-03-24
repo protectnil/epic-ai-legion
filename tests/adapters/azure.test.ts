@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AzureMCPServer } from '../../src/mcp-servers/azure.js';
 
 describe('AzureMCPServer', () => {
-  const adapter = new AzureMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new AzureMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

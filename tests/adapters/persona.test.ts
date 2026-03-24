@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PersonaMCPServer } from '../../src/mcp-servers/persona.js';
 
 describe('PersonaMCPServer', () => {
-  const adapter = new PersonaMCPServer({ apiToken: 'test-token' });
+  const adapter = new PersonaMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

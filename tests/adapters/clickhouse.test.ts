@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ClickhouseMCPServer } from '../../src/mcp-servers/clickhouse.js';
+import { ClickHouseMCPServer } from '../../src/mcp-servers/clickhouse.js';
 
-describe('ClickhouseMCPServer', () => {
-  const adapter = new ClickhouseMCPServer({ apiToken: 'test-token' });
+describe('ClickHouseMCPServer', () => {
+  const adapter = new ClickHouseMCPServer({ host: 'test.example.com', user: 'test-value', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

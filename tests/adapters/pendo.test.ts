@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PendoMCPServer } from '../../src/mcp-servers/pendo.js';
 
 describe('PendoMCPServer', () => {
-  const adapter = new PendoMCPServer({ apiToken: 'test-token' });
+  const adapter = new PendoMCPServer({ integrationKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

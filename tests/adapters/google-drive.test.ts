@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GoogleDriveMCPServer } from '../../src/mcp-servers/google-drive.js';
 
 describe('GoogleDriveMCPServer', () => {
-  const adapter = new GoogleDriveMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GoogleDriveMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

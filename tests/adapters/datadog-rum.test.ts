@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { DatadogRumMCPServer } from '../../src/mcp-servers/datadog-rum.js';
+import { DatadogRUMMCPServer } from '../../src/mcp-servers/datadog-rum.js';
 
-describe('DatadogRumMCPServer', () => {
-  const adapter = new DatadogRumMCPServer({ apiKey: 'test-key' });
+describe('DatadogRUMMCPServer', () => {
+  const adapter = new DatadogRUMMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

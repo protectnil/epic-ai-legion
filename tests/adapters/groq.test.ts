@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GroqMCPServer } from '../../src/mcp-servers/groq.js';
 
 describe('GroqMCPServer', () => {
-  const adapter = new GroqMCPServer({ apiToken: 'test-token' });
+  const adapter = new GroqMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

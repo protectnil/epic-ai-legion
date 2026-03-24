@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MarketoMCPServer } from '../../src/mcp-servers/marketo.js';
 
 describe('MarketoMCPServer', () => {
-  const adapter = new MarketoMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MarketoMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', identityUrl: 'https://test.example.com', restBaseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

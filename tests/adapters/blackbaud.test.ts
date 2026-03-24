@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BlackbaudMCPServer } from '../../src/mcp-servers/blackbaud.js';
 
 describe('BlackbaudMCPServer', () => {
-  const adapter = new BlackbaudMCPServer({ apiToken: 'test-token' });
+  const adapter = new BlackbaudMCPServer({ accessToken: 'test-token', subscriptionKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

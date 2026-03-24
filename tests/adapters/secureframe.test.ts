@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SecureframeMCPServer } from '../../src/mcp-servers/secureframe.js';
 
 describe('SecureframeMCPServer', () => {
-  const adapter = new SecureframeMCPServer({ apiToken: 'test-token' });
+  const adapter = new SecureframeMCPServer({ apiKey: 'test-key', apiSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

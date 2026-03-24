@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ShipstationMCPServer } from '../../src/mcp-servers/shipstation.js';
+import { ShipStationMCPServer } from '../../src/mcp-servers/shipstation.js';
 
-describe('ShipstationMCPServer', () => {
-  const adapter = new ShipstationMCPServer({ username: 'test', password: 'test' });
+describe('ShipStationMCPServer', () => {
+  const adapter = new ShipStationMCPServer({ apiKey: 'test-key', apiSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

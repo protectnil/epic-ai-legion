@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ArgocdMCPServer } from '../../src/mcp-servers/argocd.js';
+import { ArgoCDMCPServer } from '../../src/mcp-servers/argocd.js';
 
-describe('ArgocdMCPServer', () => {
-  const adapter = new ArgocdMCPServer({ apiToken: 'test-token' });
+describe('ArgoCDMCPServer', () => {
+  const adapter = new ArgoCDMCPServer({ server: 'test-value', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

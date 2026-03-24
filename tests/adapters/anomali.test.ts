@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AnomaliMCPServer } from '../../src/mcp-servers/anomali.js';
 
 describe('AnomaliMCPServer', () => {
-  const adapter = new AnomaliMCPServer({ apiKey: 'test-key' });
+  const adapter = new AnomaliMCPServer({ username: 'test-name', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { InvisionMCPServer } from '../../src/mcp-servers/invision.js';
+import { InVisionMCPServer } from '../../src/mcp-servers/invision.js';
 
-describe('InvisionMCPServer', () => {
-  const adapter = new InvisionMCPServer({ apiToken: 'test-token' });
+describe('InVisionMCPServer', () => {
+  const adapter = new InVisionMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

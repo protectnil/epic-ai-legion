@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RailwayMCPServer } from '../../src/mcp-servers/railway.js';
 
 describe('RailwayMCPServer', () => {
-  const adapter = new RailwayMCPServer({ apiToken: 'test-token' });
+  const adapter = new RailwayMCPServer({ token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

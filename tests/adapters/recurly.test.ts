@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RecurlyMCPServer } from '../../src/mcp-servers/recurly.js';
 
 describe('RecurlyMCPServer', () => {
-  const adapter = new RecurlyMCPServer({ username: 'test', password: 'test' });
+  const adapter = new RecurlyMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

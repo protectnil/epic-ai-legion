@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { QualysMCPServer } from '../../src/mcp-servers/qualys.js';
 
 describe('QualysMCPServer', () => {
-  const adapter = new QualysMCPServer({ username: 'test', password: 'test' });
+  const adapter = new QualysMCPServer({ baseUrl: 'https://test.example.com', username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

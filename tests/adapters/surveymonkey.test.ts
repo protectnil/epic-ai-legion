@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { SurveymonkeyMCPServer } from '../../src/mcp-servers/surveymonkey.js';
+import { SurveyMonkeyMCPServer } from '../../src/mcp-servers/surveymonkey.js';
 
-describe('SurveymonkeyMCPServer', () => {
-  const adapter = new SurveymonkeyMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('SurveyMonkeyMCPServer', () => {
+  const adapter = new SurveyMonkeyMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

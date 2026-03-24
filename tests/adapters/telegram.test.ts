@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TelegramMCPServer } from '../../src/mcp-servers/telegram.js';
 
 describe('TelegramMCPServer', () => {
-  const adapter = new TelegramMCPServer({ apiToken: 'test-token' });
+  const adapter = new TelegramMCPServer({ botToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

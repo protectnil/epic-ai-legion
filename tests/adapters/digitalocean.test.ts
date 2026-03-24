@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { DigitaloceanMCPServer } from '../../src/mcp-servers/digitalocean.js';
+import { DigitalOceanMCPServer } from '../../src/mcp-servers/digitalocean.js';
 
-describe('DigitaloceanMCPServer', () => {
-  const adapter = new DigitaloceanMCPServer({ apiToken: 'test-token' });
+describe('DigitalOceanMCPServer', () => {
+  const adapter = new DigitalOceanMCPServer({ token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

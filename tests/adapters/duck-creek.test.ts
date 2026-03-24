@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DuckCreekMCPServer } from '../../src/mcp-servers/duck-creek.js';
 
 describe('DuckCreekMCPServer', () => {
-  const adapter = new DuckCreekMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new DuckCreekMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

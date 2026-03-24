@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AhaMCPServer } from '../../src/mcp-servers/aha.js';
 
 describe('AhaMCPServer', () => {
-  const adapter = new AhaMCPServer({ apiKey: 'test-key' });
+  const adapter = new AhaMCPServer({ apiKey: 'test-key', subdomain: 'test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

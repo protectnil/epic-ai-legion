@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HootsuiteMCPServer } from '../../src/mcp-servers/hootsuite.js';
 
 describe('HootsuiteMCPServer', () => {
-  const adapter = new HootsuiteMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new HootsuiteMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ElasticsearchMCPServer } from '../../src/mcp-servers/elasticsearch.js';
 
 describe('ElasticsearchMCPServer', () => {
-  const adapter = new ElasticsearchMCPServer({ username: 'test', password: 'test' });
+  const adapter = new ElasticsearchMCPServer({ baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

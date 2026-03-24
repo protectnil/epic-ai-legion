@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { KubernetesMCPServer } from '../../src/mcp-servers/kubernetes.js';
 
 describe('KubernetesMCPServer', () => {
-  const adapter = new KubernetesMCPServer({ apiToken: 'test-token' });
+  const adapter = new KubernetesMCPServer({ api_server: 'test-value', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

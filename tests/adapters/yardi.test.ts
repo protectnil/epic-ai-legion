@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { YardiMCPServer } from '../../src/mcp-servers/yardi.js';
 
 describe('YardiMCPServer', () => {
-  const adapter = new YardiMCPServer({ apiToken: 'test-token' });
+  const adapter = new YardiMCPServer({ baseUrl: 'https://test.example.com', username: 'test-name', password: 'test-pass', serverName: 'test-name', database: 'test-value', platform: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

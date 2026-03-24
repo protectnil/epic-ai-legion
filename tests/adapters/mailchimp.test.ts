@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MailchimpMCPServer } from '../../src/mcp-servers/mailchimp.js';
 
 describe('MailchimpMCPServer', () => {
-  const adapter = new MailchimpMCPServer({ username: 'test', password: 'test' });
+  const adapter = new MailchimpMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

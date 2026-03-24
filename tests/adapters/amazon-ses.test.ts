@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AmazonSesMCPServer } from '../../src/mcp-servers/amazon-ses.js';
+import { AmazonSESMCPServer } from '../../src/mcp-servers/amazon-ses.js';
 
-describe('AmazonSesMCPServer', () => {
-  const adapter = new AmazonSesMCPServer({ accessKeyId: 'test', secretAccessKey: 'test', region: 'us-east-1' });
+describe('AmazonSESMCPServer', () => {
+  const adapter = new AmazonSESMCPServer({ accessKeyId: 'test-id', secretAccessKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

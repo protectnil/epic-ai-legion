@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LaunchdarklyMCPServer } from '../../src/mcp-servers/launchdarkly.js';
+import { LaunchDarklyMCPServer } from '../../src/mcp-servers/launchdarkly.js';
 
-describe('LaunchdarklyMCPServer', () => {
-  const adapter = new LaunchdarklyMCPServer({ apiToken: 'test-token' });
+describe('LaunchDarklyMCPServer', () => {
+  const adapter = new LaunchDarklyMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

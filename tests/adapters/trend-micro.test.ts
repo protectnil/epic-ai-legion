@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TrendMicroMCPServer } from '../../src/mcp-servers/trend-micro.js';
 
 describe('TrendMicroMCPServer', () => {
-  const adapter = new TrendMicroMCPServer({ apiToken: 'test-token' });
+  const adapter = new TrendMicroMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LexisnexisMCPServer } from '../../src/mcp-servers/lexisnexis.js';
+import { LexisNexisMCPServer } from '../../src/mcp-servers/lexisnexis.js';
 
-describe('LexisnexisMCPServer', () => {
-  const adapter = new LexisnexisMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('LexisNexisMCPServer', () => {
+  const adapter = new LexisNexisMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

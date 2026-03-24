@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LinkedinMCPServer } from '../../src/mcp-servers/linkedin.js';
+import { LinkedInMCPServer } from '../../src/mcp-servers/linkedin.js';
 
-describe('LinkedinMCPServer', () => {
-  const adapter = new LinkedinMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('LinkedInMCPServer', () => {
+  const adapter = new LinkedInMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

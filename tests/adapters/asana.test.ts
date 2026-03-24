@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AsanaMCPServer } from '../../src/mcp-servers/asana.js';
 
 describe('AsanaMCPServer', () => {
-  const adapter = new AsanaMCPServer({ apiToken: 'test-token' });
+  const adapter = new AsanaMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

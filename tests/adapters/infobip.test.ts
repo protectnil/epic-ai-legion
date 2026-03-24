@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { InfobipMCPServer } from '../../src/mcp-servers/infobip.js';
 
 describe('InfobipMCPServer', () => {
-  const adapter = new InfobipMCPServer({ apiKey: 'test-key' });
+  const adapter = new InfobipMCPServer({ apiKey: 'test-key', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

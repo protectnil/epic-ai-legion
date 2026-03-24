@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TypeformMCPServer } from '../../src/mcp-servers/typeform.js';
 
 describe('TypeformMCPServer', () => {
-  const adapter = new TypeformMCPServer({ apiToken: 'test-token' });
+  const adapter = new TypeformMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { FlyIoMCPServer } from '../../src/mcp-servers/fly-io.js';
+import { FlyioMCPServer } from '../../src/mcp-servers/fly-io.js';
 
-describe('FlyIoMCPServer', () => {
-  const adapter = new FlyIoMCPServer({ apiToken: 'test-token' });
+describe('FlyioMCPServer', () => {
+  const adapter = new FlyioMCPServer({ token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

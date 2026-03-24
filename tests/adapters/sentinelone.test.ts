@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { SentineloneMCPServer } from '../../src/mcp-servers/sentinelone.js';
+import { SentinelOneMCPServer } from '../../src/mcp-servers/sentinelone.js';
 
-describe('SentineloneMCPServer', () => {
-  const adapter = new SentineloneMCPServer({ apiToken: 'test-token' });
+describe('SentinelOneMCPServer', () => {
+  const adapter = new SentinelOneMCPServer({ apiToken: 'test-token', instance: 'test-instance' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

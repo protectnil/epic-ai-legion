@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TheTradeDeskMCPServer } from '../../src/mcp-servers/the-trade-desk.js';
 
 describe('TheTradeDeskMCPServer', () => {
-  const adapter = new TheTradeDeskMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new TheTradeDeskMCPServer({ login: 'test-value', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

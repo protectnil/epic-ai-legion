@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { TomorrowIoMCPServer } from '../../src/mcp-servers/tomorrow-io.js';
+import { TomorrowIOMCPServer } from '../../src/mcp-servers/tomorrow-io.js';
 
-describe('TomorrowIoMCPServer', () => {
-  const adapter = new TomorrowIoMCPServer({ apiKey: 'test-key' });
+describe('TomorrowIOMCPServer', () => {
+  const adapter = new TomorrowIOMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ClerkMCPServer } from '../../src/mcp-servers/clerk.js';
 
 describe('ClerkMCPServer', () => {
-  const adapter = new ClerkMCPServer({ apiToken: 'test-token' });
+  const adapter = new ClerkMCPServer({ secretKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

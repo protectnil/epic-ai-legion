@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { InfuraMCPServer } from '../../src/mcp-servers/infura.js';
 
 describe('InfuraMCPServer', () => {
-  const adapter = new InfuraMCPServer({ username: 'test', password: 'test' });
+  const adapter = new InfuraMCPServer({ projectId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

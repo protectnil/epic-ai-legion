@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SecEdgarMCPServer } from '../../src/mcp-servers/sec-edgar.js';
 
 describe('SecEdgarMCPServer', () => {
-  const adapter = new SecEdgarMCPServer({ apiToken: 'test-token' });
+  const adapter = new SecEdgarMCPServer({ userAgent: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

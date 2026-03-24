@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BrightcoveMCPServer } from '../../src/mcp-servers/brightcove.js';
 
 describe('BrightcoveMCPServer', () => {
-  const adapter = new BrightcoveMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new BrightcoveMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', accountId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

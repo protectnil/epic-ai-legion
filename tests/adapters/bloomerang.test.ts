@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BloomerangMCPServer } from '../../src/mcp-servers/bloomerang.js';
 
 describe('BloomerangMCPServer', () => {
-  const adapter = new BloomerangMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new BloomerangMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

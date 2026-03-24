@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CheckrMCPServer } from '../../src/mcp-servers/checkr.js';
 
 describe('CheckrMCPServer', () => {
-  const adapter = new CheckrMCPServer({ username: 'test', password: 'test' });
+  const adapter = new CheckrMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

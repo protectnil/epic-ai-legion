@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GoogleWorkspaceMCPServer } from '../../src/mcp-servers/google-workspace.js';
 
 describe('GoogleWorkspaceMCPServer', () => {
-  const adapter = new GoogleWorkspaceMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GoogleWorkspaceMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

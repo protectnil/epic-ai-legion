@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FaunaMCPServer } from '../../src/mcp-servers/fauna.js';
 
 describe('FaunaMCPServer', () => {
-  const adapter = new FaunaMCPServer({ apiToken: 'test-token' });
+  const adapter = new FaunaMCPServer({ secret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

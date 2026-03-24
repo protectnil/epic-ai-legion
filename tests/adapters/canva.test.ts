@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CanvaMCPServer } from '../../src/mcp-servers/canva.js';
 
 describe('CanvaMCPServer', () => {
-  const adapter = new CanvaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new CanvaMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

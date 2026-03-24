@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SauceLabsMCPServer } from '../../src/mcp-servers/sauce-labs.js';
 
 describe('SauceLabsMCPServer', () => {
-  const adapter = new SauceLabsMCPServer({ username: 'test', password: 'test' });
+  const adapter = new SauceLabsMCPServer({ username: 'test-name', accessKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

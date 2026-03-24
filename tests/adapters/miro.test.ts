@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MiroMCPServer } from '../../src/mcp-servers/miro.js';
 
 describe('MiroMCPServer', () => {
-  const adapter = new MiroMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MiroMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

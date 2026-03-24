@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SplunkMCPServer } from '../../src/mcp-servers/splunk.js';
 
 describe('SplunkMCPServer', () => {
-  const adapter = new SplunkMCPServer({ username: 'test', password: 'test' });
+  const adapter = new SplunkMCPServer({ host: 'localhost', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { OracleErpCloudMCPServer } from '../../src/mcp-servers/oracle-erp-cloud.js';
+import { OracleERPCloudMCPServer } from '../../src/mcp-servers/oracle-erp-cloud.js';
 
-describe('OracleErpCloudMCPServer', () => {
-  const adapter = new OracleErpCloudMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('OracleERPCloudMCPServer', () => {
+  const adapter = new OracleERPCloudMCPServer({ username: 'test', password: 'test', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

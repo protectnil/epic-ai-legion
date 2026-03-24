@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { SendgridMCPServer } from '../../src/mcp-servers/sendgrid.js';
+import { SendGridMCPServer } from '../../src/mcp-servers/sendgrid.js';
 
-describe('SendgridMCPServer', () => {
-  const adapter = new SendgridMCPServer({ apiToken: 'test-token' });
+describe('SendGridMCPServer', () => {
+  const adapter = new SendGridMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FreshdeskMCPServer } from '../../src/mcp-servers/freshdesk.js';
 
 describe('FreshdeskMCPServer', () => {
-  const adapter = new FreshdeskMCPServer({ username: 'test', password: 'test' });
+  const adapter = new FreshdeskMCPServer({ apiKey: 'test-key', domain: 'test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

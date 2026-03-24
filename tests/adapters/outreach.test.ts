@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { OutreachMCPServer } from '../../src/mcp-servers/outreach.js';
 
 describe('OutreachMCPServer', () => {
-  const adapter = new OutreachMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new OutreachMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

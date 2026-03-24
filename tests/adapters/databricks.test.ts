@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DatabricksMCPServer } from '../../src/mcp-servers/databricks.js';
 
 describe('DatabricksMCPServer', () => {
-  const adapter = new DatabricksMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new DatabricksMCPServer({ host: 'test.example.com', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

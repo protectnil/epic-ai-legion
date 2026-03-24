@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { VimeoMCPServer } from '../../src/mcp-servers/vimeo.js';
 
 describe('VimeoMCPServer', () => {
-  const adapter = new VimeoMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new VimeoMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

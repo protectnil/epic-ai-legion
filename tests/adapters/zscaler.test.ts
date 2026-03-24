@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ZscalerMCPServer } from '../../src/mcp-servers/zscaler.js';
 
 describe('ZscalerMCPServer', () => {
-  const adapter = new ZscalerMCPServer({ apiKey: 'test-key' });
+  const adapter = new ZscalerMCPServer({ baseUrl: 'https://test.example.com', username: 'test-name', password: 'test-pass', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

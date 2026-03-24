@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { WebexMCPServer } from '../../src/mcp-servers/webex.js';
 
 describe('WebexMCPServer', () => {
-  const adapter = new WebexMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new WebexMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

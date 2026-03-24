@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AppsmithMCPServer } from '../../src/mcp-servers/appsmith.js';
 
 describe('AppsmithMCPServer', () => {
-  const adapter = new AppsmithMCPServer({ apiToken: 'test-token' });
+  const adapter = new AppsmithMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

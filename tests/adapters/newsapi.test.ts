@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { NewsapiMCPServer } from '../../src/mcp-servers/newsapi.js';
+import { NewsAPIMCPServer } from '../../src/mcp-servers/newsapi.js';
 
-describe('NewsapiMCPServer', () => {
-  const adapter = new NewsapiMCPServer({ apiKey: 'test-key' });
+describe('NewsAPIMCPServer', () => {
+  const adapter = new NewsAPIMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { OpenaiApiMCPServer } from '../../src/mcp-servers/openai-api.js';
+import { OpenAIMCPServer } from '../../src/mcp-servers/openai-api.js';
 
-describe('OpenaiApiMCPServer', () => {
-  const adapter = new OpenaiApiMCPServer({ apiToken: 'test-token' });
+describe('OpenAIMCPServer', () => {
+  const adapter = new OpenAIMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

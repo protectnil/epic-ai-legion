@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { UpstashMCPServer } from '../../src/mcp-servers/upstash.js';
 
 describe('UpstashMCPServer', () => {
-  const adapter = new UpstashMCPServer({ username: 'test', password: 'test' });
+  const adapter = new UpstashMCPServer({ email: 'test@example.com', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

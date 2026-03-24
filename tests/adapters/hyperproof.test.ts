@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HyperproofMCPServer } from '../../src/mcp-servers/hyperproof.js';
 
 describe('HyperproofMCPServer', () => {
-  const adapter = new HyperproofMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new HyperproofMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

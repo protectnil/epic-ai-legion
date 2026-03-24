@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FlexportMCPServer } from '../../src/mcp-servers/flexport.js';
 
 describe('FlexportMCPServer', () => {
-  const adapter = new FlexportMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new FlexportMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GoogleChatMCPServer } from '../../src/mcp-servers/google-chat.js';
 
 describe('GoogleChatMCPServer', () => {
-  const adapter = new GoogleChatMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GoogleChatMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

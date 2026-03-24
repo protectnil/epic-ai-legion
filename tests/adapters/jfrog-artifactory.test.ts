@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { JfrogArtifactoryMCPServer } from '../../src/mcp-servers/jfrog-artifactory.js';
+import { JFrogArtifactoryMCPServer } from '../../src/mcp-servers/jfrog-artifactory.js';
 
-describe('JfrogArtifactoryMCPServer', () => {
-  const adapter = new JfrogArtifactoryMCPServer({ username: 'test', password: 'test' });
+describe('JFrogArtifactoryMCPServer', () => {
+  const adapter = new JFrogArtifactoryMCPServer({ baseUrl: 'https://test.example.com', accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { GitlabMCPServer } from '../../src/mcp-servers/gitlab.js';
+import { GitLabMCPServer } from '../../src/mcp-servers/gitlab.js';
 
-describe('GitlabMCPServer', () => {
-  const adapter = new GitlabMCPServer({ apiToken: 'test-token' });
+describe('GitLabMCPServer', () => {
+  const adapter = new GitLabMCPServer({ privateToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

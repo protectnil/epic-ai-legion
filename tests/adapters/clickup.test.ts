@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ClickupMCPServer } from '../../src/mcp-servers/clickup.js';
+import { ClickUpMCPServer } from '../../src/mcp-servers/clickup.js';
 
-describe('ClickupMCPServer', () => {
-  const adapter = new ClickupMCPServer({ apiToken: 'test-token' });
+describe('ClickUpMCPServer', () => {
+  const adapter = new ClickUpMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

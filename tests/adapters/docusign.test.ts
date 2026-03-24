@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { DocusignMCPServer } from '../../src/mcp-servers/docusign.js';
+import { DocuSignMCPServer } from '../../src/mcp-servers/docusign.js';
 
-describe('DocusignMCPServer', () => {
-  const adapter = new DocusignMCPServer({ apiToken: 'test-token' });
+describe('DocuSignMCPServer', () => {
+  const adapter = new DocuSignMCPServer({ accessToken: 'test-token', basePath: 'test-value', accountId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

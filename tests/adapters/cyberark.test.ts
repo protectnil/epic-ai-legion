@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CyberarkMCPServer } from '../../src/mcp-servers/cyberark.js';
+import { CyberArkMCPServer } from '../../src/mcp-servers/cyberark.js';
 
-describe('CyberarkMCPServer', () => {
-  const adapter = new CyberarkMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('CyberArkMCPServer', () => {
+  const adapter = new CyberArkMCPServer({ username: 'test-name', password: 'test-pass', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

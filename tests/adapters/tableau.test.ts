@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TableauMCPServer } from '../../src/mcp-servers/tableau.js';
 
 describe('TableauMCPServer', () => {
-  const adapter = new TableauMCPServer({ apiToken: 'test-token' });
+  const adapter = new TableauMCPServer({ serverUrl: 'https://test.example.com', apiVersion: 'test-value', patName: 'test-name', patSecret: 'test-secret', siteContentUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

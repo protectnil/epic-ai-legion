@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Auth0MCPServer } from '../../src/mcp-servers/auth0.js';
 
 describe('Auth0MCPServer', () => {
-  const adapter = new Auth0MCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new Auth0MCPServer({ domain: 'test.example.com', managementToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

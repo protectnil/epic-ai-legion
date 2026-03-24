@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AlchemyMCPServer } from '../../src/mcp-servers/alchemy.js';
 
 describe('AlchemyMCPServer', () => {
-  const adapter = new AlchemyMCPServer({ apiToken: 'test-token' });
+  const adapter = new AlchemyMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

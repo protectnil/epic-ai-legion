@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RelativityMCPServer } from '../../src/mcp-servers/relativity.js';
 
 describe('RelativityMCPServer', () => {
-  const adapter = new RelativityMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new RelativityMCPServer({ accessToken: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

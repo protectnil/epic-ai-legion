@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { UsptoMCPServer } from '../../src/mcp-servers/uspto.js';
+import { USPTOMCPServer } from '../../src/mcp-servers/uspto.js';
 
-describe('UsptoMCPServer', () => {
-  const adapter = new UsptoMCPServer({ apiKey: 'test-key' });
+describe('USPTOMCPServer', () => {
+  const adapter = new USPTOMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

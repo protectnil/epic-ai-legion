@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GuidewireMCPServer } from '../../src/mcp-servers/guidewire.js';
 
 describe('GuidewireMCPServer', () => {
-  const adapter = new GuidewireMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GuidewireMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', tenantUrl: 'https://test.example.com', tokenUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

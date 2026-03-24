@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SquarespaceMCPServer } from '../../src/mcp-servers/squarespace.js';
 
 describe('SquarespaceMCPServer', () => {
-  const adapter = new SquarespaceMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new SquarespaceMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

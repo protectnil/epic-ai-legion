@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SplunkObservabilityMCPServer } from '../../src/mcp-servers/splunk-observability.js';
 
 describe('SplunkObservabilityMCPServer', () => {
-  const adapter = new SplunkObservabilityMCPServer({ apiToken: 'test-token' });
+  const adapter = new SplunkObservabilityMCPServer({ accessToken: 'test-token', realm: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

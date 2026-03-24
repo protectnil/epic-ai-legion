@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CostarMCPServer } from '../../src/mcp-servers/costar.js';
+import { CoStarMCPServer } from '../../src/mcp-servers/costar.js';
 
-describe('CostarMCPServer', () => {
-  const adapter = new CostarMCPServer({ apiKey: 'test-key' });
+describe('CoStarMCPServer', () => {
+  const adapter = new CoStarMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

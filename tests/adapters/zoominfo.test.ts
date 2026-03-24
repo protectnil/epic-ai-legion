@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ZoominfoMCPServer } from '../../src/mcp-servers/zoominfo.js';
+import { ZoomInfoMCPServer } from '../../src/mcp-servers/zoominfo.js';
 
-describe('ZoominfoMCPServer', () => {
-  const adapter = new ZoominfoMCPServer({ apiToken: 'test-token' });
+describe('ZoomInfoMCPServer', () => {
+  const adapter = new ZoomInfoMCPServer({ username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

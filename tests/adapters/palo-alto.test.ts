@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PaloAltoMCPServer } from '../../src/mcp-servers/palo-alto.js';
 
 describe('PaloAltoMCPServer', () => {
-  const adapter = new PaloAltoMCPServer({ apiToken: 'test-token' });
+  const adapter = new PaloAltoMCPServer({ apiKey: 'test-key', apiKeyId: 'test-id', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

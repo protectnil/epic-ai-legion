@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AccelaMCPServer } from '../../src/mcp-servers/accela.js';
 
 describe('AccelaMCPServer', () => {
-  const adapter = new AccelaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new AccelaMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

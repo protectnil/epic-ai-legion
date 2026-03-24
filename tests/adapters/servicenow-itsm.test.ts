@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ServicenowItsmMCPServer } from '../../src/mcp-servers/servicenow-itsm.js';
+import { ServiceNowITSMMCPServer } from '../../src/mcp-servers/servicenow-itsm.js';
 
-describe('ServicenowItsmMCPServer', () => {
-  const adapter = new ServicenowItsmMCPServer({ username: 'test', password: 'test' });
+describe('ServiceNowITSMMCPServer', () => {
+  const adapter = new ServiceNowITSMMCPServer({ instance: 'test', bearerToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

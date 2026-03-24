@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LogrhythmMCPServer } from '../../src/mcp-servers/logrhythm.js';
+import { LogRhythmMCPServer } from '../../src/mcp-servers/logrhythm.js';
 
-describe('LogrhythmMCPServer', () => {
-  const adapter = new LogrhythmMCPServer({ apiToken: 'test-token' });
+describe('LogRhythmMCPServer', () => {
+  const adapter = new LogRhythmMCPServer({ host: 'test.example.com', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

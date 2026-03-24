@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HelpScoutMCPServer } from '../../src/mcp-servers/help-scout.js';
 
 describe('HelpScoutMCPServer', () => {
-  const adapter = new HelpScoutMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new HelpScoutMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

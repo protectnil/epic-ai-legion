@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ADPMCPServer } from '../../src/mcp-servers/adp.js';
 
 describe('ADPMCPServer', () => {
-  const adapter = new ADPMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ADPMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { WizMCPServer } from '../../src/mcp-servers/wiz.js';
 
 describe('WizMCPServer', () => {
-  const adapter = new WizMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new WizMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

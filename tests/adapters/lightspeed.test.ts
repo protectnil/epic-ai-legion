@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LightspeedMCPServer } from '../../src/mcp-servers/lightspeed.js';
 
 describe('LightspeedMCPServer', () => {
-  const adapter = new LightspeedMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new LightspeedMCPServer({ accessToken: 'test-token', accountId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

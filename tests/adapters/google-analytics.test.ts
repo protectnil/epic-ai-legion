@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GoogleAnalyticsMCPServer } from '../../src/mcp-servers/google-analytics.js';
 
 describe('GoogleAnalyticsMCPServer', () => {
-  const adapter = new GoogleAnalyticsMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GoogleAnalyticsMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

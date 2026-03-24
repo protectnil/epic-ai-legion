@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MXMCPServer } from '../../src/mcp-servers/mx.js';
 
 describe('MXMCPServer', () => {
-  const adapter = new MXMCPServer({ username: 'test', password: 'test' });
+  const adapter = new MXMCPServer({ clientId: 'test-id', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AzureMlMCPServer } from '../../src/mcp-servers/azure-ml.js';
+import { AzureMLMCPServer } from '../../src/mcp-servers/azure-ml.js';
 
-describe('AzureMlMCPServer', () => {
-  const adapter = new AzureMlMCPServer({ apiToken: 'test-token' });
+describe('AzureMLMCPServer', () => {
+  const adapter = new AzureMLMCPServer({ subscriptionId: 'test-id', resourceGroupName: 'test-name', workspaceName: 'test-workspace', accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { JamfMCPServer } from '../../src/mcp-servers/jamf.js';
 
 describe('JamfMCPServer', () => {
-  const adapter = new JamfMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new JamfMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

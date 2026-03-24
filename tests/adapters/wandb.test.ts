@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { WandbMCPServer } from '../../src/mcp-servers/wandb.js';
+import { WandBMCPServer } from '../../src/mcp-servers/wandb.js';
 
-describe('WandbMCPServer', () => {
-  const adapter = new WandbMCPServer({ apiToken: 'test-token' });
+describe('WandBMCPServer', () => {
+  const adapter = new WandBMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

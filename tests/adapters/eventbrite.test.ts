@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EventbriteMCPServer } from '../../src/mcp-servers/eventbrite.js';
 
 describe('EventbriteMCPServer', () => {
-  const adapter = new EventbriteMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new EventbriteMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ConcurMCPServer } from '../../src/mcp-servers/concur.js';
 
 describe('ConcurMCPServer', () => {
-  const adapter = new ConcurMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ConcurMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

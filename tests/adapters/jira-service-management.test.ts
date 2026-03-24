@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { JiraServiceManagementMCPServer } from '../../src/mcp-servers/jira-service-management.js';
 
 describe('JiraServiceManagementMCPServer', () => {
-  const adapter = new JiraServiceManagementMCPServer({ username: 'test', password: 'test' });
+  const adapter = new JiraServiceManagementMCPServer({ email: 'test@example.com', apiToken: 'test-token', domain: 'test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

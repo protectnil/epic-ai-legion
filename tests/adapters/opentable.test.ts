@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { OpentableMCPServer } from '../../src/mcp-servers/opentable.js';
+import { OpenTableMCPServer } from '../../src/mcp-servers/opentable.js';
 
-describe('OpentableMCPServer', () => {
-  const adapter = new OpentableMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('OpenTableMCPServer', () => {
+  const adapter = new OpenTableMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

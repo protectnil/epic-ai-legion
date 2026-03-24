@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MimecastMCPServer } from '../../src/mcp-servers/mimecast.js';
 
 describe('MimecastMCPServer', () => {
-  const adapter = new MimecastMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MimecastMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

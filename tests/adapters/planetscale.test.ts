@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PlanetscaleMCPServer } from '../../src/mcp-servers/planetscale.js';
+import { PlanetScaleMCPServer } from '../../src/mcp-servers/planetscale.js';
 
-describe('PlanetscaleMCPServer', () => {
-  const adapter = new PlanetscaleMCPServer({ apiToken: 'test-token' });
+describe('PlanetScaleMCPServer', () => {
+  const adapter = new PlanetScaleMCPServer({ serviceTokenId: 'test-id', serviceToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

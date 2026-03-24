@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { SonarqubeMCPServer } from '../../src/mcp-servers/sonarqube.js';
+import { SonarQubeMCPServer } from '../../src/mcp-servers/sonarqube.js';
 
-describe('SonarqubeMCPServer', () => {
-  const adapter = new SonarqubeMCPServer({ apiToken: 'test-token' });
+describe('SonarQubeMCPServer', () => {
+  const adapter = new SonarQubeMCPServer({ baseUrl: 'https://test.example.com', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

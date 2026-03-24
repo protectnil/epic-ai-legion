@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ParticleMCPServer } from '../../src/mcp-servers/particle.js';
 
 describe('ParticleMCPServer', () => {
-  const adapter = new ParticleMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ParticleMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

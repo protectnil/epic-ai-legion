@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { HubspotMarketingMCPServer } from '../../src/mcp-servers/hubspot-marketing.js';
+import { HubSpotMarketingMCPServer } from '../../src/mcp-servers/hubspot-marketing.js';
 
-describe('HubspotMarketingMCPServer', () => {
-  const adapter = new HubspotMarketingMCPServer({ apiToken: 'test-token' });
+describe('HubSpotMarketingMCPServer', () => {
+  const adapter = new HubSpotMarketingMCPServer({ privateAppToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

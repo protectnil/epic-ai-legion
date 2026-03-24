@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TerraformRegistryMCPServer } from '../../src/mcp-servers/terraform-registry.js';
 
 describe('TerraformRegistryMCPServer', () => {
-  const adapter = new TerraformRegistryMCPServer({ apiToken: 'test-token' });
+  const adapter = new TerraformRegistryMCPServer({ token: 'test-token', organization: 'test-org' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { BrowserstackMCPServer } from '../../src/mcp-servers/browserstack.js';
+import { BrowserStackMCPServer } from '../../src/mcp-servers/browserstack.js';
 
-describe('BrowserstackMCPServer', () => {
-  const adapter = new BrowserstackMCPServer({ username: 'test', password: 'test' });
+describe('BrowserStackMCPServer', () => {
+  const adapter = new BrowserStackMCPServer({ username: 'test-name', accessKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

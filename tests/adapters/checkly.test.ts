@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ChecklyMCPServer } from '../../src/mcp-servers/checkly.js';
 
 describe('ChecklyMCPServer', () => {
-  const adapter = new ChecklyMCPServer({ apiToken: 'test-token' });
+  const adapter = new ChecklyMCPServer({ apiKey: 'test-key', accountId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

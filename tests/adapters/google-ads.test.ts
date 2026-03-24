@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GoogleAdsMCPServer } from '../../src/mcp-servers/google-ads.js';
 
 describe('GoogleAdsMCPServer', () => {
-  const adapter = new GoogleAdsMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GoogleAdsMCPServer({ accessToken: 'test-token', developerToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

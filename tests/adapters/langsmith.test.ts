@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LangsmithMCPServer } from '../../src/mcp-servers/langsmith.js';
+import { LangSmithMCPServer } from '../../src/mcp-servers/langsmith.js';
 
-describe('LangsmithMCPServer', () => {
-  const adapter = new LangsmithMCPServer({ apiKey: 'test-key' });
+describe('LangSmithMCPServer', () => {
+  const adapter = new LangSmithMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

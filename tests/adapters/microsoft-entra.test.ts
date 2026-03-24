@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MicrosoftEntraMCPServer } from '../../src/mcp-servers/microsoft-entra.js';
 
 describe('MicrosoftEntraMCPServer', () => {
-  const adapter = new MicrosoftEntraMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MicrosoftEntraMCPServer({ tenantId: 'test-id', clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { OnetrustMCPServer } from '../../src/mcp-servers/onetrust.js';
+import { OneTrustMCPServer } from '../../src/mcp-servers/onetrust.js';
 
-describe('OnetrustMCPServer', () => {
-  const adapter = new OnetrustMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('OneTrustMCPServer', () => {
+  const adapter = new OneTrustMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

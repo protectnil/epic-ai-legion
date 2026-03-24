@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Rapid7MCPServer } from '../../src/mcp-servers/rapid7.js';
 
 describe('Rapid7MCPServer', () => {
-  const adapter = new Rapid7MCPServer({ username: 'test', password: 'test' });
+  const adapter = new Rapid7MCPServer({ host: 'test.example.com', username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { USPSMCPServer } from '../../src/mcp-servers/usps.js';
 
 describe('USPSMCPServer', () => {
-  const adapter = new USPSMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new USPSMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

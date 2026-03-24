@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { FullstoryMCPServer } from '../../src/mcp-servers/fullstory.js';
+import { FullStoryMCPServer } from '../../src/mcp-servers/fullstory.js';
 
-describe('FullstoryMCPServer', () => {
-  const adapter = new FullstoryMCPServer({ username: 'test', password: 'test' });
+describe('FullStoryMCPServer', () => {
+  const adapter = new FullStoryMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

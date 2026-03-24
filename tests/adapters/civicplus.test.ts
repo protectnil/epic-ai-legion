@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CivicplusMCPServer } from '../../src/mcp-servers/civicplus.js';
+import { CivicPlusMCPServer } from '../../src/mcp-servers/civicplus.js';
 
-describe('CivicplusMCPServer', () => {
-  const adapter = new CivicplusMCPServer({ apiToken: 'test-token' });
+describe('CivicPlusMCPServer', () => {
+  const adapter = new CivicPlusMCPServer({ apiToken: 'test-token', organizationId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

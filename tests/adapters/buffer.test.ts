@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BufferMCPServer } from '../../src/mcp-servers/buffer.js';
 
 describe('BufferMCPServer', () => {
-  const adapter = new BufferMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new BufferMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { FirehydrantMCPServer } from '../../src/mcp-servers/firehydrant.js';
+import { FireHydrantMCPServer } from '../../src/mcp-servers/firehydrant.js';
 
-describe('FirehydrantMCPServer', () => {
-  const adapter = new FirehydrantMCPServer({ apiToken: 'test-token' });
+describe('FireHydrantMCPServer', () => {
+  const adapter = new FireHydrantMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

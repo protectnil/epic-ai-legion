@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DialpadMCPServer } from '../../src/mcp-servers/dialpad.js';
 
 describe('DialpadMCPServer', () => {
-  const adapter = new DialpadMCPServer({ apiToken: 'test-token' });
+  const adapter = new DialpadMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

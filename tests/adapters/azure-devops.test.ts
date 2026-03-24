@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AzureDevopsMCPServer } from '../../src/mcp-servers/azure-devops.js';
+import { AzureDevOpsMCPServer } from '../../src/mcp-servers/azure-devops.js';
 
-describe('AzureDevopsMCPServer', () => {
-  const adapter = new AzureDevopsMCPServer({ username: 'test', password: 'test' });
+describe('AzureDevOpsMCPServer', () => {
+  const adapter = new AzureDevOpsMCPServer({ organization: 'test-org', personalAccessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

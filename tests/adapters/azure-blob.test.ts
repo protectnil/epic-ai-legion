@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AzureBlobMCPServer } from '../../src/mcp-servers/azure-blob.js';
 
 describe('AzureBlobMCPServer', () => {
-  const adapter = new AzureBlobMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new AzureBlobMCPServer({ tenantId: 'test-id', clientId: 'test-id', clientSecret: 'test-secret', accountName: 'test-account' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

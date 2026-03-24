@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HashicorpTerraformCloudMCPServer } from '../../src/mcp-servers/hashicorp-terraform-cloud.js';
 
 describe('HashicorpTerraformCloudMCPServer', () => {
-  const adapter = new HashicorpTerraformCloudMCPServer({ apiToken: 'test-token' });
+  const adapter = new HashicorpTerraformCloudMCPServer({ token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

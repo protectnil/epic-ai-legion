@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { OpsgenieMCPServer } from '../../src/mcp-servers/opsgenie.js';
 
 describe('OpsgenieMCPServer', () => {
-  const adapter = new OpsgenieMCPServer({ apiToken: 'test-token' });
+  const adapter = new OpsgenieMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

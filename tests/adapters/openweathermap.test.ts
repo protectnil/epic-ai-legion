@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { OpenweathermapMCPServer } from '../../src/mcp-servers/openweathermap.js';
+import { OpenWeatherMapMCPServer } from '../../src/mcp-servers/openweathermap.js';
 
-describe('OpenweathermapMCPServer', () => {
-  const adapter = new OpenweathermapMCPServer({ apiToken: 'test-token' });
+describe('OpenWeatherMapMCPServer', () => {
+  const adapter = new OpenWeatherMapMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

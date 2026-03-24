@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DatadogSecurityMCPServer } from '../../src/mcp-servers/datadog-security.js';
 
 describe('DatadogSecurityMCPServer', () => {
-  const adapter = new DatadogSecurityMCPServer({ apiKey: 'test-key' });
+  const adapter = new DatadogSecurityMCPServer({ apiKey: 'test-key', applicationKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

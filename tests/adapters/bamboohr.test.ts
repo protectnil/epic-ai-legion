@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { BamboohrMCPServer } from '../../src/mcp-servers/bamboohr.js';
+import { BambooHRMCPServer } from '../../src/mcp-servers/bamboohr.js';
 
-describe('BamboohrMCPServer', () => {
-  const adapter = new BamboohrMCPServer({ username: 'test', password: 'test' });
+describe('BambooHRMCPServer', () => {
+  const adapter = new BambooHRMCPServer({ companyDomain: 'test.example.com', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SageIntacctMCPServer } from '../../src/mcp-servers/sage-intacct.js';
 
 describe('SageIntacctMCPServer', () => {
-  const adapter = new SageIntacctMCPServer({ apiToken: 'test-token' });
+  const adapter = new SageIntacctMCPServer({ senderId: 'test-id', senderPassword: 'test-pass', companyId: 'test-id', userId: 'test-id', userPassword: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

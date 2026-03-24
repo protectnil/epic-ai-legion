@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { GoogleDocumentAiMCPServer } from '../../src/mcp-servers/google-document-ai.js';
+import { GoogleDocumentAIMCPServer } from '../../src/mcp-servers/google-document-ai.js';
 
-describe('GoogleDocumentAiMCPServer', () => {
-  const adapter = new GoogleDocumentAiMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('GoogleDocumentAIMCPServer', () => {
+  const adapter = new GoogleDocumentAIMCPServer({ accessToken: 'test-token', projectId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

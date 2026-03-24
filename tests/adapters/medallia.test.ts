@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MedalliaMCPServer } from '../../src/mcp-servers/medallia.js';
 
 describe('MedalliaMCPServer', () => {
-  const adapter = new MedalliaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MedalliaMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', instance: 'test-instance', company: 'test-company' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

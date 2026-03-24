@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PingIdentityMCPServer } from '../../src/mcp-servers/ping-identity.js';
 
 describe('PingIdentityMCPServer', () => {
-  const adapter = new PingIdentityMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new PingIdentityMCPServer({ bearerToken: 'test-token', environmentId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

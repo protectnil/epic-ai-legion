@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SemrushMCPServer } from '../../src/mcp-servers/semrush.js';
 
 describe('SemrushMCPServer', () => {
-  const adapter = new SemrushMCPServer({ apiToken: 'test-token' });
+  const adapter = new SemrushMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

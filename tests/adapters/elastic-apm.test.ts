@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ElasticApmMCPServer } from '../../src/mcp-servers/elastic-apm.js';
+import { ElasticAPMMCPServer } from '../../src/mcp-servers/elastic-apm.js';
 
-describe('ElasticApmMCPServer', () => {
-  const adapter = new ElasticApmMCPServer({ username: 'test', password: 'test' });
+describe('ElasticAPMMCPServer', () => {
+  const adapter = new ElasticAPMMCPServer({ kibanaUrl: 'https://test.example.com', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

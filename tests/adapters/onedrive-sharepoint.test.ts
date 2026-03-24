@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { OnedriveSharepointMCPServer } from '../../src/mcp-servers/onedrive-sharepoint.js';
+import { OneDriveSharePointMCPServer } from '../../src/mcp-servers/onedrive-sharepoint.js';
 
-describe('OnedriveSharepointMCPServer', () => {
-  const adapter = new OnedriveSharepointMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('OneDriveSharePointMCPServer', () => {
+  const adapter = new OneDriveSharePointMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', tenantId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

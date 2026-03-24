@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SlackMCPServer } from '../../src/mcp-servers/slack.js';
 
 describe('SlackMCPServer', () => {
-  const adapter = new SlackMCPServer({ apiToken: 'test-token' });
+  const adapter = new SlackMCPServer({ botToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

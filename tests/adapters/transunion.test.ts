@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { TransunionMCPServer } from '../../src/mcp-servers/transunion.js';
+import { TransUnionMCPServer } from '../../src/mcp-servers/transunion.js';
 
-describe('TransunionMCPServer', () => {
-  const adapter = new TransunionMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('TransUnionMCPServer', () => {
+  const adapter = new TransUnionMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

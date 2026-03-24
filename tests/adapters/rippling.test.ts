@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RipplingMCPServer } from '../../src/mcp-servers/rippling.js';
 
 describe('RipplingMCPServer', () => {
-  const adapter = new RipplingMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new RipplingMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

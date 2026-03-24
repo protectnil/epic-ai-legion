@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TwilioMCPServer } from '../../src/mcp-servers/twilio.js';
 
 describe('TwilioMCPServer', () => {
-  const adapter = new TwilioMCPServer({ username: 'test', password: 'test' });
+  const adapter = new TwilioMCPServer({ accountSid: 'test-id', authToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

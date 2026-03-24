@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GainsightMCPServer } from '../../src/mcp-servers/gainsight.js';
 
 describe('GainsightMCPServer', () => {
-  const adapter = new GainsightMCPServer({ username: 'test', password: 'test' });
+  const adapter = new GainsightMCPServer({ accessKey: 'test-key', domainUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

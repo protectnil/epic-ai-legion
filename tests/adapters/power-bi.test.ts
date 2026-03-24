@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PowerBiMCPServer } from '../../src/mcp-servers/power-bi.js';
+import { PowerBIMCPServer } from '../../src/mcp-servers/power-bi.js';
 
-describe('PowerBiMCPServer', () => {
-  const adapter = new PowerBiMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('PowerBIMCPServer', () => {
+  const adapter = new PowerBIMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

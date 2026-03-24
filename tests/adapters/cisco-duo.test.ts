@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CiscoDuoMCPServer } from '../../src/mcp-servers/cisco-duo.js';
 
 describe('CiscoDuoMCPServer', () => {
-  const adapter = new CiscoDuoMCPServer({ username: 'test', password: 'test' });
+  const adapter = new CiscoDuoMCPServer({ apiHost: 'test.example.com', integrationKey: 'test-key', secretKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

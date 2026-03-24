@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MattermostMCPServer } from '../../src/mcp-servers/mattermost.js';
 
 describe('MattermostMCPServer', () => {
-  const adapter = new MattermostMCPServer({ apiToken: 'test-token' });
+  const adapter = new MattermostMCPServer({ token: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

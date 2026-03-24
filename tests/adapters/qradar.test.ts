@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { QradarMCPServer } from '../../src/mcp-servers/qradar.js';
+import { QRadarMCPServer } from '../../src/mcp-servers/qradar.js';
 
-describe('QradarMCPServer', () => {
-  const adapter = new QradarMCPServer({ apiToken: 'test-token' });
+describe('QRadarMCPServer', () => {
+  const adapter = new QRadarMCPServer({ host: 'test.example.com', secToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

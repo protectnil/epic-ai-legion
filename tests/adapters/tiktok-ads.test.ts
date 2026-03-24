@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { TiktokAdsMCPServer } from '../../src/mcp-servers/tiktok-ads.js';
+import { TikTokAdsMCPServer } from '../../src/mcp-servers/tiktok-ads.js';
 
-describe('TiktokAdsMCPServer', () => {
-  const adapter = new TiktokAdsMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('TikTokAdsMCPServer', () => {
+  const adapter = new TikTokAdsMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

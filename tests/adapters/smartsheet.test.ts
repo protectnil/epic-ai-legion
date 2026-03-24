@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SmartsheetMCPServer } from '../../src/mcp-servers/smartsheet.js';
 
 describe('SmartsheetMCPServer', () => {
-  const adapter = new SmartsheetMCPServer({ apiToken: 'test-token' });
+  const adapter = new SmartsheetMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

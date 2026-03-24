@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { GitguardianMCPServer } from '../../src/mcp-servers/gitguardian.js';
+import { GitGuardianMCPServer } from '../../src/mcp-servers/gitguardian.js';
 
-describe('GitguardianMCPServer', () => {
-  const adapter = new GitguardianMCPServer({ apiToken: 'test-token' });
+describe('GitGuardianMCPServer', () => {
+  const adapter = new GitGuardianMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

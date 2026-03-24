@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AmadeusMCPServer } from '../../src/mcp-servers/amadeus.js';
 
 describe('AmadeusMCPServer', () => {
-  const adapter = new AmadeusMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new AmadeusMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

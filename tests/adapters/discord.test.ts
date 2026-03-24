@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DiscordMCPServer } from '../../src/mcp-servers/discord.js';
 
 describe('DiscordMCPServer', () => {
-  const adapter = new DiscordMCPServer({ apiToken: 'test-token' });
+  const adapter = new DiscordMCPServer({ botToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

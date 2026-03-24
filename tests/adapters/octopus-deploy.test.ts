@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { OctopusDeployMCPServer } from '../../src/mcp-servers/octopus-deploy.js';
 
 describe('OctopusDeployMCPServer', () => {
-  const adapter = new OctopusDeployMCPServer({ apiKey: 'test-key' });
+  const adapter = new OctopusDeployMCPServer({ apiKey: 'test-key', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

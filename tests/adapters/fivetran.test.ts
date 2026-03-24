@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FivetranMCPServer } from '../../src/mcp-servers/fivetran.js';
 
 describe('FivetranMCPServer', () => {
-  const adapter = new FivetranMCPServer({ username: 'test', password: 'test' });
+  const adapter = new FivetranMCPServer({ apiKey: 'test-key', apiSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

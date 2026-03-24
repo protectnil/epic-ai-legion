@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ExperianMCPServer } from '../../src/mcp-servers/experian.js';
 
 describe('ExperianMCPServer', () => {
-  const adapter = new ExperianMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ExperianMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

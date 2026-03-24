@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HightouchMCPServer } from '../../src/mcp-servers/hightouch.js';
 
 describe('HightouchMCPServer', () => {
-  const adapter = new HightouchMCPServer({ apiToken: 'test-token' });
+  const adapter = new HightouchMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

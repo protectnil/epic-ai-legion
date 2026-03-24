@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PostgresqlMCPServer } from '../../src/mcp-servers/postgresql.js';
+import { PostgreSQLMCPServer } from '../../src/mcp-servers/postgresql.js';
 
-describe('PostgresqlMCPServer', () => {
-  const adapter = new PostgresqlMCPServer({ apiKey: 'test-key' });
+describe('PostgreSQLMCPServer', () => {
+  const adapter = new PostgreSQLMCPServer({ proxyUrl: 'https://test.example.com', apiKey: 'test-key', host: 'test.example.com', port: 1, database: 'test-value', user: 'test-value', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

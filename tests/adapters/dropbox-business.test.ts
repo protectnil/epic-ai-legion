@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DropboxBusinessMCPServer } from '../../src/mcp-servers/dropbox-business.js';
 
 describe('DropboxBusinessMCPServer', () => {
-  const adapter = new DropboxBusinessMCPServer({ apiToken: 'test-token' });
+  const adapter = new DropboxBusinessMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

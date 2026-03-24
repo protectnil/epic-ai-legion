@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { StrapiMCPServer } from '../../src/mcp-servers/strapi.js';
 
 describe('StrapiMCPServer', () => {
-  const adapter = new StrapiMCPServer({ apiToken: 'test-token' });
+  const adapter = new StrapiMCPServer({ apiToken: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

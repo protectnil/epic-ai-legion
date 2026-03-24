@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LookerMCPServer } from '../../src/mcp-servers/looker.js';
 
 describe('LookerMCPServer', () => {
-  const adapter = new LookerMCPServer({ apiToken: 'test-token' });
+  const adapter = new LookerMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

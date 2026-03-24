@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AirtableMCPServer } from '../../src/mcp-servers/airtable.js';
 
 describe('AirtableMCPServer', () => {
-  const adapter = new AirtableMCPServer({ apiToken: 'test-token' });
+  const adapter = new AirtableMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

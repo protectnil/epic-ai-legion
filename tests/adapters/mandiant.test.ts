@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MandiantMCPServer } from '../../src/mcp-servers/mandiant.js';
 
 describe('MandiantMCPServer', () => {
-  const adapter = new MandiantMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MandiantMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', appName: 'test-name' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

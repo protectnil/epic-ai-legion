@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AppfolioMCPServer } from '../../src/mcp-servers/appfolio.js';
+import { AppFolioMCPServer } from '../../src/mcp-servers/appfolio.js';
 
-describe('AppfolioMCPServer', () => {
-  const adapter = new AppfolioMCPServer({ username: 'test', password: 'test' });
+describe('AppFolioMCPServer', () => {
+  const adapter = new AppFolioMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', vhost: 'test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

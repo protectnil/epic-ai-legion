@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { TrellixEdrMCPServer } from '../../src/mcp-servers/trellix-edr.js';
+import { TrellixEDRMCPServer } from '../../src/mcp-servers/trellix-edr.js';
 
-describe('TrellixEdrMCPServer', () => {
-  const adapter = new TrellixEdrMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('TrellixEDRMCPServer', () => {
+  const adapter = new TrellixEDRMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

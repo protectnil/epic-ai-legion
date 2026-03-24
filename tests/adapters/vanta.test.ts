@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { VantaMCPServer } from '../../src/mcp-servers/vanta.js';
 
 describe('VantaMCPServer', () => {
-  const adapter = new VantaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new VantaMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

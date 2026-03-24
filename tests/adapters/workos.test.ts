@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { WorkosMCPServer } from '../../src/mcp-servers/workos.js';
+import { WorkOSMCPServer } from '../../src/mcp-servers/workos.js';
 
-describe('WorkosMCPServer', () => {
-  const adapter = new WorkosMCPServer({ apiToken: 'test-token' });
+describe('WorkOSMCPServer', () => {
+  const adapter = new WorkOSMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

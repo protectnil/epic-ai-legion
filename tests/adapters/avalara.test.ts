@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AvalaraMCPServer } from '../../src/mcp-servers/avalara.js';
 
 describe('AvalaraMCPServer', () => {
-  const adapter = new AvalaraMCPServer({ username: 'test', password: 'test' });
+  const adapter = new AvalaraMCPServer({ accountId: 'test-id', licenseKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

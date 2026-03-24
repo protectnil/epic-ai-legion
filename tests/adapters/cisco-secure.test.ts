@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CiscoSecureMCPServer } from '../../src/mcp-servers/cisco-secure.js';
 
 describe('CiscoSecureMCPServer', () => {
-  const adapter = new CiscoSecureMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new CiscoSecureMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

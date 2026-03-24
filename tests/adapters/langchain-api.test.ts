@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LangchainApiMCPServer } from '../../src/mcp-servers/langchain-api.js';
+import { LangChainMCPServer } from '../../src/mcp-servers/langchain-api.js';
 
-describe('LangchainApiMCPServer', () => {
-  const adapter = new LangchainApiMCPServer({ apiKey: 'test-key' });
+describe('LangChainMCPServer', () => {
+  const adapter = new LangChainMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

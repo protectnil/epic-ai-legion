@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AbnormalSecurityMCPServer } from '../../src/mcp-servers/abnormal-security.js';
 
 describe('AbnormalSecurityMCPServer', () => {
-  const adapter = new AbnormalSecurityMCPServer({ apiToken: 'test-token' });
+  const adapter = new AbnormalSecurityMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

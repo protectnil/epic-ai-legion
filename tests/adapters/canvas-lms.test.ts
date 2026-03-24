@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CanvasLmsMCPServer } from '../../src/mcp-servers/canvas-lms.js';
+import { CanvasLMSMCPServer } from '../../src/mcp-servers/canvas-lms.js';
 
-describe('CanvasLmsMCPServer', () => {
-  const adapter = new CanvasLmsMCPServer({ apiToken: 'test-token' });
+describe('CanvasLMSMCPServer', () => {
+  const adapter = new CanvasLMSMCPServer({ accessToken: 'test-token', institutionDomain: 'test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

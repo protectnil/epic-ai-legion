@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DynatraceMCPServer } from '../../src/mcp-servers/dynatrace.js';
 
 describe('DynatraceMCPServer', () => {
-  const adapter = new DynatraceMCPServer({ apiToken: 'test-token' });
+  const adapter = new DynatraceMCPServer({ environmentId: 'test-id', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

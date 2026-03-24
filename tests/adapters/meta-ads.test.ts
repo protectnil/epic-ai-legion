@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MetaAdsMCPServer } from '../../src/mcp-servers/meta-ads.js';
 
 describe('MetaAdsMCPServer', () => {
-  const adapter = new MetaAdsMCPServer({ apiToken: 'test-token' });
+  const adapter = new MetaAdsMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

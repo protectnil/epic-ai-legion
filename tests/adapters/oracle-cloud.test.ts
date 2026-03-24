@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { OracleCloudMCPServer } from '../../src/mcp-servers/oracle-cloud.js';
 
 describe('OracleCloudMCPServer', () => {
-  const adapter = new OracleCloudMCPServer({ apiToken: 'test-token' });
+  const adapter = new OracleCloudMCPServer({ authToken: 'test-token', region: 'us-east-1', tenancyId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

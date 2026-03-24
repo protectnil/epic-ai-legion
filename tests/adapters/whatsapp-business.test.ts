@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { WhatsappBusinessMCPServer } from '../../src/mcp-servers/whatsapp-business.js';
+import { WhatsAppBusinessMCPServer } from '../../src/mcp-servers/whatsapp-business.js';
 
-describe('WhatsappBusinessMCPServer', () => {
-  const adapter = new WhatsappBusinessMCPServer({ apiToken: 'test-token' });
+describe('WhatsAppBusinessMCPServer', () => {
+  const adapter = new WhatsAppBusinessMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

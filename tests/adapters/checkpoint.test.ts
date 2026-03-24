@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CheckpointMCPServer } from '../../src/mcp-servers/checkpoint.js';
+import { CheckPointMCPServer } from '../../src/mcp-servers/checkpoint.js';
 
-describe('CheckpointMCPServer', () => {
-  const adapter = new CheckpointMCPServer({ apiToken: 'test-token' });
+describe('CheckPointMCPServer', () => {
+  const adapter = new CheckPointMCPServer({ baseUrl: 'https://test.example.com', username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

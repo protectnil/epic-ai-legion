@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ClioMCPServer } from '../../src/mcp-servers/clio.js';
 
 describe('ClioMCPServer', () => {
-  const adapter = new ClioMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ClioMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

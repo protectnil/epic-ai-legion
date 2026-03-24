@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AppStoreConnectMCPServer } from '../../src/mcp-servers/app-store-connect.js';
 
 describe('AppStoreConnectMCPServer', () => {
-  const adapter = new AppStoreConnectMCPServer({ apiToken: 'test-token' });
+  const adapter = new AppStoreConnectMCPServer({ keyId: 'test-id', issuerId: 'test-id', privateKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

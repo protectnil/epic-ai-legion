@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { JohnDeereOpsMCPServer } from '../../src/mcp-servers/john-deere-ops.js';
 
 describe('JohnDeereOpsMCPServer', () => {
-  const adapter = new JohnDeereOpsMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new JohnDeereOpsMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { NotionMCPServer } from '../../src/mcp-servers/notion.js';
 
 describe('NotionMCPServer', () => {
-  const adapter = new NotionMCPServer({ apiToken: 'test-token' });
+  const adapter = new NotionMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

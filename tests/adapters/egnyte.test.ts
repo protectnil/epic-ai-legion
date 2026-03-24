@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EgnyteMCPServer } from '../../src/mcp-servers/egnyte.js';
 
 describe('EgnyteMCPServer', () => {
-  const adapter = new EgnyteMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new EgnyteMCPServer({ accessToken: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

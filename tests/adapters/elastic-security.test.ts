@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ElasticSecurityMCPServer } from '../../src/mcp-servers/elastic-security.js';
 
 describe('ElasticSecurityMCPServer', () => {
-  const adapter = new ElasticSecurityMCPServer({ username: 'test', password: 'test' });
+  const adapter = new ElasticSecurityMCPServer({ kibanaUrl: 'https://test.example.com', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

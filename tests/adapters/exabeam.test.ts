@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ExabeamMCPServer } from '../../src/mcp-servers/exabeam.js';
 
 describe('ExabeamMCPServer', () => {
-  const adapter = new ExabeamMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ExabeamMCPServer({ baseUrl: 'https://test.example.com', clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

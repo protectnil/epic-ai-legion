@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GoogleCalendarMCPServer } from '../../src/mcp-servers/google-calendar.js';
 
 describe('GoogleCalendarMCPServer', () => {
-  const adapter = new GoogleCalendarMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GoogleCalendarMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

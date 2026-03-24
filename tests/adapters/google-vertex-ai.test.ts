@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { GoogleVertexAiMCPServer } from '../../src/mcp-servers/google-vertex-ai.js';
+import { GoogleVertexAIMCPServer } from '../../src/mcp-servers/google-vertex-ai.js';
 
-describe('GoogleVertexAiMCPServer', () => {
-  const adapter = new GoogleVertexAiMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('GoogleVertexAIMCPServer', () => {
+  const adapter = new GoogleVertexAIMCPServer({ projectId: 'test-id', accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

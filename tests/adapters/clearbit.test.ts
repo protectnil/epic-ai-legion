@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ClearbitMCPServer } from '../../src/mcp-servers/clearbit.js';
 
 describe('ClearbitMCPServer', () => {
-  const adapter = new ClearbitMCPServer({ username: 'test', password: 'test' });
+  const adapter = new ClearbitMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

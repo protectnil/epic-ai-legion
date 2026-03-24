@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FigmaMCPServer } from '../../src/mcp-servers/figma.js';
 
 describe('FigmaMCPServer', () => {
-  const adapter = new FigmaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new FigmaMCPServer({ pat: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

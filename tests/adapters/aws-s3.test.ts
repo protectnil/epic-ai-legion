@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AWSS3MCPServer } from '../../src/mcp-servers/aws-s3.js';
 
 describe('AWSS3MCPServer', () => {
-  const adapter = new AWSS3MCPServer({ accessKeyId: 'test', secretAccessKey: 'test', region: 'us-east-1' });
+  const adapter = new AWSS3MCPServer({ accessKeyId: 'test-id', secretAccessKey: 'test-secret', region: 'us-east-1' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

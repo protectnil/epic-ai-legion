@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { MongodbMCPServer } from '../../src/mcp-servers/mongodb.js';
+import { MongoDBMCPServer } from '../../src/mcp-servers/mongodb.js';
 
-describe('MongodbMCPServer', () => {
-  const adapter = new MongodbMCPServer({ apiKey: 'test-key' });
+describe('MongoDBMCPServer', () => {
+  const adapter = new MongoDBMCPServer({ appId: 'test-id', apiKey: 'test-key', dataSource: 'test-value', database: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

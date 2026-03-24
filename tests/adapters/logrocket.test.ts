@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LogrocketMCPServer } from '../../src/mcp-servers/logrocket.js';
+import { LogRocketMCPServer } from '../../src/mcp-servers/logrocket.js';
 
-describe('LogrocketMCPServer', () => {
-  const adapter = new LogrocketMCPServer({ apiToken: 'test-token' });
+describe('LogRocketMCPServer', () => {
+  const adapter = new LogRocketMCPServer({ apiKey: 'test-key', organizationSlug: 'test-org', appSlug: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ZohoCrmMCPServer } from '../../src/mcp-servers/zoho-crm.js';
+import { ZohoCRMMCPServer } from '../../src/mcp-servers/zoho-crm.js';
 
-describe('ZohoCrmMCPServer', () => {
-  const adapter = new ZohoCrmMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('ZohoCRMMCPServer', () => {
+  const adapter = new ZohoCRMMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

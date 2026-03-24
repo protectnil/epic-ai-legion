@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BarracudaMCPServer } from '../../src/mcp-servers/barracuda.js';
 
 describe('BarracudaMCPServer', () => {
-  const adapter = new BarracudaMCPServer({ apiToken: 'test-token' });
+  const adapter = new BarracudaMCPServer({ host: 'test.example.com', email: 'test@example.com', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

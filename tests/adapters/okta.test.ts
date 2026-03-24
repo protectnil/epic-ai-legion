@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { OktaMCPServer } from '../../src/mcp-servers/okta.js';
 
 describe('OktaMCPServer', () => {
-  const adapter = new OktaMCPServer({ apiToken: 'test-token' });
+  const adapter = new OktaMCPServer({ orgUrl: 'https://test.example.com', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

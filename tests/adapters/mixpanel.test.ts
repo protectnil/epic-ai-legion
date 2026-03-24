@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MixpanelMCPServer } from '../../src/mcp-servers/mixpanel.js';
 
 describe('MixpanelMCPServer', () => {
-  const adapter = new MixpanelMCPServer({ username: 'test', password: 'test' });
+  const adapter = new MixpanelMCPServer({ projectToken: 'test-token', serviceAccountUsername: 'test-account', serviceAccountSecret: 'test-secret', projectId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

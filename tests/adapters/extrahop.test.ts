@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ExtrahopMCPServer } from '../../src/mcp-servers/extrahop.js';
+import { ExtraHopMCPServer } from '../../src/mcp-servers/extrahop.js';
 
-describe('ExtrahopMCPServer', () => {
-  const adapter = new ExtrahopMCPServer({ apiKey: 'test-key' });
+describe('ExtraHopMCPServer', () => {
+  const adapter = new ExtraHopMCPServer({ apiKey: 'test-key', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { QualtricsMCPServer } from '../../src/mcp-servers/qualtrics.js';
 
 describe('QualtricsMCPServer', () => {
-  const adapter = new QualtricsMCPServer({ apiToken: 'test-token' });
+  const adapter = new QualtricsMCPServer({ apiToken: 'test-token', datacenterId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

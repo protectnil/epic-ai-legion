@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { CortexXdrMCPServer } from '../../src/mcp-servers/cortex-xdr.js';
+import { CortexXDRMCPServer } from '../../src/mcp-servers/cortex-xdr.js';
 
-describe('CortexXdrMCPServer', () => {
-  const adapter = new CortexXdrMCPServer({ apiToken: 'test-token' });
+describe('CortexXDRMCPServer', () => {
+  const adapter = new CortexXDRMCPServer({ apiKey: 'test-key', apiKeyId: 'test-id', fqdn: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LlamaindexApiMCPServer } from '../../src/mcp-servers/llamaindex-api.js';
+import { LlamaIndexMCPServer } from '../../src/mcp-servers/llamaindex-api.js';
 
-describe('LlamaindexApiMCPServer', () => {
-  const adapter = new LlamaindexApiMCPServer({ apiToken: 'test-token' });
+describe('LlamaIndexMCPServer', () => {
+  const adapter = new LlamaIndexMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

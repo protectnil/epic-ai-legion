@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { IntercomMCPServer } from '../../src/mcp-servers/intercom.js';
 
 describe('IntercomMCPServer', () => {
-  const adapter = new IntercomMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new IntercomMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

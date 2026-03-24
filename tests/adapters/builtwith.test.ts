@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { BuiltwithMCPServer } from '../../src/mcp-servers/builtwith.js';
+import { BuiltWithMCPServer } from '../../src/mcp-servers/builtwith.js';
 
-describe('BuiltwithMCPServer', () => {
-  const adapter = new BuiltwithMCPServer({ apiToken: 'test-token' });
+describe('BuiltWithMCPServer', () => {
+  const adapter = new BuiltWithMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

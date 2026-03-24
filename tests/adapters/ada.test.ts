@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AdaMCPServer } from '../../src/mcp-servers/ada.js';
 
 describe('AdaMCPServer', () => {
-  const adapter = new AdaMCPServer({ apiKey: 'test-key' });
+  const adapter = new AdaMCPServer({ handle: 'test-value', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

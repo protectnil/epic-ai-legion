@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ArgoWorkflowsMCPServer } from '../../src/mcp-servers/argo-workflows.js';
 
 describe('ArgoWorkflowsMCPServer', () => {
-  const adapter = new ArgoWorkflowsMCPServer({ apiToken: 'test-token' });
+  const adapter = new ArgoWorkflowsMCPServer({ token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

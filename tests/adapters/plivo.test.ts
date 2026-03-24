@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PlivoMCPServer } from '../../src/mcp-servers/plivo.js';
 
 describe('PlivoMCPServer', () => {
-  const adapter = new PlivoMCPServer({ username: 'test', password: 'test' });
+  const adapter = new PlivoMCPServer({ authId: 'test-id', authToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

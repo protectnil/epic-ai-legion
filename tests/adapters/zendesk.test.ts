@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ZendeskMCPServer } from '../../src/mcp-servers/zendesk.js';
 
 describe('ZendeskMCPServer', () => {
-  const adapter = new ZendeskMCPServer({ username: 'test', password: 'test' });
+  const adapter = new ZendeskMCPServer({ email: 'test@example.com', apiToken: 'test-token', subdomain: 'test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

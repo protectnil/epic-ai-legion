@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { MistralAiMCPServer } from '../../src/mcp-servers/mistral-ai.js';
+import { MistralAIMCPServer } from '../../src/mcp-servers/mistral-ai.js';
 
-describe('MistralAiMCPServer', () => {
-  const adapter = new MistralAiMCPServer({ apiToken: 'test-token' });
+describe('MistralAIMCPServer', () => {
+  const adapter = new MistralAIMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

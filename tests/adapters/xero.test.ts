@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { XeroMCPServer } from '../../src/mcp-servers/xero.js';
 
 describe('XeroMCPServer', () => {
-  const adapter = new XeroMCPServer({ apiToken: 'test-token' });
+  const adapter = new XeroMCPServer({ accessToken: 'test-token', tenantId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

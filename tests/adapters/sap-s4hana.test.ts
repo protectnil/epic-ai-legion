@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { SapS4hanaMCPServer } from '../../src/mcp-servers/sap-s4hana.js';
+import { SAPS4HANAMCPServer } from '../../src/mcp-servers/sap-s4hana.js';
 
-describe('SapS4hanaMCPServer', () => {
-  const adapter = new SapS4hanaMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('SAPS4HANAMCPServer', () => {
+  const adapter = new SAPS4HANAMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', subdomain: 'test.example.com', region: 'us-east-1', apiServer: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

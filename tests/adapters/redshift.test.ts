@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RedshiftMCPServer } from '../../src/mcp-servers/redshift.js';
 
 describe('RedshiftMCPServer', () => {
-  const adapter = new RedshiftMCPServer({ apiToken: 'test-token' });
+  const adapter = new RedshiftMCPServer({ region: 'us-east-1', signRequest: {} });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

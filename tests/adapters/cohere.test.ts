@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CohereMCPServer } from '../../src/mcp-servers/cohere.js';
 
 describe('CohereMCPServer', () => {
-  const adapter = new CohereMCPServer({ apiToken: 'test-token' });
+  const adapter = new CohereMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

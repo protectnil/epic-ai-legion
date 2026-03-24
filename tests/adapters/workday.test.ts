@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { WorkdayMCPServer } from '../../src/mcp-servers/workday.js';
 
 describe('WorkdayMCPServer', () => {
-  const adapter = new WorkdayMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new WorkdayMCPServer({ baseUrl: 'https://test.example.com', tenant: 'test-tenant', accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

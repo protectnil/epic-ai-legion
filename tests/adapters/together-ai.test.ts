@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { TogetherAiMCPServer } from '../../src/mcp-servers/together-ai.js';
+import { TogetherAIMCPServer } from '../../src/mcp-servers/together-ai.js';
 
-describe('TogetherAiMCPServer', () => {
-  const adapter = new TogetherAiMCPServer({ apiToken: 'test-token' });
+describe('TogetherAIMCPServer', () => {
+  const adapter = new TogetherAIMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

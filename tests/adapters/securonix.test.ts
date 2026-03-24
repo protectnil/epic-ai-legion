@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SecuronixMCPServer } from '../../src/mcp-servers/securonix.js';
 
 describe('SecuronixMCPServer', () => {
-  const adapter = new SecuronixMCPServer({ apiToken: 'test-token' });
+  const adapter = new SecuronixMCPServer({ baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

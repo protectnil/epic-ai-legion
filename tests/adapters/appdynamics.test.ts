@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AppdynamicsMCPServer } from '../../src/mcp-servers/appdynamics.js';
+import { AppDynamicsMCPServer } from '../../src/mcp-servers/appdynamics.js';
 
-describe('AppdynamicsMCPServer', () => {
-  const adapter = new AppdynamicsMCPServer({ username: 'test', password: 'test' });
+describe('AppDynamicsMCPServer', () => {
+  const adapter = new AppDynamicsMCPServer({ controllerUrl: 'https://test.example.com', username: 'test-name', accountName: 'test-account', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

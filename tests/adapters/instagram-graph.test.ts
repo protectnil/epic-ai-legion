@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { InstagramGraphMCPServer } from '../../src/mcp-servers/instagram-graph.js';
 
 describe('InstagramGraphMCPServer', () => {
-  const adapter = new InstagramGraphMCPServer({ apiToken: 'test-token' });
+  const adapter = new InstagramGraphMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

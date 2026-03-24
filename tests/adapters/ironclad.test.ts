@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { IroncladMCPServer } from '../../src/mcp-servers/ironclad.js';
 
 describe('IroncladMCPServer', () => {
-  const adapter = new IroncladMCPServer({ apiToken: 'test-token' });
+  const adapter = new IroncladMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

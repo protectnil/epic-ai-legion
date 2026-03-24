@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SupabaseMCPServer } from '../../src/mcp-servers/supabase.js';
 
 describe('SupabaseMCPServer', () => {
-  const adapter = new SupabaseMCPServer({ apiKey: 'test-key' });
+  const adapter = new SupabaseMCPServer({ project: 'test-project', anonKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

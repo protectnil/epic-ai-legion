@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AthenahealthMCPServer } from '../../src/mcp-servers/athenahealth.js';
+import { AthenaHealthMCPServer } from '../../src/mcp-servers/athenahealth.js';
 
-describe('AthenahealthMCPServer', () => {
-  const adapter = new AthenahealthMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('AthenaHealthMCPServer', () => {
+  const adapter = new AthenaHealthMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', practiceId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EpicFhirMCPServer } from '../../src/mcp-servers/epic-fhir.js';
 
 describe('EpicFhirMCPServer', () => {
-  const adapter = new EpicFhirMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new EpicFhirMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

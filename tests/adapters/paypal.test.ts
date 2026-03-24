@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PaypalMCPServer } from '../../src/mcp-servers/paypal.js';
+import { PayPalMCPServer } from '../../src/mcp-servers/paypal.js';
 
-describe('PaypalMCPServer', () => {
-  const adapter = new PaypalMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('PayPalMCPServer', () => {
+  const adapter = new PayPalMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

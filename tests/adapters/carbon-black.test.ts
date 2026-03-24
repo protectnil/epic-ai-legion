@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CarbonBlackMCPServer } from '../../src/mcp-servers/carbon-black.js';
 
 describe('CarbonBlackMCPServer', () => {
-  const adapter = new CarbonBlackMCPServer({ apiToken: 'test-token' });
+  const adapter = new CarbonBlackMCPServer({ apiKey: 'test-key', connectorId: 'test-id', orgKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

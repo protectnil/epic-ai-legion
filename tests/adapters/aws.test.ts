@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AWSMCPServer } from '../../src/mcp-servers/aws.js';
 
 describe('AWSMCPServer', () => {
-  const adapter = new AWSMCPServer({ accessKeyId: 'test', secretAccessKey: 'test', region: 'us-east-1' });
+  const adapter = new AWSMCPServer({ accessKeyId: 'test-id', secretAccessKey: 'test-secret', region: 'us-east-1' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

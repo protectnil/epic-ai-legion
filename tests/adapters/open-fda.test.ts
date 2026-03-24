@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { OpenFdaMCPServer } from '../../src/mcp-servers/open-fda.js';
+import { OpenFDAMCPServer } from '../../src/mcp-servers/open-fda.js';
 
-describe('OpenFdaMCPServer', () => {
-  const adapter = new OpenFdaMCPServer({ apiToken: 'test-token' });
+describe('OpenFDAMCPServer', () => {
+  const adapter = new OpenFDAMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

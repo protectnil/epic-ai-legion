@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Five9MCPServer } from '../../src/mcp-servers/five9.js';
 
 describe('Five9MCPServer', () => {
-  const adapter = new Five9MCPServer({ username: 'test', password: 'test' });
+  const adapter = new Five9MCPServer({ username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

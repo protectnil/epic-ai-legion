@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CoralogixMCPServer } from '../../src/mcp-servers/coralogix.js';
 
 describe('CoralogixMCPServer', () => {
-  const adapter = new CoralogixMCPServer({ apiToken: 'test-token' });
+  const adapter = new CoralogixMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

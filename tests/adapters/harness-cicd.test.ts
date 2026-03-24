@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { HarnessCicdMCPServer } from '../../src/mcp-servers/harness-cicd.js';
+import { HarnessCICDMCPServer } from '../../src/mcp-servers/harness-cicd.js';
 
-describe('HarnessCicdMCPServer', () => {
-  const adapter = new HarnessCicdMCPServer({ apiKey: 'test-key' });
+describe('HarnessCICDMCPServer', () => {
+  const adapter = new HarnessCICDMCPServer({ apiKey: 'test-key', accountId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LinearMCPServer } from '../../src/mcp-servers/linear.js';
 
 describe('LinearMCPServer', () => {
-  const adapter = new LinearMCPServer({ apiToken: 'test-token' });
+  const adapter = new LinearMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

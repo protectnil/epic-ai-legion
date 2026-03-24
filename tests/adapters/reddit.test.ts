@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RedditMCPServer } from '../../src/mcp-servers/reddit.js';
 
 describe('RedditMCPServer', () => {
-  const adapter = new RedditMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new RedditMCPServer({ accessToken: 'test-token', userAgent: 'test-value' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

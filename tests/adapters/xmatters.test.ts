@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { XmattersMCPServer } from '../../src/mcp-servers/xmatters.js';
+import { XMattersMCPServer } from '../../src/mcp-servers/xmatters.js';
 
-describe('XmattersMCPServer', () => {
-  const adapter = new XmattersMCPServer({ username: 'test', password: 'test' });
+describe('XMattersMCPServer', () => {
+  const adapter = new XMattersMCPServer({ baseUrl: 'https://test.xmatters.com', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

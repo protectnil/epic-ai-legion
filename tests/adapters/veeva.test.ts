@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { VeevaMCPServer } from '../../src/mcp-servers/veeva.js';
 
 describe('VeevaMCPServer', () => {
-  const adapter = new VeevaMCPServer({ apiToken: 'test-token' });
+  const adapter = new VeevaMCPServer({ username: 'test-name', password: 'test-pass', vaultDomain: 'test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GreenhouseMCPServer } from '../../src/mcp-servers/greenhouse.js';
 
 describe('GreenhouseMCPServer', () => {
-  const adapter = new GreenhouseMCPServer({ username: 'test', password: 'test' });
+  const adapter = new GreenhouseMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

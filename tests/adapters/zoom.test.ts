@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ZoomMCPServer } from '../../src/mcp-servers/zoom.js';
 
 describe('ZoomMCPServer', () => {
-  const adapter = new ZoomMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new ZoomMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

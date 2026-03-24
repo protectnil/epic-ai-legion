@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GladlyMCPServer } from '../../src/mcp-servers/gladly.js';
 
 describe('GladlyMCPServer', () => {
-  const adapter = new GladlyMCPServer({ username: 'test', password: 'test' });
+  const adapter = new GladlyMCPServer({ organization: 'test-org', email: 'test@example.com', apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

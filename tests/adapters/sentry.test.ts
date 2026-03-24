@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SentryMCPServer } from '../../src/mcp-servers/sentry.js';
 
 describe('SentryMCPServer', () => {
-  const adapter = new SentryMCPServer({ apiToken: 'test-token' });
+  const adapter = new SentryMCPServer({ authToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

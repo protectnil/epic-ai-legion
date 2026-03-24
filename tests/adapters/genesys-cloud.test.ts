@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GenesysCloudMCPServer } from '../../src/mcp-servers/genesys-cloud.js';
 
 describe('GenesysCloudMCPServer', () => {
-  const adapter = new GenesysCloudMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GenesysCloudMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

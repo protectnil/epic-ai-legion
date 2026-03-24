@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LansweeperMCPServer } from '../../src/mcp-servers/lansweeper.js';
 
 describe('LansweeperMCPServer', () => {
-  const adapter = new LansweeperMCPServer({ apiToken: 'test-token' });
+  const adapter = new LansweeperMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

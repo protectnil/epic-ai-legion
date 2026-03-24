@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DbtCloudMCPServer } from '../../src/mcp-servers/dbt-cloud.js';
 
 describe('DbtCloudMCPServer', () => {
-  const adapter = new DbtCloudMCPServer({ apiToken: 'test-token' });
+  const adapter = new DbtCloudMCPServer({ serviceToken: 'test-token', accountId: 1 });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

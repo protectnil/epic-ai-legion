@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ContentfulMCPServer } from '../../src/mcp-servers/contentful.js';
 
 describe('ContentfulMCPServer', () => {
-  const adapter = new ContentfulMCPServer({ apiToken: 'test-token' });
+  const adapter = new ContentfulMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

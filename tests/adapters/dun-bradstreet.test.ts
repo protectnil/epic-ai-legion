@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DunBradstreetMCPServer } from '../../src/mcp-servers/dun-bradstreet.js';
 
 describe('DunBradstreetMCPServer', () => {
-  const adapter = new DunBradstreetMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new DunBradstreetMCPServer({ consumerKey: 'test-key', consumerSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

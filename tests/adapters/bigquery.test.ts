@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { BigqueryMCPServer } from '../../src/mcp-servers/bigquery.js';
+import { BigQueryMCPServer } from '../../src/mcp-servers/bigquery.js';
 
-describe('BigqueryMCPServer', () => {
-  const adapter = new BigqueryMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('BigQueryMCPServer', () => {
+  const adapter = new BigQueryMCPServer({ token: 'test-token', projectId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

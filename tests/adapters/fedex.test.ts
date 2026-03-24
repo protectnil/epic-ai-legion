@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { FedexMCPServer } from '../../src/mcp-servers/fedex.js';
+import { FedExMCPServer } from '../../src/mcp-servers/fedex.js';
 
-describe('FedexMCPServer', () => {
-  const adapter = new FedexMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('FedExMCPServer', () => {
+  const adapter = new FedExMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CartaMCPServer } from '../../src/mcp-servers/carta.js';
 
 describe('CartaMCPServer', () => {
-  const adapter = new CartaMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new CartaMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

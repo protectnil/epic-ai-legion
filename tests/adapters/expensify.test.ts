@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ExpensifyMCPServer } from '../../src/mcp-servers/expensify.js';
 
 describe('ExpensifyMCPServer', () => {
-  const adapter = new ExpensifyMCPServer({ apiToken: 'test-token' });
+  const adapter = new ExpensifyMCPServer({ partnerUserID: 'test-id', partnerUserSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PulumiMCPServer } from '../../src/mcp-servers/pulumi.js';
 
 describe('PulumiMCPServer', () => {
-  const adapter = new PulumiMCPServer({ apiToken: 'test-token' });
+  const adapter = new PulumiMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

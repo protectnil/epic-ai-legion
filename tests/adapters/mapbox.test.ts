@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MapboxMCPServer } from '../../src/mcp-servers/mapbox.js';
 
 describe('MapboxMCPServer', () => {
-  const adapter = new MapboxMCPServer({ apiToken: 'test-token' });
+  const adapter = new MapboxMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

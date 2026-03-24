@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MablMCPServer } from '../../src/mcp-servers/mabl.js';
 
 describe('MablMCPServer', () => {
-  const adapter = new MablMCPServer({ username: 'test', password: 'test' });
+  const adapter = new MablMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

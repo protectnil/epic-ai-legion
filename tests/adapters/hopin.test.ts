@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { HopinMCPServer } from '../../src/mcp-servers/hopin.js';
 
 describe('HopinMCPServer', () => {
-  const adapter = new HopinMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new HopinMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

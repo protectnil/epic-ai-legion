@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SophosMCPServer } from '../../src/mcp-servers/sophos.js';
 
 describe('SophosMCPServer', () => {
-  const adapter = new SophosMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new SophosMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', tenantId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

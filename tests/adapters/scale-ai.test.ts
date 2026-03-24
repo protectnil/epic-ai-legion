@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ScaleAiMCPServer } from '../../src/mcp-servers/scale-ai.js';
+import { ScaleAIMCPServer } from '../../src/mcp-servers/scale-ai.js';
 
-describe('ScaleAiMCPServer', () => {
-  const adapter = new ScaleAiMCPServer({ username: 'test', password: 'test' });
+describe('ScaleAIMCPServer', () => {
+  const adapter = new ScaleAIMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

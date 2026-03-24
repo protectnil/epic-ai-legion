@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DockerHubMCPServer } from '../../src/mcp-servers/docker-hub.js';
 
 describe('DockerHubMCPServer', () => {
-  const adapter = new DockerHubMCPServer({ apiToken: 'test-token' });
+  const adapter = new DockerHubMCPServer({ token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

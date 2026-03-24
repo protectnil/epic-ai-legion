@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AquaSecurityMCPServer } from '../../src/mcp-servers/aqua-security.js';
 
 describe('AquaSecurityMCPServer', () => {
-  const adapter = new AquaSecurityMCPServer({ apiToken: 'test-token' });
+  const adapter = new AquaSecurityMCPServer({ aquaKey: 'test-key', aquaSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

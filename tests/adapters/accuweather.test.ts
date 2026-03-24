@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { AccuweatherMCPServer } from '../../src/mcp-servers/accuweather.js';
+import { AccuWeatherMCPServer } from '../../src/mcp-servers/accuweather.js';
 
-describe('AccuweatherMCPServer', () => {
-  const adapter = new AccuweatherMCPServer({ apiKey: 'test-key' });
+describe('AccuWeatherMCPServer', () => {
+  const adapter = new AccuWeatherMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

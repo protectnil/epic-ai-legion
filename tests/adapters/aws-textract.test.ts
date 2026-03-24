@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AWSTextractMCPServer } from '../../src/mcp-servers/aws-textract.js';
 
 describe('AWSTextractMCPServer', () => {
-  const adapter = new AWSTextractMCPServer({ accessKeyId: 'test', secretAccessKey: 'test', region: 'us-east-1' });
+  const adapter = new AWSTextractMCPServer({ accessKeyId: 'test-id', secretAccessKey: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

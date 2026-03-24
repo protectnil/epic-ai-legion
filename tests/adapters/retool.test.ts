@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RetoolMCPServer } from '../../src/mcp-servers/retool.js';
 
 describe('RetoolMCPServer', () => {
-  const adapter = new RetoolMCPServer({ apiToken: 'test-token' });
+  const adapter = new RetoolMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

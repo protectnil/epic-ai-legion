@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AdyenMCPServer } from '../../src/mcp-servers/adyen.js';
 
 describe('AdyenMCPServer', () => {
-  const adapter = new AdyenMCPServer({ apiKey: 'test-key' });
+  const adapter = new AdyenMCPServer({ apiKey: 'test-key', merchantAccount: 'test-account' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

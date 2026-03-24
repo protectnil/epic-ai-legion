@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { WixMCPServer } from '../../src/mcp-servers/wix.js';
 
 describe('WixMCPServer', () => {
-  const adapter = new WixMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new WixMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

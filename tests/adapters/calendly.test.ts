@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CalendlyMCPServer } from '../../src/mcp-servers/calendly.js';
 
 describe('CalendlyMCPServer', () => {
-  const adapter = new CalendlyMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new CalendlyMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

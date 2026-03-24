@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { TomtomMCPServer } from '../../src/mcp-servers/tomtom.js';
+import { TomTomMCPServer } from '../../src/mcp-servers/tomtom.js';
 
-describe('TomtomMCPServer', () => {
-  const adapter = new TomtomMCPServer({ apiToken: 'test-token' });
+describe('TomTomMCPServer', () => {
+  const adapter = new TomTomMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LatticeMCPServer } from '../../src/mcp-servers/lattice.js';
 
 describe('LatticeMCPServer', () => {
-  const adapter = new LatticeMCPServer({ apiToken: 'test-token' });
+  const adapter = new LatticeMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

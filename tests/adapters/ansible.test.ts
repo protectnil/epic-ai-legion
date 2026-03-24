@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AnsibleMCPServer } from '../../src/mcp-servers/ansible.js';
 
 describe('AnsibleMCPServer', () => {
-  const adapter = new AnsibleMCPServer({ apiToken: 'test-token' });
+  const adapter = new AnsibleMCPServer({ baseUrl: 'https://test.example.com', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

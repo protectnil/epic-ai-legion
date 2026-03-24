@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { IexCloudMCPServer } from '../../src/mcp-servers/iex-cloud.js';
+import { IEXCloudMCPServer } from '../../src/mcp-servers/iex-cloud.js';
 
-describe('IexCloudMCPServer', () => {
-  const adapter = new IexCloudMCPServer({ apiToken: 'test-token' });
+describe('IEXCloudMCPServer', () => {
+  const adapter = new IEXCloudMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

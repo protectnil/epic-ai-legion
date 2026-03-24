@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { KandjiMCPServer } from '../../src/mcp-servers/kandji.js';
 
 describe('KandjiMCPServer', () => {
-  const adapter = new KandjiMCPServer({ apiToken: 'test-token' });
+  const adapter = new KandjiMCPServer({ apiToken: 'test-token', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

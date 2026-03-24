@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CrowdinMCPServer } from '../../src/mcp-servers/crowdin.js';
 
 describe('CrowdinMCPServer', () => {
-  const adapter = new CrowdinMCPServer({ apiToken: 'test-token' });
+  const adapter = new CrowdinMCPServer({ personalToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

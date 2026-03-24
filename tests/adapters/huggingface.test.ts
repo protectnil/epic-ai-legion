@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { HuggingfaceMCPServer } from '../../src/mcp-servers/huggingface.js';
+import { HuggingFaceMCPServer } from '../../src/mcp-servers/huggingface.js';
 
-describe('HuggingfaceMCPServer', () => {
-  const adapter = new HuggingfaceMCPServer({ apiToken: 'test-token' });
+describe('HuggingFaceMCPServer', () => {
+  const adapter = new HuggingFaceMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

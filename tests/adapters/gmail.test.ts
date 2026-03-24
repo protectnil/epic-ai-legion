@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GmailMCPServer } from '../../src/mcp-servers/gmail.js';
 
 describe('GmailMCPServer', () => {
-  const adapter = new GmailMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new GmailMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

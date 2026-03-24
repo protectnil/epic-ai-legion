@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { MetaGraphApiMCPServer } from '../../src/mcp-servers/meta-graph-api.js';
+import { MetaGraphAPIMCPServer } from '../../src/mcp-servers/meta-graph-api.js';
 
-describe('MetaGraphApiMCPServer', () => {
-  const adapter = new MetaGraphApiMCPServer({ apiToken: 'test-token' });
+describe('MetaGraphAPIMCPServer', () => {
+  const adapter = new MetaGraphAPIMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

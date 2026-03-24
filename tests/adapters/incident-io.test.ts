@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { IncidentIoMCPServer } from '../../src/mcp-servers/incident-io.js';
 
 describe('IncidentIoMCPServer', () => {
-  const adapter = new IncidentIoMCPServer({ apiToken: 'test-token' });
+  const adapter = new IncidentIoMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

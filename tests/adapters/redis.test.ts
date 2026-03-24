@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RedisMCPServer } from '../../src/mcp-servers/redis.js';
 
 describe('RedisMCPServer', () => {
-  const adapter = new RedisMCPServer({ apiToken: 'test-token' });
+  const adapter = new RedisMCPServer({ endpoint: 'test-value', token: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

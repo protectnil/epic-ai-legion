@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SalesloftMCPServer } from '../../src/mcp-servers/salesloft.js';
 
 describe('SalesloftMCPServer', () => {
-  const adapter = new SalesloftMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new SalesloftMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

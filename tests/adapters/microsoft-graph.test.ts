@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MicrosoftGraphMCPServer } from '../../src/mcp-servers/microsoft-graph.js';
 
 describe('MicrosoftGraphMCPServer', () => {
-  const adapter = new MicrosoftGraphMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MicrosoftGraphMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ConfluentKafkaMCPServer } from '../../src/mcp-servers/confluent-kafka.js';
 
 describe('ConfluentKafkaMCPServer', () => {
-  const adapter = new ConfluentKafkaMCPServer({ username: 'test', password: 'test' });
+  const adapter = new ConfluentKafkaMCPServer({ apiKey: 'test-key', apiSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

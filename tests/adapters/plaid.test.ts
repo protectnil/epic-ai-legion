@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PlaidMCPServer } from '../../src/mcp-servers/plaid.js';
 
 describe('PlaidMCPServer', () => {
-  const adapter = new PlaidMCPServer({ apiToken: 'test-token' });
+  const adapter = new PlaidMCPServer({ clientId: 'test-id', secret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MonteCarloMCPServer } from '../../src/mcp-servers/monte-carlo.js';
 
 describe('MonteCarloMCPServer', () => {
-  const adapter = new MonteCarloMCPServer({ apiToken: 'test-token' });
+  const adapter = new MonteCarloMCPServer({ mcdId: 'test-id', mcdToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

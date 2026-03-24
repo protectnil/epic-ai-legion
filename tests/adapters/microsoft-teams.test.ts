@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MicrosoftTeamsMCPServer } from '../../src/mcp-servers/microsoft-teams.js';
 
 describe('MicrosoftTeamsMCPServer', () => {
-  const adapter = new MicrosoftTeamsMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new MicrosoftTeamsMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

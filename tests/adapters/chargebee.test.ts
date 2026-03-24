@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ChargebeeMCPServer } from '../../src/mcp-servers/chargebee.js';
 
 describe('ChargebeeMCPServer', () => {
-  const adapter = new ChargebeeMCPServer({ username: 'test', password: 'test' });
+  const adapter = new ChargebeeMCPServer({ apiKey: 'test-key', site: 'test-site' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

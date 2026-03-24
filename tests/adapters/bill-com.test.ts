@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BillComMCPServer } from '../../src/mcp-servers/bill-com.js';
 
 describe('BillComMCPServer', () => {
-  const adapter = new BillComMCPServer({ apiToken: 'test-token' });
+  const adapter = new BillComMCPServer({ userName: 'test-name', password: 'test-pass', organizationId: 'test-id', devKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

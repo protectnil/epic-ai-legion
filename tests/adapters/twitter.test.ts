@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TwitterMCPServer } from '../../src/mcp-servers/twitter.js';
 
 describe('TwitterMCPServer', () => {
-  const adapter = new TwitterMCPServer({ apiToken: 'test-token' });
+  const adapter = new TwitterMCPServer({ bearerToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CornerstoneMCPServer } from '../../src/mcp-servers/cornerstone.js';
 
 describe('CornerstoneMCPServer', () => {
-  const adapter = new CornerstoneMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new CornerstoneMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', corpname: 'test-company' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

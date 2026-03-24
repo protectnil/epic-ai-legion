@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CybereasonMCPServer } from '../../src/mcp-servers/cybereason.js';
 
 describe('CybereasonMCPServer', () => {
-  const adapter = new CybereasonMCPServer({ apiToken: 'test-token' });
+  const adapter = new CybereasonMCPServer({ host: 'test.example.com', username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

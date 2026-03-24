@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SonatypeNexusMCPServer } from '../../src/mcp-servers/sonatype-nexus.js';
 
 describe('SonatypeNexusMCPServer', () => {
-  const adapter = new SonatypeNexusMCPServer({ username: 'test', password: 'test' });
+  const adapter = new SonatypeNexusMCPServer({ baseUrl: 'https://test.example.com', username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EnvoyMCPServer } from '../../src/mcp-servers/envoy.js';
 
 describe('EnvoyMCPServer', () => {
-  const adapter = new EnvoyMCPServer({ apiToken: 'test-token' });
+  const adapter = new EnvoyMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

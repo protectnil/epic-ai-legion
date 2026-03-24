@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BrandwatchMCPServer } from '../../src/mcp-servers/brandwatch.js';
 
 describe('BrandwatchMCPServer', () => {
-  const adapter = new BrandwatchMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new BrandwatchMCPServer({ username: 'test-name', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

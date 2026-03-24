@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BackstageMCPServer } from '../../src/mcp-servers/backstage.js';
 
 describe('BackstageMCPServer', () => {
-  const adapter = new BackstageMCPServer({ apiToken: 'test-token' });
+  const adapter = new BackstageMCPServer({ baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

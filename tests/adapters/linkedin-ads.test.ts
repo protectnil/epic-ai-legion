@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LinkedinAdsMCPServer } from '../../src/mcp-servers/linkedin-ads.js';
+import { LinkedInAdsMCPServer } from '../../src/mcp-servers/linkedin-ads.js';
 
-describe('LinkedinAdsMCPServer', () => {
-  const adapter = new LinkedinAdsMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('LinkedInAdsMCPServer', () => {
+  const adapter = new LinkedInAdsMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

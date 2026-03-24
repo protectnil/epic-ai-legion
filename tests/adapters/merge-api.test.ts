@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MergeApiMCPServer } from '../../src/mcp-servers/merge-api.js';
 
 describe('MergeApiMCPServer', () => {
-  const adapter = new MergeApiMCPServer({ apiToken: 'test-token' });
+  const adapter = new MergeApiMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

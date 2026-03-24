@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { StytchMCPServer } from '../../src/mcp-servers/stytch.js';
 
 describe('StytchMCPServer', () => {
-  const adapter = new StytchMCPServer({ username: 'test', password: 'test' });
+  const adapter = new StytchMCPServer({ projectId: 'test-id', secret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

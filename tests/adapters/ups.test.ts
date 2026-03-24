@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { UPSMCPServer } from '../../src/mcp-servers/ups.js';
 
 describe('UPSMCPServer', () => {
-  const adapter = new UPSMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new UPSMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { VertaforeMCPServer } from '../../src/mcp-servers/vertafore.js';
 
 describe('VertaforeMCPServer', () => {
-  const adapter = new VertaforeMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new VertaforeMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', agencyId: 'test-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

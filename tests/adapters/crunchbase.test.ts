@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CrunchbaseMCPServer } from '../../src/mcp-servers/crunchbase.js';
 
 describe('CrunchbaseMCPServer', () => {
-  const adapter = new CrunchbaseMCPServer({ apiToken: 'test-token' });
+  const adapter = new CrunchbaseMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

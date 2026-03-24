@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { WebflowMCPServer } from '../../src/mcp-servers/webflow.js';
 
 describe('WebflowMCPServer', () => {
-  const adapter = new WebflowMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new WebflowMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

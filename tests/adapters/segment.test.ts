@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SegmentMCPServer } from '../../src/mcp-servers/segment.js';
 
 describe('SegmentMCPServer', () => {
-  const adapter = new SegmentMCPServer({ apiToken: 'test-token' });
+  const adapter = new SegmentMCPServer({ writeKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

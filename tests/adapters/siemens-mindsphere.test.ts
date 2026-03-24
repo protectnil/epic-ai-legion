@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { SiemensMindsphereMCPServer } from '../../src/mcp-servers/siemens-mindsphere.js';
+import { SiemensMindSphereMCPServer } from '../../src/mcp-servers/siemens-mindsphere.js';
 
-describe('SiemensMindsphereMCPServer', () => {
-  const adapter = new SiemensMindsphereMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('SiemensMindSphereMCPServer', () => {
+  const adapter = new SiemensMindSphereMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', tenant: 'test-tenant' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

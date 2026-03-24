@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { Knowbe4MCPServer } from '../../src/mcp-servers/knowbe4.js';
+import { KnowBe4MCPServer } from '../../src/mcp-servers/knowbe4.js';
 
-describe('Knowbe4MCPServer', () => {
-  const adapter = new Knowbe4MCPServer({ apiToken: 'test-token' });
+describe('KnowBe4MCPServer', () => {
+  const adapter = new KnowBe4MCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { VectraAiMCPServer } from '../../src/mcp-servers/vectra-ai.js';
+import { VectraAIMCPServer } from '../../src/mcp-servers/vectra-ai.js';
 
-describe('VectraAiMCPServer', () => {
-  const adapter = new VectraAiMCPServer({ clientId: 'test', clientSecret: 'test' });
+describe('VectraAIMCPServer', () => {
+  const adapter = new VectraAIMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', baseUrl: 'https://test.example.com' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

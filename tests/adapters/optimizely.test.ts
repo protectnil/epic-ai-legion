@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { OptimizelyMCPServer } from '../../src/mcp-servers/optimizely.js';
 
 describe('OptimizelyMCPServer', () => {
-  const adapter = new OptimizelyMCPServer({ clientId: 'test', clientSecret: 'test' });
+  const adapter = new OptimizelyMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

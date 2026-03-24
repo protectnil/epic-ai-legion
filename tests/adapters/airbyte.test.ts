@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AirbyteMCPServer } from '../../src/mcp-servers/airbyte.js';
 
 describe('AirbyteMCPServer', () => {
-  const adapter = new AirbyteMCPServer({ apiToken: 'test-token' });
+  const adapter = new AirbyteMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();
