@@ -16,7 +16,7 @@ import { createLogger } from '../logger.js';
 
 const DEFAULT_OLLAMA_URL = 'http://localhost:11434';
 const DEFAULT_GATEWAY_URL = 'http://localhost:8000';
-const DEFAULT_TIMEOUT_MS = 5000;
+const DEFAULT_TIMEOUT_MS = 30000;
 
 let ollamaDeprecationWarned = false;
 

@@ -599,9 +599,9 @@ describe('Air-Gapped: Throughput & Latency', { timeout: TIMEOUT_MS * 3 }, () => 
   it('measures token generation rate', async () => {
     const backend = await detectBackend(); if (!backend) return;
 
-    // Use raw Ollama API to get token counts
+    // Use OpenAI-compatible endpoint (works with any backend)
     const start = performance.now();
-    const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+    const res = await fetch(`${backend.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -610,26 +610,27 @@ describe('Air-Gapped: Throughput & Latency', { timeout: TIMEOUT_MS * 3 }, () => 
           { role: 'system', content: 'You are a cybersecurity expert. Give a detailed explanation.' },
           { role: 'user', content: 'Explain the kill chain of a ransomware attack from initial access to data exfiltration. Be thorough.' },
         ],
-        stream: false,
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const durationMs = performance.now() - start;
-    const data = await res.json() as { message?: { content?: string }; eval_count?: number; eval_duration?: number; prompt_eval_count?: number };
+    const data = await res.json() as {
+      choices?: { message?: { content?: string } }[];
+      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+    };
 
-    const evalCount = data.eval_count ?? 0;
-    const evalDurationNs = data.eval_duration ?? 1;
-    const tokensPerSecond = evalCount / (evalDurationNs / 1e9);
-    const promptTokens = data.prompt_eval_count ?? 0;
+    const completionTokens = data.usage?.completion_tokens ?? 0;
+    const promptTokens = data.usage?.prompt_tokens ?? 0;
+    const tokensPerSecond = completionTokens / (durationMs / 1000);
 
     console.log(`Token generation rate:`);
     console.log(`  Prompt tokens: ${promptTokens}`);
-    console.log(`  Generated tokens: ${evalCount}`);
+    console.log(`  Generated tokens: ${completionTokens}`);
     console.log(`  Generation speed: ${tokensPerSecond.toFixed(1)} tokens/sec`);
     console.log(`  Wall clock: ${durationMs.toFixed(0)}ms`);
-    console.log(`  Response preview: ${data.message?.content?.slice(0, 200)}`);
+    console.log(`  Response preview: ${data.choices?.[0]?.message?.content?.slice(0, 200)}`);
 
-    expect(evalCount).toBeGreaterThan(50);
+    expect(completionTokens).toBeGreaterThan(50);
   });
 });
 

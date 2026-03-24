@@ -165,6 +165,7 @@ const mockConfig: Record<string, unknown> = {
   basePath: 'na1.docusign.net',
   domain: 'test',
   organizationUrl: 'https://mock.crm.dynamics.com',
+  endpoint: 'https://mock.example.com',
 };
 
 interface AdapterEntry {
