@@ -1,6 +1,6 @@
 # Epic AI Harness
 
-This directory defines the test harness that Claude should implement for `@epicai/core`.
+This directory defines the test harness specification for `@epicai/core`.
 
 The harness is split into three backend profiles and one shared runner:
 

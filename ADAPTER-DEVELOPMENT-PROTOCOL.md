@@ -601,7 +601,7 @@ If the vendor provides a free sandbox or test account, write integration tests i
 5. Write test in `tests/adapters/{vendor}.test.ts`.
 6. Run: `npx vitest run {vendor}` — all tests pass.
 7. Run: `npm run build` — zero new TypeScript errors.
-8. Codex review.
+8. Code review.
 9. Commit and push.
 
 ### For community contributors
@@ -611,7 +611,7 @@ If the vendor provides a free sandbox or test account, write integration tests i
 3. Fork the repo. Create branch: `adapter/{vendor-name}`.
 4. Follow steps 1-7 above.
 5. Submit PR. CI runs lint, typecheck, and tests.
-6. Codex reviews for: auth correctness, error handling, API path accuracy, tool description quality.
+6. Code review for: auth correctness, error handling, API path accuracy, tool description quality.
 7. Maintainer merges. Catalog auto-regenerated on next build.
 
 ### For vendor contributors
@@ -623,7 +623,7 @@ Same as community, but:
 
 ---
 
-## Quality Gate (Codex Review Checklist)
+## Quality Gate (Review Checklist)
 
 Every adapter PR is reviewed against this checklist:
 

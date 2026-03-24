@@ -50,7 +50,7 @@ jobs:
 
           if [ "$FAILED" -eq 1 ]; then
             echo ""
-            echo "Commit message policy: one-line subject, no internals. See CLAUDE.md."
+            echo "Commit message policy: one-line subject, no internals. See CONTRIBUTING.md."
             exit 1
           fi
 
