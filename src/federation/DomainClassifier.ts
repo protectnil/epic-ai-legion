@@ -78,6 +78,7 @@ async function loadSemanticEngine(modelName: string): Promise<SemanticEngine | n
 
   semanticEngineLoading = (async () => {
     try {
+      // @ts-expect-error — @xenova/transformers is an optional runtime dependency, not installed at compile time
       const { pipeline } = await import('@xenova/transformers');
       const extractor = await pipeline('feature-extraction', modelName);
 

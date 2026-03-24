@@ -29,6 +29,7 @@ export class AWSSecretsManager implements SecretsProvider {
     const client = await this.getClient();
     const secretName = `epicai/adapters/${adapterName}/${key}`;
 
+    // @ts-expect-error — @aws-sdk/client-secrets-manager is an optional peer dependency
     const { GetSecretValueCommand } = await import('@aws-sdk/client-secrets-manager');
     const command = new GetSecretValueCommand({ SecretId: secretName });
     const response = await (client as { send: (cmd: unknown) => Promise<{ SecretString?: string }> }).send(command);
@@ -45,6 +46,7 @@ export class AWSSecretsManager implements SecretsProvider {
   private async getClient(): Promise<unknown> {
     if (this.client) return this.client;
 
+    // @ts-expect-error — @aws-sdk/client-secrets-manager is an optional peer dependency
     const { SecretsManagerClient } = await import('@aws-sdk/client-secrets-manager');
     this.client = new SecretsManagerClient(this.region ? { region: this.region } : {});
     return this.client;
