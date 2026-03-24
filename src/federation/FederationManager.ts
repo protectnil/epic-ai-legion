@@ -88,10 +88,24 @@ export class FederationManager {
   }
 
   /**
-   * List all discovered tools across all connected servers.
+   * List all discovered tools across all connected servers (all tiers).
    */
   listTools(): Tool[] {
     return this.registry.listAll();
+  }
+
+  /**
+   * List only orchestrated tools (eligible for SLM selection via pre-filter).
+   */
+  listOrchestratedTools(): Tool[] {
+    return this.registry.listOrchestrated();
+  }
+
+  /**
+   * List only direct tools (callable by explicit name, not sent to SLM).
+   */
+  listDirectTools(): Tool[] {
+    return this.registry.listDirect();
   }
 
   /**

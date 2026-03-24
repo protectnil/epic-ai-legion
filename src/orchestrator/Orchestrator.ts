@@ -172,14 +172,19 @@ export class Orchestrator {
     const systemPrompt = this.deps.persona.buildSystemPrompt();
 
     // 3. BUILD TOOL DEFINITIONS from federation, narrowed by pre-filter
-    const allTools = this.deps.federation.listTools();
-    this.preFilter.index(allTools);
-    const tools = this.preFilter.select(query, this.deps.preFilter);
-    const toolDefs: LLMToolDefinition[] = tools.map(t => ({
+    //    Use only orchestrated tools (tier: 'orchestrated') — direct tools are
+    //    callable by explicit name but not presented to the SLM for selection.
+    const orchestratedTools = this.deps.federation.listOrchestratedTools
+      ? this.deps.federation.listOrchestratedTools()
+      : this.deps.federation.listTools();
+    this.preFilter.index(orchestratedTools);
+    let tools = this.preFilter.select(query, this.deps.preFilter);
+    let toolDefs: LLMToolDefinition[] = tools.map(t => ({
       name: t.name,
       description: t.description,
       parameters: t.parameters,
     }));
+    let preFilterRetried = false;
 
     // 4. PLAN — orchestrator decides which tools to call
     const messages: LLMMessage[] = [
@@ -202,8 +207,27 @@ export class Orchestrator {
       const planDurationMs = Date.now() - planStart;
       orchestratorMs += planDurationMs;
 
-      // No tool calls — orchestrator decided to respond
+      // No tool calls — orchestrator decided to respond (or pre-filter missed)
       if (planResponse.toolCalls.length === 0) {
+        // Feedback loop: if this is the first iteration and we haven't retried
+        // the pre-filter yet, retry with doubled maxTools to recover from
+        // pre-filter misses (correct tool was filtered out).
+        if (iteration === 0 && !preFilterRetried && toolDefs.length > 0) {
+          preFilterRetried = true;
+          const expandedOptions = {
+            ...this.deps.preFilter,
+            maxTools: (this.deps.preFilter?.maxTools ?? 8) * 2,
+            maxPerServer: (this.deps.preFilter?.maxPerServer ?? 3) * 2,
+          };
+          tools = this.preFilter.select(query, expandedOptions);
+          toolDefs = tools.map(t => ({
+            name: t.name,
+            description: t.description,
+            parameters: t.parameters,
+          }));
+          // Retry this iteration with broader tool set
+          continue;
+        }
         completedIterations++;
         break;
       }

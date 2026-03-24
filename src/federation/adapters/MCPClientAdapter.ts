@@ -113,6 +113,7 @@ export class MCPClientAdapter implements MCPAdapter {
         description: t.description ?? '',
         parameters: (t.inputSchema as Record<string, unknown>) ?? {},
         server: this.name,
+        tier: 'orchestrated' as const,
       }));
 
       this._status = 'connected';

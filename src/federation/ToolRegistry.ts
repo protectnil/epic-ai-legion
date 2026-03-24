@@ -52,6 +52,20 @@ export class ToolRegistry {
   }
 
   /**
+   * Get only orchestrated tools (eligible for SLM selection via pre-filter).
+   */
+  listOrchestrated(): Tool[] {
+    return Array.from(this.tools.values()).filter(t => t.tier === 'orchestrated');
+  }
+
+  /**
+   * Get only direct tools (callable by explicit name, not sent to SLM).
+   */
+  listDirect(): Tool[] {
+    return Array.from(this.tools.values()).filter(t => t.tier === 'direct');
+  }
+
+  /**
    * Get tools registered by a specific server.
    */
   listByServer(serverName: string): Tool[] {

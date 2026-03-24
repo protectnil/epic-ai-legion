@@ -109,11 +109,14 @@ export interface FederationConfig {
   healthCheckIntervalMs?: number;
 }
 
+export type ToolTier = 'orchestrated' | 'direct';
+
 export interface Tool {
   name: string;
   description: string;
   parameters: Record<string, unknown>;
   server: string;
+  tier: ToolTier;
 }
 
 export interface ToolResult {

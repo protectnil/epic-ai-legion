@@ -150,6 +150,7 @@ export type {
   ConnectionHealth,
   ConnectionStatus,
   Tool,
+  ToolTier,
   ToolResult,
   CorrelationQuery,
   CorrelationResult,
