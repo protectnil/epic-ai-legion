@@ -33,6 +33,10 @@
     "./adapter-catalog": {
       "import": "./adapter-catalog.json",
       "default": "./adapter-catalog.json"
+    },
+    "./mcp-registry": {
+      "import": "./mcp-registry.json",
+      "default": "./mcp-registry.json"
     }
   },
   "bin": {
@@ -43,6 +47,7 @@
   "files": [
     "dist",
     "adapter-catalog.json",
+    "mcp-registry.json",
     "LICENSE",
     "NOTICE",
     "README.md",
