@@ -82,6 +82,45 @@ export { FileCheckpointStore, InMemoryCheckpointStore } from './resilience/Check
 export type { CheckpointData, CheckpointStore } from './resilience/Checkpoint.js';
 export { PromptCache } from './resilience/PromptCache.js';
 
+// Federation V2
+export { AdapterCatalog } from './federation/AdapterCatalog.js';
+export type { AdapterCatalogEntry, AdapterCategory, CatalogSourceConfig } from './federation/AdapterCatalog.js';
+export { DomainClassifier } from './federation/DomainClassifier.js';
+export type { DomainClassifierConfig } from './federation/DomainClassifier.js';
+export { AdaptivePool } from './federation/AdaptivePool.js';
+export type { AdaptivePoolConfig, PoolStats } from './federation/AdaptivePool.js';
+export { EpicAIAdapter } from './federation/adapters/base.js';
+export type { EpicAIAdapterConstructor } from './federation/adapters/base.js';
+
+// Trust
+export {
+  AuthMiddleware,
+  AuthError,
+  AccessPolicyEngine,
+  ArtifactVerifier,
+  loadPolicyFromFile,
+  validatePolicyRules,
+  createSecretsProvider,
+} from './trust/index.js';
+export type {
+  SecretsProvider,
+  TenantContext,
+  PolicyRule,
+  PolicyDecision,
+  TrustConfig,
+  JWTAuthConfig,
+  MTLSConfig,
+  SecretsConfig,
+} from './trust/index.js';
+
+// Sandbox
+export { SandboxManager } from './federation/sandbox/SandboxManager.js';
+export type { SandboxedAdapter } from './federation/sandbox/SandboxManager.js';
+export type { AdapterSandboxConfig, SandboxMode } from './federation/sandbox/types.js';
+
+// Observability (V2)
+export { PrometheusExporter } from './observability/PrometheusExporter.js';
+
 // Types — all public interfaces
 export type {
   // LLM

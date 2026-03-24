@@ -474,8 +474,8 @@ export class ArgoWorkflowsMCPServer {
             return { content: [{ type: 'text', text: 'name is required' }], isError: true };
           }
 
-          const podName = (args.podName as string) || '-';
           const params = new URLSearchParams();
+          if (args.podName) params.append('podName', args.podName as string);
           if (args.container) params.append('logOptions.container', args.container as string);
           if (args.tailLines) params.append('logOptions.tailLines', String(args.tailLines as number));
           if (args.grep) params.append('grep', args.grep as string);

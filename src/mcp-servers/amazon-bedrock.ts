@@ -66,7 +66,7 @@ async function awsSigV4Sign(
     return crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(data));
   }
 
-  const kDate = await hmac(encoder.encode(`AWS4${secretAccessKey}`), dateStamp);
+  const kDate = await hmac(encoder.encode(`AWS4${secretAccessKey}`).buffer as ArrayBuffer, dateStamp);
   const kRegion = await hmac(kDate, region);
   const kService = await hmac(kRegion, service);
   const kSigning = await hmac(kService, 'aws4_request');
