@@ -1,10 +1,4 @@
-/**
- * Shopify MCP Server
- * Adapter for the Shopify Admin API 2024-01 — products, orders, and customers
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Shopify MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -21,7 +15,7 @@ export class ShopifyMCPServer {
   }
 
   private get baseUrl(): string {
-    return `https://${this.config.store}.myshopify.com/admin/api/2024-01`;
+    return `https://${this.config.store}.myshopify.com/admin/api/2026-01`;
   }
 
   private get authHeaders(): Record<string, string> {
@@ -105,6 +99,26 @@ export class ShopifyMCPServer {
           required: [],
         },
       },
+      {
+        name: 'create_product',
+        description: 'Create a new product in the Shopify store.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Product title.' },
+            body_html: { type: 'string', description: 'Product description in HTML.' },
+            vendor: { type: 'string', description: 'Product vendor name.' },
+            product_type: { type: 'string', description: 'Product type (category).' },
+            status: {
+              type: 'string',
+              enum: ['active', 'archived', 'draft'],
+              description: 'Product status (default: draft).',
+            },
+            tags: { type: 'string', description: 'Comma-separated list of tags.' },
+          },
+          required: ['title'],
+        },
+      },
     ];
   }
 
@@ -176,6 +190,33 @@ export class ShopifyMCPServer {
             data = await response.json();
           } catch {
             throw new Error(`Non-JSON response (HTTP ${response.status})`);
+          }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'create_product': {
+          if (!args.title) {
+            return { content: [{ type: 'text', text: 'title is required' }], isError: true };
+          }
+          const product: Record<string, unknown> = { title: args.title };
+          if (args.body_html) product['body_html'] = args.body_html;
+          if (args.vendor) product['vendor'] = args.vendor;
+          if (args.product_type) product['product_type'] = args.product_type;
+          if (args.status) product['status'] = args.status;
+          if (args.tags) product['tags'] = args.tags;
+          const response = await fetch(`${this.baseUrl}/products.json`, {
+            method: 'POST',
+            headers: this.authHeaders,
+            body: JSON.stringify({ product }),
+          });
+          let data: unknown;
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error(`Non-JSON response (HTTP ${response.status})`);
+          }
+          if (!response.ok) {
+            return { content: [{ type: 'text', text: `Failed to create product: ${JSON.stringify(data)}` }], isError: true };
           }
           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
         }

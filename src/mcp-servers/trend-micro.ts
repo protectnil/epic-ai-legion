@@ -1,7 +1,4 @@
-/**
- * Trend Micro Vision One MCP Server
- * Provides access to Trend Micro Vision One REST API endpoints for detection and analysis
- 
+/** Trend Micro Vision One MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -130,6 +127,27 @@ export class TrendMicroMCPServer {
             },
           },
           required: ['object', 'type'],
+        },
+      },
+      {
+        name: 'isolate_endpoint',
+        description: 'Disconnect one or more endpoints from the network while allowing communication with the managing Trend Micro server. Requires Response Management — isolate endpoint permission.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            agent_guid: {
+              type: 'string',
+              description: 'UUID of the installed agent on the target endpoint (e.g. "9c94bd33-c589-48c4-9431-dace397b0067"). Provide either agent_guid or endpoint_name.',
+            },
+            endpoint_name: {
+              type: 'string',
+              description: 'Hostname of the target endpoint. Provide either endpoint_name or agent_guid.',
+            },
+            description: {
+              type: 'string',
+              description: 'Description of the response task (max 2048 characters)',
+            },
+          },
         },
       },
     ];
@@ -261,7 +279,6 @@ export class TrendMicroMCPServer {
             };
           }
 
-          // encodeURIComponent is only for URL query params, not JSON body fields.
           const response = await fetch(`${this.baseUrl}/v3.0/search/suspicious-objects`, {
             method: 'POST',
             headers,
@@ -322,6 +339,49 @@ export class TrendMicroMCPServer {
             data = await response.json();
           } catch {
             throw new Error(`Trend Micro returned non-JSON response (HTTP ${response.status})`);
+          }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'isolate_endpoint': {
+          const agentGuid = args.agent_guid as string | undefined;
+          const endpointName = args.endpoint_name as string | undefined;
+          const description = args.description as string | undefined;
+
+          if (!agentGuid && !endpointName) {
+            return {
+              content: [{ type: 'text', text: 'Either agent_guid or endpoint_name is required' }],
+              isError: true,
+            };
+          }
+
+          const entry: Record<string, string> = {};
+          if (agentGuid) entry.agentGuid = agentGuid;
+          if (endpointName) entry.endpointName = endpointName;
+          if (description) entry.description = description;
+
+          const response = await fetch(`${this.baseUrl}/v3.0/response/endpoints/isolate`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify([entry]),
+          });
+
+          if (response.status === 401) {
+            throw new Error('Auth token expired. Provide a new token.');
+          }
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to isolate endpoint: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try {
+            data = await response.json();
+          } catch {
+            data = { status: response.status, message: 'Isolation task submitted successfully' };
           }
           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
         }

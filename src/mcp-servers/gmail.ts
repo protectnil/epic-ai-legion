@@ -29,7 +29,7 @@ export class GmailMCPServer {
     return [
       {
         name: 'list_messages',
-        description: 'List messages in the Gmail mailbox',
+        description: 'List messages in the Gmail mailbox filtered by label. Use labelIds to scope to a folder (INBOX, SENT, DRAFT, SPAM, TRASH, UNREAD, etc.) and the optional q parameter for additional filtering.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -48,7 +48,7 @@ export class GmailMCPServer {
             },
             q: {
               type: 'string',
-              description: 'Gmail search query string',
+              description: 'Additional Gmail search query to narrow results within the specified labels',
             },
           },
         },
@@ -110,25 +110,33 @@ export class GmailMCPServer {
         },
       },
       {
-        name: 'search_messages',
-        description: 'Search Gmail messages using Gmail search syntax',
+        name: 'create_draft',
+        description: 'Save a new draft email in the Gmail mailbox. The draft can be sent later via the Gmail UI or the drafts.send endpoint.',
         inputSchema: {
           type: 'object',
           properties: {
-            query: {
+            to: {
               type: 'string',
-              description: 'Gmail search query (e.g., "from:user@example.com subject:invoice")',
+              description: 'Recipient email address',
             },
-            maxResults: {
-              type: 'number',
-              description: 'Maximum number of results to return (default: 20)',
-            },
-            pageToken: {
+            subject: {
               type: 'string',
-              description: 'Page token for pagination',
+              description: 'Email subject line',
+            },
+            body: {
+              type: 'string',
+              description: 'Plain text email body',
+            },
+            cc: {
+              type: 'string',
+              description: 'CC email addresses (comma-separated)',
+            },
+            bcc: {
+              type: 'string',
+              description: 'BCC email addresses (comma-separated)',
             },
           },
-          required: ['query'],
+          required: ['to', 'subject', 'body'],
         },
       },
     ];
@@ -159,11 +167,13 @@ export class GmailMCPServer {
           );
         case 'list_labels':
           return await this.listLabels();
-        case 'search_messages':
-          return await this.searchMessages(
-            args.query as string,
-            args.maxResults as number | undefined,
-            args.pageToken as string | undefined
+        case 'create_draft':
+          return await this.createDraft(
+            args.to as string,
+            args.subject as string,
+            args.body as string,
+            args.cc as string | undefined,
+            args.bcc as string | undefined
           );
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
@@ -259,19 +269,35 @@ export class GmailMCPServer {
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
   }
 
-  private async searchMessages(
-    query: string,
-    maxResults?: number,
-    pageToken?: string
+  private async createDraft(
+    to: string,
+    subject: string,
+    body: string,
+    cc?: string,
+    bcc?: string
   ): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    params.append('q', query);
-    params.append('maxResults', String(maxResults ?? 20));
-    if (pageToken) params.append('pageToken', pageToken);
+    const lines = [
+      `To: ${to}`,
+      ...(cc ? [`Cc: ${cc}`] : []),
+      ...(bcc ? [`Bcc: ${bcc}`] : []),
+      `Subject: ${subject}`,
+      'Content-Type: text/plain; charset=utf-8',
+      '',
+      body,
+    ];
+    const raw = Buffer.from(lines.join('\r\n'))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
 
     const response = await fetch(
-      `${this.baseUrl}/users/${this.userId}/messages?${params}`,
-      { method: 'GET', headers: this.headers }
+      `${this.baseUrl}/users/${this.userId}/drafts`,
+      {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify({ message: { raw } }),
+      }
     );
     if (!response.ok) throw new Error(`Gmail API error: ${response.status} ${response.statusText}`);
     let data: unknown;

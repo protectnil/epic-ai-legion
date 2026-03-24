@@ -99,11 +99,15 @@ export class MicrosoftGraphMCPServer {
             },
             skip: {
               type: 'number',
-              description: 'Number of events to skip for pagination (default: 0)',
+              description: 'Number of events to skip for pagination when not using calendarView (default: 0)',
+            },
+            skip_token: {
+              type: 'string',
+              description: 'Pagination token from @odata.nextLink, used when start/end (calendarView) is specified',
             },
             filter: {
               type: 'string',
-              description: 'OData filter expression (e.g. start/dateTime ge \'2026-01-01T00:00:00\')',
+              description: 'OData filter expression (e.g. start/dateTime ge \'2026-01-01T00:00:00\'). Not used when start/end are provided.',
             },
             start: {
               type: 'string',
@@ -180,9 +184,13 @@ export class MicrosoftGraphMCPServer {
           const top = (args.top as number) || 10;
           const skip = (args.skip as number) || 0;
 
+          // $search and $filter are mutually exclusive on the messages endpoint
           let url = `${this.baseUrl}/me/mailFolders/${encodeURIComponent(folder)}/messages?$top=${top}&$skip=${skip}`;
-          if (args.filter) url += `&$filter=${encodeURIComponent(args.filter as string)}`;
-          if (args.search) url += `&$search=${encodeURIComponent(`"${args.search as string}"`)}`;
+          if (args.search) {
+            url += `&$search=${encodeURIComponent(`"${args.search as string}"`)}`;
+          } else if (args.filter) {
+            url += `&$filter=${encodeURIComponent(args.filter as string)}`;
+          }
 
           const response = await fetch(url, { method: 'GET', headers });
 
@@ -247,7 +255,9 @@ export class MicrosoftGraphMCPServer {
 
           let url: string;
           if (args.start && args.end) {
-            url = `${this.baseUrl}/me/calendarView?startDateTime=${encodeURIComponent(args.start as string)}&endDateTime=${encodeURIComponent(args.end as string)}&$top=${top}&$skip=${skip}`;
+            // calendarView does not support $skip; pagination uses @odata.nextLink / $skipToken
+            url = `${this.baseUrl}/me/calendarView?startDateTime=${encodeURIComponent(args.start as string)}&endDateTime=${encodeURIComponent(args.end as string)}&$top=${top}`;
+            if (args.skip_token) url += `&$skipToken=${encodeURIComponent(args.skip_token as string)}`;
           } else {
             url = `${this.baseUrl}/me/events?$top=${top}&$skip=${skip}`;
             if (args.filter) url += `&$filter=${encodeURIComponent(args.filter as string)}`;

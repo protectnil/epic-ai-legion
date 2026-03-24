@@ -1,10 +1,4 @@
-/**
- * GitLab MCP Server
- * Provides access to GitLab REST API v4 for project, merge request, and pipeline management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** GitLab MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -143,6 +137,80 @@ export class GitLabMCPServer {
             },
           },
           required: ['project_id'],
+        },
+      },
+      {
+        name: 'list_issues',
+        description: 'List issues for a GitLab project',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            project_id: {
+              type: 'string',
+              description: 'Project ID or URL-encoded namespace/project path',
+            },
+            state: {
+              type: 'string',
+              description: 'Issue state: opened, closed, all (default: opened)',
+            },
+            labels: {
+              type: 'string',
+              description: 'Comma-separated list of label names to filter by',
+            },
+            assignee_id: {
+              type: 'number',
+              description: 'Filter by assignee user ID',
+            },
+            per_page: {
+              type: 'number',
+              description: 'Number of results per page (max 100, default: 20)',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+            },
+          },
+          required: ['project_id'],
+        },
+      },
+      {
+        name: 'get_merge_request',
+        description: 'Get details of a specific merge request',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            project_id: {
+              type: 'string',
+              description: 'Project ID or URL-encoded namespace/project path',
+            },
+            merge_request_iid: {
+              type: 'number',
+              description: 'The internal ID of the merge request within the project',
+            },
+          },
+          required: ['project_id', 'merge_request_iid'],
+        },
+      },
+      {
+        name: 'get_file',
+        description: 'Get the contents of a file from a GitLab repository. Content is returned Base64-encoded.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            project_id: {
+              type: 'string',
+              description: 'Project ID or URL-encoded namespace/project path',
+            },
+            file_path: {
+              type: 'string',
+              description: 'URL-encoded full path of the file (e.g., "src%2Findex.ts")',
+            },
+            ref: {
+              type: 'string',
+              description: 'Branch name, tag, or commit SHA (default: HEAD)',
+            },
+          },
+          required: ['project_id', 'file_path', 'ref'],
         },
       },
     ];
@@ -290,6 +358,95 @@ export class GitLabMCPServer {
           if (!response.ok) {
             return {
               content: [{ type: 'text', text: `Failed to list pipelines: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`GitLab returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'list_issues': {
+          const projectId = args.project_id as string;
+
+          if (!projectId) {
+            return {
+              content: [{ type: 'text', text: 'project_id is required' }],
+              isError: true,
+            };
+          }
+
+          const state = (args.state as string) || 'opened';
+          const perPage = (args.per_page as number) || 20;
+          const page = (args.page as number) || 1;
+
+          let url = `${this.baseUrl}/projects/${encodeURIComponent(projectId)}/issues?state=${state}&per_page=${perPage}&page=${page}`;
+          if (args.labels) url += `&labels=${encodeURIComponent(args.labels as string)}`;
+          if (args.assignee_id) url += `&assignee_id=${args.assignee_id as number}`;
+
+          const response = await fetch(url, { method: 'GET', headers });
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to list issues: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`GitLab returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'get_merge_request': {
+          const projectId = args.project_id as string;
+          const mergeRequestIid = args.merge_request_iid as number;
+
+          if (!projectId || !mergeRequestIid) {
+            return {
+              content: [{ type: 'text', text: 'project_id and merge_request_iid are required' }],
+              isError: true,
+            };
+          }
+
+          const response = await fetch(
+            `${this.baseUrl}/projects/${encodeURIComponent(projectId)}/merge_requests/${mergeRequestIid}`,
+            { method: 'GET', headers }
+          );
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to get merge request: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`GitLab returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'get_file': {
+          const projectId = args.project_id as string;
+          const filePath = args.file_path as string;
+          const ref = args.ref as string;
+
+          if (!projectId || !filePath || !ref) {
+            return {
+              content: [{ type: 'text', text: 'project_id, file_path, and ref are required' }],
+              isError: true,
+            };
+          }
+
+          const response = await fetch(
+            `${this.baseUrl}/projects/${encodeURIComponent(projectId)}/repository/files/${filePath}?ref=${encodeURIComponent(ref)}`,
+            { method: 'GET', headers }
+          );
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to get file: ${response.statusText}` }],
               isError: true,
             };
           }

@@ -1,10 +1,4 @@
-/**
- * PagerDuty MCP Server
- * Adapter for PagerDuty REST API v2 — incidents, services, and on-call management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** PagerDuty MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 

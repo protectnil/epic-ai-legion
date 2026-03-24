@@ -1,10 +1,5 @@
-/**
- * Sentry MCP Server
- * Sentry API v0 — issues, events, projects, and resolution.
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Sentry MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
+
 import { ToolDefinition, ToolResult } from './types.js';
 
 export class SentryMCPServer {
@@ -13,8 +8,11 @@ export class SentryMCPServer {
 
   constructor(config: {
     token: string;
+    baseUrl?: string;
   }) {
-    this.baseUrl = 'https://sentry.io/api/0';
+    this.baseUrl = config.baseUrl
+      ? config.baseUrl.replace(/\/$/, '')
+      : 'https://sentry.io/api/0';
     this.headers = {
       'Authorization': `Bearer ${config.token}`,
       'Content-Type': 'application/json',
@@ -121,6 +119,28 @@ export class SentryMCPServer {
           required: ['issue_id'],
         },
       },
+      {
+        name: 'assign_issue',
+        description: 'Assign a Sentry issue to a user or team',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'Organization slug',
+            },
+            issue_id: {
+              type: 'string',
+              description: 'The Sentry issue ID to assign',
+            },
+            assigned_to: {
+              type: 'string',
+              description: 'The actor to assign: a username, user ID, or team slug prefixed with "team:" (e.g., "jane@example.com", "team:backend")',
+            },
+          },
+          required: ['organization_slug', 'issue_id', 'assigned_to'],
+        },
+      },
     ];
   }
 
@@ -153,6 +173,12 @@ export class SentryMCPServer {
           );
         case 'resolve_issue':
           return await this.resolveIssue(args.issue_id as string);
+        case 'assign_issue':
+          return await this.assignIssue(
+            args.organization_slug as string,
+            args.issue_id as string,
+            args.assigned_to as string
+          );
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -259,6 +285,29 @@ export class SentryMCPServer {
         method: 'PUT',
         headers: this.headers,
         body: JSON.stringify({ status: 'resolved' }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Sentry API error: ${response.status} ${response.statusText}`);
+    }
+
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Sentry returned non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  }
+
+  private async assignIssue(
+    organizationSlug: string,
+    issueId: string,
+    assignedTo: string
+  ): Promise<ToolResult> {
+    const response = await fetch(
+      `${this.baseUrl}/organizations/${organizationSlug}/issues/${issueId}/`,
+      {
+        method: 'PUT',
+        headers: this.headers,
+        body: JSON.stringify({ assignedTo }),
       }
     );
 

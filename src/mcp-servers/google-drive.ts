@@ -1,7 +1,5 @@
 /**
- * Google Drive MCP Server
- * Adapter for Google Drive API v3 — file management, search, and permissions
- *
+ * Google Drive MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -68,6 +66,21 @@ export class GoogleDriveMCPServer {
             description: { type: 'string', description: 'Optional file description.' },
           },
           required: ['name'],
+        },
+      },
+      {
+        name: 'export_file',
+        description: 'Export a Google Workspace document (Docs, Sheets, Slides, etc.) to plain text or another MIME type and return the content.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            file_id: { type: 'string', description: 'The Google Drive file ID of the Workspace document to export.' },
+            mime_type: {
+              type: 'string',
+              description: "Export MIME type (default: 'text/plain'). Other examples: 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'.",
+            },
+          },
+          required: ['file_id'],
         },
       },
       {
@@ -157,6 +170,20 @@ export class GoogleDriveMCPServer {
             throw new Error(`Non-JSON response (HTTP ${response.status})`);
           }
           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'export_file': {
+          const mimeType = (args.mime_type as string) ?? 'text/plain';
+          const params = new URLSearchParams();
+          params.set('mimeType', mimeType);
+          const response = await fetch(`${this.baseUrl}/files/${args.file_id}/export?${params}`, {
+            headers: this.authHeaders,
+          });
+          if (!response.ok) {
+            throw new Error(`Google Drive export error: ${response.status} ${response.statusText}`);
+          }
+          const text = await response.text();
+          return { content: [{ type: 'text', text }], isError: false };
         }
 
         case 'search_files': {

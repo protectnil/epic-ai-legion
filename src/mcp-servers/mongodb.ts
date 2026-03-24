@@ -1,9 +1,4 @@
-/** MongoDB MCP Server
- * MongoDB Atlas Data API document operations
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** MongoDB MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -96,6 +91,33 @@ export class MongoDBMCPServer {
           required: ['collection', 'pipeline'],
         },
       },
+      {
+        name: 'find_one',
+        description: 'Find the first document in a collection matching a filter',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            collection: { type: 'string', description: 'Collection name' },
+            filter: { type: 'object', description: 'Query filter document' },
+            projection: { type: 'object', description: 'Fields to include or exclude' },
+            database: { type: 'string', description: 'Database name override' },
+          },
+          required: ['collection'],
+        },
+      },
+      {
+        name: 'count_documents',
+        description: 'Count documents in a collection matching a filter',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            collection: { type: 'string', description: 'Collection name' },
+            filter: { type: 'object', description: 'Query filter document' },
+            database: { type: 'string', description: 'Database name override' },
+          },
+          required: ['collection'],
+        },
+      },
     ];
   }
 
@@ -165,6 +187,27 @@ export class MongoDBMCPServer {
             database,
             collection: args.collection,
             pipeline: args.pipeline,
+          };
+          break;
+        }
+        case 'find_one': {
+          endpoint = 'action/findOne';
+          body = {
+            dataSource: this.config.dataSource,
+            database,
+            collection: args.collection,
+            filter: args.filter ?? {},
+            projection: args.projection,
+          };
+          break;
+        }
+        case 'count_documents': {
+          endpoint = 'action/count';
+          body = {
+            dataSource: this.config.dataSource,
+            database,
+            collection: args.collection,
+            filter: args.filter ?? {},
           };
           break;
         }

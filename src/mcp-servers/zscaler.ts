@@ -1,3 +1,8 @@
+/** Zscaler MCP Adapter
+ * Built on the Epic AI® Intelligence Platform
+ * Copyright 2026 protectNIL Inc. Apache-2.0
+ */
+
 import { ToolDefinition, ToolResult } from './types.js';
 
 export class ZscalerMCPServer {
@@ -132,12 +137,28 @@ export class ZscalerMCPServer {
   }
 
   /**
-   * Zscaler uses password-based cookie auth.
-   * This is required by the Zscaler Internet Access API — no OAuth2 alternative exists.
-   
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+   * Obfuscates the raw API key using Zscaler's documented algorithm.
+   * The ZIA API requires the obfuscated key (not the raw key) plus the
+   * millisecond timestamp in the POST /api/v1/authenticatedSession body.
+   *
+   * Algorithm (from Zscaler docs):
+   *   high = last 6 digits of timestamp string
+   *   low  = (parseInt(high) >> 1).toString().padStart(6, '0')
+   *   result = chars at indices high[i] from key + chars at indices low[i]+2 from key
+   */
+  private obfuscateApiKey(rawKey: string, timestamp: string): string {
+    const high = timestamp.slice(-6);
+    const low = (parseInt(high, 10) >> 1).toString().padStart(6, '0');
+    let obfuscated = '';
+    for (let i = 0; i < high.length; i++) {
+      obfuscated += rawKey[parseInt(high[i], 10)];
+    }
+    for (let i = 0; i < low.length; i++) {
+      obfuscated += rawKey[parseInt(low[i], 10) + 2];
+    }
+    return obfuscated;
+  }
+
   private async withReauth<T>(fn: () => Promise<T>): Promise<T> {
     try {
       return await fn();
@@ -157,33 +178,38 @@ export class ZscalerMCPServer {
       throw new Error('Zscaler: cannot re-authenticate — password has been cleared after initial auth');
     }
 
-    const url = `${this.baseUrl}/authenticatedSession`;
+    const timestamp = String(Date.now());
+    const obfuscatedKey = this.obfuscateApiKey(this.apiKey, timestamp);
+
+    // ZIA API requires /api/v1/authenticatedSession with an obfuscated apiKey and timestamp.
+    const url = `${this.baseUrl}/api/v1/authenticatedSession`;
     const headers = { 'Content-Type': 'application/json' };
 
     const body = JSON.stringify({
       username: this.username,
       password: this.password,
-      apiKey: this.apiKey,
+      apiKey: obfuscatedKey,
+      timestamp,
     });
 
     const response = await fetch(url, {
       method: 'POST',
       headers,
       body,
-      credentials: 'include',
     });
 
     if (!response.ok) {
       throw new Error(`Zscaler authentication failed: ${response.status} ${response.statusText}`);
     }
 
-    // Extract session cookie from Set-Cookie header
-    const cookies = response.headers.get('set-cookie');
-    if (!cookies) {
-      throw new Error('No session cookie returned from Zscaler API');
+    // ZIA returns a JSESSIONID cookie that must be forwarded on all subsequent requests.
+    const setCookie = response.headers.get('set-cookie');
+    if (!setCookie) {
+      throw new Error('Zscaler authentication succeeded but no JSESSIONID cookie was returned');
     }
 
-    this.sessionCookie = cookies.split(';')[0];
+    // Extract only the cookie name=value pair (drop attributes like Path, HttpOnly, etc.)
+    this.sessionCookie = setCookie.split(';')[0].trim();
     this.sessionExpiry = Date.now() + ZscalerMCPServer.SESSION_TTL_MS;
     this.password = null;
   }
@@ -198,7 +224,7 @@ export class ZscalerMCPServer {
   private async listUrlCategories(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) || 100;
 
-    const url = `${this.baseUrl}/urlCategories?limit=${limit}`;
+    const url = `${this.baseUrl}/api/v1/urlCategories?limit=${limit}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -222,7 +248,7 @@ export class ZscalerMCPServer {
     const limit = (args.limit as number) || 100;
     const offset = (args.offset as number) || 0;
 
-    const url = `${this.baseUrl}/firewallRules?limit=${limit}&offset=${offset}`;
+    const url = `${this.baseUrl}/api/v1/firewallFilteringRules?limit=${limit}&offset=${offset}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -245,7 +271,7 @@ export class ZscalerMCPServer {
   private async getDlpPolicies(args: Record<string, unknown>): Promise<ToolResult> {
     const policyId = args.policy_id as string | undefined;
 
-    let url = `${this.baseUrl}/dlpPolicies`;
+    let url = `${this.baseUrl}/api/v1/dlpDictionaries`;
 
     if (policyId) {
       url += `/${encodeURIComponent(policyId)}`;
@@ -272,7 +298,7 @@ export class ZscalerMCPServer {
   private async listLocations(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) || 100;
 
-    const url = `${this.baseUrl}/locations?limit=${limit}`;
+    const url = `${this.baseUrl}/api/v1/locations?limit=${limit}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -296,7 +322,7 @@ export class ZscalerMCPServer {
     const fileHash = args.file_hash as string;
     const reportType = (args.report_type as string) || 'full';
 
-    const url = `${this.baseUrl}/sandbox/report/${encodeURIComponent(fileHash)}?reportType=${encodeURIComponent(reportType)}`;
+    const url = `${this.baseUrl}/api/v1/sandbox/report/${encodeURIComponent(fileHash)}?details=${encodeURIComponent(reportType)}`;
 
     const response = await fetch(url, {
       method: 'GET',

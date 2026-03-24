@@ -1,10 +1,4 @@
-/**
- * Incident.io MCP Server
- * Adapter for Incident.io API v2 — incident lifecycle and role management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** incident.io MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -102,11 +96,17 @@ export class IncidentIoMCPServer {
       switch (name) {
         case 'list_incidents': {
           const params = new URLSearchParams();
-          if (args.status) params.set('status', args.status as string);
+          // v2 API uses operator-based filter objects: status[one_of][]
+          if (args.status) params.append('status[one_of][]', args.status as string);
           if (args.page_size) params.set('page_size', String(args.page_size));
           if (args.after) params.set('after', args.after as string);
           const response = await fetch(`${this.baseUrl}/incidents?${params}`, { headers: this.authHeaders });
-          const data = await response.json();
+          let data: unknown;
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error(`Non-JSON response (HTTP ${response.status})`);
+          }
           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
         }
 

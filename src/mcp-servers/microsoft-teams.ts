@@ -34,9 +34,9 @@ export class MicrosoftTeamsMCPServer {
               type: 'number',
               description: 'Number of teams to return (max 999, default: 20)',
             },
-            skip: {
-              type: 'number',
-              description: 'Number of teams to skip for pagination (default: 0)',
+            skip_token: {
+              type: 'string',
+              description: 'Pagination token from @odata.nextLink returned by a previous call. The /me/joinedTeams endpoint does not support $skip; use this token to page.',
             },
           },
         },
@@ -139,10 +139,14 @@ export class MicrosoftTeamsMCPServer {
       switch (name) {
         case 'list_teams': {
           const top = (args.top as number) || 20;
-          const skip = (args.skip as number) || 0;
+
+          // /me/joinedTeams is a directory-object endpoint; $skip is not supported.
+          // Pagination is handled via @odata.nextLink / $skipToken.
+          let teamsUrl = `${this.baseUrl}/me/joinedTeams?$top=${top}`;
+          if (args.skip_token) teamsUrl += `&$skipToken=${encodeURIComponent(args.skip_token as string)}`;
 
           const response = await fetch(
-            `${this.baseUrl}/me/joinedTeams?$top=${top}&$skip=${skip}`,
+            teamsUrl,
             { method: 'GET', headers }
           );
 

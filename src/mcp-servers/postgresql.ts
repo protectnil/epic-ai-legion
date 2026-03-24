@@ -1,9 +1,4 @@
-/** PostgreSQL MCP Server
- * PostgreSQL database query and schema inspection via HTTP proxy
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** PostgreSQL MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 

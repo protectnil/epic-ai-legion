@@ -1,8 +1,5 @@
 /**
- * Barracuda Email Security REST API MCP Server Wrapper
- * REST API: https://{host}/api/v1
- * Auth: API key header (Authorization: Bearer {api_key})
- 
+ * Barracuda Email Security MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -11,18 +8,65 @@ import { ToolDefinition, ToolResult } from './types.js';
 
 interface BarracudaAuthConfig {
   host: string;
-  apiKey: string;
+  email: string;
+  password: string;
   useHttps?: boolean;
 }
 
 export class BarracudaMCPServer {
   private readonly baseUrl: string;
-  private readonly apiKey: string;
+  private readonly email: string;
+  private readonly password: string;
+  private authToken: string | null = null;
 
   constructor(config: BarracudaAuthConfig) {
     const protocol = config.useHttps !== false ? 'https' : 'http';
     this.baseUrl = `${protocol}://${config.host}/api/v1`;
-    this.apiKey = config.apiKey;
+    this.email = config.email;
+    this.password = config.password;
+  }
+
+  private async login(): Promise<string> {
+    const url = `${this.baseUrl}/api_login`;
+    const body = new URLSearchParams({
+      email: this.email,
+      password: this.password,
+    });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Barracuda login failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    let data: { key?: string };
+    try {
+      data = await response.json() as { key?: string };
+    } catch {
+      throw new Error(`Barracuda login returned non-JSON response (HTTP ${response.status})`);
+    }
+
+    if (!data.key) {
+      throw new Error('Barracuda login response missing token key');
+    }
+
+    return data.key;
+  }
+
+  private async getToken(): Promise<string> {
+    if (!this.authToken) {
+      this.authToken = await this.login();
+    }
+    return this.authToken;
   }
 
   private async request(
@@ -30,16 +74,41 @@ export class BarracudaMCPServer {
     method: string = 'GET',
     body?: unknown
   ): Promise<unknown> {
+    const token = await this.getToken();
     const url = `${this.baseUrl}${endpoint}`;
 
     const response = await fetch(url, {
       method,
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'auth-api': token,
         'Content-Type': 'application/json',
       },
       body: body ? JSON.stringify(body) : undefined,
     });
+
+    if (response.status === 401) {
+      // Token may have expired — clear and retry once
+      this.authToken = null;
+      const freshToken = await this.getToken();
+      const retry = await fetch(url, {
+        method,
+        headers: {
+          'auth-api': freshToken,
+          'Content-Type': 'application/json',
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!retry.ok) {
+        throw new Error(
+          `Barracuda API error: ${retry.status} ${retry.statusText}`
+        );
+      }
+      try {
+        return await retry.json();
+      } catch {
+        throw new Error(`Barracuda returned non-JSON response (HTTP ${retry.status})`);
+      }
+    }
 
     if (!response.ok) {
       throw new Error(
@@ -210,7 +279,6 @@ export class BarracudaMCPServer {
 
       switch (name) {
         case 'list_threats': {
-          // Use URLSearchParams for all query parameters — dates and other values properly encoded
           const params = new URLSearchParams();
           if (args.threat_type) params.append('threat_type', String(args.threat_type));
           if (args.status) params.append('status', String(args.status));

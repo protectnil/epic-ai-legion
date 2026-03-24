@@ -1,10 +1,4 @@
-/**
- * Discord MCP Server
- * Discord REST API v10 adapter for reading and sending messages across guilds
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Discord MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface DiscordConfig {

@@ -1,10 +1,4 @@
-/**
- * Cloudflare MCP Server
- * Adapter for Cloudflare API v4 using Bearer token authentication
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Cloudflare MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface CloudflareConfig {
@@ -87,6 +81,35 @@ export class CloudflareMCPServer {
         },
       },
       {
+        name: 'update_dns_record',
+        description: 'Update an existing DNS record in a Cloudflare zone (PUT — replaces all fields)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            zoneId: { type: 'string', description: 'Cloudflare zone ID' },
+            recordId: { type: 'string', description: 'DNS record ID to update' },
+            type: { type: 'string', description: 'DNS record type: A, AAAA, CNAME, TXT, MX, NS, SRV' },
+            name: { type: 'string', description: 'DNS record name (e.g. example.com or sub.example.com)' },
+            content: { type: 'string', description: 'DNS record content (IP, hostname, or text value)' },
+            ttl: { type: 'number', description: 'Time to live in seconds (1 = automatic)' },
+            proxied: { type: 'boolean', description: 'Whether the record is proxied through Cloudflare' },
+          },
+          required: ['zoneId', 'recordId', 'type', 'name', 'content'],
+        },
+      },
+      {
+        name: 'delete_dns_record',
+        description: 'Delete a DNS record from a Cloudflare zone',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            zoneId: { type: 'string', description: 'Cloudflare zone ID' },
+            recordId: { type: 'string', description: 'DNS record ID to delete' },
+          },
+          required: ['zoneId', 'recordId'],
+        },
+      },
+      {
         name: 'list_workers',
         description: 'List Cloudflare Workers scripts in the account',
         inputSchema: {
@@ -161,6 +184,42 @@ export class CloudflareMCPServer {
             method: 'POST',
             headers: this.headers(),
             body: JSON.stringify(payload),
+          });
+          let data: unknown;
+          try { data = await response.json(); } catch { data = await response.text(); }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+            isError: !response.ok,
+          };
+        }
+
+        case 'update_dns_record': {
+          const payload: Record<string, unknown> = {
+            type: String(args.type),
+            name: String(args.name),
+            content: String(args.content),
+          };
+          if (args.ttl !== undefined) payload['ttl'] = Number(args.ttl);
+          if (args.proxied !== undefined) payload['proxied'] = Boolean(args.proxied);
+          const url = `${BASE}/zones/${String(args.zoneId)}/dns_records/${String(args.recordId)}`;
+          const response = await fetch(url, {
+            method: 'PUT',
+            headers: this.headers(),
+            body: JSON.stringify(payload),
+          });
+          let data: unknown;
+          try { data = await response.json(); } catch { data = await response.text(); }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+            isError: !response.ok,
+          };
+        }
+
+        case 'delete_dns_record': {
+          const url = `${BASE}/zones/${String(args.zoneId)}/dns_records/${String(args.recordId)}`;
+          const response = await fetch(url, {
+            method: 'DELETE',
+            headers: this.headers(),
           });
           let data: unknown;
           try { data = await response.json(); } catch { data = await response.text(); }

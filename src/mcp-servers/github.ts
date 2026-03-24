@@ -1,10 +1,4 @@
-/**
- * GitHub MCP Server
- * Provides access to GitHub REST API for repository, issue, and code management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** GitHub MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -151,6 +145,96 @@ export class GitHubMCPServer {
             },
           },
           required: ['q'],
+        },
+      },
+      {
+        name: 'list_pull_requests',
+        description: 'List pull requests for a repository',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            owner: {
+              type: 'string',
+              description: 'Repository owner (user or org)',
+            },
+            repo: {
+              type: 'string',
+              description: 'Repository name',
+            },
+            state: {
+              type: 'string',
+              description: 'PR state: open, closed, all (default: open)',
+            },
+            head: {
+              type: 'string',
+              description: 'Filter by head branch name (format: user:branch)',
+            },
+            base: {
+              type: 'string',
+              description: 'Filter by base branch name',
+            },
+            per_page: {
+              type: 'number',
+              description: 'Number of results per page (max 100, default: 30)',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+            },
+          },
+          required: ['owner', 'repo'],
+        },
+      },
+      {
+        name: 'get_file_contents',
+        description: 'Get the contents of a file in a repository. File content is returned Base64-encoded.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            owner: {
+              type: 'string',
+              description: 'Repository owner (user or org)',
+            },
+            repo: {
+              type: 'string',
+              description: 'Repository name',
+            },
+            path: {
+              type: 'string',
+              description: 'Path to the file within the repository (e.g., "src/index.ts")',
+            },
+            ref: {
+              type: 'string',
+              description: 'Branch, tag, or commit SHA to read from (default: repo default branch)',
+            },
+          },
+          required: ['owner', 'repo', 'path'],
+        },
+      },
+      {
+        name: 'add_issue_comment',
+        description: 'Add a comment to an existing issue or pull request',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            owner: {
+              type: 'string',
+              description: 'Repository owner (user or org)',
+            },
+            repo: {
+              type: 'string',
+              description: 'Repository name',
+            },
+            issue_number: {
+              type: 'number',
+              description: 'The issue or pull request number',
+            },
+            body: {
+              type: 'string',
+              description: 'The comment body (Markdown supported)',
+            },
+          },
+          required: ['owner', 'repo', 'issue_number', 'body'],
         },
       },
     ];
@@ -305,6 +389,98 @@ export class GitHubMCPServer {
           if (!response.ok) {
             return {
               content: [{ type: 'text', text: `Failed to search code: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`GitHub returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'list_pull_requests': {
+          const owner = args.owner as string;
+          const repo = args.repo as string;
+
+          if (!owner || !repo) {
+            return {
+              content: [{ type: 'text', text: 'owner and repo are required' }],
+              isError: true,
+            };
+          }
+
+          const state = (args.state as string) || 'open';
+          const perPage = (args.per_page as number) || 30;
+          const page = (args.page as number) || 1;
+
+          let url = `${this.baseUrl}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls?state=${state}&per_page=${perPage}&page=${page}`;
+          if (args.head) url += `&head=${encodeURIComponent(args.head as string)}`;
+          if (args.base) url += `&base=${encodeURIComponent(args.base as string)}`;
+
+          const response = await fetch(url, { method: 'GET', headers });
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to list pull requests: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`GitHub returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'get_file_contents': {
+          const owner = args.owner as string;
+          const repo = args.repo as string;
+          const path = args.path as string;
+
+          if (!owner || !repo || !path) {
+            return {
+              content: [{ type: 'text', text: 'owner, repo, and path are required' }],
+              isError: true,
+            };
+          }
+
+          let url = `${this.baseUrl}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`;
+          if (args.ref) url += `?ref=${encodeURIComponent(args.ref as string)}`;
+
+          const response = await fetch(url, { method: 'GET', headers });
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to get file contents: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`GitHub returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'add_issue_comment': {
+          const owner = args.owner as string;
+          const repo = args.repo as string;
+          const issueNumber = args.issue_number as number;
+          const body = args.body as string;
+
+          if (!owner || !repo || !issueNumber || !body) {
+            return {
+              content: [{ type: 'text', text: 'owner, repo, issue_number, and body are required' }],
+              isError: true,
+            };
+          }
+
+          const response = await fetch(
+            `${this.baseUrl}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues/${issueNumber}/comments`,
+            { method: 'POST', headers, body: JSON.stringify({ body }) }
+          );
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to add comment: ${response.statusText}` }],
               isError: true,
             };
           }

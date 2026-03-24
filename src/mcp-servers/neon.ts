@@ -1,9 +1,4 @@
-/** Neon MCP Server
- * Neon serverless PostgreSQL project and branch management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Neon MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -83,6 +78,33 @@ export class NeonMCPServer {
           required: ['projectId', 'branchId'],
         },
       },
+      {
+        name: 'delete_branch',
+        description: 'Delete a branch from a Neon project',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: 'Project ID' },
+            branchId: { type: 'string', description: 'Branch ID to delete' },
+          },
+          required: ['projectId', 'branchId'],
+        },
+      },
+      {
+        name: 'run_sql',
+        description: 'Retrieve the connection URI for a Neon project branch (used to connect and run SQL)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: 'Project ID' },
+            branchId: { type: 'string', description: 'Branch ID' },
+            endpointId: { type: 'string', description: 'Compute endpoint ID' },
+            dbName: { type: 'string', description: 'Database name' },
+            roleName: { type: 'string', description: 'Role name' },
+          },
+          required: ['projectId', 'branchId'],
+        },
+      },
     ];
   }
 
@@ -131,6 +153,20 @@ export class NeonMCPServer {
         }
         case 'list_databases': {
           url = `${this.baseUrl}/projects/${args.projectId}/branches/${args.branchId}/databases`;
+          method = 'GET';
+          break;
+        }
+        case 'delete_branch': {
+          url = `${this.baseUrl}/projects/${args.projectId}/branches/${args.branchId}`;
+          method = 'DELETE';
+          break;
+        }
+        case 'run_sql': {
+          const params = new URLSearchParams();
+          if (args.endpointId) params.set('endpoint_id', String(args.endpointId));
+          if (args.dbName) params.set('db_name', String(args.dbName));
+          if (args.roleName) params.set('role_name', String(args.roleName));
+          url = `${this.baseUrl}/projects/${args.projectId}/connection_uri?branch_id=${args.branchId}&${params}`;
           method = 'GET';
           break;
         }

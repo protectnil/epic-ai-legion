@@ -1,7 +1,5 @@
 /**
- * Elasticsearch MCP Server
- * Elasticsearch REST API adapter for search, document, and cluster operations
- *
+ * Elasticsearch MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
@@ -9,7 +7,7 @@
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface ElasticsearchConfig {
-  host: string;
+  baseUrl: string;
   username?: string;
   password?: string;
   apiKey?: string;
@@ -21,7 +19,7 @@ export class ElasticsearchMCPServer {
 
   constructor(config: ElasticsearchConfig) {
     this.config = config;
-    this.baseUrl = `https://${config.host}:9200`;
+    this.baseUrl = config.baseUrl.replace(/\/$/, '');
   }
 
   private headers(): Record<string, string> {
@@ -152,6 +150,20 @@ export class ElasticsearchMCPServer {
           required: [],
         },
       },
+      {
+        name: 'get_mappings',
+        description: 'Retrieve the field mapping definitions for one or more indices',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            index: {
+              type: 'string',
+              description: 'Index name, comma-separated list, or wildcard pattern (e.g. logs-*, _all)',
+            },
+          },
+          required: ['index'],
+        },
+      },
     ];
   }
 
@@ -238,6 +250,20 @@ export class ElasticsearchMCPServer {
           const response = await fetch(`${this.baseUrl}/_cluster/health?${params}`, {
             headers: this.headers(),
           });
+          let data: unknown;
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error(`Non-JSON response (HTTP ${response.status})`);
+          }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'get_mappings': {
+          const response = await fetch(
+            `${this.baseUrl}/${encodeURIComponent(String(args.index))}/_mapping`,
+            { headers: this.headers() }
+          );
           let data: unknown;
           try {
             data = await response.json();

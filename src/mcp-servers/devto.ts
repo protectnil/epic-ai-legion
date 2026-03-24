@@ -1,10 +1,4 @@
-/**
- * Dev.to MCP Server
- * Dev.to / Forem API adapter for articles, comments, and search
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Dev.to MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface DevToConfig {
@@ -18,6 +12,7 @@ export class DevToMCPServer {
   constructor(config: DevToConfig) {
     this.headers = {
       'api-key': config.apiKey,
+      'Accept': 'application/vnd.forem.api-v1+json',
       'Content-Type': 'application/json',
     };
   }

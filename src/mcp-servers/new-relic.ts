@@ -1,10 +1,4 @@
-/**
- * New Relic MCP Server
- * New Relic API v2 and NerdGraph — applications, NRQL queries, alerts, and synthetics.
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** New Relic MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 export class NewRelicMCPServer {
@@ -97,17 +91,13 @@ export class NewRelicMCPServer {
       },
       {
         name: 'list_synthetics_monitors',
-        description: 'List Synthetic monitors in New Relic',
+        description: 'List Synthetic monitors in New Relic via NerdGraph (entitySearch). The Synthetics REST API is deprecated; this uses the recommended NerdGraph approach.',
         inputSchema: {
           type: 'object',
           properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of monitors to return (default: 100)',
-            },
-            offset: {
-              type: 'number',
-              description: 'Pagination offset (default: 0)',
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor returned from a previous call to retrieve the next page of results.',
             },
           },
         },
@@ -141,8 +131,7 @@ export class NewRelicMCPServer {
           );
         case 'list_synthetics_monitors':
           return await this.listSyntheticsMonitors(
-            args.limit as number | undefined,
-            args.offset as number | undefined
+            args.cursor as string | undefined
           );
         default:
           return {
@@ -246,21 +235,42 @@ export class NewRelicMCPServer {
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
   }
 
-  private async listSyntheticsMonitors(
-    limit?: number,
-    offset?: number
-  ): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    params.append('limit', String(limit || 100));
-    params.append('offset', String(offset || 0));
+  private async listSyntheticsMonitors(cursor?: string): Promise<ToolResult> {
+    // The Synthetics REST API (/v2/synthetics/monitors) is deprecated as of August 2024.
+    // NerdGraph entitySearch is the recommended replacement for all runtime versions.
+    const cursorArg = cursor ? `, cursor: "${cursor}"` : '';
+    const body = {
+      query: `{
+        actor {
+          entitySearch(query: "domain = 'SYNTH' AND type = 'MONITOR'"${cursorArg}) {
+            results {
+              nextCursor
+              entities {
+                ... on SyntheticMonitorEntityOutline {
+                  guid
+                  name
+                  accountId
+                  monitorType
+                  monitorId
+                  tags {
+                    key
+                    values
+                  }
+                }
+              }
+            }
+          }
+        }
+      }`,
+    };
 
     const response = await fetch(
-      `${this.baseUrl}/synthetics/monitors?${params}`,
-      { method: 'GET', headers: this.headers }
+      this.graphqlUrl,
+      { method: 'POST', headers: this.headers, body: JSON.stringify(body) }
     );
 
     if (!response.ok) {
-      throw new Error(`New Relic API error: ${response.status} ${response.statusText}`);
+      throw new Error(`New Relic NerdGraph error: ${response.status} ${response.statusText}`);
     }
 
     let data: unknown;

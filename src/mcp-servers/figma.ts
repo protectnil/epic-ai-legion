@@ -1,9 +1,4 @@
-/** Figma MCP Server
- * Provides access to Figma design files, projects, comments, and version history
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Figma MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -70,17 +65,21 @@ export class FigmaMCPServer {
         },
       },
       {
-        name: 'list_team_projects',
-        description: 'List all projects belonging to a Figma team',
+        name: 'get_project_files',
+        description: 'List all files in a Figma project',
         inputSchema: {
           type: 'object',
           properties: {
-            team_id: {
+            project_id: {
               type: 'string',
-              description: 'The Figma team ID',
+              description: 'The Figma project ID',
+            },
+            branch_data: {
+              type: 'boolean',
+              description: 'Return branch metadata for each main file that has branches (default: false)',
             },
           },
-          required: ['team_id'],
+          required: ['project_id'],
         },
       },
       {
@@ -152,14 +151,16 @@ export class FigmaMCPServer {
           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
         }
 
-        case 'list_team_projects': {
-          const teamId = args.team_id as string;
-          if (!teamId) {
-            return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
+        case 'get_project_files': {
+          const projectId = args.project_id as string;
+          if (!projectId) {
+            return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
           }
-          const response = await fetch(`${this.baseUrl}/teams/${encodeURIComponent(teamId)}/projects`, { method: 'GET', headers });
+          let url = `${this.baseUrl}/projects/${encodeURIComponent(projectId)}/files`;
+          if (args.branch_data) url += '?branch_data=true';
+          const response = await fetch(url, { method: 'GET', headers });
           if (!response.ok) {
-            return { content: [{ type: 'text', text: `Failed to list team projects: ${response.statusText}` }], isError: true };
+            return { content: [{ type: 'text', text: `Failed to get project files: ${response.statusText}` }], isError: true };
           }
           let data: unknown;
           try { data = await response.json(); } catch { throw new Error(`Figma returned non-JSON response (HTTP ${response.status})`); }

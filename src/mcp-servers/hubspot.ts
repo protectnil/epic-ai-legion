@@ -1,9 +1,4 @@
-/** HubSpot MCP Server
- * Provides access to HubSpot CRM contacts, deals, and search via the HubSpot API
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** HubSpot MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
