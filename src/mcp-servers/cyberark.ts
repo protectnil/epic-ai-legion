@@ -1,10 +1,4 @@
-/**
- * CyberArk MCP Server
- * Provides access to CyberArk REST API endpoints for privileged access management
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** CyberArk PAM MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -64,8 +58,6 @@ export class CyberArkMCPServer {
     }
   }
 
-  /**
-   */
   private async withReauth<T>(fn: (token: string) => Promise<T>): Promise<T> {
     let token = await this.getOrRefreshToken();
     try {

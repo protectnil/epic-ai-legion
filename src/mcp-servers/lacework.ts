@@ -1,10 +1,4 @@
-/**
- * Lacework REST API MCP Server Wrapper
- * Provides tools for alert and vulnerability management via Lacework
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Lacework MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 

@@ -1,10 +1,4 @@
-/**
- * Twitter MCP Server
- * X/Twitter API v2 adapter for tweets, users, and followers
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Twitter / X MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface TwitterConfig {
@@ -92,6 +86,26 @@ export class TwitterMCPServer {
           required: ['id'],
         },
       },
+      {
+        name: 'post_tweet',
+        description: 'Create a new tweet',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            text: { type: 'string', description: 'The text of the tweet (up to 280 characters)' },
+            reply: {
+              type: 'object',
+              description: 'Reply settings',
+              properties: {
+                in_reply_to_tweet_id: { type: 'string', description: 'Tweet ID to reply to' },
+              },
+            },
+            quote_tweet_id: { type: 'string', description: 'Tweet ID to quote' },
+            reply_settings: { type: 'string', description: 'Who can reply: mentionedUsers, subscribers, or everyone' },
+          },
+          required: ['text'],
+        },
+      },
     ];
   }
 
@@ -108,6 +122,8 @@ export class TwitterMCPServer {
           return await this.getTweet(args);
         case 'get_user_followers':
           return await this.getUserFollowers(args);
+        case 'post_tweet':
+          return await this.postTweet(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -179,6 +195,22 @@ export class TwitterMCPServer {
     if (args.pagination_token) params.append('pagination_token', args.pagination_token as string);
     if (args.user_fields) params.append('user.fields', args.user_fields as string);
     const response = await fetch(`${this.baseUrl}/users/${args.id}/followers?${params}`, { method: 'GET', headers: this.headers });
+    if (!response.ok) throw new Error(`Twitter API error: ${response.status} ${response.statusText}`);
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+  }
+
+  private async postTweet(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = { text: args.text };
+    if (args.reply) body.reply = args.reply;
+    if (args.quote_tweet_id) body.quote_tweet_id = args.quote_tweet_id;
+    if (args.reply_settings) body.reply_settings = args.reply_settings;
+    const response = await fetch(`${this.baseUrl}/tweets`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
     if (!response.ok) throw new Error(`Twitter API error: ${response.status} ${response.statusText}`);
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }

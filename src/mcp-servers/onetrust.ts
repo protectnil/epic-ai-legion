@@ -1,12 +1,4 @@
-/**
- * OneTrust MCP Server Wrapper
- * Integrates OneTrust REST API for privacy, compliance, and assessment management
- * Base URL: https://app.onetrust.com/api
- * Auth: Bearer token
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** OneTrust MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -207,7 +199,7 @@ export class OneTrustMCPServer {
     params.append('pageIndex', String(args.pageIndex || 0));
 
     const response = await fetch(
-      `${this.baseUrl}/datamaps?${params.toString()}`,
+      `${this.baseUrl}/datamap?${params.toString()}`,
       { method: 'GET', headers: this.headers }
     );
 

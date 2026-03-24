@@ -1,10 +1,4 @@
-/**
- * Google Workspace MCP Server
- * Google Drive, Docs, and Sheets API adapter for file and document management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Google Workspace MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface GoogleWorkspaceConfig {

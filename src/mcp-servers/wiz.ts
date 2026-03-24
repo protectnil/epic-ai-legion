@@ -1,7 +1,5 @@
 /**
- * Wiz Security REST API MCP Server Wrapper
- * Provides tools for vulnerability and compliance management via Wiz
- 
+ * Wiz Security MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

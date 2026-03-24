@@ -1,10 +1,4 @@
-/**
- * CrowdStrike Identity Protection MCP Server
- * Provides access to CrowdStrike Identity Protection REST API endpoints for identity threat detection
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** CrowdStrike Identity Protection MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -38,14 +32,16 @@ export class CrowdStrikeIdentityMCPServer {
     }
 
     try {
-      const authHeader = btoa(`${this.clientId}:${this.clientSecret}`);
       const response = await fetch(`${this.baseUrl}/oauth2/token`, {
         method: 'POST',
         headers: {
-          Authorization: `Basic ${authHeader}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'grant_type=client_credentials',
+        body: new URLSearchParams({
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          grant_type: 'client_credentials',
+        }).toString(),
       });
 
       if (!response.ok) {

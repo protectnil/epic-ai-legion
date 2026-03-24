@@ -1,10 +1,4 @@
-/**
- * Delinea Secret Server MCP Server
- * Provides access to Delinea Secret Server REST API endpoints for secrets management
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Delinea Secret Server MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -34,12 +28,6 @@ export class DelineaMCPServer {
     }
 
     try {
-      /**
-       * grant type (grant_type=password) on its /oauth/token endpoint.
-       * No machine-to-machine client_credentials endpoint is available.
-       * Risk: password is transmitted to the token endpoint on every refresh.
-       * Accepted as required by the Delinea API.
-       */
       const response = await fetch(`${this.baseUrl}/oauth/token`, {
         method: 'POST',
         headers: {

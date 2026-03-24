@@ -1,10 +1,4 @@
-/**
- * Grafana API MCP Server
- * Grafana HTTP API — dashboards, datasources, and alert rules.
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Grafana MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 export class GrafanaAPIMCPServer {
@@ -94,25 +88,17 @@ export class GrafanaAPIMCPServer {
       },
       {
         name: 'list_alerts',
-        description: 'List Grafana alert rules',
+        description: 'List Grafana alert rules via the Unified Alerting provisioning API',
         inputSchema: {
           type: 'object',
           properties: {
-            dashboard_id: {
-              type: 'number',
-              description: 'Filter alerts by dashboard ID',
-            },
-            panel_id: {
-              type: 'number',
-              description: 'Filter alerts by panel ID',
-            },
-            state: {
+            folderUID: {
               type: 'string',
-              description: 'Filter by alert state: "alerting", "ok", "paused", "pending", "no_data"',
+              description: 'Filter alert rules by folder UID',
             },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of alert rules to return (default: 100)',
+            group: {
+              type: 'string',
+              description: 'Filter alert rules by rule group name',
             },
           },
         },
@@ -145,10 +131,8 @@ export class GrafanaAPIMCPServer {
           );
         case 'list_alerts':
           return await this.listAlerts(
-            args.dashboard_id as number | undefined,
-            args.panel_id as number | undefined,
-            args.state as string | undefined,
-            args.limit as number | undefined
+            args.folderUID as string | undefined,
+            args.group as string | undefined
           );
         default:
           return {
@@ -246,21 +230,16 @@ export class GrafanaAPIMCPServer {
   }
 
   private async listAlerts(
-    dashboardId?: number,
-    panelId?: number,
-    state?: string,
-    limit?: number
+    folderUID?: string,
+    group?: string
   ): Promise<ToolResult> {
     const params = new URLSearchParams();
-    if (dashboardId !== undefined) params.append('dashboardId', String(dashboardId));
-    if (panelId !== undefined) params.append('panelId', String(panelId));
-    if (state) params.append('state', state);
-    params.append('limit', String(limit || 100));
+    if (folderUID) params.append('folderUID', folderUID);
+    if (group) params.append('group', group);
 
-    const response = await fetch(
-      `${this.baseUrl}/alerts?${params}`,
-      { method: 'GET', headers: this.headers }
-    );
+    const query = params.toString();
+    const url = `${this.baseUrl}/v1/provisioning/alert-rules${query ? `?${query}` : ''}`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers });
 
     if (!response.ok) {
       throw new Error(`Grafana API error: ${response.status} ${response.statusText}`);

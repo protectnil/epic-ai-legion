@@ -1,7 +1,5 @@
 /**
- * YouTube MCP Server
- * YouTube Data API v3 adapter for search, videos, channels, and playlists
- *
+ * YouTube MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

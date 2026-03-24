@@ -1,10 +1,4 @@
-/**
- * Vercel MCP Server
- * Adapter for Vercel REST API v9 using Bearer token authentication
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Vercel MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface VercelConfig {
@@ -27,7 +21,6 @@ export class VercelMCPServer {
       'Content-Type': 'application/json',
     };
   }
-
 
   private appendTeam(params: URLSearchParams, teamIdOverride?: string): void {
     const tid = teamIdOverride || this.config.teamId;
@@ -112,7 +105,7 @@ export class VercelMCPServer {
           this.appendTeam(params, args.teamId as string | undefined);
           if (args.limit) params.set('limit', String(args.limit));
           if (args.from) params.set('from', String(args.from));
-          const url = `${BASE}/v9/projects?${params.toString()}`;
+          const url = `${BASE}/v10/projects?${params.toString()}`;
           const response = await fetch(url, { headers: this.headers() });
           let data: unknown;
           try { data = await response.json(); } catch { data = await response.text(); }

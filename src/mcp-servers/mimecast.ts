@@ -1,48 +1,26 @@
-/**
- * Mimecast REST API MCP Server Wrapper
- * REST API: https://{region}-api.mimecast.com/api
- * Auth: OAuth2 (client_credentials) + account-specific headers
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Mimecast MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface MimecastAuthConfig {
   clientId: string;
   clientSecret: string;
-  emailAddress: string;
-  region?: string; // e.g., 'us' or 'eu', default to 'us'
 }
 
-/** Valid Mimecast region identifiers */
-const VALID_REGIONS = new Set(['us', 'eu', 'de', 'ca', 'au', 'za', 'je', 'offshore']);
+const MIMECAST_BASE_URL = 'https://api.mimecast.com';
+const MIMECAST_TOKEN_URL = 'https://api.mimecast.com/oauth/token';
 
 export class MimecastMCPServer {
-  private readonly region: string;
   private readonly baseUrl: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
-  private readonly emailAddress: string;
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
 
   constructor(config: MimecastAuthConfig) {
-    const region = config.region || 'us';
-
-    if (!VALID_REGIONS.has(region)) {
-      throw new Error(
-        `MimecastMCPServer: invalid region "${region}". ` +
-        `Valid regions are: ${[...VALID_REGIONS].join(', ')}.`
-      );
-    }
-
-    this.region = region;
-    this.baseUrl = `https://${this.region}-api.mimecast.com/api`;
+    this.baseUrl = MIMECAST_BASE_URL;
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
-    this.emailAddress = config.emailAddress;
   }
 
   private async ensureToken(): Promise<string> {
@@ -51,8 +29,7 @@ export class MimecastMCPServer {
       return this.accessToken;
     }
 
-    const authUrl = `https://${this.region}-api.mimecast.com/oauth/token`;
-    const response = await fetch(authUrl, {
+    const response = await fetch(MIMECAST_TOKEN_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -90,7 +67,6 @@ export class MimecastMCPServer {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
-        'X-MC-Email': this.emailAddress,
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -241,7 +217,7 @@ export class MimecastMCPServer {
               to: args.to_date,
               limit: args.limit || 100,
             };
-            result = await this.request('/v1/messages/search', 'POST', payload);
+            result = await this.request('/api/message-finder/search', 'POST', payload);
           }
           break;
 
@@ -252,7 +228,7 @@ export class MimecastMCPServer {
               limit: args.limit || 100,
             };
             result = await this.request(
-              '/v1/messages/held',
+              '/api/gateway/get-hold-message-list',
               'POST',
               payload
             );
@@ -261,10 +237,11 @@ export class MimecastMCPServer {
 
         case 'list_blocked_senders':
           {
-            const params = new URLSearchParams();
-            if (args.policy_type) params.append('type', String(args.policy_type));
-            params.append('limit', String(args.limit || 100));
-            result = await this.request(`/v1/policies/blocked-senders?${params.toString()}`);
+            const payload: Record<string, unknown> = {
+              pageSize: args.limit || 100,
+            };
+            if (args.policy_type) payload.policyType = args.policy_type;
+            result = await this.request('/api/policy/blockedsenders/get-policy', 'POST', payload);
           }
           break;
 
@@ -275,7 +252,7 @@ export class MimecastMCPServer {
               type: args.indicator_type,
             };
             result = await this.request(
-              '/v1/threat-intelligence/lookup',
+              '/api/ttp/threat-intel/get-feed',
               'POST',
               payload
             );
@@ -284,10 +261,11 @@ export class MimecastMCPServer {
 
         case 'list_policies':
           {
-            const params = new URLSearchParams();
-            if (args.policy_type) params.append('type', String(args.policy_type));
-            params.append('limit', String(args.limit || 100));
-            result = await this.request(`/v1/policies?${params.toString()}`);
+            const payload: Record<string, unknown> = {
+              pageSize: args.limit || 100,
+            };
+            if (args.policy_type) payload.policyType = args.policy_type;
+            result = await this.request('/api/policy/get-policy', 'POST', payload);
           }
           break;
 

@@ -1,11 +1,4 @@
-/**
- * Mandiant (Google) Threat Intelligence MCP Server Wrapper
- * REST API: https://api.intelligence.mandiant.com/v4
- * Auth: OAuth2 (client_credentials) with X-App-Name header
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Mandiant MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -237,7 +230,7 @@ export class MandiantMCPServer {
 
         case 'list_campaigns': {
           const params = new URLSearchParams();
-          if (args.actor_id) params.append('actor_id', encodeURIComponent(String(args.actor_id)));
+          if (args.actor_id) params.append('actor_id', String(args.actor_id));
           params.append('limit', String(args.limit || 100));
           params.append('offset', String(args.offset || 0));
           result = await this.request(`/campaigns?${params.toString()}`);

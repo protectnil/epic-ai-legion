@@ -1,10 +1,4 @@
-/**
- * Bitbucket MCP Server
- * Provides access to Bitbucket Cloud REST API 2.0 for repository, pull request, and pipeline management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Atlassian Bitbucket MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -133,6 +127,40 @@ export class BitbucketMCPServer {
             },
           },
           required: ['workspace', 'repo_slug', 'title', 'source_branch'],
+        },
+      },
+      {
+        name: 'list_branches',
+        description: 'List branches for a repository',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            workspace: {
+              type: 'string',
+              description: 'Workspace slug or UUID',
+            },
+            repo_slug: {
+              type: 'string',
+              description: 'Repository slug',
+            },
+            q: {
+              type: 'string',
+              description: 'Query filter (e.g. name ~ "feature")',
+            },
+            sort: {
+              type: 'string',
+              description: 'Field to sort results by (e.g. -target.date)',
+            },
+            pagelen: {
+              type: 'number',
+              description: 'Number of results per page (max 100, default: 10)',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1)',
+            },
+          },
+          required: ['workspace', 'repo_slug'],
         },
       },
       {
@@ -294,6 +322,40 @@ export class BitbucketMCPServer {
           if (!response.ok) {
             return {
               content: [{ type: 'text', text: `Failed to create pull request: ${response.statusText}` }],
+              isError: true,
+            };
+          }
+
+          let data: unknown;
+          try { data = await response.json(); } catch { throw new Error(`Bitbucket returned non-JSON response (HTTP ${response.status})`); }
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+        }
+
+        case 'list_branches': {
+          const workspace = args.workspace as string;
+          const repoSlug = args.repo_slug as string;
+
+          if (!workspace || !repoSlug) {
+            return {
+              content: [{ type: 'text', text: 'workspace and repo_slug are required' }],
+              isError: true,
+            };
+          }
+
+          const params = new URLSearchParams();
+          if (args.q) params.set('q', String(args.q));
+          if (args.sort) params.set('sort', String(args.sort));
+          params.set('pagelen', String((args.pagelen as number) || 10));
+          params.set('page', String((args.page as number) || 1));
+
+          const response = await fetch(
+            `${this.baseUrl}/repositories/${encodeURIComponent(workspace)}/${encodeURIComponent(repoSlug)}/refs/branches?${params}`,
+            { method: 'GET', headers }
+          );
+
+          if (!response.ok) {
+            return {
+              content: [{ type: 'text', text: `Failed to list branches: ${response.statusText}` }],
               isError: true,
             };
           }

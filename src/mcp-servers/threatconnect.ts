@@ -1,11 +1,4 @@
-/**
- * ThreatConnect REST API MCP Server Wrapper
- * REST API: https://api.threatconnect.com/v3
- * Auth: HMAC signature (TC-Token or timestamp-based HMAC)
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** ThreatConnect MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -206,9 +199,14 @@ export class ThreatConnectMCPServer {
           break;
 
         case 'search_intelligence':
-          result = await this.request(
-            `/search?query=${encodeURIComponent(args.query as string)}&type=${args.data_type || ''}&limit=${args.limit || 50}`
-          );
+          {
+            const tql = `summary CONTAINS "${(args.query as string).replace(/"/g, '\\"')}"`;
+            const collection = args.data_type === 'group' || args.data_type === 'document' || args.data_type === 'signature'
+              ? '/groups'
+              : '/indicators';
+            const path = `${collection}?tql=${encodeURIComponent(tql)}&limit=${args.limit || 50}`;
+            result = await this.request(path);
+          }
           break;
 
         case 'list_playbooks':

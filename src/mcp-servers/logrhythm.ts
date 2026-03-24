@@ -1,8 +1,4 @@
-/**
- * @epicai/core — LogRhythm MCP Server
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** LogRhythm MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -20,7 +16,7 @@ export class LogRhythmMCPServer {
 
   constructor(config: LogRhythmConfig) {
     const port = config.port || 8501;
-    this.baseUrl = `https://${config.host}:${port}/lr-admin-api`;
+    this.baseUrl = `https://${config.host}:${port}`;
     this.headers = {
       'Authorization': `Bearer ${config.apiKey}`,
       'Content-Type': 'application/json',
@@ -130,7 +126,7 @@ export class LogRhythmMCPServer {
     const status = args.status as string;
     const severity = args.severity as string;
 
-    const url = new URL(`${this.baseUrl}/alarms`);
+    const url = new URL(`${this.baseUrl}/lr-alarm-api/alarms`);
     url.searchParams.append('limit', limit.toString());
     url.searchParams.append('offset', offset.toString());
     if (status) {
@@ -164,7 +160,7 @@ export class LogRhythmMCPServer {
       throw new Error('alarmId is required');
     }
 
-    const url = `${this.baseUrl}/alarms/${encodeURIComponent(alarmId)}`;
+    const url = `${this.baseUrl}/lr-alarm-api/alarms/${encodeURIComponent(alarmId)}`;
     const response = await fetch(url, { headers: this.headers });
 
     if (!response.ok) {
@@ -205,7 +201,7 @@ export class LogRhythmMCPServer {
       body.end_time = endTime;
     }
 
-    const url = `${this.baseUrl}/events/search`;
+    const url = `${this.baseUrl}/lr-search-api/actions/search`;
     const response = await fetch(url, {
       method: 'POST',
       headers: this.headers,
@@ -233,7 +229,7 @@ export class LogRhythmMCPServer {
     const offset = (args.offset as number) || 0;
     const status = args.status as string;
 
-    const url = new URL(`${this.baseUrl}/cases`);
+    const url = new URL(`${this.baseUrl}/lr-case-api/cases`);
     url.searchParams.append('limit', limit.toString());
     url.searchParams.append('offset', offset.toString());
     if (status) {
@@ -280,7 +276,7 @@ export class LogRhythmMCPServer {
       throw new Error('At least one field (status, notes, or assignee) is required for update');
     }
 
-    const url = `${this.baseUrl}/cases/${encodeURIComponent(caseId)}`;
+    const url = `${this.baseUrl}/lr-case-api/cases/${encodeURIComponent(caseId)}`;
     const response = await fetch(url, {
       method: 'PATCH',
       headers: this.headers,

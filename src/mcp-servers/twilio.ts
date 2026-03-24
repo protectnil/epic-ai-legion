@@ -1,10 +1,4 @@
-/**
- * Twilio MCP Server
- * Adapter for Twilio REST API 2010-04-01 — SMS, voice calls, and message history
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Twilio MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 

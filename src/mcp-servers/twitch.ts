@@ -1,10 +1,4 @@
-/**
- * Twitch MCP Server
- * Twitch Helix API adapter for streams, users, channels, and clips
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Twitch MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface TwitchConfig {

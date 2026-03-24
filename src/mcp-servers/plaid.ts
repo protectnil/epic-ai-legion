@@ -1,10 +1,4 @@
-/**
- * Plaid MCP Server
- * Adapter for the Plaid API — accounts, transactions, balances, and identity
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Plaid MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 

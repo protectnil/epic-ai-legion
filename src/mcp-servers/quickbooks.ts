@@ -1,7 +1,5 @@
 /**
- * QuickBooks MCP Server
- * Adapter for the QuickBooks Online API v3 — invoices, customers, and financial data
- *
+ * QuickBooks MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

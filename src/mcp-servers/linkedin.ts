@@ -1,10 +1,4 @@
-/**
- * LinkedIn MCP Server
- * LinkedIn API v2 adapter for profiles, connections, people search, companies, and posts
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** LinkedIn MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface LinkedInConfig {

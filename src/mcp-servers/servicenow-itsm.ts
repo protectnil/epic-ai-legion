@@ -1,6 +1,5 @@
-/** ServiceNow ITSM MCP Server
- * Provides access to ServiceNow ITSM incidents and service requests via the ServiceNow REST API
- *
+/**
+ * ServiceNow ITSM MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

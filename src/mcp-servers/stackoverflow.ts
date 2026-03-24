@@ -1,7 +1,5 @@
 /**
- * StackOverflow MCP Server
- * Stack Exchange API v2.3 adapter for questions, answers, users, and tags
- *
+ * Stack Overflow MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

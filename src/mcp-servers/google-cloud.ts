@@ -1,10 +1,4 @@
-/**
- * Google Cloud MCP Server
- * Adapter for Google Cloud Resource Manager and Compute APIs using OAuth2 Bearer token
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Google Cloud MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface GoogleCloudConfig {

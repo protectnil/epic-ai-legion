@@ -1,10 +1,4 @@
-/**
- * Prometheus MCP Server
- * Prometheus HTTP API adapter for metrics querying and target inspection
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Prometheus MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 

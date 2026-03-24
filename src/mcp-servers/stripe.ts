@@ -1,7 +1,5 @@
 /**
- * Stripe MCP Server
- * Adapter for the Stripe API — payments, customers, and subscriptions
- *
+ * Stripe MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

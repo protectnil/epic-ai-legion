@@ -1,7 +1,5 @@
 /**
- * Xero MCP Server
- * Adapter for the Xero API v2 — invoices, contacts, and accounts
- *
+ * Xero MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

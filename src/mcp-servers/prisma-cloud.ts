@@ -1,10 +1,4 @@
-/**
- * Prisma Cloud (Palo Alto Networks) REST API MCP Server Wrapper
- * Provides tools for cloud security posture management
- 
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Prisma Cloud MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -298,16 +292,18 @@ export class PrismaCloudMCPServer {
     headers: Record<string, string>,
     args: Record<string, unknown>
   ): Promise<ToolResult> {
-    const params = new URLSearchParams();
-
+    const body: Record<string, unknown> = {
+      timeRange: { type: 'relative', value: { unit: 'month', amount: 1 } },
+    };
     if (args.framework) {
-      params.append('framework', args.framework as string);
+      body['filters'] = [{ name: 'complianceStandard', operator: '=', value: args.framework }];
     }
 
-    const url = `${this.baseUrl}/compliance${
-      params.toString() ? `?${params.toString()}` : ''
-    }`;
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await fetch(`${this.baseUrl}/compliance/posture`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
 
     if (!response.ok) {
       const text = await response.text();
@@ -336,7 +332,7 @@ export class PrismaCloudMCPServer {
     if (args.resourceType) filters.resourceType = [args.resourceType];
     if (args.cloudType) filters.cloudType = [args.cloudType];
 
-    const response = await fetch(`${this.baseUrl}/resource`, {
+    const response = await fetch(`${this.baseUrl}/v2/inventories`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ limit, filters }),

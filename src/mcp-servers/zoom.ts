@@ -1,7 +1,5 @@
 /**
- * Zoom MCP Server
- * Zoom REST API v2 adapter for managing meetings and recordings
- *
+ * Zoom MCP Adapter
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

@@ -1,10 +1,4 @@
-/**
- * Dynatrace MCP Server
- * Dynatrace Environment API v2 adapter for entity, metric, and problem management
- *
- * Built on the Epic AI® Intelligence Platform
- * Copyright 2026 protectNIL Inc. Apache-2.0
- */
+/** Dynatrace MCP Adapter / Built on the Epic AI® Intelligence Platform / Copyright 2026 protectNIL Inc. Apache-2.0 */
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -155,7 +149,12 @@ export class DynatraceMCPServer {
           const response = await fetch(`${this.baseUrl}/entities?${params}`, {
             headers: this.headers(),
           });
-          const data = await response.json();
+          let data: unknown;
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error(`Non-JSON response (HTTP ${response.status})`);
+          }
           return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
         }
 
