@@ -7,22 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## 0.3.0 (unreleased)
+## 0.4.2 — 2026-03-24
+
+### Fixed
+- All 243 adapters rewritten to ADAPTER-DEVELOPMENT-PROTOCOL — full tool coverage, MCP headers, static `catalog()` method on every adapter.
+- Integration tests probe gateway first (`localhost:8000`), fall back to Ollama — M5 Metal compatible.
+
+## 0.4.0 — 2026-03-24
 
 ### Added
-- **Inference Gateway** (`npx epic-ai-gateway`) — OpenAI-compatible HTTP router for llama.cpp, mlx-lm, vLLM, and Ollama backends with circuit breakers, Redis-backed control plane, and leader-elected health checks.
-- **Auto provider** — `provider: 'auto'` discovers local inference backends by probing standard ports (Ollama 11434, vLLM 8000, llama.cpp 8080, mlx-lm 5000).
+- **Inference Gateway** (`npx epic-ai-gateway`) — OpenAI-compatible HTTP router for llama.cpp, mlx-lm, and vLLM backends with circuit breakers, Redis-backed control plane, and leader-elected health checks.
+- **Auto provider** — `provider: 'auto'` probes `localhost:8000` (gateway), `localhost:8080` (llama.cpp), `localhost:11434` (Ollama legacy). First responder wins.
 - **Three-tier tool resolution** — DomainClassifier (keyword/semantic), BM25 ToolPreFilter, and SLM selection prevent context window bloat across 472 adapters.
 - **Adapter sandboxing** — SandboxManager runs community and vendor adapters in process-isolated sandboxes with configurable memory limits, timeouts, and egress enforcement.
 - **Adaptive connection pool** — Per-tenant burst-aware connection management with LRU/LFU eviction, replacing flat maxConnections.
 - **Enterprise trust** — AuthMiddleware, AccessPolicyEngine, ArtifactVerifier (Sigstore/SLSA), and pluggable secrets providers.
 - **PrometheusExporter** — new observability export format.
-- **359 new adapters** — expanded from 113 to 472 across all enterprise domains.
+- **ADAPTER-DEVELOPMENT-PROTOCOL** — mandatory standard for all adapter contributions.
 
 ### Changed
 - Default orchestrator provider changed from `'ollama'` to `'auto'`.
-- Default model changed to `mistral-small-3`.
+- Default model changed to `llama3.1:8b`.
+- Ollama deprecated — Apple M5 Metal incompatibility ([#13867](https://github.com/ollama/ollama/issues/13867), [#13896](https://github.com/ollama/ollama/issues/13896), [#13460](https://github.com/ollama/ollama/issues/13460)) with no fix timeline. The Inference Gateway with llama.cpp is the reliable path across all Apple Silicon generations.
 - Ollama `/api/chat` and `/api/generate` endpoints deprecated via OllamaShim (sunset 2026-12-31). Use OpenAI-compatible `/v1/chat/completions` instead.
+
+## 0.3.0 — 2026-03-24
+
+### Added
+- 359 new adapters — expanded from 113 to 472 across 22 enterprise categories.
 
 ---
 

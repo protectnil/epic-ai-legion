@@ -1,7 +1,7 @@
 # Epic AI® IVA Core — Developer Guide
 
 **SDK:** `@epicai/core`
-**Version:** 0.2.0
+**Version:** 0.4.2
 **License:** Apache 2.0
 **Runtime:** Node.js >= 20.0.0, TypeScript 5.3+
 
