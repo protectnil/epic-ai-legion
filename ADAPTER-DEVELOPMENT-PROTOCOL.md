@@ -41,21 +41,27 @@ Build a REST wrapper when ANY of these are true:
 
 ### When to ship both
 
-Never ship both for the same vendor in the same deployment. However, the adapter catalog may list both options:
-
-- `transport: 'rest-api'` — our REST wrapper (default, works everywhere)
-- `transport: 'mcp-stdio'` — vendor's MCP server (requires `npx` or local install)
-
-The FederationManager connects one or the other per vendor, never both simultaneously.
+Never ship both for the same vendor in the same deployment. The adapter catalog lists one entry per vendor. If a vendor MCP server exists, note it in the file header so future contributors can evaluate migration. The FederationManager connects one integration per vendor, never both simultaneously.
 
 ### Documentation requirement
 
-Every adapter file must include a header comment block documenting the vendor's MCP status:
+Every adapter file must include a header comment block documenting the vendor's MCP status. This block goes below the copyright JSDoc comment and above the import statements:
 
 ```typescript
+/**
+ * {Vendor Name} MCP Adapter
+ * Built on the Epic AI® Intelligence Platform
+ * Copyright 2026 protectNIL Inc. Apache-2.0
+ */
+
 // Official MCP: https://github.com/vendor/mcp-server-name — transport: stdio, auth: API token
 // Our adapter covers: 8 tools (core operations). Vendor MCP covers: 60+ tools (full API).
 // Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+//
+// Base URL: https://api.vendor.com
+// Auth: OAuth2 client credentials
+// Docs: https://developer.vendor.com/api/
+// Rate limits: 120 req/min per OAuth2 token
 ```
 
 Or if no MCP exists:
@@ -64,6 +70,8 @@ Or if no MCP exists:
 // Official MCP: None found as of [date]
 // No official [Vendor] MCP server was found on GitHub.
 ```
+
+> **Note:** The bundled `crowdstrike.ts` adapter predates this protocol and uses a condensed single-line header. New adapters and updated adapters must use the full multi-line MCP-status block shown above.
 
 ---
 
@@ -83,14 +91,14 @@ The adapter's job is completeness. The pre-filter's job is selection. Do not con
 
 ### Tool tiers
 
-Every tool has a tier that determines how it participates in orchestration:
+Tool tiers are a logical concept used by the orchestration layer — they are **not a field on `ToolDefinition`** (which only has `name`, `description`, and `inputSchema`). Tier assignment is managed by the FederationManager at registration time based on the adapter's catalog metadata and the per-query BM25 promotion step.
 
 | Tier | Behavior | Use case |
 |---|---|---|
 | `orchestrated` | Participates in three-tier resolution. SLM can select it. | Common operations: list, get, search, create, update |
 | `direct` | Registered in ToolRegistry but NOT sent to SLM. Callable by explicit name only. | Rare/dangerous operations: bulk delete, schema migration, admin config |
 
-**Default tier:** All tools default to `orchestrated`. Set `tier: 'direct'` only for tools that are rarely needed or could cause damage if selected by a small model with imperfect judgment.
+**Default tier:** All tools default to `orchestrated`. Tools are marked `direct` only for tools that are rarely needed or could cause damage if selected by a small model with imperfect judgment — this designation is expressed in catalog metadata, not in `ToolDefinition`.
 
 **Vendor MCP tools:** When connecting a vendor MCP server with 60+ tools, all tools register as `direct` by default. The DomainClassifier + BM25 promote the most relevant to `orchestrated` per query. This prevents a 60-tool vendor MCP from flooding the SLM's context.
 
@@ -139,6 +147,32 @@ import { ToolDefinition, ToolResult } from './types.js';
 
 No other imports except Node.js built-ins (`crypto` for HMAC/SigV4 signing). No npm packages. No framework imports. No SDK imports. The adapter is self-contained.
 
+### ToolResult shapes
+
+There are two `ToolResult` definitions in the codebase. REST API adapters (all files in `src/mcp-servers/`) use the **adapter-level** shape from `src/mcp-servers/types.ts`:
+
+```typescript
+interface ToolResult {
+  content: Array<{ type: 'text'; text: string }>;
+  isError: boolean;
+}
+```
+
+This is the shape every adapter's `callTool()` must return. The content must be an array with at least one `{ type: 'text', text: string }` element.
+
+The **SDK-level** `ToolResult` in `src/types/index.ts` is a different type used by the FederationManager after it executes a tool call — it adds routing metadata (`server`, `tool`, `durationMs`) that the federation layer attaches. Adapters never construct or return the SDK-level shape directly.
+
+### EpicAIAdapter vs. VendorMCPServer pattern
+
+The codebase has two adapter patterns:
+
+| Pattern | File pattern | Interface | Use case |
+|---|---|---|---|
+| **VendorMCPServer** | `src/mcp-servers/{vendor}.ts` | No base class. Self-contained class with `get tools()` and `callTool()`. | REST API wrappers — the pattern described in this document. |
+| **EpicAIAdapter** | `src/federation/adapters/` | Abstract class from `src/federation/adapters/base.ts`. | V2 adapter contract for federation-aware adapters that optionally implement `connect()`, `disconnect()`, and `ping()`. Supports lazy connection pool and health tracking. |
+
+When writing a new REST API adapter, use the **VendorMCPServer** pattern. The `EpicAIAdapter` base class is for advanced federation adapters that need lifecycle management — not for standard REST wrappers.
+
 ### Config interface
 
 ```typescript
@@ -169,15 +203,22 @@ export class {VendorName}MCPServer {
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
-    switch (name) {
-      case 'tool_name':
-        return this.toolName(args);
-      // ... one case per tool
-      default:
-        return {
-          content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-          isError: true,
-        };
+    try {
+      switch (name) {
+        case 'tool_name':
+          return this.toolName(args);
+        // ... one case per tool
+        default:
+          return {
+            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+            isError: true,
+          };
+      }
+    } catch (error) {
+      return {
+        content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
+        isError: true,
+      };
     }
   }
 
@@ -315,7 +356,7 @@ private async listIncidents(args: Record<string, unknown>): Promise<ToolResult> 
 
 ### Error handling
 
-Never throw from `callTool()` or any tool method. Always return a `ToolResult` with `isError: true`. The orchestrator handles errors through the normal observe loop — it doesn't catch exceptions from tool calls.
+`callTool()` must never propagate an exception to its caller. Always return a `ToolResult` with `isError: true`. The orchestrator handles errors through the normal observe loop — it does not catch exceptions from tool calls.
 
 ```typescript
 // CORRECT
@@ -324,9 +365,26 @@ return {
   isError: true,
 };
 
-// WRONG — never do this
+// WRONG — never let an exception escape callTool()
 throw new Error(`API error: ${response.status}`);
 ```
+
+**Private helper methods** (e.g., `getOrRefreshToken()`) may throw internally. The rule is that `callTool()` must catch all exceptions from helpers and convert them to `ToolResult` before returning. Wrap the entire `callTool()` body in a top-level try/catch:
+
+```typescript
+async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+  try {
+    // ... switch dispatch and helper calls
+  } catch (error) {
+    return {
+      content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
+      isError: true,
+    };
+  }
+}
+```
+
+This pattern — helper throws, `callTool()` catches — is the correct design. The OAuth2 `getOrRefreshToken()` helper in this document throws on token failure; the wrapping `callTool()` try/catch converts it to a `ToolResult` before it leaves the adapter.
 
 ### Authentication patterns
 
@@ -418,7 +476,7 @@ export class PagerDutyMCPServer {
       name: 'pagerduty',
       displayName: 'PagerDuty',
       version: '1.0.0',
-      category: 'incident-management',
+      category: 'observability',
       keywords: ['incident', 'alert', 'on-call', 'escalation', 'page', 'acknowledge'],
       toolNames: ['list_incidents', 'get_incident', 'acknowledge_incident', 'resolve_incident', 'list_oncalls'],
       description: 'Incident management: create, triage, acknowledge, and resolve incidents. Query on-call schedules and escalation policies.',
@@ -433,9 +491,14 @@ export class PagerDutyMCPServer {
 When `static catalog()` is present, the generator uses it directly. When absent, the generator infers:
 - `name` from the filename (e.g., `pagerduty.ts` → `pagerduty`)
 - `displayName` from the class name (e.g., `PagerDutyMCPServer` → `PagerDuty`)
+- `version` defaults to `'1.0.0'`
 - `toolNames` from the `tools` getter
 - `keywords` from tool names + descriptions (tokenized, stopwords removed)
 - `category` defaults to `misc` (maintainers should add `static catalog()` for correct categorization)
+- `description` defaults to an empty string (maintainers should provide one via `static catalog()`)
+- `author` defaults to `'community'`
+
+> **Note:** All eight fields of `AdapterCatalogEntry` — `name`, `displayName`, `version`, `category`, `keywords`, `toolNames`, `description`, and `author` — are required by the type. When relying on inference, `version`, `description`, and `author` will receive the defaults above, which are suitable for development but should be overridden in `static catalog()` before shipping.
 
 ### Category taxonomy
 
@@ -569,7 +632,8 @@ Every adapter PR is reviewed against this checklist:
 - [ ] Base URL is correct (verified against vendor docs)
 - [ ] API paths are correct (verified against vendor docs)
 - [ ] OAuth2 token refresh implements 60-second early renewal
-- [ ] Every `callTool` case returns `ToolResult` — no throws
+- [ ] `callTool()` has a top-level try/catch that converts all exceptions to `ToolResult`
+- [ ] Every `callTool` case returns `ToolResult` — no exceptions escape the method
 - [ ] Unknown tool case returns `isError: true`
 - [ ] Response data is JSON-stringified in `content[0].text`
 - [ ] Large responses are truncated at 10KB
