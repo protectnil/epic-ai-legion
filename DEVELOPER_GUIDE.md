@@ -54,7 +54,7 @@ npm install mongodb                   # Audit + memory persistence
 import { EpicAI } from '@epicai/core';
 
 const agent = await EpicAI.create({
-  orchestrator: { provider: 'auto', model: 'mistral-small-3' },
+  orchestrator: { provider: 'auto', model: 'llama3.1:8b' },
   generator: { provider: 'openai', model: 'gpt-4.1', apiKey: process.env.OPENAI_API_KEY },
   federation: {
     servers: [
@@ -127,11 +127,11 @@ The orchestrator/generator split is a data sovereignty architecture, not just a 
 - MCP server connection details (URLs, auth tokens, internal hostnames) stay local
 - Raw data from connected platforms (Splunk queries, CrowdStrike detections, Vault secrets, Jira tickets, Salesforce records, AWS events) is processed locally and only summarized results reach the generator
 
-For fully air-gapped deployments, set the generator to `provider: 'ollama'` and both the orchestrator and generator run locally with zero external network calls.
+For fully air-gapped deployments, set the generator to use your local backend and both the orchestrator and generator run locally with zero external network calls.
 
 #### Generator Fallback
 
-If `generator` is omitted from `EpicAIConfig`, `EpicAI.start()` reuses the orchestrator's local model for both tool routing and response synthesis. **This works when the orchestrator uses Ollama directly or via the `'auto'` provider with Ollama discovered locally.** For all other providers, omitting `generator` throws an error at startup before any side effects (MCP connections, audit trail initialization) occur.
+If `generator` is omitted from `EpicAIConfig`, `EpicAI.start()` reuses the orchestrator's local model for both tool routing and response synthesis. **This works when the orchestrator uses a local backend via the `'auto'` provider.** For all other providers, omitting `generator` throws an error at startup before any side effects (MCP connections, audit trail initialization) occur.
 
 For production deployments, always provide an explicit `generator` configuration pointing to a cloud LLM (GPT-4.1, Claude, etc.) for response quality. The orchestrator (local SLM) handles tool selection; the generator handles human-readable synthesis.
 
@@ -191,7 +191,7 @@ If configuration is invalid, the agent fails fast with no partial initialization
 | Field | Type | Description |
 |-------|------|-------------|
 | `provider` | `'auto' \| 'ollama' \| 'vllm' \| 'llama.cpp' \| 'mlx-lm' \| 'apple-foundation' \| 'custom'` | Runtime (`'auto'` discovers Ollama, vLLM, llama.cpp, mlx-lm) |
-| `model` | `string` | Model name (e.g., `'mistral-small-3'`) |
+| `model` | `string` | Model name (e.g., `'llama3.1:8b'`) |
 | `baseUrl` | `string` | Ollama/vLLM endpoint |
 | `maxIterations` | `number` | Max tool-calling loop iterations |
 | `timeoutMs` | `number` | Per-call timeout (default: 5000) |
@@ -1242,7 +1242,7 @@ Runs via `vitest run`. Includes unit tests, harness transport tests, orchestrato
 
 ### Integration suite (`npm run test:integration`)
 
-Runs all tests under `tests/integration/` against real LLM inference. Expects Ollama serving on `http://localhost:11434` with `mistral-small-3` pulled. Tests skip gracefully if Ollama is not available, but the files must still be run in their own vitest invocation to avoid collection-phase hangs.
+Runs all tests under `tests/integration/` against real LLM inference. Expects Ollama serving on `http://localhost:11434` with `llama3.1:8b` pulled. Tests skip gracefully if Ollama is not available, but the files must still be run in their own vitest invocation to avoid collection-phase hangs.
 
 The integration suite is organized into three directories:
 
@@ -1317,14 +1317,14 @@ Interactive setup wizard for first-time configuration:
 
 ```bash
 npx epic-ai setup
-npx epic-ai setup --model mistral-small-3
+npx epic-ai setup --model llama3.1:8b
 npx epic-ai setup --skip-model
 npx epic-ai setup --force-config
 ```
 
 The wizard:
 1. Detects Ollama (probes `http://localhost:11434/api/version`)
-2. Checks/pulls the orchestrator model (default: `mistral-small-3`)
+2. Checks/pulls the orchestrator model (default: `llama3.1:8b`)
 3. Validates the model responds to a test prompt
 4. Generates `epic-ai.config.ts` template
 

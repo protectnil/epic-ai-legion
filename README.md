@@ -39,15 +39,11 @@ Append-only logs are not audit trails. Epic AI® writes every agent action to a 
 ## Prerequisites
 
 - **Node.js** >= 20.0.0 ([nodejs.org](https://nodejs.org))
-- **Ollama** — local LLM runtime ([ollama.com](https://ollama.com))
+- **Local inference backend** — any OpenAI-compatible server: [vLLM](https://docs.vllm.ai), [llama.cpp](https://github.com/ggml-org/llama.cpp), or [mlx-lm](https://github.com/ml-explore/mlx-lm)
   ```bash
-  # macOS
-  brew install ollama
-  ollama serve
-  ollama pull mistral-small-3
+  # Start the Inference Gateway — auto-discovers local backends
+  npx epic-ai-gateway
   ```
-
-> **Apple M5 / macOS 26.x:** Ollama versions 0.13+ have a known Metal shader compatibility issue with the M5 chip's neural accelerator (`MTLLibraryErrorDomain Code=3`). No models will run until Ollama ships a fix. Track progress at [ollama/ollama#14432](https://github.com/ollama/ollama/issues/14432). Apple M1–M4 Macs are unaffected — Ollama runs without issues on all prior Apple Silicon generations.
 
 ## Quick Start
 
@@ -69,7 +65,7 @@ npm pkg set type=module
 import { EpicAI } from '@epicai/core';
 
 const agent = await EpicAI.create({
-  orchestrator: { provider: 'auto', model: 'mistral-small-3' },
+  orchestrator: { provider: 'auto', model: 'llama3.1:8b' },
   federation: {
     servers: [],
   },
@@ -101,9 +97,9 @@ await agent.stop();
 npx tsx index.ts
 ```
 
-> **No OpenAI key required.** The example above runs entirely on Ollama — your local SLM handles both tool routing and response synthesis. To add a cloud LLM for higher-quality responses, add a `generator` field with your API key. See the [Developer Guide](DEVELOPER_GUIDE.md) for details.
+> **No OpenAI key required.** The example above runs entirely on your local inference backend — the SLM handles both tool routing and response synthesis. To add a cloud LLM for higher-quality responses, add a `generator` field with your API key. See the [Developer Guide](DEVELOPER_GUIDE.md) for details.
 
-> **The `'auto'` provider discovers local inference backends automatically.** It probes for Ollama (port 11434), vLLM (port 8000), llama.cpp (port 8080), and mlx-lm (port 5000). For explicit control, use `provider: 'ollama'` or run the Inference Gateway (`npx epic-ai-gateway`).
+> **The `'auto'` provider discovers local inference backends automatically.** Start the Inference Gateway (`npx epic-ai-gateway`) and it probes for vLLM (port 8000), llama.cpp (port 8080), and mlx-lm (port 5000). The gateway routes to the best available backend with circuit breakers and health checks.
 
 ---
 
@@ -517,7 +513,7 @@ The trust layer includes `AuthMiddleware` for request authentication, `AccessPol
 | Field           | Type                                                | Description                              |
 |-----------------|-----------------------------------------------------|------------------------------------------|
 | `provider`      | `'auto' \| 'ollama' \| 'vllm' \| 'apple-foundation' \| 'custom'` | Orchestrator runtime          |
-| `model`         | `string`                                            | Model name (e.g., `'mistral-small-3'`)        |
+| `model`         | `string`                                            | Model name (e.g., `'llama3.1:8b'`)        |
 | `baseUrl`       | `string`                                            | Base URL for Ollama or vLLM endpoints    |
 | `maxIterations` | `number`                                            | Max orchestrator loop iterations         |
 | `llm`           | `LLMFunction`                                       | Bring-your-own LLM function (custom)     |
