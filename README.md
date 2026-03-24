@@ -1,7 +1,7 @@
 # Epic AI® IVA Core
 ## The Intelligent Virtual Assistant that replaces dashboards and manual analysis.
 
-> **Local SLM orchestrates. Cloud LLM responds. Your data never leaves. 113 enterprise adapters, tiered autonomy governance, tamper-evident audit trails. Connect your AI to everything.**
+> **Local SLM orchestrates. Cloud LLM responds. Your data never leaves. 472 enterprise adapters, tiered autonomy governance, tamper-evident audit trails. Connect your AI to everything.**
 
 [![npm version](https://img.shields.io/npm/v/@epicai/core.svg?style=flat)](https://www.npmjs.com/package/@epicai/core)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
@@ -11,7 +11,7 @@
 
 **Epic AI® IVA Core** is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. An open-source TypeScript SDK that federates across multiple Model Context Protocol (MCP) servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis.
 
-113 pre-built adapters span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations — all under Apache 2.0.
+472 pre-built adapters span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations — all under Apache 2.0.
 
 Built by [protectNIL Inc.](https://protectnil.com) — Epic AI® is a registered trademark (U.S. Reg. No. 7,748,019).
 
@@ -44,7 +44,7 @@ Append-only logs are not audit trails. Epic AI® writes every agent action to a 
   # macOS
   brew install ollama
   ollama serve
-  ollama pull qwen2.5:7b
+  ollama pull mistral-small-3
   ```
 
 > **Apple M5 / macOS 26.x:** Ollama versions 0.13+ have a known Metal shader compatibility issue with the M5 chip's neural accelerator (`MTLLibraryErrorDomain Code=3`). No models will run until Ollama ships a fix. Track progress at [ollama/ollama#14432](https://github.com/ollama/ollama/issues/14432). Apple M1–M4 Macs are unaffected — Ollama runs without issues on all prior Apple Silicon generations.
@@ -69,7 +69,7 @@ npm pkg set type=module
 import { EpicAI } from '@epicai/core';
 
 const agent = await EpicAI.create({
-  orchestrator: { provider: 'ollama', model: 'qwen2.5:7b' },
+  orchestrator: { provider: 'auto', model: 'mistral-small-3' },
   federation: {
     servers: [],
   },
@@ -103,6 +103,8 @@ npx tsx index.ts
 
 > **No OpenAI key required.** The example above runs entirely on Ollama — your local SLM handles both tool routing and response synthesis. To add a cloud LLM for higher-quality responses, add a `generator` field with your API key. See the [Developer Guide](DEVELOPER_GUIDE.md) for details.
 
+> **The `'auto'` provider discovers local inference backends automatically.** It probes for Ollama (port 11434), vLLM (port 8000), llama.cpp (port 8080), and mlx-lm (port 5000). For explicit control, use `provider: 'ollama'` or run the Inference Gateway (`npx epic-ai-gateway`).
+
 ---
 
 ## Architecture
@@ -119,7 +121,7 @@ npx tsx index.ts
    ┌──────────────────┐            ┌───────────────────┐            ┌───────────────────┐
    │  Orchestrator    │            │   Autonomy Layer   │            │   Audit Trail     │
    │  (Local SLM)     │◄──────────►│   TieredAutonomy  │            │  SHA-256 chain    │
-   │  Mistral 7B /    │  evaluates │   PolicyEngine     │            │  append-only log  │
+   │  Local SLM /     │  evaluates │   PolicyEngine     │            │  append-only log  │
    │  vLLM / custom   │  actions   │   ApprovalQueue    │            │  tamper-evident   │
    └────────┬─────────┘            └───────────────────┘            └───────────────────┘
             │ selects tools
@@ -326,11 +328,11 @@ await audit.export('syslog');  // emits to syslog
 
 ---
 
-## 113 Enterprise Adapters
+## 472 Enterprise Adapters
 
-Epic AI® ships 113 pre-built MCP server adapters across security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. Each adapter implements the `MCPAdapter` interface and handles authentication, request formatting, and response normalization for its respective platform.
+Epic AI® ships 472 pre-built MCP server adapters across security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. Each adapter implements the `MCPAdapter` interface and handles authentication, request formatting, and response normalization for its respective platform.
 
-All 113 adapters are included in the SDK under Apache 2.0.
+All 472 adapters are included in the SDK under Apache 2.0.
 
 ### Security Operations
 
@@ -401,7 +403,7 @@ const splunk = new SplunkMCPServer({
 await federation.connect('splunk', { name: 'splunk', transport: 'streamable-http', url: 'https://splunk.corp.example.com:8089' });
 ```
 
-All 113 adapters share a consistent interface — swap platforms without changing orchestration logic. Managed adapter maintenance — keeping adapters current as vendor APIs and MCP specifications evolve — is available from [protectNIL Inc.](https://protectnil.com)
+All 472 adapters share a consistent interface — swap platforms without changing orchestration logic. Managed adapter maintenance — keeping adapters current as vendor APIs and MCP specifications evolve — is available from [protectNIL Inc.](https://protectnil.com)
 
 ---
 
@@ -471,6 +473,30 @@ for await (const event of agent.stream('Identify all endpoints with active C2 be
 
 ---
 
+## V2 Platform Features
+
+### Inference Gateway
+
+`npx epic-ai-gateway` starts an OpenAI-compatible HTTP router that load-balances across all locally discovered inference backends — Ollama, vLLM, llama.cpp, and mlx-lm — with per-backend circuit breakers and health checks. A Redis-backed control plane enables consistent routing decisions across multi-replica deployments. The built-in Ollama shim provides drop-in compatibility for clients using the Ollama API format (deprecated, sunset 2026-12-31).
+
+### Three-Tier Tool Resolution
+
+When 472 adapters are registered, sending all tool schemas to the orchestrator SLM would saturate its context window. V2 resolves this with a three-tier pipeline: a **DomainClassifier** (keyword + semantic matching) narrows the full adapter set to a relevant domain subset; a **BM25 ToolPreFilter** ranks candidates by query relevance; the **SLM** makes the final tool selection from a compact, high-signal shortlist. Context window bloat is prevented by architecture, not by reducing adapter coverage.
+
+### Adapter Sandboxing
+
+Community and vendor adapters run in process-isolated sandboxes managed by `SandboxManager`. Each sandbox enforces configurable memory limits (default 256 MB), execution timeouts (default 30s), and egress restrictions. Worker-thread isolation is available for adapters that do not require a separate process. Isolation boundaries apply per adapter, not per request.
+
+### Adaptive Connection Pool
+
+`AdaptivePool` provides per-tenant connection management with burst mode that temporarily allows up to 2.5× the base connection limit for up to 30 seconds. Eviction uses a combined LRU/LFU strategy to retain high-value connections under memory pressure. Pool limits are configurable per tenant.
+
+### Enterprise Trust
+
+The trust layer includes `AuthMiddleware` for request authentication, `AccessPolicyEngine` for fine-grained authorization, and `ArtifactVerifier` for supply-chain integrity verification via Sigstore and SLSA attestations. Four built-in secrets providers are available via `createSecretsProvider`. `PrometheusExporter` exposes agent metrics in Prometheus format for scraping by any compatible monitoring stack.
+
+---
+
 ## Configuration Reference
 
 ### `EpicAIConfig`
@@ -490,7 +516,7 @@ for await (const event of agent.stream('Identify all endpoints with active C2 be
 
 | Field           | Type                                                | Description                              |
 |-----------------|-----------------------------------------------------|------------------------------------------|
-| `provider`      | `'ollama' \| 'vllm' \| 'apple-foundation' \| 'custom'` | Orchestrator runtime                 |
+| `provider`      | `'auto' \| 'ollama' \| 'vllm' \| 'apple-foundation' \| 'custom'` | Orchestrator runtime          |
 | `model`         | `string`                                            | Model name (e.g., `'mistral:7b'`)        |
 | `baseUrl`       | `string`                                            | Base URL for Ollama or vLLM endpoints    |
 | `maxIterations` | `number`                                            | Max orchestrator loop iterations         |
@@ -596,4 +622,4 @@ All other trademarks, service marks, and product names referenced in this docume
 
 ---
 
-*Epic AI® — Intelligent Virtual Assistant (IVA) Platform | Zero LLM Context MCP Orchestrator | 113 Enterprise Adapters | Built by [protectNIL Inc.](https://protectnil.com)*
+*Epic AI® — Intelligent Virtual Assistant (IVA) Platform | Zero LLM Context MCP Orchestrator | 472 Enterprise Adapters | Built by [protectNIL Inc.](https://protectnil.com)*

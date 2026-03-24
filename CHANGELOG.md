@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 0.3.0 (unreleased)
+
+### Added
+- **Inference Gateway** (`npx epic-ai-gateway`) — OpenAI-compatible HTTP router for llama.cpp, mlx-lm, vLLM, and Ollama backends with circuit breakers, Redis-backed control plane, and leader-elected health checks.
+- **Auto provider** — `provider: 'auto'` discovers local inference backends by probing standard ports (Ollama 11434, vLLM 8000, llama.cpp 8080, mlx-lm 5000).
+- **Three-tier tool resolution** — DomainClassifier (keyword/semantic), BM25 ToolPreFilter, and SLM selection prevent context window bloat across 472 adapters.
+- **Adapter sandboxing** — SandboxManager runs community and vendor adapters in process-isolated sandboxes with configurable memory limits, timeouts, and egress enforcement.
+- **Adaptive connection pool** — Per-tenant burst-aware connection management with LRU/LFU eviction, replacing flat maxConnections.
+- **Enterprise trust** — AuthMiddleware, AccessPolicyEngine, ArtifactVerifier (Sigstore/SLSA), and pluggable secrets providers.
+- **PrometheusExporter** — new observability export format.
+- **359 new adapters** — expanded from 113 to 472 across all enterprise domains.
+
+### Changed
+- Default orchestrator provider changed from `'ollama'` to `'auto'`.
+- Default model changed to `mistral-small-3`.
+- Ollama `/api/chat` and `/api/generate` endpoints deprecated via OllamaShim (sunset 2026-12-31). Use OpenAI-compatible `/v1/chat/completions` instead.
+
+---
+
 ## 0.2.0 — 2026-03-22
 
 ### Changed

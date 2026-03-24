@@ -5,7 +5,7 @@
 **License:** Apache 2.0
 **Runtime:** Node.js >= 20.0.0, TypeScript 5.3+
 
-Epic AI® IVA Core is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. The SDK federates across multiple MCP servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis. 113 pre-built adapters span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. This guide covers every layer of the SDK.
+Epic AI® IVA Core is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. The SDK federates across multiple MCP servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis. 472 pre-built adapters span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. This guide covers every layer of the SDK.
 
 ---
 
@@ -22,13 +22,15 @@ Epic AI® IVA Core is an Intelligent Virtual Assistant that replaces dashboards 
 9. [Memory Layer](#memory-layer)
 10. [Audit Layer](#audit-layer)
 11. [Orchestrator](#orchestrator)
-12. [Streaming](#streaming)
+12. [Inference Gateway](#inference-gateway)
 13. [Resilience](#resilience)
 14. [Observability](#observability)
 15. [MCP Server Adapters](#mcp-server-adapters)
 16. [Writing Custom Adapters](#writing-custom-adapters)
-17. [Testing](#testing)
-18. [CLI Setup Tool](#cli-setup-tool)
+17. [Adapter Sandboxing](#adapter-sandboxing)
+18. [Testing](#testing)
+19. [CLI Setup Tool](#cli-setup-tool)
+20. [Enterprise Trust](#enterprise-trust)
 
 ---
 
@@ -52,7 +54,7 @@ npm install mongodb                   # Audit + memory persistence
 import { EpicAI } from '@epicai/core';
 
 const agent = await EpicAI.create({
-  orchestrator: { provider: 'ollama', model: 'mistral:7b' },
+  orchestrator: { provider: 'auto', model: 'mistral-small-3' },
   generator: { provider: 'openai', model: 'gpt-4.1', apiKey: process.env.OPENAI_API_KEY },
   federation: {
     servers: [
@@ -92,7 +94,7 @@ User Query
     ▼
 ┌─────────────────────────────────────────────────────┐
 │                    Orchestrator                      │
-│              (Local SLM — Mistral 7B)               │
+│                   (Local SLM)                        │
 │         Selects tools, routes actions.               │
 │         Tool schemas NEVER leave this box.           │
 └──────┬──────────────┬───────────────┬───────────────┘
@@ -129,7 +131,7 @@ For fully air-gapped deployments, set the generator to `provider: 'ollama'` and 
 
 #### Generator Fallback
 
-If `generator` is omitted from `EpicAIConfig`, `EpicAI.start()` reuses the orchestrator's local model for both tool routing and response synthesis. **This only works when the orchestrator provider is `'ollama'`.** For all other providers, omitting `generator` throws an error at startup before any side effects (MCP connections, audit trail initialization) occur.
+If `generator` is omitted from `EpicAIConfig`, `EpicAI.start()` reuses the orchestrator's local model for both tool routing and response synthesis. **This works when the orchestrator uses Ollama directly or via the `'auto'` provider with Ollama discovered locally.** For all other providers, omitting `generator` throws an error at startup before any side effects (MCP connections, audit trail initialization) occur.
 
 For production deployments, always provide an explicit `generator` configuration pointing to a cloud LLM (GPT-4.1, Claude, etc.) for response quality. The orchestrator (local SLM) handles tool selection; the generator handles human-readable synthesis.
 
@@ -188,8 +190,8 @@ If configuration is invalid, the agent fails fast with no partial initialization
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `provider` | `'ollama' \| 'vllm' \| 'apple-foundation' \| 'custom'` | Runtime |
-| `model` | `string` | Model name (e.g., `'mistral:7b'`) |
+| `provider` | `'auto' \| 'ollama' \| 'vllm' \| 'llama.cpp' \| 'mlx-lm' \| 'apple-foundation' \| 'custom'` | Runtime (`'auto'` discovers Ollama, vLLM, llama.cpp, mlx-lm) |
+| `model` | `string` | Model name (e.g., `'mistral-small-3'`) |
 | `baseUrl` | `string` | Ollama/vLLM endpoint |
 | `maxIterations` | `number` | Max tool-calling loop iterations |
 | `timeoutMs` | `number` | Per-call timeout (default: 5000) |
@@ -313,6 +315,63 @@ const health = await federation.health();
 
 federation.onHealthChange((h) => {
   if (h.status === 'error') console.error(`${h.server} down: ${h.lastError}`);
+});
+```
+
+### Three-Tier Tool Resolution
+
+When a query arrives, the federation layer narrows the full tool catalog down to a relevant subset before passing it to the SLM. This keeps the orchestrator's context window manageable as adapter counts grow.
+
+**Tier 1 — DomainClassifier:** A lightweight classifier assigns the query to one or more domains (e.g., `security`, `devops`, `finance`). Only adapters registered under those domains are considered for subsequent tiers.
+
+**Tier 2 — BM25 ToolPreFilter:** BM25 keyword matching scores each tool's name and description against the query. Tools below the score threshold are excluded. This tier is fast and requires no inference.
+
+**Tier 3 — SLM Selection:** The local SLM receives only the pre-filtered tool subset and selects specific tools for invocation. With fewer tools in context, selection accuracy improves and latency decreases.
+
+Configure the pre-filter threshold via `FederationConfig`:
+
+```typescript
+const federation = new FederationManager({
+  servers: [...],
+  preFilter: {
+    enabled: true,
+    bm25TopK: 20,          // Max tools passed to SLM after BM25 scoring
+    domainClassifier: true, // Enable domain-scoped pre-filtering
+  },
+});
+```
+
+Disable pre-filtering for small deployments (fewer than ~30 tools) where full tool context fits comfortably within the SLM's context window.
+
+### Adaptive Connection Pool
+
+`AdaptivePool` manages per-tenant MCP server connections, scaling connection count based on observed request rate and evicting idle connections to bound memory.
+
+```typescript
+import { AdaptivePool } from '@epicai/core';
+
+const pool = new AdaptivePool({
+  minConnections: 1,
+  maxConnections: 10,
+  idleTimeoutMs: 60000,       // Evict connections idle longer than 60s
+  burstMode: {
+    enabled: true,
+    thresholdRps: 50,          // Activate burst mode above 50 req/s
+    maxBurstConnections: 20,   // Temporary ceiling during burst
+    cooldownMs: 5000,          // Return to maxConnections after 5s of normal load
+  },
+  evictionPolicy: 'lru',       // 'lru' | 'lfu' | 'ttl'
+});
+```
+
+Burst mode temporarily raises the connection ceiling when request rate spikes, then backs off once the spike subsides. LRU eviction removes the least-recently-used tenant connections first when the pool approaches its limit.
+
+Attach to the federation layer via `FederationConfig.pool`:
+
+```typescript
+const federation = new FederationManager({
+  servers: [...],
+  pool: new AdaptivePool({ minConnections: 2, maxConnections: 8 }),
 });
 ```
 
@@ -757,6 +816,58 @@ for await (const event of agent.stream('Summarize open incidents, stalled deals,
 
 ---
 
+## Inference Gateway
+
+The Inference Gateway is a lightweight OpenAI-compatible HTTP proxy that sits in front of your local inference backends (Ollama, vLLM, llama.cpp, mlx-lm) and exposes them on a single endpoint at port 8000.
+
+### Starting the Gateway
+
+```bash
+npx epic-ai-gateway
+# Listening on http://localhost:8000 (OpenAI-compatible)
+```
+
+The gateway auto-discovers running backends on startup and registers them as upstream targets. Any OpenAI-compatible client can point its `baseURL` to `http://localhost:8000/v1` without further configuration.
+
+### Routing Strategies
+
+| Strategy | Description |
+|----------|-------------|
+| `lowest-queue-depth` | Routes each request to the backend with the fewest in-flight requests. Default. |
+| `round-robin` | Distributes requests evenly across all healthy backends, regardless of load. |
+
+Configure via environment variable:
+
+```bash
+EPIC_GATEWAY_STRATEGY=round-robin npx epic-ai-gateway
+```
+
+### Health Checks
+
+The gateway exposes a health endpoint that reports per-backend status:
+
+```
+GET http://localhost:8000/health
+```
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "backends": [
+    { "name": "ollama", "url": "http://localhost:11434", "status": "healthy", "queueDepth": 0 },
+    { "name": "vllm",   "url": "http://localhost:8080",  "status": "healthy", "queueDepth": 2 }
+  ]
+}
+```
+
+### Deprecated Ollama Shim
+
+Prior to V2, the SDK included a built-in Ollama shim that translated OpenAI-format requests to the Ollama `/api/generate` endpoint. That shim is deprecated. Use `npx epic-ai-gateway` instead — it handles Ollama, vLLM, llama.cpp, and mlx-lm through a single unified interface.
+
+---
+
 ## Resilience
 
 ### Rate Limiting
@@ -917,7 +1028,7 @@ emitter.onLog(createOTelLogCallback(logExporter));
 
 ## MCP Server Adapters
 
-The SDK ships 113 pre-built adapters across security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. Each implements `MCPAdapter` and handles authentication, request formatting, and response normalization. All 113 are included under Apache 2.0.
+The SDK ships 472 pre-built adapters across security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. Each implements `MCPAdapter` and handles authentication, request formatting, and response normalization. All 472 are included under Apache 2.0.
 
 ### Security Operations
 
@@ -1065,6 +1176,48 @@ class MyAuditStore implements AuditStoreAdapter {
 
 ---
 
+## Adapter Sandboxing
+
+`SandboxManager` wraps each adapter in an isolation boundary so that a misbehaving or compromised adapter cannot affect the host process or other adapters.
+
+### Sandbox Modes
+
+| Mode | Description |
+|------|-------------|
+| `process` | Spawns a child process per adapter. Strongest isolation; highest overhead. |
+| `worker-thread` | Runs adapter in a Node.js Worker thread. Isolates CPU and memory; shares the OS process. |
+| `none` | No sandbox. Adapter runs in-process. Use for trusted, well-tested adapters only. |
+
+### Configuration
+
+```typescript
+import { SandboxManager } from '@epicai/core';
+
+const sandbox = new SandboxManager({
+  mode: 'process',            // 'process' | 'worker-thread' | 'none'
+  maxMemoryMb: 256,           // Kill adapter if RSS exceeds this value
+  timeoutMs: 10000,           // Kill adapter if a single tool call takes longer than this
+  allowedHosts: [             // Egress allowlist (process mode only)
+    'splunk.corp.example.com',
+    'api.crowdstrike.com',
+  ],
+  egressEnforcement: true,    // Block outbound connections not in allowedHosts
+});
+```
+
+Attach to the federation layer:
+
+```typescript
+const federation = new FederationManager({
+  servers: [...],
+  sandbox,
+});
+```
+
+When `mode: 'process'`, each adapter's child process is subject to `maxMemoryMb` and `timeoutMs` enforcement. Egress enforcement uses an outbound connection filter — connections to hosts not in `allowedHosts` are refused and logged to the audit trail. Worker-thread mode enforces `maxMemoryMb` and `timeoutMs` but does not restrict network egress (use `mode: 'process'` for network isolation).
+
+---
+
 ## Testing
 
 The test suite is split into three lanes:
@@ -1089,7 +1242,7 @@ Runs via `vitest run`. Includes unit tests, harness transport tests, orchestrato
 
 ### Integration suite (`npm run test:integration`)
 
-Runs all tests under `tests/integration/` against real LLM inference. Expects Ollama serving on `http://localhost:11434` with `mistral:7b` pulled. Tests skip gracefully if Ollama is not available, but the files must still be run in their own vitest invocation to avoid collection-phase hangs.
+Runs all tests under `tests/integration/` against real LLM inference. Expects Ollama serving on `http://localhost:11434` with `mistral-small-3` pulled. Tests skip gracefully if Ollama is not available, but the files must still be run in their own vitest invocation to avoid collection-phase hangs.
 
 The integration suite is organized into three directories:
 
@@ -1164,16 +1317,116 @@ Interactive setup wizard for first-time configuration:
 
 ```bash
 npx epic-ai setup
-npx epic-ai setup --model llama3:8b
+npx epic-ai setup --model mistral-small-3
 npx epic-ai setup --skip-model
 npx epic-ai setup --force-config
 ```
 
 The wizard:
 1. Detects Ollama (probes `http://localhost:11434/api/version`)
-2. Checks/pulls the orchestrator model
+2. Checks/pulls the orchestrator model (default: `mistral-small-3`)
 3. Validates the model responds to a test prompt
 4. Generates `epic-ai.config.ts` template
+
+---
+
+## Enterprise Trust
+
+The trust layer enforces authentication, access policy, and supply-chain integrity across the SDK. All three components operate before any tool invocation reaches the federation layer.
+
+### AuthMiddleware
+
+`AuthMiddleware` validates inbound requests (e.g., from an HTTP wrapper around the agent) and attaches a verified identity to the request context. Unverified requests are rejected before the orchestrator loop starts.
+
+```typescript
+import { AuthMiddleware } from '@epicai/core';
+
+const auth = new AuthMiddleware({
+  provider: 'jwt',                        // 'jwt' | 'api-key' | 'mtls'
+  jwksUri: 'https://auth.corp.com/.well-known/jwks.json',
+  audience: 'epic-ai-gateway',
+  clockSkewSeconds: 30,
+});
+
+// Attach to your HTTP handler
+app.use(auth.middleware());
+```
+
+### AccessPolicyEngine
+
+`AccessPolicyEngine` enforces which identities may invoke which tools. Policies are evaluated per tool call after the orchestrator selects tools but before the federation layer executes them.
+
+```typescript
+import { AccessPolicyEngine } from '@epicai/core';
+
+const policy = new AccessPolicyEngine();
+await policy.loadPolicyFromFile('/etc/epic-ai/access-policy.yaml');
+
+// Or define policies inline
+policy.addRule({
+  principal: 'role:analyst',
+  allow: ['read', 'search', 'query'],
+  deny: ['delete', 'revoke', 'terminate'],
+});
+
+policy.addRule({
+  principal: 'role:admin',
+  allow: ['*'],
+});
+```
+
+Policy files use a simple YAML schema. The engine evaluates rules in order; first match wins. Denies take precedence over allows within the same rule.
+
+Attach to the autonomy layer:
+
+```typescript
+const autonomy = new TieredAutonomy(rules, approvalQueueConfig, { policyEngine: policy });
+```
+
+### ArtifactVerifier
+
+`ArtifactVerifier` validates adapter supply-chain integrity before loading. It checks that adapter packages match their published checksums and that signing keys are trusted — preventing a compromised registry or tampered package from executing inside the SDK.
+
+```typescript
+import { ArtifactVerifier } from '@epicai/core';
+
+const verifier = new ArtifactVerifier({
+  trustedKeys: ['/etc/epic-ai/signing-keys/protectnil.pub'],
+  requireSignature: true,           // Reject adapters without a valid signature
+  checksumAlgorithm: 'sha256',
+  failOpen: false,                  // true = warn only; false = throw on verification failure
+});
+
+// Verify before connecting
+await verifier.verifyAdapter('@epicai/core/mcp-servers/splunk');
+```
+
+### createSecretsProvider
+
+`createSecretsProvider` abstracts secret retrieval so adapter credentials are never hardcoded or stored in config files. Supported backends: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, environment variables.
+
+```typescript
+import { createSecretsProvider } from '@epicai/core';
+
+const secrets = createSecretsProvider({
+  backend: 'vault',
+  address: 'https://vault.corp.example.com',
+  token: process.env.VAULT_TOKEN,
+  mountPath: 'secret/epic-ai',
+});
+
+const splunkToken = await secrets.get('splunk/api-token');
+const csToken = await secrets.get('crowdstrike/client-secret');
+```
+
+Pass the secrets provider to `FederationManager` to have credentials resolved at connection time rather than at startup:
+
+```typescript
+const federation = new FederationManager({
+  servers: [...],
+  secrets,
+});
+```
 
 ---
 
