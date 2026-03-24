@@ -1,40 +1,62 @@
 /**
- * @epicai/core — Ollama Integration Test
- * Tests the orchestrator provider against a local model via Ollama.
- * Default: qwen2.5:7b (best tool-calling accuracy at 7B scale).
- * Override: EPICAI_TEST_MODEL=llama3.1:8b npm run test:integration
- * Requires: ollama running with the target model pulled.
- * CPU inference — expect 10-60 seconds per call.
+ * @epicai/core — Inference Integration Test
+ * Tests the orchestrator provider against a local model via the
+ * Inference Gateway (llama.cpp / mlx-lm / vLLM) or Ollama fallback.
+ *
+ * Backend priority:
+ *   1. Gateway at localhost:8000 (V2 — works on M5 Metal)
+ *   2. Ollama at localhost:11434 (legacy fallback)
+ *
+ * Default model: llama3.1:8b
+ * Override: EPICAI_TEST_MODEL=qwen2.5:7b npm run test:integration
+ * Requires: at least one backend running with the target model.
+ * CPU/Metal inference — expect 10-60 seconds per call.
  */
 
 import { describe, it, expect } from 'vitest';
 import { createOrchestratorLLM } from '../../src/orchestrator/OrchestratorProvider.js';
 import type { LLMToolDefinition } from '../../src/types/index.js';
 
-const OLLAMA_URL = 'http://localhost:11434';
-const MODEL = process.env.EPICAI_TEST_MODEL || 'qwen2.5:7b';
+const GATEWAY_URL = process.env.EPICAI_GATEWAY_URL || 'http://localhost:8000';
+const OLLAMA_URL = process.env.EPICAI_OLLAMA_URL || 'http://localhost:11434';
+const MODEL = process.env.EPICAI_TEST_MODEL || 'llama3.1:8b';
 
-async function ollamaAvailable(): Promise<boolean> {
+async function probeEndpoint(url: string, path: string): Promise<boolean> {
   try {
-    const response = await fetch(`${OLLAMA_URL}/api/version`, { signal: AbortSignal.timeout(3000) });
-    return response.ok;
+    const res = await fetch(`${url}${path}`, { signal: AbortSignal.timeout(3000) });
+    return res.ok;
   } catch {
     return false;
   }
 }
 
-describe('Ollama Orchestrator Provider', () => {
+async function detectBackend(): Promise<{ provider: 'auto' | 'ollama'; baseUrl: string } | null> {
+  // Prefer gateway (works on M5 Metal)
+  if (await probeEndpoint(GATEWAY_URL, '/v1/models')) {
+    return { provider: 'auto', baseUrl: GATEWAY_URL };
+  }
+  // Fallback to Ollama
+  if (await probeEndpoint(OLLAMA_URL, '/api/version')) {
+    return { provider: 'ollama', baseUrl: OLLAMA_URL };
+  }
+  return null;
+}
+
+describe('Orchestrator Provider — Inference Backend', () => {
   it('generates a text response', async () => {
-    if (!await ollamaAvailable()) {
-      console.log('Skipping: Ollama not available');
+    const backend = await detectBackend();
+    if (!backend) {
+      console.log('Skipping: no inference backend available (gateway or Ollama)');
       return;
     }
 
+    console.log(`Using backend: ${backend.provider} at ${backend.baseUrl}`);
+
     const llm = createOrchestratorLLM({
-      provider: 'ollama',
+      provider: backend.provider,
       model: MODEL,
-      baseUrl: OLLAMA_URL,
-      timeoutMs: 120000, // CPU inference is slow
+      baseUrl: backend.baseUrl,
+      timeoutMs: 120000,
     });
 
     const response = await llm({
@@ -51,10 +73,13 @@ describe('Ollama Orchestrator Provider', () => {
   });
 
   it('makes tool calls when tools are provided', { timeout: 300000 }, async () => {
-    if (!await ollamaAvailable()) {
-      console.log('Skipping: Ollama not available');
+    const backend = await detectBackend();
+    if (!backend) {
+      console.log('Skipping: no inference backend available (gateway or Ollama)');
       return;
     }
+
+    console.log(`Using backend: ${backend.provider} at ${backend.baseUrl}`);
 
     const tools: LLMToolDefinition[] = [
       {
@@ -83,10 +108,10 @@ describe('Ollama Orchestrator Provider', () => {
     ];
 
     const llm = createOrchestratorLLM({
-      provider: 'ollama',
+      provider: backend.provider,
       model: MODEL,
-      baseUrl: OLLAMA_URL,
-      timeoutMs: 300000, // 5 min — tool calling on CPU is very slow
+      baseUrl: backend.baseUrl,
+      timeoutMs: 300000,
     });
 
     const response = await llm({
@@ -97,7 +122,6 @@ describe('Ollama Orchestrator Provider', () => {
       tools,
     });
 
-    // Model should either call tools or respond with text
     const hasToolCalls = response.toolCalls.length > 0;
     const hasText = response.content !== null && response.content.length > 0;
 
@@ -105,7 +129,6 @@ describe('Ollama Orchestrator Provider', () => {
 
     if (hasToolCalls) {
       console.log('Tool calls:', response.toolCalls.map(tc => `${tc.name}(${JSON.stringify(tc.arguments)})`));
-      // Verify tool call structure
       for (const tc of response.toolCalls) {
         expect(tc.name).toBeTruthy();
         expect(typeof tc.arguments).toBe('object');

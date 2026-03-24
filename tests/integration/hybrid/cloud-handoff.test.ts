@@ -17,18 +17,25 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { createOrchestratorLLM } from '../../../src/orchestrator/OrchestratorProvider.js';
 import type { LLMToolDefinition, LLMResponse, LLMMessage } from '../../../src/types/index.js';
 
-const OLLAMA_URL = 'http://localhost:11434';
-const ORCHESTRATOR_MODEL = process.env.EPICAI_TEST_MODEL || 'qwen2.5:7b';
+const GATEWAY_URL = process.env.EPICAI_GATEWAY_URL || 'http://localhost:8000';
+const OLLAMA_URL = process.env.EPICAI_OLLAMA_URL || 'http://localhost:11434';
+const ORCHESTRATOR_MODEL = process.env.EPICAI_TEST_MODEL || 'llama3.1:8b';
 const GENERATOR_MODEL = 'gpt-4.1';
 const TIMEOUT_MS = 120_000;
 
-async function ollamaAvailable(): Promise<boolean> {
+async function probeEndpoint(url: string, path: string): Promise<boolean> {
   try {
-    const res = await fetch(`${OLLAMA_URL}/api/version`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${url}${path}`, { signal: AbortSignal.timeout(3000) });
     return res.ok;
   } catch {
     return false;
   }
+}
+
+async function detectBackend(): Promise<{ provider: 'auto' | 'ollama'; baseUrl: string } | null> {
+  if (await probeEndpoint(GATEWAY_URL, '/v1/models')) return { provider: 'auto', baseUrl: GATEWAY_URL };
+  if (await probeEndpoint(OLLAMA_URL, '/api/version')) return { provider: 'ollama', baseUrl: OLLAMA_URL };
+  return null;
 }
 
 function openaiAvailable(): boolean {
@@ -110,7 +117,7 @@ const SYSTEM_PROMPT = 'You are a cybersecurity AI. Use tools to query security d
 describe('Hybrid: Ollama Orchestrator → OpenAI Generator', { timeout: TIMEOUT_MS * 2 }, () => {
 
   beforeAll(async () => {
-    if (!await ollamaAvailable()) {
+    const backend = await detectBackend(); if (!backend) {
       console.log('Skipping hybrid tests: Ollama not available');
     }
     if (!openaiAvailable()) {
@@ -119,13 +126,13 @@ describe('Hybrid: Ollama Orchestrator → OpenAI Generator', { timeout: TIMEOUT_
   });
 
   it('orchestrator selects tool, generator synthesizes response from tool result', async () => {
-    if (!await ollamaAvailable() || !openaiAvailable()) return;
+    const backend = await detectBackend(); if (!backend || !openaiAvailable()) return;
 
     // Step 1: Orchestrator (Ollama) selects tools
     const orchestrator = createOrchestratorLLM({
-      provider: 'ollama',
+      provider: 'auto',
       model: ORCHESTRATOR_MODEL,
-      baseUrl: OLLAMA_URL,
+      baseUrl: GATEWAY_URL,
       timeoutMs: TIMEOUT_MS,
     });
 
@@ -168,13 +175,13 @@ describe('Hybrid: Ollama Orchestrator → OpenAI Generator', { timeout: TIMEOUT_
   });
 
   it('generator never sees tool schemas (data sovereignty verification)', async () => {
-    if (!await ollamaAvailable() || !openaiAvailable()) return;
+    const backend = await detectBackend(); if (!backend || !openaiAvailable()) return;
 
     // Orchestrator selects tools — tool schemas are sent here
     const orchestrator = createOrchestratorLLM({
-      provider: 'ollama',
+      provider: 'auto',
       model: ORCHESTRATOR_MODEL,
-      baseUrl: OLLAMA_URL,
+      baseUrl: GATEWAY_URL,
       timeoutMs: TIMEOUT_MS,
     });
 
@@ -213,12 +220,12 @@ describe('Hybrid: Ollama Orchestrator → OpenAI Generator', { timeout: TIMEOUT_
   });
 
   it('full loop with multi-step orchestration and cloud synthesis', async () => {
-    if (!await ollamaAvailable() || !openaiAvailable()) return;
+    const backend = await detectBackend(); if (!backend || !openaiAvailable()) return;
 
     const orchestrator = createOrchestratorLLM({
-      provider: 'ollama',
+      provider: 'auto',
       model: ORCHESTRATOR_MODEL,
-      baseUrl: OLLAMA_URL,
+      baseUrl: GATEWAY_URL,
       timeoutMs: TIMEOUT_MS,
     });
 

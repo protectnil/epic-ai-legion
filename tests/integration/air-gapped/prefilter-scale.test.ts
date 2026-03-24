@@ -14,17 +14,24 @@ import { createOrchestratorLLM } from '../../../src/orchestrator/OrchestratorPro
 import { ToolPreFilter } from '../../../src/federation/ToolPreFilter.js';
 import type { LLMToolDefinition, Tool } from '../../../src/types/index.js';
 
-const OLLAMA_URL = 'http://localhost:11434';
-const MODEL = process.env.EPICAI_TEST_MODEL || 'qwen2.5:7b';
+const GATEWAY_URL = process.env.EPICAI_GATEWAY_URL || 'http://localhost:8000';
+const OLLAMA_URL = process.env.EPICAI_OLLAMA_URL || 'http://localhost:11434';
+const MODEL = process.env.EPICAI_TEST_MODEL || 'llama3.1:8b';
 const TIMEOUT_MS = 120_000;
 
-async function ollamaAvailable(): Promise<boolean> {
+async function probeEndpoint(url: string, path: string): Promise<boolean> {
   try {
-    const res = await fetch(`${OLLAMA_URL}/api/version`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${url}${path}`, { signal: AbortSignal.timeout(3000) });
     return res.ok;
   } catch {
     return false;
   }
+}
+
+async function detectBackend(): Promise<{ provider: 'auto' | 'ollama'; baseUrl: string } | null> {
+  if (await probeEndpoint(GATEWAY_URL, '/v1/models')) return { provider: 'auto', baseUrl: GATEWAY_URL };
+  if (await probeEndpoint(OLLAMA_URL, '/api/version')) return { provider: 'ollama', baseUrl: OLLAMA_URL };
+  return null;
 }
 
 // 30 tools across 6 servers — realistic enterprise catalog
@@ -71,7 +78,7 @@ describe('Pre-Filter Scale Test', () => {
   let available = false;
 
   beforeAll(async () => {
-    available = await ollamaAvailable();
+    const detectedBackend = await detectBackend(); available = !!detectedBackend;
   });
 
   it('pre-filter narrows 30 tools to ≤8 relevant ones', () => {
@@ -96,9 +103,9 @@ describe('Pre-Filter Scale Test', () => {
     }
 
     const llm = createOrchestratorLLM({
-      provider: 'ollama',
+      provider: 'auto',
       model: MODEL,
-      baseUrl: OLLAMA_URL,
+      baseUrl: GATEWAY_URL,
       timeoutMs: TIMEOUT_MS,
     });
 
@@ -139,9 +146,9 @@ describe('Pre-Filter Scale Test', () => {
     }
 
     const llm = createOrchestratorLLM({
-      provider: 'ollama',
+      provider: 'auto',
       model: MODEL,
-      baseUrl: OLLAMA_URL,
+      baseUrl: GATEWAY_URL,
       timeoutMs: TIMEOUT_MS,
     });
 

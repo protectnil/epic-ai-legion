@@ -15,17 +15,24 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { createOrchestratorLLM } from '../../../src/orchestrator/OrchestratorProvider.js';
 import type { LLMToolDefinition, LLMResponse } from '../../../src/types/index.js';
 
-const OLLAMA_URL = 'http://localhost:11434';
-const MODEL = process.env.EPICAI_TEST_MODEL || 'qwen2.5:7b';
+const GATEWAY_URL = process.env.EPICAI_GATEWAY_URL || 'http://localhost:8000';
+const OLLAMA_URL = process.env.EPICAI_OLLAMA_URL || 'http://localhost:11434';
+const MODEL = process.env.EPICAI_TEST_MODEL || 'llama3.1:8b';
 const TIMEOUT_MS = 120_000;
 
-async function ollamaAvailable(): Promise<boolean> {
+async function probeEndpoint(url: string, path: string): Promise<boolean> {
   try {
-    const res = await fetch(`${OLLAMA_URL}/api/version`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${url}${path}`, { signal: AbortSignal.timeout(3000) });
     return res.ok;
   } catch {
     return false;
   }
+}
+
+async function detectBackend(): Promise<{ provider: 'auto' | 'ollama'; baseUrl: string } | null> {
+  if (await probeEndpoint(GATEWAY_URL, '/v1/models')) return { provider: 'auto', baseUrl: GATEWAY_URL };
+  if (await probeEndpoint(OLLAMA_URL, '/api/version')) return { provider: 'ollama', baseUrl: OLLAMA_URL };
+  return null;
 }
 
 // --- Tool Definitions (simulated MCP tool surface) ---
@@ -135,9 +142,9 @@ const SECURITY_TOOLS: LLMToolDefinition[] = [
 
 function createLLM(timeoutMs = TIMEOUT_MS) {
   return createOrchestratorLLM({
-    provider: 'ollama',
+    provider: 'auto',
     model: MODEL,
-    baseUrl: OLLAMA_URL,
+    baseUrl: GATEWAY_URL,
     timeoutMs,
   });
 }
@@ -150,13 +157,13 @@ const SYSTEM_PROMPT = 'You are a cybersecurity AI assistant. Use the available t
 
 describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
   beforeAll(async () => {
-    if (!await ollamaAvailable()) {
+    const backend = await detectBackend(); if (!backend) {
       console.log('Skipping air-gapped tests: Ollama not available');
     }
   });
 
   it('selects search_threats for a threat hunting query', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -173,7 +180,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
   });
 
   it('selects check_identity for a user compromise query', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -197,7 +204,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
   });
 
   it('selects list_endpoints for an EDR status query', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -214,7 +221,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
   });
 
   it('selects query_vulnerabilities for a CVE lookup', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -236,7 +243,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
   });
 
   it('selects get_network_flows for lateral movement detection', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -265,7 +272,7 @@ describe('Air-Gapped: Tool Selection Accuracy', { timeout: TIMEOUT_MS }, () => {
 describe('Air-Gapped: Multi-Step Orchestrator Chaining', { timeout: TIMEOUT_MS * 2 }, () => {
 
   it('chains search_threats → check_identity when asked about a targeted user', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     // Step 1: Initial query — model should call search_threats or check_identity
@@ -305,7 +312,7 @@ describe('Air-Gapped: Multi-Step Orchestrator Chaining', { timeout: TIMEOUT_MS *
   });
 
   it('chains list_endpoints → isolate_endpoint for incident containment', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     const step1 = await llm({
@@ -337,7 +344,7 @@ describe('Air-Gapped: Multi-Step Orchestrator Chaining', { timeout: TIMEOUT_MS *
   });
 
   it('chains three steps: search → correlate flows → respond', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     // Step 1
@@ -392,7 +399,7 @@ describe('Air-Gapped: Multi-Step Orchestrator Chaining', { timeout: TIMEOUT_MS *
 describe('Air-Gapped: Argument Extraction', { timeout: TIMEOUT_MS }, () => {
 
   it('extracts severity enum from natural language', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -412,7 +419,7 @@ describe('Air-Gapped: Argument Extraction', { timeout: TIMEOUT_MS }, () => {
   });
 
   it('extracts complex filter parameters for vulnerability queries', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -433,7 +440,7 @@ describe('Air-Gapped: Argument Extraction', { timeout: TIMEOUT_MS }, () => {
   });
 
   it('extracts ticket priority and title from an incident description', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -462,7 +469,7 @@ describe('Air-Gapped: Argument Extraction', { timeout: TIMEOUT_MS }, () => {
 describe('Air-Gapped: Stop Conditions', { timeout: TIMEOUT_MS }, () => {
 
   it('responds directly without tool calls for general knowledge questions', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -480,7 +487,7 @@ describe('Air-Gapped: Stop Conditions', { timeout: TIMEOUT_MS }, () => {
   });
 
   it('stops after receiving a complete tool result instead of looping', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     // First call — should request a tool
@@ -518,7 +525,7 @@ describe('Air-Gapped: Stop Conditions', { timeout: TIMEOUT_MS }, () => {
 describe('Air-Gapped: Throughput & Latency', { timeout: TIMEOUT_MS * 3 }, () => {
 
   it('measures single inference latency (warm)', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     // Warm-up call
@@ -543,7 +550,7 @@ describe('Air-Gapped: Throughput & Latency', { timeout: TIMEOUT_MS * 3 }, () => 
   });
 
   it('measures 5 concurrent requests (p50/p95)', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     // Warm up
@@ -590,7 +597,7 @@ describe('Air-Gapped: Throughput & Latency', { timeout: TIMEOUT_MS * 3 }, () => 
   });
 
   it('measures token generation rate', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
 
     // Use raw Ollama API to get token counts
     const start = performance.now();
@@ -633,7 +640,7 @@ describe('Air-Gapped: Throughput & Latency', { timeout: TIMEOUT_MS * 3 }, () => 
 describe('Air-Gapped: Long Context Handling', { timeout: TIMEOUT_MS * 2 }, () => {
 
   it('routes correctly with a large system prompt and conversation history', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     // Build a large system prompt (~2K tokens)
@@ -688,7 +695,7 @@ describe('Air-Gapped: Long Context Handling', { timeout: TIMEOUT_MS * 2 }, () =>
   });
 
   it('handles large tool results without hallucinating', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     // Step 1: trigger a tool call
@@ -731,7 +738,7 @@ describe('Air-Gapped: Long Context Handling', { timeout: TIMEOUT_MS * 2 }, () =>
 describe('Air-Gapped: Adversarial Inputs', { timeout: TIMEOUT_MS }, () => {
 
   it('still evaluates tools when user query contains injection attempt', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
     const response = await llm({
       messages: [
@@ -756,7 +763,7 @@ describe('Air-Gapped: Adversarial Inputs', { timeout: TIMEOUT_MS }, () => {
   });
 
   it('selects semantically correct tool despite misleading keyword overlap', async () => {
-    if (!await ollamaAvailable()) return;
+    const backend = await detectBackend(); if (!backend) return;
     const llm = createLLM();
 
     // "check" appears in check_identity description, but this query is about vulnerabilities
