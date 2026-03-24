@@ -25,10 +25,15 @@
     "./harness": {
       "import": "./dist/harness/index.js",
       "types": "./dist/harness/index.d.ts"
+    },
+    "./gateway": {
+      "import": "./dist/gateway/index.js",
+      "types": "./dist/gateway/index.d.ts"
     }
   },
   "bin": {
     "epic-ai": "./dist/bin/setup.js",
+    "epic-ai-gateway": "./dist/bin/gateway.js",
     "epicai-harness": "./dist/harness/cli.js"
   },
   "files": [

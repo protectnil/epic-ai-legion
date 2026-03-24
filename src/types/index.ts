@@ -43,7 +43,7 @@ export type LLMFunction = (params: {
 // =============================================================================
 
 export interface OrchestratorConfig {
-  provider: 'ollama' | 'vllm' | 'apple-foundation' | 'custom';
+  provider: 'auto' | 'ollama' | 'vllm' | 'apple-foundation' | 'custom';
   model: string;
   adapter?: string;
   baseUrl?: string;

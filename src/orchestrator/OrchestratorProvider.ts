@@ -15,7 +15,10 @@ import type {
 import { createLogger } from '../logger.js';
 
 const DEFAULT_OLLAMA_URL = 'http://localhost:11434';
+const DEFAULT_GATEWAY_URL = 'http://localhost:8000';
 const DEFAULT_TIMEOUT_MS = 5000;
+
+let ollamaDeprecationWarned = false;
 
 /**
  * Create an LLM function from orchestrator config.
@@ -26,8 +29,16 @@ export function createOrchestratorLLM(config: OrchestratorConfig): LLMFunction {
   if (config.llm) return config.llm;
 
   switch (config.provider) {
-    case 'ollama':
+    case 'auto':
+      return createAutoLLM(config);
+    case 'ollama': {
+      if (!ollamaDeprecationWarned) {
+        ollamaDeprecationWarned = true;
+        const deprecationLog = createLogger('orchestrator.deprecation');
+        deprecationLog.warn('provider "ollama" is deprecated — migrate to "auto" or "vllm". See: npx epic-ai migrate --check --from ollama');
+      }
       return createOllamaLLM(config);
+    }
     case 'vllm':
       return createVLLMLLM(config);
     case 'custom':
@@ -37,6 +48,47 @@ export function createOrchestratorLLM(config: OrchestratorConfig): LLMFunction {
     default:
       throw new Error(`Unknown orchestrator provider: ${config.provider as string}`);
   }
+}
+
+/**
+ * Auto-detect provider: probe the gateway/vLLM at baseUrl.
+ * If responsive, use OpenAI-compatible (vLLM) path.
+ * If not, fall back to Ollama with deprecation warning.
+ */
+function createAutoLLM(config: OrchestratorConfig): LLMFunction {
+  const baseUrl = config.baseUrl ?? DEFAULT_GATEWAY_URL;
+  const log = createLogger('orchestrator.auto', config.logLevel);
+  let resolved: LLMFunction | null = null;
+
+  return async (params) => {
+    if (resolved) return resolved(params);
+
+    // Probe gateway/vLLM endpoint
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3_000);
+      try {
+        const response = await fetch(`${baseUrl}/v1/models`, { signal: controller.signal });
+        if (response.ok) {
+          log.info('auto-detected OpenAI-compatible backend', { baseUrl });
+          resolved = createVLLMLLM({ ...config, baseUrl });
+          return resolved(params);
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
+    } catch {
+      // Gateway not available
+    }
+
+    // Fallback to Ollama
+    log.warn('gateway not detected — falling back to Ollama (deprecated). Start the gateway: npx epic-ai-gateway');
+    if (!ollamaDeprecationWarned) {
+      ollamaDeprecationWarned = true;
+    }
+    resolved = createOllamaLLM(config);
+    return resolved(params);
+  };
 }
 
 function createOllamaLLM(config: OrchestratorConfig): LLMFunction {
