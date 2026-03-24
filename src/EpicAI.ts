@@ -60,7 +60,7 @@ const RetryPolicySchema = z.object({
 });
 
 const OrchestratorConfigSchema = z.object({
-  provider: z.enum(['ollama', 'vllm', 'apple-foundation', 'custom']),
+  provider: z.enum(['auto', 'ollama', 'vllm', 'apple-foundation', 'custom']),
   model: z.string().min(1),
   adapter: z.string().optional(),
   baseUrl: z.string().url().optional(),
