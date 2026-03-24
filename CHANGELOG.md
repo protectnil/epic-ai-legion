@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 0.4.4 — 2026-03-24
+
+### Added
+- `mcp-registry.json` ships with package — 472 adapter connection configs (223 MCP + 472 REST).
+- `RegistryLoader` — one-line adapter loading with credential resolution from env vars.
+- Adapter sync service — autonomous MCP discovery, tool enumeration, Qdrant embeddings, GitHub publishing.
+- MongoDB schema (`epicai_core.adapters`) — verbose source of truth with 37 indexes.
+- 472 individual test files in `tests/adapters/`.
+- `docs/KNOWN-ISSUES.md` — Llama 3.1 8B tool-calling limitation documented.
+- Spec folder generators, CSV export, test file generators — all from MongoDB.
+
+### Fixed
+- All 472 adapters have `static catalog()` — adapter-catalog.json now contains 472 entries (was 470).
+
 ## 0.4.3 — 2026-03-24
 
 ### Fixed
