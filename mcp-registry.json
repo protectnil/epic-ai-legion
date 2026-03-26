@@ -168,7 +168,7 @@
     "mcp": {
       "transport": "streamable-http",
       "toolCount": 9,
-      "recommendation": "not-evaluated"
+      "recommendation": "use-our-adapter"
     },
     "rest": {
       "module": "./dist/mcp-servers/activecampaign.js",
@@ -489,7 +489,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.columnapi.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.columntax.com/page/aiwyn-tax-mcp-server"
     }
   },
@@ -506,7 +506,7 @@
       "transport": "streamable-http",
       "url": "https://app.circleback.ai/api/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://circleback.ai/docs/mcp"
     }
   },
@@ -523,7 +523,7 @@
       "transport": "streamable-http",
       "url": "https://api.clarify.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.clarify.ai/en/articles/13367278-clarify-mcp"
     }
   },
@@ -540,7 +540,7 @@
       "transport": "streamable-http",
       "url": "https://clarity-sfdr20-mcp.pro.clarity.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://clarity-sfdr20-mcp.pro.clarity.ai/"
     }
   },
@@ -557,7 +557,7 @@
       "transport": "streamable-http",
       "url": "https://day.ai/api/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://day.ai/mcp"
     }
   },
@@ -574,7 +574,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.deepsense.ai/biorxiv/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mcp.deepsense.ai/guides/biorxiv.html"
     }
   },
@@ -591,7 +591,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.deepsense.ai/chembl/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mcp.deepsense.ai/guides/chembl.html"
     }
   },
@@ -608,7 +608,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.deepsense.ai/clinical_trials/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mcp.deepsense.ai/guides/clinical_trials.html"
     }
   },
@@ -625,7 +625,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.deepsense.ai/cms_coverage/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mcp.deepsense.ai/guides/cms_coverage.html"
     }
   },
@@ -642,7 +642,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.deepsense.ai/icd10_codes/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mcp.deepsense.ai/guides/icd10_codes.html"
     }
   },
@@ -659,7 +659,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.deepsense.ai/npi_registry/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mcp.deepsense.ai/guides/npi_registry.html"
     }
   },
@@ -676,7 +676,7 @@
       "transport": "streamable-http",
       "url": "https://api.devrev.ai/mcp/v1",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.devrev.ai/en-US/devrev/article/ART-21859-remote-mcp-server"
     }
   },
@@ -693,7 +693,7 @@
       "transport": "streamable-http",
       "url": "https://www.directbooker.ai/claude",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.directbooker.ai/products/mcp-server-documentation"
     }
   },
@@ -710,7 +710,7 @@
       "transport": "streamable-http",
       "url": "https://api.fireflies.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://guide.fireflies.ai/articles/8272956938-learn-about-the-fireflies-mcp-server-model-context-protocol"
     }
   },
@@ -727,7 +727,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.granola.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.granola.ai/article/granola-mcp#set-up-guide"
     }
   },
@@ -744,7 +744,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.api.harmonic.ai",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.harmonic.ai/en/articles/12785899-harmonic-mcp-server-getting-started-guide"
     }
   },
@@ -761,7 +761,7 @@
       "transport": "streamable-http",
       "url": "https://api.harvey.ai/hosted_mcp/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.harvey.ai/guides/harvey_mcp"
     }
   },
@@ -778,7 +778,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.krisp.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.krisp.ai/hc/en-us/articles/25416265429660-Krisp-MCP-Supported-tools"
     }
   },
@@ -795,7 +795,7 @@
       "transport": "streamable-http",
       "url": "https://lunarcrush.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://lunarcrush.com/developers/api/ai"
     }
   },
@@ -812,7 +812,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.mem.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mem.ai/mcp/overview"
     }
   },
@@ -829,7 +829,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.metaview.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.metaview.ai/integrations/mcp-integration/mcp-overview.mdx"
     }
   },
@@ -846,7 +846,7 @@
       "transport": "streamable-http",
       "url": "https://app.midpage.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://midpage-docs.apidocumentation.com/documentation/integration/mcp-tools"
     }
   },
@@ -863,7 +863,7 @@
       "transport": "streamable-http",
       "url": "https://sprouts-mcp-server.kartikay-dhar.workers.dev",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.sprouts.ai/en/articles/13384582-sprouts-mcp-server-documentation#h_541c149a52"
     }
   },
@@ -880,7 +880,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.tickettailor.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.tickettailor.com/en/articles/11892797-how-to-connect-ticket-tailor-to-your-favourite-ai-agent"
     }
   },
@@ -897,7 +897,7 @@
       "transport": "streamable-http",
       "url": "https://vibeprospecting.explorium.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.explorium.ai/mcp-docs/agentsource-mcp"
     }
   },
@@ -914,7 +914,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.windsor.ai",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://windsor.ai/introducing-windsor-mcp/#method-1-using-claude-desktop-3"
     }
   },
@@ -1460,7 +1460,7 @@
     "mcp": {
       "transport": "streamable-http",
       "toolCount": 13,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-our-adapter",
       "repoUrl": "https://github.com/amplitude/mcp"
     },
     "rest": {
@@ -1673,7 +1673,7 @@
       "transport": "streamable-http",
       "url": "https://fellow.app/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.fellow.ai/en/articles/12622641-fellow-s-mcp-server"
     }
   },
@@ -1690,7 +1690,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.gamma.app/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://gamma.app/docs/Gamma-MCP-Server-Documentation-m6p43kobgzy15zj?mode=doc"
     }
   },
@@ -1707,7 +1707,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.linear.app/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://linear.app/docs/mcp"
     }
   },
@@ -1724,7 +1724,7 @@
       "transport": "streamable-http",
       "url": "https://netlify-mcp.netlify.app/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.netlify.com/build/build-with-ai/netlify-mcp-server/"
     }
   },
@@ -2378,7 +2378,7 @@
     "mcp": {
       "transport": "streamable-http",
       "toolCount": 20,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-our-adapter",
       "repoUrl": "https://github.com/auth0/auth0"
     },
     "rest": {
@@ -2611,7 +2611,7 @@
       "transport": "streamable-http",
       "url": "https://marketplace-mcp.us-east-1.api.aws/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.aws.amazon.com/marketplace/latest/APIReference/marketplace-mcp-server.html"
     }
   },
@@ -5576,7 +5576,7 @@
       "transport": "streamable-http",
       "url": "https://huggingface.co/mcp?login&gradio=none",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://huggingface.co/settings/mcp"
     }
   },
@@ -5593,7 +5593,7 @@
       "transport": "streamable-http",
       "url": "https://callbacks.omniapp.co/callback/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.omni.co/ai/mcp"
     }
   },
@@ -5819,7 +5819,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.activecampaign.com/page/mcp"
     }
   },
@@ -5836,7 +5836,7 @@
       "transport": "streamable-http",
       "url": "https://api.ahrefs.com/mcp/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.ahrefs.com/docs/mcp/reference/introduction"
     }
   },
@@ -5853,7 +5853,7 @@
       "transport": "streamable-http",
       "url": "https://mcp-pub.aiera.com/",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://rest.aiera.com/docs/mcp"
     }
   },
@@ -5870,7 +5870,7 @@
       "transport": "streamable-http",
       "url": "https://app.airops.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.airops.com/mcp"
     }
   },
@@ -5887,7 +5887,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.airtable.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.airtable.com/docs/using-the-airtable-mcp-server"
     }
   },
@@ -5904,7 +5904,7 @@
       "transport": "streamable-http",
       "url": "https://mcp-demo.airwallex.com/developer",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.airwallex.com/docs/developer-tools/ai/developer-mcp"
     }
   },
@@ -5921,7 +5921,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://amplitude.com/docs/analytics/amplitude-mcp"
     }
   },
@@ -5938,7 +5938,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.asana.com/v2/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.asana.com/docs/mcp-server"
     }
   },
@@ -5955,7 +5955,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.atlassian.com/v1/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://community.atlassian.com/forums/Atlassian-Platform-articles/Using-the-Atlassian-Remote-MCP-Server-beta/ba-p/3005104"
     }
   },
@@ -5972,7 +5972,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.attio.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.attio.com/mcp/overview"
     }
   },
@@ -5989,7 +5989,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.auraintelligence.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.getaura.ai/"
     }
   },
@@ -6006,7 +6006,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.benchling.com/hc/en-us/articles/40342713479437-Benchling-MCP"
     }
   },
@@ -6023,7 +6023,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.services.biorender.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.biorender.com/hc/en-gb/articles/30870978672157-How-to-use-the-BioRender-MCP-connector"
     }
   },
@@ -6040,7 +6040,7 @@
       "transport": "streamable-http",
       "url": "https://api-ssl.bitly.com/v4/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://dev.bitly.com/bitly-mcp/"
     }
   },
@@ -6057,7 +6057,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.blockscout.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://github.com/blockscout/mcp-server"
     }
   },
@@ -6074,7 +6074,7 @@
       "transport": "streamable-http",
       "url": "https://vast-mcp.blueskyapi.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://console.blueskyapi.com/docs/EDGE/news/MT_NEWSWIRES_Global#mcp"
     }
   },
@@ -6091,7 +6091,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.box.com",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.box.com/guides/box-mcp"
     }
   },
@@ -6108,7 +6108,7 @@
       "transport": "streamable-http",
       "url": "https://api.brex.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.brex.com/support/using-brex-in-ai-apps"
     }
   },
@@ -6125,7 +6125,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.calendly.com",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.calendly.com/hc/en-us/articles/36734570264855-Connect-Calendly-to-your-AI-tools-with-Calendly-MCP"
     }
   },
@@ -6142,7 +6142,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.canva.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.canva.dev/docs/connect/canva-mcp-server-setup/"
     }
   },
@@ -6159,7 +6159,7 @@
       "transport": "streamable-http",
       "url": "https://pubmed.mcp.claude.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.claude.com/en/"
     }
   },
@@ -6176,7 +6176,7 @@
       "transport": "streamable-http",
       "url": "https://api.clay.com/v3/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.notion.so/clayrun/Clay-Claude-MCP-Server-Documentation-2ef7e66eb01480c9820de48041591aeb?showMoveTo=true&saveParent=true"
     }
   },
@@ -6193,7 +6193,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.clerk.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://clerk.com/docs/guides/ai/mcp/clerk-mcp-server"
     }
   },
@@ -6210,7 +6210,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.clickup.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.clickup.com/hc/en-us/articles/33335772678423-What-is-ClickUp-MCP"
     }
   },
@@ -6227,7 +6227,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.close.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.close.com/v1/docs/en/mcp-server"
     }
   },
@@ -6244,7 +6244,7 @@
       "transport": "streamable-http",
       "url": "https://bindings.mcp.cloudflare.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.support.cloudflare.com/"
     }
   },
@@ -6261,7 +6261,7 @@
       "transport": "sse",
       "url": "https://asset-management.mcp.cloudinary.com/sse",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://cloudinary.com/documentation/cloudinary_llm_mcp#available_mcp_servers"
     }
   },
@@ -6278,7 +6278,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.context7.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://context7.com/docs/overview"
     }
   },
@@ -6295,7 +6295,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.crossbeam.com",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.crossbeam.com/en/articles/12601327-crossbeam-mcp-server-beta"
     }
   },
@@ -6312,7 +6312,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.crypto.com/market-data/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://mcp.crypto.com/docs"
     }
   },
@@ -6329,7 +6329,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.daloopa.com/server/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.daloopa.com/docs/daloopa-mcp#/"
     }
   },
@@ -6346,7 +6346,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.databricks.com/aws/en/generative-ai/mcp/connect-external-services"
     }
   },
@@ -6363,7 +6363,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.datagrail.io/docs/vera/vera-mcp/introduction-and-use"
     }
   },
@@ -6380,7 +6380,7 @@
       "transport": "streamable-http",
       "url": "https://docuseal.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.docuseal.com/guides/integrate-with-ai-agents-using-mcp"
     }
   },
@@ -6397,7 +6397,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.docusign.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.docusign.com/tools/mcp-server/"
     }
   },
@@ -6414,7 +6414,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.dremio.com/cloud/sonar/mcp-server/"
     }
   },
@@ -6431,7 +6431,7 @@
       "transport": "streamable-http",
       "url": "https://mcp-server.egnyte.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.egnyte.com/docs/Remote_MCP_Server"
     }
   },
@@ -6448,7 +6448,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.factset.com/content/v1",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.factset.com/mcp/factset-ai-ready-data-mcp"
     }
   },
@@ -6465,7 +6465,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.figma.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.figma.com/hc/en-us/articles/32132100833559"
     }
   },
@@ -6482,7 +6482,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.g2.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://documentation.g2.com/docs/g2-mcp-server"
     }
   },
@@ -6499,7 +6499,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.api.getguru.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.getguru.com/docs/connecting-gurus-mcp-server"
     }
   },
@@ -6516,7 +6516,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.glean.com/administration/platform/mcp/about"
     }
   },
@@ -6533,7 +6533,7 @@
       "transport": "streamable-http",
       "url": "https://api.godaddy.com/v1/domains/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.godaddy.com/mcp"
     }
   },
@@ -6550,7 +6550,7 @@
       "transport": "streamable-http",
       "url": "https://bigquery.googleapis.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://cloud.google.com/bigquery/docs/use-bigquery-mcp"
     }
   },
@@ -6567,7 +6567,7 @@
       "transport": "streamable-http",
       "url": "https://compute.googleapis.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://cloud.google.com/docs"
     }
   },
@@ -6584,7 +6584,7 @@
       "transport": "streamable-http",
       "url": "https://grantedai.com/api/mcp/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://grantedai.com/mcp"
     }
   },
@@ -6601,7 +6601,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.api.gusto.com/anthropic",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.gusto.com/app-integrations/docs/mcp"
     }
   },
@@ -6618,7 +6618,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.hubspot.com/anthropic",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://knowledge.hubspot.com/integrations/set-up-and-use-the-hubspot-connector-for-claude"
     }
   },
@@ -6635,7 +6635,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.imedidata.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://learn.medidata.com/en-US/bundle/mcp-server-documentation/page/medidata_mcp_server_documentation.html"
     }
   },
@@ -6652,7 +6652,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.indeed.com/claude/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.indeed.com/mcp"
     }
   },
@@ -6669,7 +6669,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.intapp.com/mcp-documentation/"
     }
   },
@@ -6686,7 +6686,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.intercom.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.intercom.com/docs/guides/mcp"
     }
   },
@@ -6703,7 +6703,7 @@
       "transport": "streamable-http",
       "url": "https://ai-inc.turbotax.intuit.com/358A1C1B-F73B-46A7-B130-4B14916E6843/v1/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://ttlc.intuit.com/turbotax-support/en-us/help-article/tax-return/access-turbotax-tools-claude"
     }
   },
@@ -6720,7 +6720,7 @@
       "transport": "streamable-http",
       "url": "https://api.jentic.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.jentic.com/guides/mcp/remote-mcp/"
     }
   },
@@ -6737,7 +6737,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.jotform.com/mcp-app",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.jotform.com/developers/mcp/"
     }
   },
@@ -6754,7 +6754,7 @@
       "transport": "streamable-http",
       "url": "https://kfinance.kensho.com/integrations/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.kensho.com/llmreadyapi/mcp"
     }
   },
@@ -6771,7 +6771,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.klaviyo.com/mcp?include-mcp-app=true",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.klaviyo.com/en/docs/klaviyo_mcp_server"
     }
   },
@@ -6788,7 +6788,7 @@
       "transport": "streamable-http",
       "url": "https://www.legalzoom.com/mcp/claude/v1",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.legalzoom.com/tools/mcp-docs"
     }
   },
@@ -6805,7 +6805,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.lilt.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.lilt.com/kb/LILT-mcp"
     }
   },
@@ -6822,7 +6822,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.localfalcon.com",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://github.com/local-falcon/mcp"
     }
   },
@@ -6839,7 +6839,7 @@
       "transport": "streamable-http",
       "url": "https://api.analytics.lseg.com/lfa/mcp/server-cl",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.lseg.com/en/solutions/ai-finance-solutions/anthropic"
     }
   },
@@ -6856,7 +6856,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.luminpdf.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://github.com/luminpdf/lumin-mcp-server"
     }
   },
@@ -6873,7 +6873,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.mailerlite.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.mailerlite.com/mcp/#how-mcp-works"
     }
   },
@@ -6890,7 +6890,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.make.com",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.make.com/mcp-server/"
     }
   },
@@ -6907,7 +6907,7 @@
       "transport": "streamable-http",
       "url": "https://api.meetcampfire.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.campfire.ai/guides/ai-integration#what-is-mcp"
     }
   },
@@ -6924,7 +6924,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.mercury.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mercury.com/docs/connecting-mercury-mcp"
     }
   },
@@ -6941,7 +6941,7 @@
       "transport": "streamable-http",
       "url": "https://chatgpt.mermaid.ai/anthropic/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mermaidchart.com/ai/mcp-server"
     }
   },
@@ -6958,7 +6958,7 @@
       "transport": "streamable-http",
       "url": "https://learn.microsoft.com/api/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://learn.microsoft.com/en-us/training/support/mcp"
     }
   },
@@ -6975,7 +6975,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.mixpanel.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.mixpanel.com/docs/features/mcp"
     }
   },
@@ -6992,7 +6992,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.monday.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.monday.com/apps/docs/mondaycom-mcp-integration"
     }
   },
@@ -7009,7 +7009,7 @@
       "transport": "streamable-http",
       "url": "https://api.moodys.com/genai-ready-data/m1/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.moodys.com/web/en/us/genai/model-context-protocol.html"
     }
   },
@@ -7026,7 +7026,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.morningstar.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.morningstar.com/direct-web-services/documentation/mcp-server/morningstar-mcp-server"
     }
   },
@@ -7043,7 +7043,7 @@
       "transport": "streamable-http",
       "url": "https://api.motherduck.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://motherduck.com/docs/sql-reference/mcp/"
     }
   },
@@ -7060,7 +7060,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.msci.com/mcp/v1.0/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.msci.com/downloads/web/msci-com/data-and-analytics/private-asset-solutions/ai-for-private-markets/msci-mcp-msci-connector-user-guide.pdf"
     }
   },
@@ -7077,7 +7077,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/article_7200233106.html"
     }
   },
@@ -7094,7 +7094,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.notion.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.notion.com/docs/mcp"
     }
   },
@@ -7111,7 +7111,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.k.owkin.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.owkin.com/core-features-and-usage"
     }
   },
@@ -7128,7 +7128,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.pagerduty.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.pagerduty.com/docs/mcp-tooling-remote-server"
     }
   },
@@ -7145,7 +7145,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.paypal.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://mcp.paypal.com/"
     }
   },
@@ -7162,7 +7162,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://kb.pigment.com/docs/mcp-server"
     }
   },
@@ -7179,7 +7179,7 @@
       "transport": "streamable-http",
       "url": "https://premium.mcp.pitchbook.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.pitchbook.com/s/article/PitchBook-Premium-for-Claude-by-Anthropic"
     }
   },
@@ -7196,7 +7196,7 @@
       "transport": "sse",
       "url": "https://api.dashboard.plaid.com/mcp/sse",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://plaid.com/docs/resources/mcp/"
     }
   },
@@ -7213,7 +7213,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.postman.com/minimal",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://github.com/postmanlabs/postman-mcp-server"
     }
   },
@@ -7230,7 +7230,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.quartr.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://mcp.quartr.com/docs"
     }
   },
@@ -7247,7 +7247,7 @@
       "transport": "streamable-http",
       "url": "https://ramp-mcp-remote.ramp.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.ramp.com/developer-api/v1/guides/ramp-mcp-remote"
     }
   },
@@ -7264,7 +7264,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.bigdata.com/",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.bigdata.com/mcp-reference"
     }
   },
@@ -7281,7 +7281,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.razorpay.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://razorpay.com/docs/mcp-server/?preferred-country=IN"
     }
   },
@@ -7298,7 +7298,7 @@
       "transport": "streamable-http",
       "url": "https://mcp-server.signnow.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.signnow.com/docs/signnow/mcp-server"
     }
   },
@@ -7315,7 +7315,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.similarweb.com",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.similarweb.com/api-v5/mcp/mcp-setup"
     }
   },
@@ -7332,7 +7332,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.slack.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.slack.dev/ai/mcp-server"
     }
   },
@@ -7349,7 +7349,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.smartsheet.com/articles/2483663-use-smartsheet-connector-claude"
     }
   },
@@ -7366,7 +7366,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-mcp"
     }
   },
@@ -7383,7 +7383,7 @@
       "transport": "sse",
       "url": "https://mcp.squareup.com/sse",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.squareup.com/docs/mcp"
     }
   },
@@ -7400,7 +7400,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.stripe.com",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.stripe.com/mcp"
     }
   },
@@ -7425,7 +7425,7 @@
       ],
       "url": "https://mcp.supabase.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://supabase.com/docs/guides/getting-started/mcp"
     }
   },
@@ -7442,7 +7442,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.supermetrics.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://mcp.supermetrics.com/docs"
     }
   },
@@ -7459,7 +7459,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.tavily.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.tavily.com/documentation/mcp"
     }
   },
@@ -7476,7 +7476,7 @@
       "transport": "streamable-http",
       "url": "https://api.udemy.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://business-support.udemy.com/hc/en-us/articles/34213384429335-How-to-Integrate-the-Udemy-Business-MCP-Server-With-Your-AI-Tool#h_01K9CA42YGCV1AVXPY1RKABKP1"
     }
   },
@@ -7493,7 +7493,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.usepylon.com/",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.usepylon.com/articles/2407390554-connecting-to-the-pylon-mcp-server?lang=en"
     }
   },
@@ -7510,7 +7510,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.vercel.com/",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://vercel.com/docs/mcp/vercel-mcp"
     }
   },
@@ -7527,7 +7527,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.visier.com/developer/agents/mcp/mcp-server.htm"
     }
   },
@@ -7544,7 +7544,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.webflow.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.webflow.com/mcp/v1.0.0/reference/overview"
     }
   },
@@ -7561,7 +7561,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.wix.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://dev.wix.com/docs/sdk/articles/use-the-wix-mcp/about-the-wix-mcp"
     }
   },
@@ -7578,7 +7578,7 @@
       "transport": "streamable-http",
       "url": "https://public-api.wordpress.com/wpcom/v2/mcp/v1",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.wordpress.com/docs/mcp/"
     }
   },
@@ -7595,7 +7595,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.workato.com/en/mcp.html"
     }
   },
@@ -7612,7 +7612,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.virtuoso.ai/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.virtuoso.ai/en/articles/13679727-yardi-virtuoso-mcp-technical-documentation-guide"
     }
   },
@@ -7629,7 +7629,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.zapier.com/api/v1/connect",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.zapier.com/mcp/home"
     }
   },
@@ -7646,7 +7646,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.zoominfo.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.zoominfo.com/docs/zi-api-mcp-overview/"
     }
   },
@@ -9233,7 +9233,7 @@
       "transport": "streamable-http",
       "url": "https://govcon.dev/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://tango.makegov.com/docs/mcp/"
     }
   },
@@ -9250,7 +9250,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.jam.dev/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://jam.dev/docs/debug-a-jam/mcp"
     }
   },
@@ -9267,7 +9267,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.pscale.dev/mcp/planetscale",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://planetscale.com/docs/connect/mcp"
     }
   },
@@ -9284,7 +9284,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.sentry.dev/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.sentry.io/product/sentry-mcp/"
     }
   },
@@ -9301,7 +9301,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.stytch.dev/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://stytch.com/docs/workspace-management/stytch-mcp"
     }
   },
@@ -14590,7 +14590,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.apollo.io/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://knowledge.apollo.io/hc/en-us/articles/43827318678541-Integrate-Apollo-with-Claude"
     }
   },
@@ -14607,7 +14607,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.apollographql.com",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.apollographql.com/docs/graphos/platform/graphos-mcp-tools"
     }
   },
@@ -14624,7 +14624,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.commonroom.io/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.commonroom.io/docs/using-common-room/common-room-for-claude-connector-and-plugin/"
     }
   },
@@ -14641,7 +14641,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.coupler.io/mcp/",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.coupler.io/article/592-coupler-local-mcp-server"
     }
   },
@@ -14658,7 +14658,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.customer.io/ai/mcp-server/"
     }
   },
@@ -14675,7 +14675,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.miro.com/",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.miro.com/docs/miro-mcp"
     }
   },
@@ -14692,7 +14692,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.posthog.com/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://posthog.com/docs/model-context-protocol"
     }
   },
@@ -14709,7 +14709,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.honeycomb.io/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.honeycomb.io/troubleshoot/product-lifecycle/beta/mcp/"
     }
   },
@@ -14726,7 +14726,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.n8n.io/advanced-ai/accessing-n8n-mcp-server/"
     }
   },
@@ -14743,7 +14743,7 @@
       "transport": "streamable-http",
       "url": "https://api.outreach.io/mcp/",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.outreach.io/hc/en-us/articles/46370115253403-Outreach-MCP-Server"
     }
   },
@@ -14760,7 +14760,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.pendo.io/hc/en-us/articles/41102236924955"
     }
   },
@@ -14777,7 +14777,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.port.io/ai-interfaces/port-mcp-server/overview-and-installation"
     }
   },
@@ -14794,7 +14794,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.sanity.io",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.sanity.io/docs/ai/mcp-server"
     }
   },
@@ -14811,7 +14811,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.starburst.io/starburst-galaxy/ai-workflows/mcp-server.html"
     }
   },
@@ -19210,7 +19210,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.benevity.org/general/v1/nonprofit",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.claude.com/en/articles/12923227-using-the-benevity-connector-in-claude"
     }
   },
@@ -19227,7 +19227,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.candid.org/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.claude.com/en/articles/12923235-using-the-candid-connector-in-claude"
     }
   },
@@ -19244,7 +19244,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.platform.opentargets.org/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://github.com/opentargets/open-targets-platform-mcp"
     }
   },
@@ -19261,7 +19261,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.synapse.org/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://github.com/susheel/synapse-mcp?tab=readme-ov-file#synapse-mcp-server"
     }
   },
@@ -19680,7 +19680,7 @@
       "transport": "streamable-http",
       "url": "https://ai.chronograph.pe/mcp",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://lp-help.chronograph.pe/article/735-chronograph-mcp"
     }
   },
@@ -24038,7 +24038,7 @@
       "transport": "streamable-http",
       "url": "https://mcp.process.st",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.process.st/help/docs/mcp-server/"
     }
   },
@@ -24660,7 +24660,7 @@
       "transport": "streamable-http",
       "url": "{url}",
       "requiresOAuth": true,
-      "recommendation": "not-evaluated",
+      "recommendation": "use-vendor-mcp",
       "repoUrl": "https://learn.hex.tech/docs/administration/mcp-server"
     }
   },
