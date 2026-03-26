@@ -477,6 +477,448 @@
     }
   },
   {
+    "id": "ai-aiwyn-tax",
+    "name": "Aiwyn Tax",
+    "description": "Prepare your federal & state tax return 100% accurately",
+    "category": "misc",
+    "keywords": [
+      "ai-aiwyn-tax"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.columnapi.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.columntax.com/page/aiwyn-tax-mcp-server"
+    }
+  },
+  {
+    "id": "ai-circleback-app-circleback",
+    "name": "Circleback",
+    "description": "Search and access context from meetings",
+    "category": "misc",
+    "keywords": [
+      "ai-circleback-app-circleback"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://app.circleback.ai/api/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://circleback.ai/docs/mcp"
+    }
+  },
+  {
+    "id": "ai-clarify-clarify",
+    "name": "Clarify",
+    "description": "Query your CRM. Create records. Ask anything.",
+    "category": "misc",
+    "keywords": [
+      "ai-clarify-clarify"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.clarify.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.clarify.ai/en/articles/13367278-clarify-mcp"
+    }
+  },
+  {
+    "id": "ai-clarity-sfdr20-mcp",
+    "name": "Clarity AI",
+    "description": "Simulate fund classifications under proposed SFDR 2.0",
+    "category": "misc",
+    "keywords": [
+      "ai-clarity-sfdr20-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://clarity-sfdr20-mcp.pro.clarity.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://clarity-sfdr20-mcp.pro.clarity.ai/"
+    }
+  },
+  {
+    "id": "ai-day-day-ai",
+    "name": "Day AI",
+    "description": "Know everything about your prospects & customers with CRMx",
+    "category": "misc",
+    "keywords": [
+      "ai-day-day-ai"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://day.ai/api/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://day.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-deepsense-mcp-biorxiv",
+    "name": "bioRxiv",
+    "description": "Access bioRxiv and medRxiv preprint data",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-biorxiv"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.deepsense.ai/biorxiv/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mcp.deepsense.ai/guides/biorxiv.html"
+    }
+  },
+  {
+    "id": "ai-deepsense-mcp-chembl",
+    "name": "ChEMBL",
+    "description": "Access the ChEMBL Database",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-chembl"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.deepsense.ai/chembl/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mcp.deepsense.ai/guides/chembl.html"
+    }
+  },
+  {
+    "id": "ai-deepsense-mcp-clinical-trials",
+    "name": "Clinical Trials",
+    "description": "Access ClinicalTrials.gov data",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-clinical-trials"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.deepsense.ai/clinical_trials/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mcp.deepsense.ai/guides/clinical_trials.html"
+    }
+  },
+  {
+    "id": "ai-deepsense-mcp-cms-coverage",
+    "name": "CMS Coverage",
+    "description": "Access the CMS Coverage Database",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-cms-coverage"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.deepsense.ai/cms_coverage/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mcp.deepsense.ai/guides/cms_coverage.html"
+    }
+  },
+  {
+    "id": "ai-deepsense-mcp-icd-10-codes",
+    "name": "ICD-10 Codes",
+    "description": "Access ICD-10-CM and ICD-10-PCS code sets",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-icd-10-codes"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.deepsense.ai/icd10_codes/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mcp.deepsense.ai/guides/icd10_codes.html"
+    }
+  },
+  {
+    "id": "ai-deepsense-mcp-npi-registry",
+    "name": "NPI Registry",
+    "description": "Access US National Provider Identifier (NPI) Registry",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-npi-registry"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.deepsense.ai/npi_registry/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mcp.deepsense.ai/guides/npi_registry.html"
+    }
+  },
+  {
+    "id": "ai-devrev-api-devrev",
+    "name": "DevRev",
+    "description": "Search and update your company's knowledge graph",
+    "category": "misc",
+    "keywords": [
+      "ai-devrev-api-devrev"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.devrev.ai/mcp/v1",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.devrev.ai/en-US/devrev/article/ART-21859-remote-mcp-server"
+    }
+  },
+  {
+    "id": "ai-directbooker-mcp",
+    "name": "DirectBooker",
+    "description": "Compare hotels, then book direct",
+    "category": "misc",
+    "keywords": [
+      "ai-directbooker-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://www.directbooker.ai/claude",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.directbooker.ai/products/mcp-server-documentation"
+    }
+  },
+  {
+    "id": "ai-fireflies-api-fireflies",
+    "name": "Fireflies",
+    "description": "Analyze and generate insights from meeting transcripts",
+    "category": "misc",
+    "keywords": [
+      "ai-fireflies-api-fireflies"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.fireflies.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://guide.fireflies.ai/articles/8272956938-learn-about-the-fireflies-mcp-server-model-context-protocol"
+    }
+  },
+  {
+    "id": "ai-granola-mcp-granola",
+    "name": "Granola",
+    "description": "The AI notepad for meetings",
+    "category": "misc",
+    "keywords": [
+      "ai-granola-mcp-granola"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.granola.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.granola.ai/article/granola-mcp#set-up-guide"
+    }
+  },
+  {
+    "id": "ai-harmonic-mcp-api-harmonic",
+    "name": "Harmonic",
+    "description": "Discover, research, and enrich companies and people",
+    "category": "misc",
+    "keywords": [
+      "ai-harmonic-mcp-api-harmonic"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.api.harmonic.ai",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.harmonic.ai/en/articles/12785899-harmonic-mcp-server-getting-started-guide"
+    }
+  },
+  {
+    "id": "ai-harvey-mcp",
+    "name": "Harvey",
+    "description": "Answer legal queries, search vaults, and research",
+    "category": "misc",
+    "keywords": [
+      "ai-harvey-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.harvey.ai/hosted_mcp/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.harvey.ai/guides/harvey_mcp"
+    }
+  },
+  {
+    "id": "ai-krisp-krisp",
+    "name": "Krisp",
+    "description": "Add your meetings context via transcripts and notes",
+    "category": "misc",
+    "keywords": [
+      "ai-krisp-krisp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.krisp.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.krisp.ai/hc/en-us/articles/25416265429660-Krisp-MCP-Supported-tools"
+    }
+  },
+  {
+    "id": "ai-lunarcrush-lunarcrush",
+    "name": "LunarCrush",
+    "description": "Add real-time social media data to your searches",
+    "category": "misc",
+    "keywords": [
+      "ai-lunarcrush-lunarcrush"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://lunarcrush.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://lunarcrush.com/developers/api/ai"
+    }
+  },
+  {
+    "id": "ai-mem-mcp",
+    "name": "Mem",
+    "description": "The AI notebook for everything on your mind",
+    "category": "misc",
+    "keywords": [
+      "ai-mem-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.mem.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mem.ai/mcp/overview"
+    }
+  },
+  {
+    "id": "ai-metaview-mcp",
+    "name": "Metaview",
+    "description": "The AI platform for recruiting.",
+    "category": "misc",
+    "keywords": [
+      "ai-metaview-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.metaview.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.metaview.ai/integrations/mcp-integration/mcp-overview.mdx"
+    }
+  },
+  {
+    "id": "ai-midpage-mcp",
+    "name": "Midpage Legal Research",
+    "description": "Conduct legal research and create work product",
+    "category": "misc",
+    "keywords": [
+      "ai-midpage-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://app.midpage.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://midpage-docs.apidocumentation.com/documentation/integration/mcp-tools"
+    }
+  },
+  {
+    "id": "ai-sprouts-mcp",
+    "name": "Sprouts Data Intelligence",
+    "description": "From query to qualified lead in seconds.",
+    "category": "misc",
+    "keywords": [
+      "ai-sprouts-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://sprouts-mcp-server.kartikay-dhar.workers.dev",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.sprouts.ai/en/articles/13384582-sprouts-mcp-server-documentation#h_541c149a52"
+    }
+  },
+  {
+    "id": "ai-tickettailor-mcp",
+    "name": "Ticket Tailor",
+    "description": "Event platform for managing tickets, orders & more",
+    "category": "misc",
+    "keywords": [
+      "ai-tickettailor-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.tickettailor.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.tickettailor.com/en/articles/11892797-how-to-connect-ticket-tailor-to-your-favourite-ai-agent"
+    }
+  },
+  {
+    "id": "ai-vibeprospecting-vibeprospecting",
+    "name": "Vibe Prospecting",
+    "description": "Find company & contact data",
+    "category": "misc",
+    "keywords": [
+      "ai-vibeprospecting-vibeprospecting"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://vibeprospecting.explorium.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.explorium.ai/mcp-docs/agentsource-mcp"
+    }
+  },
+  {
+    "id": "ai-windsor-mcp-windsor-ai",
+    "name": "Windsor.ai",
+    "description": "Connect 325+ marketing, analytics and CRM data sources",
+    "category": "misc",
+    "keywords": [
+      "ai-windsor-mcp-windsor-ai"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.windsor.ai",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://windsor.ai/introducing-windsor-mcp/#method-1-using-claude-desktop-3"
+    }
+  },
+  {
     "id": "airbyte",
     "name": "Airbyte",
     "description": "",
@@ -1216,6 +1658,74 @@
         "remove_contacts_from_sequence",
         "list_contact_stages"
       ]
+    }
+  },
+  {
+    "id": "app-fellow-fellow-ai",
+    "name": "Fellow.ai",
+    "description": "Chat with your meetings to uncover actionable insights",
+    "category": "misc",
+    "keywords": [
+      "app-fellow-fellow-ai"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://fellow.app/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.fellow.ai/en/articles/12622641-fellow-s-mcp-server"
+    }
+  },
+  {
+    "id": "app-gamma-mcp-gamma",
+    "name": "Gamma",
+    "description": "Create presentations, docs, socials, and sites with AI",
+    "category": "misc",
+    "keywords": [
+      "app-gamma-mcp-gamma"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.gamma.app/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://gamma.app/docs/Gamma-MCP-Server-Documentation-m6p43kobgzy15zj?mode=doc"
+    }
+  },
+  {
+    "id": "app-linear-linear",
+    "name": "Linear",
+    "description": "Manage issues, projects & team workflows in Linear",
+    "category": "misc",
+    "keywords": [
+      "app-linear-linear"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.linear.app/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://linear.app/docs/mcp"
+    }
+  },
+  {
+    "id": "app-netlify-netlify-mcp-netlify",
+    "name": "Netlify",
+    "description": "Create, deploy, manage, and secure websites on Netlify.",
+    "category": "misc",
+    "keywords": [
+      "app-netlify-netlify-mcp-netlify"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://netlify-mcp.netlify.app/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.netlify.com/build/build-with-ai/netlify-mcp-server/"
     }
   },
   {
@@ -2086,6 +2596,23 @@
         "list_sns_topics",
         "get_caller_identity"
       ]
+    }
+  },
+  {
+    "id": "aws-api-us-east-1-marketplace-mcp-aws-marketplace",
+    "name": "AWS Marketplace",
+    "description": "Discover, evaluate, and buy solutions for the cloud",
+    "category": "misc",
+    "keywords": [
+      "aws-api-us-east-1-marketplace-mcp-aws-marketplace"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://marketplace-mcp.us-east-1.api.aws/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.aws.amazon.com/marketplace/latest/APIReference/marketplace-mcp-server.html"
     }
   },
   {
@@ -5037,6 +5564,40 @@
     }
   },
   {
+    "id": "co-huggingface-hf-mcp-server",
+    "name": "Hugging Face",
+    "description": "Access the Hugging Face Hub and thousands of Gradio Apps",
+    "category": "misc",
+    "keywords": [
+      "co-huggingface-hf-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://huggingface.co/mcp?login&gradio=none",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://huggingface.co/settings/mcp"
+    }
+  },
+  {
+    "id": "co-omni-mcp",
+    "name": "Omni Analytics",
+    "description": "Query your data using natural language through Omni's semantic model",
+    "category": "misc",
+    "keywords": [
+      "co-omni-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://callbacks.omniapp.co/callback/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.omni.co/ai/mcp"
+    }
+  },
+  {
     "id": "cockroachdb",
     "name": "CockroachDB",
     "description": "CockroachDB Cloud management: provision clusters, manage databases, SQL users, backups, and regions via the Cloud API.",
@@ -5243,6 +5804,1850 @@
         "list_nfts",
         "get_nft"
       ]
+    }
+  },
+  {
+    "id": "com-activecampaign-activecampaign",
+    "name": "ActiveCampaign",
+    "description": "Autonomous marketing to transform how you work",
+    "category": "misc",
+    "keywords": [
+      "com-activecampaign-activecampaign"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.activecampaign.com/page/mcp"
+    }
+  },
+  {
+    "id": "com-ahrefs-api-ahrefs",
+    "name": "Ahrefs",
+    "description": "SEO & AI search analytics",
+    "category": "misc",
+    "keywords": [
+      "com-ahrefs-api-ahrefs"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.ahrefs.com/mcp/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.ahrefs.com/docs/mcp/reference/introduction"
+    }
+  },
+  {
+    "id": "com-aiera-mcp-pub-aiera",
+    "name": "Aiera",
+    "description": "Live events, filings, company publications, and more",
+    "category": "misc",
+    "keywords": [
+      "com-aiera-mcp-pub-aiera"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp-pub.aiera.com/",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://rest.aiera.com/docs/mcp"
+    }
+  },
+  {
+    "id": "com-airops-app-airops",
+    "name": "AirOps",
+    "description": "Craft content that wins AI search",
+    "category": "misc",
+    "keywords": [
+      "com-airops-app-airops"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://app.airops.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.airops.com/mcp"
+    }
+  },
+  {
+    "id": "com-airtable-mcp",
+    "name": "Airtable",
+    "description": "Bring your structured data to Claude",
+    "category": "misc",
+    "keywords": [
+      "com-airtable-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.airtable.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.airtable.com/docs/using-the-airtable-mcp-server"
+    }
+  },
+  {
+    "id": "com-airwallex-developer-mcp",
+    "name": "Airwallex Developer",
+    "description": "Integrate with the Airwallex Platform using Claude",
+    "category": "misc",
+    "keywords": [
+      "com-airwallex-developer-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp-demo.airwallex.com/developer",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.airwallex.com/docs/developer-tools/ai/developer-mcp"
+    }
+  },
+  {
+    "id": "com-amplitude-mcp-server",
+    "name": "Amplitude",
+    "description": "Search, access, and get insights on your Amplitude data",
+    "category": "misc",
+    "keywords": [
+      "com-amplitude-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://amplitude.com/docs/analytics/amplitude-mcp"
+    }
+  },
+  {
+    "id": "com-asana-mcp-asana",
+    "name": "Asana",
+    "description": "Connect to Asana to coordinate tasks, projects, and goals",
+    "category": "misc",
+    "keywords": [
+      "com-asana-mcp-asana"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.asana.com/v2/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.asana.com/docs/mcp-server"
+    }
+  },
+  {
+    "id": "com-atlassian-atlassian-mcp-server",
+    "name": "Atlassian",
+    "description": "Access Jira & Confluence from Claude",
+    "category": "misc",
+    "keywords": [
+      "com-atlassian-atlassian-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://community.atlassian.com/forums/Atlassian-Platform-articles/Using-the-Atlassian-Remote-MCP-Server-beta/ba-p/3005104"
+    }
+  },
+  {
+    "id": "com-attio-attio",
+    "name": "Attio",
+    "description": "Search, manage, and update your Attio CRM from Claude",
+    "category": "misc",
+    "keywords": [
+      "com-attio-attio"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.attio.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.attio.com/mcp/overview"
+    }
+  },
+  {
+    "id": "com-auraintelligence-mcp-aura",
+    "name": "Aura",
+    "description": "Company intelligence & workforce analytics",
+    "category": "misc",
+    "keywords": [
+      "com-auraintelligence-mcp-aura"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.auraintelligence.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.getaura.ai/"
+    }
+  },
+  {
+    "id": "com-benchling-benchling",
+    "name": "Benchling",
+    "description": "Connect to R&D data, source experiments, and notebooks",
+    "category": "misc",
+    "keywords": [
+      "com-benchling-benchling"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.benchling.com/hc/en-us/articles/40342713479437-Benchling-MCP"
+    }
+  },
+  {
+    "id": "com-biorender-services-mcp-biorender",
+    "name": "BioRender",
+    "description": "Search for and use scientific templates and icons",
+    "category": "misc",
+    "keywords": [
+      "com-biorender-services-mcp-biorender"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.services.biorender.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.biorender.com/hc/en-gb/articles/30870978672157-How-to-use-the-BioRender-MCP-connector"
+    }
+  },
+  {
+    "id": "com-bitly-api-ssl-bitly",
+    "name": "Bitly",
+    "description": "Shorten links, generate QR Codes, and track performance",
+    "category": "misc",
+    "keywords": [
+      "com-bitly-api-ssl-bitly"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api-ssl.bitly.com/v4/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://dev.bitly.com/bitly-mcp/"
+    }
+  },
+  {
+    "id": "com-blockscout-mcp-server",
+    "name": "Blockscout",
+    "description": "Access and analyze blockchain data",
+    "category": "misc",
+    "keywords": [
+      "com-blockscout-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.blockscout.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://github.com/blockscout/mcp-server"
+    }
+  },
+  {
+    "id": "com-blueskyapi-vast-mcp-mt-newswires",
+    "name": "MT Newswires",
+    "description": "Trusted real-time global financial news provider",
+    "category": "misc",
+    "keywords": [
+      "com-blueskyapi-vast-mcp-mt-newswires"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://vast-mcp.blueskyapi.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://console.blueskyapi.com/docs/EDGE/news/MT_NEWSWIRES_Global#mcp"
+    }
+  },
+  {
+    "id": "com-box-mcp-box",
+    "name": "Box",
+    "description": "Search, access and get insights on your Box content",
+    "category": "misc",
+    "keywords": [
+      "com-box-mcp-box"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.box.com",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developer.box.com/guides/box-mcp"
+    }
+  },
+  {
+    "id": "com-brex-mcp",
+    "name": "Brex",
+    "description": "Intelligent finance automation",
+    "category": "misc",
+    "keywords": [
+      "com-brex-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.brex.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.brex.com/support/using-brex-in-ai-apps"
+    }
+  },
+  {
+    "id": "com-calendly-mcp",
+    "name": "Calendly",
+    "description": "Manage event types, availability, and bookings.",
+    "category": "misc",
+    "keywords": [
+      "com-calendly-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.calendly.com",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.calendly.com/hc/en-us/articles/36734570264855-Connect-Calendly-to-your-AI-tools-with-Calendly-MCP"
+    }
+  },
+  {
+    "id": "com-canva-mcp-canva",
+    "name": "Canva",
+    "description": "Search, create, autofill, and export Canva designs",
+    "category": "misc",
+    "keywords": [
+      "com-canva-mcp-canva"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.canva.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.canva.dev/docs/connect/canva-mcp-server-setup/"
+    }
+  },
+  {
+    "id": "com-claude-mcp-pubmed-pubmed",
+    "name": "PubMed",
+    "description": "Search biomedical literature from PubMed",
+    "category": "misc",
+    "keywords": [
+      "com-claude-mcp-pubmed-pubmed"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://pubmed.mcp.claude.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.claude.com/en/"
+    }
+  },
+  {
+    "id": "com-clay-api-clay",
+    "name": "Clay",
+    "description": "Find prospects. Research accounts. Personalize outreach",
+    "category": "misc",
+    "keywords": [
+      "com-clay-api-clay"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.clay.com/v3/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.notion.so/clayrun/Clay-Claude-MCP-Server-Documentation-2ef7e66eb01480c9820de48041591aeb?showMoveTo=true&saveParent=true"
+    }
+  },
+  {
+    "id": "com-clerk-mcp",
+    "name": "Clerk",
+    "description": "Add authentication, organizations, and billing",
+    "category": "misc",
+    "keywords": [
+      "com-clerk-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.clerk.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://clerk.com/docs/guides/ai/mcp/clerk-mcp-server"
+    }
+  },
+  {
+    "id": "com-clickup-mcp-clickup",
+    "name": "ClickUp",
+    "description": "Project management & collaboration for teams & agents",
+    "category": "misc",
+    "keywords": [
+      "com-clickup-mcp-clickup"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.clickup.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.clickup.com/hc/en-us/articles/33335772678423-What-is-ClickUp-MCP"
+    }
+  },
+  {
+    "id": "com-close-close-mcp",
+    "name": "Close",
+    "description": "Connect Claude to Close CRM to securely access and act on your sales data",
+    "category": "misc",
+    "keywords": [
+      "com-close-close-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.close.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.close.com/v1/docs/en/mcp-server"
+    }
+  },
+  {
+    "id": "com-cloudflare-mcp-mcp",
+    "name": "Cloudflare Developer Platform",
+    "description": "Build applications with compute, storage, and AI",
+    "category": "misc",
+    "keywords": [
+      "com-cloudflare-mcp-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://bindings.mcp.cloudflare.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.support.cloudflare.com/"
+    }
+  },
+  {
+    "id": "com-cloudinary-mcp-asset-management-cloudinary",
+    "name": "Cloudinary",
+    "description": "Manage, transform and deliver your images & videos",
+    "category": "misc",
+    "keywords": [
+      "com-cloudinary-mcp-asset-management-cloudinary"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "sse",
+      "url": "https://asset-management.mcp.cloudinary.com/sse",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://cloudinary.com/documentation/cloudinary_llm_mcp#available_mcp_servers"
+    }
+  },
+  {
+    "id": "com-context7-context7",
+    "name": "Context7",
+    "description": "Up-to-date docs for LLMs and AI code editors",
+    "category": "misc",
+    "keywords": [
+      "com-context7-context7"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.context7.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://context7.com/docs/overview"
+    }
+  },
+  {
+    "id": "com-crossbeam-mcp-crossbeam",
+    "name": "Crossbeam",
+    "description": "Explore partner data and ecosystem insights in Claude",
+    "category": "misc",
+    "keywords": [
+      "com-crossbeam-mcp-crossbeam"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.crossbeam.com",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.crossbeam.com/en/articles/12601327-crossbeam-mcp-server-beta"
+    }
+  },
+  {
+    "id": "com-crypto-mcp-crypto-com",
+    "name": "Crypto.com",
+    "description": "Real time prices, orders, charts, and more for crypto",
+    "category": "misc",
+    "keywords": [
+      "com-crypto-mcp-crypto-com"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.crypto.com/market-data/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://mcp.crypto.com/docs"
+    }
+  },
+  {
+    "id": "com-daloopa-mcp-daloopa",
+    "name": "Daloopa",
+    "description": "Financial fundamental data and KPIs with hyperlinks",
+    "category": "misc",
+    "keywords": [
+      "com-daloopa-mcp-daloopa"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.daloopa.com/server/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.daloopa.com/docs/daloopa-mcp#/"
+    }
+  },
+  {
+    "id": "com-databricks-www-databricks",
+    "name": "Databricks",
+    "description": "Managed MCP servers with Unity Catalog and Mosaic AI",
+    "category": "misc",
+    "keywords": [
+      "com-databricks-www-databricks"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.databricks.com/aws/en/generative-ai/mcp/connect-external-services"
+    }
+  },
+  {
+    "id": "com-datagrail-mcp",
+    "name": "DataGrail",
+    "description": "Secure, production-ready AI orchestration for privacy",
+    "category": "misc",
+    "keywords": [
+      "com-datagrail-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.datagrail.io/docs/vera/vera-mcp/introduction-and-use"
+    }
+  },
+  {
+    "id": "com-docuseal-mcp",
+    "name": "DocuSeal",
+    "description": "Sign, send & manage documents with DocuSeal",
+    "category": "misc",
+    "keywords": [
+      "com-docuseal-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://docuseal.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.docuseal.com/guides/integrate-with-ai-agents-using-mcp"
+    }
+  },
+  {
+    "id": "com-docusign-mcp",
+    "name": "Docusign",
+    "description": "Intelligent, secure contract management by Docusign",
+    "category": "misc",
+    "keywords": [
+      "com-docusign-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.docusign.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.docusign.com/tools/mcp-server/"
+    }
+  },
+  {
+    "id": "com-dremio-cloud-mcp",
+    "name": "Dremio Cloud",
+    "description": "Analyze and get insights from your lakehouse data",
+    "category": "misc",
+    "keywords": [
+      "com-dremio-cloud-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.dremio.com/cloud/sonar/mcp-server/"
+    }
+  },
+  {
+    "id": "com-egnyte-mcp-server",
+    "name": "Egnyte",
+    "description": "Securely access and analyze Egnyte content",
+    "category": "misc",
+    "keywords": [
+      "com-egnyte-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp-server.egnyte.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.egnyte.com/docs/Remote_MCP_Server"
+    }
+  },
+  {
+    "id": "com-factset-mcp",
+    "name": "FactSet AI-Ready Data",
+    "description": "Access institutional-quality financial data and analytics",
+    "category": "misc",
+    "keywords": [
+      "com-factset-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.factset.com/content/v1",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developer.factset.com/mcp/factset-ai-ready-data-mcp"
+    }
+  },
+  {
+    "id": "com-figma-mcp-mcp",
+    "name": "Figma",
+    "description": "Generate diagrams and better code from Figma context",
+    "category": "misc",
+    "keywords": [
+      "com-figma-mcp-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.figma.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.figma.com/hc/en-us/articles/32132100833559"
+    }
+  },
+  {
+    "id": "com-g2-mcp",
+    "name": "G2",
+    "description": "Bring real buyer signals into AI workflows",
+    "category": "misc",
+    "keywords": [
+      "com-g2-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.g2.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://documentation.g2.com/docs/g2-mcp-server"
+    }
+  },
+  {
+    "id": "com-getguru-mcp-server",
+    "name": "Guru",
+    "description": "Search and interact with your company knowledge",
+    "category": "misc",
+    "keywords": [
+      "com-getguru-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.api.getguru.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.getguru.com/docs/connecting-gurus-mcp-server"
+    }
+  },
+  {
+    "id": "com-glean-glean",
+    "name": "Glean",
+    "description": "Bring enterprise context to Claude and your AI tools",
+    "category": "misc",
+    "keywords": [
+      "com-glean-glean"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.glean.com/administration/platform/mcp/about"
+    }
+  },
+  {
+    "id": "com-godaddy-api-godaddy",
+    "name": "GoDaddy",
+    "description": "Search domains and check availability",
+    "category": "misc",
+    "keywords": [
+      "com-godaddy-api-godaddy"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.godaddy.com/v1/domains/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developer.godaddy.com/mcp"
+    }
+  },
+  {
+    "id": "com-google-cloud-bigquery",
+    "name": "Google Cloud BigQuery",
+    "description": "BigQuery: Advanced analytical insights for agents",
+    "category": "misc",
+    "keywords": [
+      "com-google-cloud-bigquery"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://bigquery.googleapis.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://cloud.google.com/bigquery/docs/use-bigquery-mcp"
+    }
+  },
+  {
+    "id": "com-google-cloud-compute-engine",
+    "name": "Google Compute Engine",
+    "description": "MCP server for Google Compute Engine",
+    "category": "misc",
+    "keywords": [
+      "com-google-cloud-compute-engine"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://compute.googleapis.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://cloud.google.com/docs"
+    }
+  },
+  {
+    "id": "com-grantedai-mcp",
+    "name": "Granted",
+    "description": "Discover every grant opportunity in existence.",
+    "category": "misc",
+    "keywords": [
+      "com-grantedai-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://grantedai.com/api/mcp/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://grantedai.com/mcp"
+    }
+  },
+  {
+    "id": "com-gusto-mcp",
+    "name": "Gusto",
+    "description": "Query and analyze your Gusto data",
+    "category": "misc",
+    "keywords": [
+      "com-gusto-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.api.gusto.com/anthropic",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.gusto.com/app-integrations/docs/mcp"
+    }
+  },
+  {
+    "id": "com-hubspot-mcp-hubspot",
+    "name": "HubSpot",
+    "description": "Chat with your CRM data to get personalized insights",
+    "category": "misc",
+    "keywords": [
+      "com-hubspot-mcp-hubspot"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.hubspot.com/anthropic",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://knowledge.hubspot.com/integrations/set-up-and-use-the-hubspot-connector-for-claude"
+    }
+  },
+  {
+    "id": "com-imedidata-mcp-medidata",
+    "name": "Medidata",
+    "description": "Clinical trial software and site ranking tools",
+    "category": "misc",
+    "keywords": [
+      "com-imedidata-mcp-medidata"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.imedidata.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://learn.medidata.com/en-US/bundle/mcp-server-documentation/page/medidata_mcp_server_documentation.html"
+    }
+  },
+  {
+    "id": "com-indeed-mcp-indeed",
+    "name": "Indeed",
+    "description": "Search for jobs on Indeed",
+    "category": "misc",
+    "keywords": [
+      "com-indeed-mcp-indeed"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.indeed.com/claude/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.indeed.com/mcp"
+    }
+  },
+  {
+    "id": "com-intapp-my-celeste",
+    "name": "Intapp Celeste",
+    "description": "Securely, compliantly access Intapp Celeste products",
+    "category": "misc",
+    "keywords": [
+      "com-intapp-my-celeste"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.intapp.com/mcp-documentation/"
+    }
+  },
+  {
+    "id": "com-intercom-mcp-intercom",
+    "name": "Intercom",
+    "description": "Access to Intercom data for better customer insights",
+    "category": "misc",
+    "keywords": [
+      "com-intercom-mcp-intercom"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.intercom.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.intercom.com/docs/guides/mcp"
+    }
+  },
+  {
+    "id": "com-intuit-turbotax-mcp",
+    "name": "Intuit TurboTax",
+    "description": "Estimate tax refunds and connect with live tax experts",
+    "category": "misc",
+    "keywords": [
+      "com-intuit-turbotax-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://ai-inc.turbotax.intuit.com/358A1C1B-F73B-46A7-B130-4B14916E6843/v1/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://ttlc.intuit.com/turbotax-support/en-us/help-article/tax-return/access-turbotax-tools-claude"
+    }
+  },
+  {
+    "id": "com-jentic-jentic",
+    "name": "Jentic",
+    "description": "One connection to access all your tools securely",
+    "category": "misc",
+    "keywords": [
+      "com-jentic-jentic"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.jentic.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.jentic.com/guides/mcp/remote-mcp/"
+    }
+  },
+  {
+    "id": "com-jotform-mcp",
+    "name": "Jotform",
+    "description": "Create forms & analyze submissions inside Claude",
+    "category": "misc",
+    "keywords": [
+      "com-jotform-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.jotform.com/mcp-app",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.jotform.com/developers/mcp/"
+    }
+  },
+  {
+    "id": "com-kensho-kfinance-s-p-global",
+    "name": "S&P Global",
+    "description": "Query a range of S&P Global datasets",
+    "category": "misc",
+    "keywords": [
+      "com-kensho-kfinance-s-p-global"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://kfinance.kensho.com/integrations/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.kensho.com/llmreadyapi/mcp"
+    }
+  },
+  {
+    "id": "com-klaviyo-mcp-klaviyo",
+    "name": "Klaviyo",
+    "description": "Report, strategize & create with real-time Klaviyo data",
+    "category": "misc",
+    "keywords": [
+      "com-klaviyo-mcp-klaviyo"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.klaviyo.com/mcp?include-mcp-app=true",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.klaviyo.com/en/docs/klaviyo_mcp_server"
+    }
+  },
+  {
+    "id": "com-legalzoom-mcp",
+    "name": "LegalZoom",
+    "description": "Attorney guidance & tools for business & personal needs",
+    "category": "misc",
+    "keywords": [
+      "com-legalzoom-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://www.legalzoom.com/mcp/claude/v1",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.legalzoom.com/tools/mcp-docs"
+    }
+  },
+  {
+    "id": "com-lilt-mcp",
+    "name": "LILT",
+    "description": "High-quality translation with human verification",
+    "category": "misc",
+    "keywords": [
+      "com-lilt-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.lilt.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.lilt.com/kb/LILT-mcp"
+    }
+  },
+  {
+    "id": "com-localfalcon-mcp",
+    "name": "Local Falcon",
+    "description": "AI visibility and local search intelligence platform",
+    "category": "misc",
+    "keywords": [
+      "com-localfalcon-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.localfalcon.com",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://github.com/local-falcon/mcp"
+    }
+  },
+  {
+    "id": "com-lseg-analytics-api-lseg",
+    "name": "LSEG",
+    "description": "Access best in class data & analytics across a broad spectrum of asset classes.",
+    "category": "misc",
+    "keywords": [
+      "com-lseg-analytics-api-lseg"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.analytics.lseg.com/lfa/mcp/server-cl",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.lseg.com/en/solutions/ai-finance-solutions/anthropic"
+    }
+  },
+  {
+    "id": "com-luminpdf-lumin",
+    "name": "Lumin",
+    "description": "Manage documents, send signature requests, and convert Markdown to PDF",
+    "category": "misc",
+    "keywords": [
+      "com-luminpdf-lumin"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.luminpdf.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://github.com/luminpdf/lumin-mcp-server"
+    }
+  },
+  {
+    "id": "com-mailerlite-mcp",
+    "name": "MailerLite",
+    "description": "Turn Claude into your email marketing assistant",
+    "category": "misc",
+    "keywords": [
+      "com-mailerlite-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.mailerlite.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.mailerlite.com/mcp/#how-mcp-works"
+    }
+  },
+  {
+    "id": "com-make-mcp",
+    "name": "Make",
+    "description": "Run Make scenarios and manage your Make account",
+    "category": "misc",
+    "keywords": [
+      "com-make-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.make.com",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.make.com/mcp-server/"
+    }
+  },
+  {
+    "id": "com-meetcampfire-api-mcp",
+    "name": "Campfire",
+    "description": "Search, analyze, and export Campfire data",
+    "category": "misc",
+    "keywords": [
+      "com-meetcampfire-api-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.meetcampfire.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.campfire.ai/guides/ai-integration#what-is-mcp"
+    }
+  },
+  {
+    "id": "com-mercury-mcp-mercury",
+    "name": "Mercury",
+    "description": "Search, analyze and understand your finances on Mercury",
+    "category": "misc",
+    "keywords": [
+      "com-mercury-mcp-mercury"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.mercury.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mercury.com/docs/connecting-mercury-mcp"
+    }
+  },
+  {
+    "id": "com-mermaidchart-mermaid-mcp",
+    "name": "Mermaid Chart",
+    "description": "Validates Mermaid syntax, renders diagrams as high-quality SVG, and displays them instantly in an interactive UI where users can preview, zoom, and iterate in real time.",
+    "category": "misc",
+    "keywords": [
+      "com-mermaidchart-mermaid-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://chatgpt.mermaid.ai/anthropic/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mermaidchart.com/ai/mcp-server"
+    }
+  },
+  {
+    "id": "com-microsoft-microsoft-learn-mcp",
+    "name": "Microsoft Learn",
+    "description": "Search trusted Microsoft docs to power your development",
+    "category": "misc",
+    "keywords": [
+      "com-microsoft-microsoft-learn-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://learn.microsoft.com/api/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://learn.microsoft.com/en-us/training/support/mcp"
+    }
+  },
+  {
+    "id": "com-mixpanel-mixpanel",
+    "name": "Mixpanel",
+    "description": "Analyze, query, and manage your Mixpanel data",
+    "category": "misc",
+    "keywords": [
+      "com-mixpanel-mixpanel"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.mixpanel.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.mixpanel.com/docs/features/mcp"
+    }
+  },
+  {
+    "id": "com-monday-monday-com",
+    "name": "monday.com",
+    "description": "Manage projects, boards, and workflows in monday.com",
+    "category": "misc",
+    "keywords": [
+      "com-monday-monday-com"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.monday.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developer.monday.com/apps/docs/mondaycom-mcp-integration"
+    }
+  },
+  {
+    "id": "com-moodys-api-moody-s",
+    "name": "Moody's",
+    "description": "Risk insights, analytics, and decision intelligence",
+    "category": "misc",
+    "keywords": [
+      "com-moodys-api-moody-s"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.moodys.com/genai-ready-data/m1/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.moodys.com/web/en/us/genai/model-context-protocol.html"
+    }
+  },
+  {
+    "id": "com-morningstar-mcp-morningstar",
+    "name": "Morningstar",
+    "description": "Up-to-date investment and market insights",
+    "category": "misc",
+    "keywords": [
+      "com-morningstar-mcp-morningstar"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.morningstar.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developer.morningstar.com/direct-web-services/documentation/mcp-server/morningstar-mcp-server"
+    }
+  },
+  {
+    "id": "com-motherduck-api-motherduck",
+    "name": "MotherDuck",
+    "description": "Get answers from your data",
+    "category": "misc",
+    "keywords": [
+      "com-motherduck-api-motherduck"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.motherduck.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://motherduck.com/docs/sql-reference/mcp/"
+    }
+  },
+  {
+    "id": "com-msci-msci",
+    "name": "MSCI",
+    "description": "Converse, query and comprehend a world of MSCI indexes",
+    "category": "misc",
+    "keywords": [
+      "com-msci-msci"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.msci.com/mcp/v1.0/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.msci.com/downloads/web/msci-com/data-and-analytics/private-asset-solutions/ai-for-private-markets/msci-mcp-msci-connector-user-guide.pdf"
+    }
+  },
+  {
+    "id": "com-netsuite-www-netsuite",
+    "name": "NetSuite",
+    "description": "Connect Claude to NetSuite data for analysis & insights",
+    "category": "misc",
+    "keywords": [
+      "com-netsuite-www-netsuite"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/article_7200233106.html"
+    }
+  },
+  {
+    "id": "com-notion-mcp",
+    "name": "Notion",
+    "description": "Connect your Notion workspace to search, update, and power workflows across tools",
+    "category": "misc",
+    "keywords": [
+      "com-notion-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.notion.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.notion.com/docs/mcp"
+    }
+  },
+  {
+    "id": "com-owkin-k-mcp-owkin",
+    "name": "Owkin",
+    "description": "Interact with AI agents built for biology",
+    "category": "misc",
+    "keywords": [
+      "com-owkin-k-mcp-owkin"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.k.owkin.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.owkin.com/core-features-and-usage"
+    }
+  },
+  {
+    "id": "com-pagerduty-mcp",
+    "name": "PagerDuty",
+    "description": "Manage incidents, services and on-call schedules",
+    "category": "misc",
+    "keywords": [
+      "com-pagerduty-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.pagerduty.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developer.pagerduty.com/docs/mcp-tooling-remote-server"
+    }
+  },
+  {
+    "id": "com-paypal-mcp-mcp",
+    "name": "PayPal",
+    "description": "Access PayPal payments platform",
+    "category": "misc",
+    "keywords": [
+      "com-paypal-mcp-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.paypal.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://mcp.paypal.com/"
+    }
+  },
+  {
+    "id": "com-pigment-app-pigment",
+    "name": "Pigment",
+    "description": "Analyze business data",
+    "category": "misc",
+    "keywords": [
+      "com-pigment-app-pigment"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://kb.pigment.com/docs/mcp-server"
+    }
+  },
+  {
+    "id": "com-pitchbook-mcp-premium-pitchbook-premium",
+    "name": "PitchBook Premium",
+    "description": "PitchBook data, embedded in the way you work.",
+    "category": "misc",
+    "keywords": [
+      "com-pitchbook-mcp-premium-pitchbook-premium"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://premium.mcp.pitchbook.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.pitchbook.com/s/article/PitchBook-Premium-for-Claude-by-Anthropic"
+    }
+  },
+  {
+    "id": "com-plaid-dashboard-api-plaid-developer-tools",
+    "name": "Plaid Developer Tools",
+    "description": "Monitor, debug, and optimize your Plaid integration",
+    "category": "misc",
+    "keywords": [
+      "com-plaid-dashboard-api-plaid-developer-tools"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "sse",
+      "url": "https://api.dashboard.plaid.com/mcp/sse",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://plaid.com/docs/resources/mcp/"
+    }
+  },
+  {
+    "id": "com-postman-postman-mcp-server",
+    "name": "Postman",
+    "description": "Give API context to your coding agents",
+    "category": "misc",
+    "keywords": [
+      "com-postman-postman-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.postman.com/minimal",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://github.com/postmanlabs/postman-mcp-server"
+    }
+  },
+  {
+    "id": "com-quartr-mcp",
+    "name": "Quartr",
+    "description": "Financial data and AI infrastructure for company research.",
+    "category": "misc",
+    "keywords": [
+      "com-quartr-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.quartr.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://mcp.quartr.com/docs"
+    }
+  },
+  {
+    "id": "com-ramp-ramp-mcp-remote-ramp",
+    "name": "Ramp",
+    "description": "Search, access, and analyze your Ramp financial data",
+    "category": "misc",
+    "keywords": [
+      "com-ramp-ramp-mcp-remote-ramp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://ramp-mcp-remote.ramp.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.ramp.com/developer-api/v1/guides/ramp-mcp-remote"
+    }
+  },
+  {
+    "id": "com-ravenpack-bigdata-bigdata",
+    "name": "Bigdata.com",
+    "description": "Access real-time financial data",
+    "category": "misc",
+    "keywords": [
+      "com-ravenpack-bigdata-bigdata"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.bigdata.com/",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.bigdata.com/mcp-reference"
+    }
+  },
+  {
+    "id": "com-razorpay-razorpay",
+    "name": "Razorpay",
+    "description": "Turn Claude into your Razorpay Dashboard Assistant",
+    "category": "misc",
+    "keywords": [
+      "com-razorpay-razorpay"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.razorpay.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://razorpay.com/docs/mcp-server/?preferred-country=IN"
+    }
+  },
+  {
+    "id": "com-signnow-mcp",
+    "name": "SignNow",
+    "description": "Automate eSignature workflows directly from Claude",
+    "category": "misc",
+    "keywords": [
+      "com-signnow-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp-server.signnow.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.signnow.com/docs/signnow/mcp-server"
+    }
+  },
+  {
+    "id": "com-similarweb-mcp-similarweb",
+    "name": "Similarweb",
+    "description": "Real time web, mobile app, and market data.",
+    "category": "misc",
+    "keywords": [
+      "com-similarweb-mcp-similarweb"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.similarweb.com",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.similarweb.com/api-v5/mcp/mcp-setup"
+    }
+  },
+  {
+    "id": "com-slack-mcp-slack",
+    "name": "Slack",
+    "description": "Send messages, create canvases, and fetch Slack data",
+    "category": "misc",
+    "keywords": [
+      "com-slack-mcp-slack"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.slack.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.slack.dev/ai/mcp-server"
+    }
+  },
+  {
+    "id": "com-smartsheet-mcp",
+    "name": "Smartsheet",
+    "description": "Analyze and manage Smartsheet data with Claude",
+    "category": "misc",
+    "keywords": [
+      "com-smartsheet-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.smartsheet.com/articles/2483663-use-smartsheet-connector-claude"
+    }
+  },
+  {
+    "id": "com-snowflake-snowflake",
+    "name": "Snowflake",
+    "description": "Retrieve both structured and unstructured data",
+    "category": "misc",
+    "keywords": [
+      "com-snowflake-snowflake"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-mcp"
+    }
+  },
+  {
+    "id": "com-squareup-mcp-square",
+    "name": "Square",
+    "description": "Search and manage transaction, merchant, and payment data",
+    "category": "misc",
+    "keywords": [
+      "com-squareup-mcp-square"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "sse",
+      "url": "https://mcp.squareup.com/sse",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developer.squareup.com/docs/mcp"
+    }
+  },
+  {
+    "id": "com-stripe-mcp",
+    "name": "Stripe",
+    "description": "Payment processing and financial infrastructure tools",
+    "category": "misc",
+    "keywords": [
+      "com-stripe-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.stripe.com",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.stripe.com/mcp"
+    }
+  },
+  {
+    "id": "com-supabase-mcp",
+    "name": "Supabase",
+    "description": "Manage databases, authentication, and storage",
+    "category": "misc",
+    "keywords": [
+      "com-supabase-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase"
+      ],
+      "envKeys": [
+        "SUPABASE_ACCESS_TOKEN"
+      ],
+      "url": "https://mcp.supabase.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://supabase.com/docs/guides/getting-started/mcp"
+    }
+  },
+  {
+    "id": "com-supermetrics-supermetrics",
+    "name": "Supermetrics",
+    "description": "Analyze marketing performance across 200+ platforms",
+    "category": "misc",
+    "keywords": [
+      "com-supermetrics-supermetrics"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.supermetrics.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://mcp.supermetrics.com/docs"
+    }
+  },
+  {
+    "id": "com-tavily-mcp",
+    "name": "Tavily",
+    "description": "Connect your AI agents to the web",
+    "category": "misc",
+    "keywords": [
+      "com-tavily-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.tavily.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.tavily.com/documentation/mcp"
+    }
+  },
+  {
+    "id": "com-udemy-api-udemy-business",
+    "name": "Udemy Business",
+    "description": "Search and explore skill-building resources",
+    "category": "misc",
+    "keywords": [
+      "com-udemy-api-udemy-business"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.udemy.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://business-support.udemy.com/hc/en-us/articles/34213384429335-How-to-Integrate-the-Udemy-Business-MCP-Server-With-Your-AI-Tool#h_01K9CA42YGCV1AVXPY1RKABKP1"
+    }
+  },
+  {
+    "id": "com-usepylon-mcp",
+    "name": "Pylon",
+    "description": "Search and manage Pylon support issues",
+    "category": "misc",
+    "keywords": [
+      "com-usepylon-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.usepylon.com/",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.usepylon.com/articles/2407390554-connecting-to-the-pylon-mcp-server?lang=en"
+    }
+  },
+  {
+    "id": "com-vercel-vercel-mcp",
+    "name": "Vercel",
+    "description": "Analyze, debug, and manage projects and deployments",
+    "category": "misc",
+    "keywords": [
+      "com-vercel-vercel-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.vercel.com/",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://vercel.com/docs/mcp/vercel-mcp"
+    }
+  },
+  {
+    "id": "com-visier-www-visier",
+    "name": "Visier",
+    "description": "Find people, productivity and business impact insights",
+    "category": "misc",
+    "keywords": [
+      "com-visier-www-visier"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.visier.com/developer/agents/mcp/mcp-server.htm"
+    }
+  },
+  {
+    "id": "com-webflow-mcp",
+    "name": "Webflow",
+    "description": "Manage Webflow CMS, pages, assets and sites",
+    "category": "misc",
+    "keywords": [
+      "com-webflow-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.webflow.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.webflow.com/mcp/v1.0.0/reference/overview"
+    }
+  },
+  {
+    "id": "com-wix-mcp",
+    "name": "Wix",
+    "description": "Manage and build sites and apps on Wix",
+    "category": "misc",
+    "keywords": [
+      "com-wix-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.wix.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://dev.wix.com/docs/sdk/articles/use-the-wix-mcp/about-the-wix-mcp"
+    }
+  },
+  {
+    "id": "com-wordpress-public-api-wordpress-com",
+    "name": "WordPress.com",
+    "description": "Secure AI access to manage your WordPress.com sites",
+    "category": "misc",
+    "keywords": [
+      "com-wordpress-public-api-wordpress-com"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://public-api.wordpress.com/wpcom/v2/mcp/v1",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developer.wordpress.com/docs/mcp/"
+    }
+  },
+  {
+    "id": "com-workato-www-workato",
+    "name": "Workato",
+    "description": "Automate workflows and connect your business apps",
+    "category": "misc",
+    "keywords": [
+      "com-workato-www-workato"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.workato.com/en/mcp.html"
+    }
+  },
+  {
+    "id": "com-yardi-virtuoso",
+    "name": "Yardi Virtuoso",
+    "description": "Real-time Yardi data & insights",
+    "category": "misc",
+    "keywords": [
+      "com-yardi-virtuoso"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.virtuoso.ai/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.virtuoso.ai/en/articles/13679727-yardi-virtuoso-mcp-technical-documentation-guide"
+    }
+  },
+  {
+    "id": "com-zapier-zapier",
+    "name": "Zapier",
+    "description": "Automate workflows across thousands of apps via conversation",
+    "category": "misc",
+    "keywords": [
+      "com-zapier-zapier"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.zapier.com/api/v1/connect",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.zapier.com/mcp/home"
+    }
+  },
+  {
+    "id": "com-zoominfo-mcp-zoominfo",
+    "name": "ZoomInfo",
+    "description": "Enrich contacts & accounts with GTM intelligence",
+    "category": "misc",
+    "keywords": [
+      "com-zoominfo-mcp-zoominfo"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.zoominfo.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.zoominfo.com/docs/zi-api-mcp-overview/"
     }
   },
   {
@@ -6813,6 +9218,91 @@
         "list_secret_policies",
         "get_secret_policy"
       ]
+    }
+  },
+  {
+    "id": "dev-govcon-mcp",
+    "name": "Tango",
+    "description": "Search for US Government Contracting Data",
+    "category": "misc",
+    "keywords": [
+      "dev-govcon-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://govcon.dev/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://tango.makegov.com/docs/mcp/"
+    }
+  },
+  {
+    "id": "dev-jam-mcp-jam",
+    "name": "Jam",
+    "description": "Record screen and collect automatic context for issues",
+    "category": "misc",
+    "keywords": [
+      "dev-jam-mcp-jam"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.jam.dev/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://jam.dev/docs/debug-a-jam/mcp"
+    }
+  },
+  {
+    "id": "dev-pscale-mcp-planetscale",
+    "name": "PlanetScale",
+    "description": "Authenticated access to your Postgres and MySQL DB's",
+    "category": "misc",
+    "keywords": [
+      "dev-pscale-mcp-planetscale"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.pscale.dev/mcp/planetscale",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://planetscale.com/docs/connect/mcp"
+    }
+  },
+  {
+    "id": "dev-sentry-mcp-sentry",
+    "name": "Sentry",
+    "description": "Search, query, and debug errors intelligently",
+    "category": "misc",
+    "keywords": [
+      "dev-sentry-mcp-sentry"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.sentry.dev/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.sentry.io/product/sentry-mcp/"
+    }
+  },
+  {
+    "id": "dev-stytch-mcp-stytch",
+    "name": "Stytch",
+    "description": "Manage your Stytch Project",
+    "category": "misc",
+    "keywords": [
+      "dev-stytch-mcp-stytch"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.stytch.dev/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://stytch.com/docs/workspace-management/stytch-mcp"
     }
   },
   {
@@ -12088,6 +14578,244 @@
     }
   },
   {
+    "id": "io-apollo-mcp",
+    "name": "Apollo.io",
+    "description": "Find buyers. Book more meetings. Close more deals.",
+    "category": "misc",
+    "keywords": [
+      "io-apollo-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.apollo.io/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://knowledge.apollo.io/hc/en-us/articles/43827318678541-Integrate-Apollo-with-Claude"
+    }
+  },
+  {
+    "id": "io-apollographql-mcp-graphos-tools",
+    "name": "GraphOS MCP Tools",
+    "description": "Search Apollo docs, specs, and best practices",
+    "category": "misc",
+    "keywords": [
+      "io-apollographql-mcp-graphos-tools"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.apollographql.com",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.apollographql.com/docs/graphos/platform/graphos-mcp-tools"
+    }
+  },
+  {
+    "id": "io-commonroom-commonroom",
+    "name": "Common Room",
+    "description": "Your GTM Copilot",
+    "category": "misc",
+    "keywords": [
+      "io-commonroom-commonroom"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.commonroom.io/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.commonroom.io/docs/using-common-room/common-room-for-claude-connector-and-plugin/"
+    }
+  },
+  {
+    "id": "io-coupler-remote-mcp-server",
+    "name": "Coupler.io",
+    "description": "Access business data from hundreds of sources",
+    "category": "misc",
+    "keywords": [
+      "io-coupler-remote-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.coupler.io/mcp/",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://help.coupler.io/article/592-coupler-local-mcp-server"
+    }
+  },
+  {
+    "id": "io-customer-mcp",
+    "name": "Customer.io",
+    "description": "Explore customer data and generate insights via Claude",
+    "category": "misc",
+    "keywords": [
+      "io-customer-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.customer.io/ai/mcp-server/"
+    }
+  },
+  {
+    "id": "io-github-miroapp-mcp-server",
+    "name": "Miro",
+    "description": "Access and create new content on Miro boards",
+    "category": "misc",
+    "keywords": [
+      "io-github-miroapp-mcp-server"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.miro.com/",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://developers.miro.com/docs/miro-mcp"
+    }
+  },
+  {
+    "id": "io-github-posthog-mcp",
+    "name": "PostHog",
+    "description": "Query, analyze, and manage your PostHog insights",
+    "category": "misc",
+    "keywords": [
+      "io-github-posthog-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.posthog.com/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://posthog.com/docs/model-context-protocol"
+    }
+  },
+  {
+    "id": "io-honeycomb-mcp-honeycomb",
+    "name": "Honeycomb",
+    "description": "Query and explore observability data and SLOs",
+    "category": "misc",
+    "keywords": [
+      "io-honeycomb-mcp-honeycomb"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.honeycomb.io/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.honeycomb.io/troubleshoot/product-lifecycle/beta/mcp/"
+    }
+  },
+  {
+    "id": "io-n8n-n8n",
+    "name": "n8n",
+    "description": "Access and run your n8n workflows",
+    "category": "misc",
+    "keywords": [
+      "io-n8n-n8n"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.n8n.io/advanced-ai/accessing-n8n-mcp-server/"
+    }
+  },
+  {
+    "id": "io-outreach-mcp",
+    "name": "Outreach",
+    "description": "Unleash your team's best performance with Outreach AI",
+    "category": "misc",
+    "keywords": [
+      "io-outreach-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.outreach.io/mcp/",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.outreach.io/hc/en-us/articles/46370115253403-Outreach-MCP-Server"
+    }
+  },
+  {
+    "id": "io-pendo-www-pendo",
+    "name": "Pendo",
+    "description": "Connect to Pendo for product and user insights",
+    "category": "misc",
+    "keywords": [
+      "io-pendo-www-pendo"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.pendo.io/hc/en-us/articles/41102236924955"
+    }
+  },
+  {
+    "id": "io-port-port",
+    "name": "Port IO",
+    "description": "Search your context lake and safely run actions",
+    "category": "misc",
+    "keywords": [
+      "io-port-port"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.port.io/ai-interfaces/port-mcp-server/overview-and-installation"
+    }
+  },
+  {
+    "id": "io-sanity-www-mcp",
+    "name": "Sanity",
+    "description": "Create, query, and manage structured content in Sanity",
+    "category": "misc",
+    "keywords": [
+      "io-sanity-www-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.sanity.io",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.sanity.io/docs/ai/mcp-server"
+    }
+  },
+  {
+    "id": "io-starburst-starburst",
+    "name": "Starburst",
+    "description": "Securely retrieve data from your federated data sources",
+    "category": "misc",
+    "keywords": [
+      "io-starburst-starburst"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://docs.starburst.io/starburst-galaxy/ai-workflows/mcp-server.html"
+    }
+  },
+  {
     "id": "ironclad",
     "name": "Ironclad",
     "description": "Contract lifecycle management: launch and track contract workflows, manage repository records, and configure webhooks for Ironclad CLM.",
@@ -16470,6 +19198,74 @@
     }
   },
   {
+    "id": "org-benevity-mcp-benevity",
+    "name": "Benevity",
+    "description": "Find and engage with verified nonprofits",
+    "category": "misc",
+    "keywords": [
+      "org-benevity-mcp-benevity"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.benevity.org/general/v1/nonprofit",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.claude.com/en/articles/12923227-using-the-benevity-connector-in-claude"
+    }
+  },
+  {
+    "id": "org-candid-mcp-candid",
+    "name": "Candid",
+    "description": "Research nonprofits and funders using Candid's data",
+    "category": "misc",
+    "keywords": [
+      "org-candid-mcp-candid"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.candid.org/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://support.claude.com/en/articles/12923235-using-the-candid-connector-in-claude"
+    }
+  },
+  {
+    "id": "org-opentargets-platform-mcp-open-targets",
+    "name": "Open Targets",
+    "description": "Drug target discovery and prioritisation platform",
+    "category": "misc",
+    "keywords": [
+      "org-opentargets-platform-mcp-open-targets"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.platform.opentargets.org/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://github.com/opentargets/open-targets-platform-mcp"
+    }
+  },
+  {
+    "id": "org-synapse-mcp-synapse-org",
+    "name": "Synapse.org",
+    "description": "Search and metadata tools for Synapse scientific data",
+    "category": "misc",
+    "keywords": [
+      "org-synapse-mcp-synapse-org"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.synapse.org/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://github.com/susheel/synapse-mcp?tab=readme-ov-file#synapse-mcp-server"
+    }
+  },
+  {
     "id": "outreach",
     "name": "Outreach",
     "description": "Sales engagement: manage prospects, accounts, sequences, opportunities, mailings, calls, tasks, and users in Outreach.",
@@ -16869,6 +19665,23 @@
         "get_subscription",
         "cancel_subscription"
       ]
+    }
+  },
+  {
+    "id": "pe-chronograph-ai-chronograph",
+    "name": "Chronograph",
+    "description": "Interact with your Chronograph data directly in Claude",
+    "category": "misc",
+    "keywords": [
+      "pe-chronograph-ai-chronograph"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://ai.chronograph.pe/mcp",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://lp-help.chronograph.pe/article/735-chronograph-mcp"
     }
   },
   {
@@ -21213,6 +24026,23 @@
     }
   },
   {
+    "id": "st-process-mcp",
+    "name": "Process Street",
+    "description": "Explore and update your Process Street data",
+    "category": "misc",
+    "keywords": [
+      "st-process-mcp"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.process.st",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://www.process.st/help/docs/mcp-server/"
+    }
+  },
+  {
     "id": "stackoverflow",
     "name": "Stack Overflow",
     "description": "Search and retrieve Stack Overflow questions, answers, comments, users, tags, and badges via the Stack Exchange API.",
@@ -21815,6 +24645,23 @@
         "list_changes",
         "get_change"
       ]
+    }
+  },
+  {
+    "id": "tech-hex-hex",
+    "name": "Hex",
+    "description": "Answer questions with the Hex agent",
+    "category": "misc",
+    "keywords": [
+      "tech-hex-hex"
+    ],
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "{url}",
+      "requiresOAuth": true,
+      "recommendation": "not-evaluated",
+      "repoUrl": "https://learn.hex.tech/docs/administration/mcp-server"
     }
   },
   {

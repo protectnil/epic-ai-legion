@@ -3,7 +3,7 @@
     "name": "abnormal-security",
     "displayName": "Abnormal Security",
     "version": "1.0.0",
-    "category": "cybersecurity",
+    "category": "misc",
     "keywords": [
       "abnormal-security",
       "abnormal",
@@ -23,7 +23,7 @@
       "get_vendor_case",
       "list_detection_rules"
     ],
-    "description": "Abnormal Security adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -218,8 +218,9 @@
     "name": "ada",
     "displayName": "Ada",
     "version": "1.0.0",
-    "category": "crm",
+    "category": "misc",
     "keywords": [
+      "ada",
       "ada"
     ],
     "toolNames": [
@@ -238,7 +239,7 @@
       "delete_end_user",
       "list_integrations"
     ],
-    "description": "Ada adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -292,10 +293,11 @@
   },
   {
     "name": "adp",
-    "displayName": "ADP",
+    "displayName": "Adp",
     "version": "1.0.0",
-    "category": "finance",
+    "category": "misc",
     "keywords": [
+      "adp",
       "adp"
     ],
     "toolNames": [
@@ -310,15 +312,16 @@
       "list_job_classifications",
       "list_worker_benefits"
     ],
-    "description": "ADP adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "adyen",
     "displayName": "Adyen",
     "version": "1.0.0",
-    "category": "commerce",
+    "category": "misc",
     "keywords": [
+      "adyen",
       "adyen"
     ],
     "toolNames": [
@@ -338,15 +341,16 @@
       "get_dispute",
       "defend_dispute"
     ],
-    "description": "Adyen adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "aha",
     "displayName": "Aha",
     "version": "1.0.0",
-    "category": "collaboration",
+    "category": "misc",
     "keywords": [
+      "aha",
       "aha"
     ],
     "toolNames": [
@@ -370,15 +374,328 @@
       "list_users",
       "search_records"
     ],
-    "description": "Aha adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
+  },
+  {
+    "name": "ai-aiwyn-tax",
+    "displayName": "Aiwyn Tax",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-aiwyn-tax"
+    ],
+    "toolNames": [],
+    "description": "Prepare your federal & state tax return 100% accurately",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-circleback-app-circleback",
+    "displayName": "Circleback",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-circleback-app-circleback"
+    ],
+    "toolNames": [],
+    "description": "Search and access context from meetings",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-clarify-clarify",
+    "displayName": "Clarify",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-clarify-clarify"
+    ],
+    "toolNames": [],
+    "description": "Query your CRM. Create records. Ask anything.",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-clarity-sfdr20-mcp",
+    "displayName": "Clarity AI",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-clarity-sfdr20-mcp"
+    ],
+    "toolNames": [],
+    "description": "Simulate fund classifications under proposed SFDR 2.0",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-day-day-ai",
+    "displayName": "Day AI",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-day-day-ai"
+    ],
+    "toolNames": [],
+    "description": "Know everything about your prospects & customers with CRMx",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-deepsense-mcp-biorxiv",
+    "displayName": "bioRxiv",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-biorxiv"
+    ],
+    "toolNames": [],
+    "description": "Access bioRxiv and medRxiv preprint data",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-deepsense-mcp-chembl",
+    "displayName": "ChEMBL",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-chembl"
+    ],
+    "toolNames": [],
+    "description": "Access the ChEMBL Database",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-deepsense-mcp-clinical-trials",
+    "displayName": "Clinical Trials",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-clinical-trials"
+    ],
+    "toolNames": [],
+    "description": "Access ClinicalTrials.gov data",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-deepsense-mcp-cms-coverage",
+    "displayName": "CMS Coverage",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-cms-coverage"
+    ],
+    "toolNames": [],
+    "description": "Access the CMS Coverage Database",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-deepsense-mcp-icd-10-codes",
+    "displayName": "ICD-10 Codes",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-icd-10-codes"
+    ],
+    "toolNames": [],
+    "description": "Access ICD-10-CM and ICD-10-PCS code sets",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-deepsense-mcp-npi-registry",
+    "displayName": "NPI Registry",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-deepsense-mcp-npi-registry"
+    ],
+    "toolNames": [],
+    "description": "Access US National Provider Identifier (NPI) Registry",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-devrev-api-devrev",
+    "displayName": "DevRev",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-devrev-api-devrev"
+    ],
+    "toolNames": [],
+    "description": "Search and update your company's knowledge graph",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-directbooker-mcp",
+    "displayName": "DirectBooker",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-directbooker-mcp"
+    ],
+    "toolNames": [],
+    "description": "Compare hotels, then book direct",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-fireflies-api-fireflies",
+    "displayName": "Fireflies",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-fireflies-api-fireflies"
+    ],
+    "toolNames": [],
+    "description": "Analyze and generate insights from meeting transcripts",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-granola-mcp-granola",
+    "displayName": "Granola",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-granola-mcp-granola"
+    ],
+    "toolNames": [],
+    "description": "The AI notepad for meetings",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-harmonic-mcp-api-harmonic",
+    "displayName": "Harmonic",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-harmonic-mcp-api-harmonic"
+    ],
+    "toolNames": [],
+    "description": "Discover, research, and enrich companies and people",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-harvey-mcp",
+    "displayName": "Harvey",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-harvey-mcp"
+    ],
+    "toolNames": [],
+    "description": "Answer legal queries, search vaults, and research",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-krisp-krisp",
+    "displayName": "Krisp",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-krisp-krisp"
+    ],
+    "toolNames": [],
+    "description": "Add your meetings context via transcripts and notes",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-lunarcrush-lunarcrush",
+    "displayName": "LunarCrush",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-lunarcrush-lunarcrush"
+    ],
+    "toolNames": [],
+    "description": "Add real-time social media data to your searches",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-mem-mcp",
+    "displayName": "Mem",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-mem-mcp"
+    ],
+    "toolNames": [],
+    "description": "The AI notebook for everything on your mind",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-metaview-mcp",
+    "displayName": "Metaview",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-metaview-mcp"
+    ],
+    "toolNames": [],
+    "description": "The AI platform for recruiting.",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-midpage-mcp",
+    "displayName": "Midpage Legal Research",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-midpage-mcp"
+    ],
+    "toolNames": [],
+    "description": "Conduct legal research and create work product",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-sprouts-mcp",
+    "displayName": "Sprouts Data Intelligence",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-sprouts-mcp"
+    ],
+    "toolNames": [],
+    "description": "From query to qualified lead in seconds.",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-tickettailor-mcp",
+    "displayName": "Ticket Tailor",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-tickettailor-mcp"
+    ],
+    "toolNames": [],
+    "description": "Event platform for managing tickets, orders & more",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-vibeprospecting-vibeprospecting",
+    "displayName": "Vibe Prospecting",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-vibeprospecting-vibeprospecting"
+    ],
+    "toolNames": [],
+    "description": "Find company & contact data",
+    "author": "vendor"
+  },
+  {
+    "name": "ai-windsor-mcp-windsor-ai",
+    "displayName": "Windsor.ai",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "ai-windsor-mcp-windsor-ai"
+    ],
+    "toolNames": [],
+    "description": "Connect 325+ marketing, analytics and CRM data sources",
+    "author": "vendor"
   },
   {
     "name": "airbyte",
     "displayName": "Airbyte",
     "version": "1.0.0",
-    "category": "data",
+    "category": "misc",
     "keywords": [
+      "airbyte",
       "airbyte"
     ],
     "toolNames": [
@@ -402,7 +719,7 @@
       "trigger_sync",
       "cancel_job"
     ],
-    "description": "Airbyte adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -615,9 +932,9 @@
       "get_fx_rate",
       "get_fx_daily",
       "get_fx_intraday",
-      "get_crypto_rating",
-      "get_crypto_daily",
       "get_crypto_exchange_rate",
+      "get_crypto_daily",
+      "get_crypto_rating",
       "get_rsi",
       "get_macd",
       "get_sma",
@@ -731,7 +1048,7 @@
     "name": "amazon-bedrock",
     "displayName": "Amazon Bedrock",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "misc",
     "keywords": [
       "amazon-bedrock",
       "amazon",
@@ -768,7 +1085,7 @@
       "get_model_invocation_job",
       "list_model_invocation_jobs"
     ],
-    "description": "Amazon Bedrock adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -818,8 +1135,9 @@
     "name": "amplitude",
     "displayName": "Amplitude",
     "version": "1.0.0",
-    "category": "data",
+    "category": "misc",
     "keywords": [
+      "amplitude",
       "amplitude"
     ],
     "toolNames": [
@@ -841,15 +1159,16 @@
       "delete_user_data",
       "get_deletion_job"
     ],
-    "description": "Amplitude adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "anomali",
     "displayName": "Anomali",
     "version": "1.0.0",
-    "category": "cybersecurity",
+    "category": "misc",
     "keywords": [
+      "anomali",
       "anomali"
     ],
     "toolNames": [
@@ -870,15 +1189,16 @@
       "list_incidents",
       "get_incident"
     ],
-    "description": "Anomali adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "ansible",
     "displayName": "Ansible",
     "version": "1.0.0",
-    "category": "devops",
+    "category": "misc",
     "keywords": [
+      "ansible",
       "ansible"
     ],
     "toolNames": [
@@ -904,7 +1224,7 @@
       "list_organizations",
       "list_users"
     ],
-    "description": "Ansible adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -977,6 +1297,54 @@
     ],
     "description": "Apollo.io sales intelligence: search and enrich people and companies, manage CRM contacts and accounts, and orchestrate email sequences.",
     "author": "protectnil"
+  },
+  {
+    "name": "app-fellow-fellow-ai",
+    "displayName": "Fellow.ai",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "app-fellow-fellow-ai"
+    ],
+    "toolNames": [],
+    "description": "Chat with your meetings to uncover actionable insights",
+    "author": "vendor"
+  },
+  {
+    "name": "app-gamma-mcp-gamma",
+    "displayName": "Gamma",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "app-gamma-mcp-gamma"
+    ],
+    "toolNames": [],
+    "description": "Create presentations, docs, socials, and sites with AI",
+    "author": "vendor"
+  },
+  {
+    "name": "app-linear-linear",
+    "displayName": "Linear",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "app-linear-linear"
+    ],
+    "toolNames": [],
+    "description": "Manage issues, projects & team workflows in Linear",
+    "author": "vendor"
+  },
+  {
+    "name": "app-netlify-netlify-mcp-netlify",
+    "displayName": "Netlify",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "app-netlify-netlify-mcp-netlify"
+    ],
+    "toolNames": [],
+    "description": "Create, deploy, manage, and secure websites on Netlify.",
+    "author": "vendor"
   },
   {
     "name": "app-store-connect",
@@ -1642,6 +2010,64 @@
     "author": "protectnil"
   },
   {
+    "name": "aws",
+    "displayName": "Amazon Web Services",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "amazon",
+      "ec2",
+      "s3",
+      "lambda",
+      "iam",
+      "cloudwatch",
+      "rds",
+      "ecs",
+      "sqs",
+      "sns",
+      "sts",
+      "cloud",
+      "infrastructure"
+    ],
+    "toolNames": [
+      "list_s3_buckets",
+      "list_s3_objects",
+      "get_s3_object",
+      "list_ec2_instances",
+      "describe_ec2_instance",
+      "list_ec2_security_groups",
+      "list_lambda_functions",
+      "get_lambda_function",
+      "invoke_lambda_function",
+      "list_iam_users",
+      "list_iam_roles",
+      "get_iam_role",
+      "list_cloudwatch_metrics",
+      "get_cloudwatch_metric_statistics",
+      "list_rds_instances",
+      "list_ecs_clusters",
+      "list_ecs_services",
+      "list_sqs_queues",
+      "list_sns_topics",
+      "get_caller_identity"
+    ],
+    "description": "AWS resource management: list and inspect EC2, S3, Lambda, IAM, CloudWatch, RDS, ECS, SQS, SNS, and STS resources.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-api-us-east-1-marketplace-mcp-aws-marketplace",
+    "displayName": "AWS Marketplace",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "aws-api-us-east-1-marketplace-mcp-aws-marketplace"
+    ],
+    "toolNames": [],
+    "description": "Discover, evaluate, and buy solutions for the cloud",
+    "author": "vendor"
+  },
+  {
     "name": "aws-s3",
     "displayName": "AWS S3",
     "version": "1.0.0",
@@ -1725,49 +2151,45 @@
     "author": "protectnil"
   },
   {
-    "name": "aws",
-    "displayName": "Amazon Web Services",
+    "name": "azure",
+    "displayName": "Microsoft Azure",
     "version": "1.0.0",
     "category": "cloud",
     "keywords": [
-      "aws",
-      "amazon",
-      "ec2",
-      "s3",
-      "lambda",
-      "iam",
-      "cloudwatch",
-      "rds",
-      "ecs",
-      "sqs",
-      "sns",
-      "sts",
-      "cloud",
-      "infrastructure"
+      "azure",
+      "microsoft",
+      "arm",
+      "resource manager",
+      "vm",
+      "virtual machine",
+      "storage",
+      "network",
+      "deployment",
+      "subscription",
+      "resource group",
+      "cloud"
     ],
     "toolNames": [
-      "list_s3_buckets",
-      "list_s3_objects",
-      "get_s3_object",
-      "list_ec2_instances",
-      "describe_ec2_instance",
-      "list_ec2_security_groups",
-      "list_lambda_functions",
-      "get_lambda_function",
-      "invoke_lambda_function",
-      "list_iam_users",
-      "list_iam_roles",
-      "get_iam_role",
-      "list_cloudwatch_metrics",
-      "get_cloudwatch_metric_statistics",
-      "list_rds_instances",
-      "list_ecs_clusters",
-      "list_ecs_services",
-      "list_sqs_queues",
-      "list_sns_topics",
-      "get_caller_identity"
+      "list_subscriptions",
+      "list_resource_groups",
+      "create_resource_group",
+      "delete_resource_group",
+      "list_resources",
+      "get_resource",
+      "delete_resource",
+      "list_virtual_machines",
+      "get_virtual_machine",
+      "start_virtual_machine",
+      "stop_virtual_machine",
+      "list_storage_accounts",
+      "list_virtual_networks",
+      "list_deployments",
+      "get_deployment",
+      "validate_deployment",
+      "list_policy_assignments",
+      "list_role_assignments"
     ],
-    "description": "AWS resource management: list and inspect EC2, S3, Lambda, IAM, CloudWatch, RDS, ECS, SQS, SNS, and STS resources.",
+    "description": "Azure Resource Manager operations: subscriptions, resource groups, VMs, storage, networking, deployments, policies, and role assignments.",
     "author": "protectnil"
   },
   {
@@ -1903,48 +2325,6 @@
       "list_components"
     ],
     "description": "Azure Machine Learning MLOps: training jobs, model registry, online and batch endpoints, computes, datastores, environments, and components.",
-    "author": "protectnil"
-  },
-  {
-    "name": "azure",
-    "displayName": "Microsoft Azure",
-    "version": "1.0.0",
-    "category": "cloud",
-    "keywords": [
-      "azure",
-      "microsoft",
-      "arm",
-      "resource manager",
-      "vm",
-      "virtual machine",
-      "storage",
-      "network",
-      "deployment",
-      "subscription",
-      "resource group",
-      "cloud"
-    ],
-    "toolNames": [
-      "list_subscriptions",
-      "list_resource_groups",
-      "create_resource_group",
-      "delete_resource_group",
-      "list_resources",
-      "get_resource",
-      "delete_resource",
-      "list_virtual_machines",
-      "get_virtual_machine",
-      "start_virtual_machine",
-      "stop_virtual_machine",
-      "list_storage_accounts",
-      "list_virtual_networks",
-      "list_deployments",
-      "get_deployment",
-      "validate_deployment",
-      "list_policy_assignments",
-      "list_role_assignments"
-    ],
-    "description": "Azure Resource Manager operations: subscriptions, resource groups, VMs, storage, networking, deployments, policies, and role assignments.",
     "author": "protectnil"
   },
   {
@@ -2358,25 +2738,43 @@
       "blackbaud",
       "nonprofit",
       "crm",
-      "raiser's edge",
-      "renxt",
-      "fundraising",
-      "constituent",
-      "donor",
-      "gift",
-      "donation",
-      "fund",
-      "campaign",
-      "pledge",
-      "appeal",
-      "appeal letter",
-      "giving",
-      "philanthropy",
-      "ngo",
-      "charity",
-      "sky api",
-      "financial edge",
-      "altru"
+      "raiser\\",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      "\n        ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      "\n        ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      " ",
+      "",
+      "\n        ",
+      "",
+      " ",
+      "",
+      " "
     ],
     "toolNames": [
       "list_constituents",
@@ -2400,7 +2798,7 @@
       "list_gift_types",
       "get_constituent_giving_summary"
     ],
-    "description": "Blackbaud SKY API for Raiser's Edge NXT: manage constituents (donors), gifts, funds, campaigns, and appeals in nonprofit CRM and fundraising operations.",
+    "description": "Blackbaud SKY API for Raiser\\",
     "author": "protectnil"
   },
   {
@@ -3223,6 +3621,49 @@
     "author": "protectnil"
   },
   {
+    "name": "census",
+    "displayName": "Census",
+    "version": "1.0.0",
+    "category": "data",
+    "keywords": [
+      "census",
+      "reverse etl",
+      "sync",
+      "data warehouse",
+      "salesforce",
+      "hubspot",
+      "destination",
+      "source",
+      "model",
+      "connector",
+      "pipeline",
+      "customer data",
+      "snowflake",
+      "bigquery",
+      "redshift",
+      "dbt",
+      "activation"
+    ],
+    "toolNames": [
+      "list_syncs",
+      "get_sync",
+      "create_sync",
+      "update_sync",
+      "delete_sync",
+      "trigger_sync",
+      "list_sync_runs",
+      "get_sync_run",
+      "list_sources",
+      "get_source",
+      "list_destinations",
+      "get_destination",
+      "list_models",
+      "list_webhooks"
+    ],
+    "description": "Census reverse ETL: manage syncs from data warehouse to SaaS destinations, trigger sync runs, inspect sources, destinations, and models.",
+    "author": "protectnil"
+  },
+  {
     "name": "census-gov",
     "displayName": "US Census Bureau",
     "version": "1.0.0",
@@ -3269,54 +3710,12 @@
     "author": "protectnil"
   },
   {
-    "name": "census",
-    "displayName": "Census",
-    "version": "1.0.0",
-    "category": "data",
-    "keywords": [
-      "census",
-      "reverse etl",
-      "sync",
-      "data warehouse",
-      "salesforce",
-      "hubspot",
-      "destination",
-      "source",
-      "model",
-      "connector",
-      "pipeline",
-      "customer data",
-      "snowflake",
-      "bigquery",
-      "redshift",
-      "dbt",
-      "activation"
-    ],
-    "toolNames": [
-      "list_syncs",
-      "get_sync",
-      "create_sync",
-      "update_sync",
-      "delete_sync",
-      "trigger_sync",
-      "list_sync_runs",
-      "get_sync_run",
-      "list_sources",
-      "get_source",
-      "list_destinations",
-      "get_destination",
-      "list_models",
-      "list_webhooks"
-    ],
-    "description": "Census reverse ETL: manage syncs from data warehouse to SaaS destinations, trigger sync runs, inspect sources, destinations, and models.",
-    "author": "protectnil"
-  },
-  {
     "name": "chargebee",
     "displayName": "Chargebee",
     "version": "1.0.0",
-    "category": "commerce",
+    "category": "misc",
     "keywords": [
+      "chargebee",
       "chargebee"
     ],
     "toolNames": [
@@ -3339,15 +3738,16 @@
       "list_items",
       "list_coupons"
     ],
-    "description": "Chargebee adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "checkly",
     "displayName": "Checkly",
     "version": "1.0.0",
-    "category": "observability",
+    "category": "misc",
     "keywords": [
+      "checkly",
       "checkly"
     ],
     "toolNames": [
@@ -3370,15 +3770,16 @@
       "list_maintenance_windows",
       "list_locations"
     ],
-    "description": "Checkly adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "checkpoint",
-    "displayName": "Check Point",
+    "displayName": "Checkpoint",
     "version": "1.0.0",
-    "category": "cybersecurity",
+    "category": "misc",
     "keywords": [
+      "checkpoint",
       "checkpoint"
     ],
     "toolNames": [
@@ -3398,7 +3799,7 @@
       "list_threat_logs",
       "logout"
     ],
-    "description": "Check Point adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -3407,6 +3808,7 @@
     "version": "1.0.0",
     "category": "misc",
     "keywords": [
+      "checkr",
       "checkr"
     ],
     "toolNames": [
@@ -3426,15 +3828,16 @@
       "list_adverse_actions",
       "create_adverse_action"
     ],
-    "description": "Checkr adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "chronicle",
     "displayName": "Chronicle",
     "version": "1.0.0",
-    "category": "cybersecurity",
+    "category": "misc",
     "keywords": [
+      "chronicle",
       "chronicle"
     ],
     "toolNames": [
@@ -3453,15 +3856,16 @@
       "search_entities",
       "ingest_udm_events"
     ],
-    "description": "Chronicle adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "churnzero",
-    "displayName": "Churn Zero",
+    "displayName": "Churnzero",
     "version": "1.0.0",
-    "category": "crm",
+    "category": "misc",
     "keywords": [
+      "churnzero",
       "churnzero"
     ],
     "toolNames": [
@@ -3479,15 +3883,16 @@
       "list_segments",
       "get_segment_members"
     ],
-    "description": "Churn Zero adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "circleci",
-    "displayName": "Circle CI",
+    "displayName": "Circleci",
     "version": "1.0.0",
-    "category": "devops",
+    "category": "misc",
     "keywords": [
+      "circleci",
       "circleci"
     ],
     "toolNames": [
@@ -3509,14 +3914,14 @@
       "list_contexts",
       "list_environment_variables"
     ],
-    "description": "17 tools (full CRUD for pipelines, workflows, jobs, contexts, schedules, insights).",
+    "description": "",
     "author": "protectnil"
   },
   {
     "name": "cisco-duo",
     "displayName": "Cisco Duo",
     "version": "1.0.0",
-    "category": "identity",
+    "category": "misc",
     "keywords": [
       "cisco-duo",
       "cisco",
@@ -3541,7 +3946,7 @@
       "bypass_user",
       "get_account_summary"
     ],
-    "description": "Cisco Duo adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -3596,7 +4001,7 @@
     "name": "cisco-secure",
     "displayName": "Cisco Secure",
     "version": "1.0.0",
-    "category": "cybersecurity",
+    "category": "misc",
     "keywords": [
       "cisco-secure",
       "cisco",
@@ -3619,7 +4024,7 @@
       "list_audit_logs",
       "query_umbrella_dns"
     ],
-    "description": "Cisco Secure adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -3715,8 +4120,9 @@
     "name": "clari",
     "displayName": "Clari",
     "version": "1.0.0",
-    "category": "crm",
+    "category": "misc",
     "keywords": [
+      "clari",
       "clari"
     ],
     "toolNames": [
@@ -3730,7 +4136,7 @@
       "get_call_scorecards",
       "create_call"
     ],
-    "description": "Clari adapter for the Epic AI Intelligence Platform",
+    "description": "",
     "author": "protectnil"
   },
   {
@@ -3846,12 +4252,12 @@
     "toolNames": [
       "list_users",
       "get_user",
+      "get_user_by_email",
       "create_user",
       "update_user",
       "delete_user",
       "ban_user",
       "unban_user",
-      "get_user_by_email",
       "list_organizations",
       "get_organization",
       "create_organization",
@@ -4078,6 +4484,30 @@
     "author": "protectnil"
   },
   {
+    "name": "co-huggingface-hf-mcp-server",
+    "displayName": "Hugging Face",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "co-huggingface-hf-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Access the Hugging Face Hub and thousands of Gradio Apps",
+    "author": "vendor"
+  },
+  {
+    "name": "co-omni-mcp",
+    "displayName": "Omni Analytics",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "co-omni-mcp"
+    ],
+    "toolNames": [],
+    "description": "Query your data using natural language through Omni's semantic model",
+    "author": "vendor"
+  },
+  {
     "name": "cockroachdb",
     "displayName": "CockroachDB",
     "version": "1.0.0",
@@ -4226,6 +4656,7 @@
       "blockchain"
     ],
     "toolNames": [
+      "ping",
       "get_price",
       "get_coin_data",
       "list_coins",
@@ -4240,11 +4671,1306 @@
       "get_exchange",
       "get_exchange_tickers",
       "list_nfts",
-      "get_nft",
-      "ping"
+      "get_nft"
     ],
     "description": "CoinGecko crypto market data: real-time prices, market caps, OHLC, trending coins, NFTs, exchanges, and global DeFi statistics.",
     "author": "protectnil"
+  },
+  {
+    "name": "com-activecampaign-activecampaign",
+    "displayName": "ActiveCampaign",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-activecampaign-activecampaign"
+    ],
+    "toolNames": [],
+    "description": "Autonomous marketing to transform how you work",
+    "author": "vendor"
+  },
+  {
+    "name": "com-ahrefs-api-ahrefs",
+    "displayName": "Ahrefs",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-ahrefs-api-ahrefs"
+    ],
+    "toolNames": [],
+    "description": "SEO & AI search analytics",
+    "author": "vendor"
+  },
+  {
+    "name": "com-aiera-mcp-pub-aiera",
+    "displayName": "Aiera",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-aiera-mcp-pub-aiera"
+    ],
+    "toolNames": [],
+    "description": "Live events, filings, company publications, and more",
+    "author": "vendor"
+  },
+  {
+    "name": "com-airops-app-airops",
+    "displayName": "AirOps",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-airops-app-airops"
+    ],
+    "toolNames": [],
+    "description": "Craft content that wins AI search",
+    "author": "vendor"
+  },
+  {
+    "name": "com-airtable-mcp",
+    "displayName": "Airtable",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-airtable-mcp"
+    ],
+    "toolNames": [],
+    "description": "Bring your structured data to Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "com-airwallex-developer-mcp",
+    "displayName": "Airwallex Developer",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-airwallex-developer-mcp"
+    ],
+    "toolNames": [],
+    "description": "Integrate with the Airwallex Platform using Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "com-amplitude-mcp-server",
+    "displayName": "Amplitude",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-amplitude-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Search, access, and get insights on your Amplitude data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-asana-mcp-asana",
+    "displayName": "Asana",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-asana-mcp-asana"
+    ],
+    "toolNames": [],
+    "description": "Connect to Asana to coordinate tasks, projects, and goals",
+    "author": "vendor"
+  },
+  {
+    "name": "com-atlassian-atlassian-mcp-server",
+    "displayName": "Atlassian",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-atlassian-atlassian-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Access Jira & Confluence from Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "com-attio-attio",
+    "displayName": "Attio",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-attio-attio"
+    ],
+    "toolNames": [],
+    "description": "Search, manage, and update your Attio CRM from Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "com-auraintelligence-mcp-aura",
+    "displayName": "Aura",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-auraintelligence-mcp-aura"
+    ],
+    "toolNames": [],
+    "description": "Company intelligence & workforce analytics",
+    "author": "vendor"
+  },
+  {
+    "name": "com-benchling-benchling",
+    "displayName": "Benchling",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-benchling-benchling"
+    ],
+    "toolNames": [],
+    "description": "Connect to R&D data, source experiments, and notebooks",
+    "author": "vendor"
+  },
+  {
+    "name": "com-biorender-services-mcp-biorender",
+    "displayName": "BioRender",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-biorender-services-mcp-biorender"
+    ],
+    "toolNames": [],
+    "description": "Search for and use scientific templates and icons",
+    "author": "vendor"
+  },
+  {
+    "name": "com-bitly-api-ssl-bitly",
+    "displayName": "Bitly",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-bitly-api-ssl-bitly"
+    ],
+    "toolNames": [],
+    "description": "Shorten links, generate QR Codes, and track performance",
+    "author": "vendor"
+  },
+  {
+    "name": "com-blockscout-mcp-server",
+    "displayName": "Blockscout",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-blockscout-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Access and analyze blockchain data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-blueskyapi-vast-mcp-mt-newswires",
+    "displayName": "MT Newswires",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-blueskyapi-vast-mcp-mt-newswires"
+    ],
+    "toolNames": [],
+    "description": "Trusted real-time global financial news provider",
+    "author": "vendor"
+  },
+  {
+    "name": "com-box-mcp-box",
+    "displayName": "Box",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-box-mcp-box"
+    ],
+    "toolNames": [],
+    "description": "Search, access and get insights on your Box content",
+    "author": "vendor"
+  },
+  {
+    "name": "com-brex-mcp",
+    "displayName": "Brex",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-brex-mcp"
+    ],
+    "toolNames": [],
+    "description": "Intelligent finance automation",
+    "author": "vendor"
+  },
+  {
+    "name": "com-calendly-mcp",
+    "displayName": "Calendly",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-calendly-mcp"
+    ],
+    "toolNames": [],
+    "description": "Manage event types, availability, and bookings.",
+    "author": "vendor"
+  },
+  {
+    "name": "com-canva-mcp-canva",
+    "displayName": "Canva",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-canva-mcp-canva"
+    ],
+    "toolNames": [],
+    "description": "Search, create, autofill, and export Canva designs",
+    "author": "vendor"
+  },
+  {
+    "name": "com-claude-mcp-pubmed-pubmed",
+    "displayName": "PubMed",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-claude-mcp-pubmed-pubmed"
+    ],
+    "toolNames": [],
+    "description": "Search biomedical literature from PubMed",
+    "author": "vendor"
+  },
+  {
+    "name": "com-clay-api-clay",
+    "displayName": "Clay",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-clay-api-clay"
+    ],
+    "toolNames": [],
+    "description": "Find prospects. Research accounts. Personalize outreach",
+    "author": "vendor"
+  },
+  {
+    "name": "com-clerk-mcp",
+    "displayName": "Clerk",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-clerk-mcp"
+    ],
+    "toolNames": [],
+    "description": "Add authentication, organizations, and billing",
+    "author": "vendor"
+  },
+  {
+    "name": "com-clickup-mcp-clickup",
+    "displayName": "ClickUp",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-clickup-mcp-clickup"
+    ],
+    "toolNames": [],
+    "description": "Project management & collaboration for teams & agents",
+    "author": "vendor"
+  },
+  {
+    "name": "com-close-close-mcp",
+    "displayName": "Close",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-close-close-mcp"
+    ],
+    "toolNames": [],
+    "description": "Connect Claude to Close CRM to securely access and act on your sales data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-cloudflare-mcp-mcp",
+    "displayName": "Cloudflare Developer Platform",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-cloudflare-mcp-mcp"
+    ],
+    "toolNames": [],
+    "description": "Build applications with compute, storage, and AI",
+    "author": "vendor"
+  },
+  {
+    "name": "com-cloudinary-mcp-asset-management-cloudinary",
+    "displayName": "Cloudinary",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-cloudinary-mcp-asset-management-cloudinary"
+    ],
+    "toolNames": [],
+    "description": "Manage, transform and deliver your images & videos",
+    "author": "vendor"
+  },
+  {
+    "name": "com-context7-context7",
+    "displayName": "Context7",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-context7-context7"
+    ],
+    "toolNames": [],
+    "description": "Up-to-date docs for LLMs and AI code editors",
+    "author": "vendor"
+  },
+  {
+    "name": "com-crossbeam-mcp-crossbeam",
+    "displayName": "Crossbeam",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-crossbeam-mcp-crossbeam"
+    ],
+    "toolNames": [],
+    "description": "Explore partner data and ecosystem insights in Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "com-crypto-mcp-crypto-com",
+    "displayName": "Crypto.com",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-crypto-mcp-crypto-com"
+    ],
+    "toolNames": [],
+    "description": "Real time prices, orders, charts, and more for crypto",
+    "author": "vendor"
+  },
+  {
+    "name": "com-daloopa-mcp-daloopa",
+    "displayName": "Daloopa",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-daloopa-mcp-daloopa"
+    ],
+    "toolNames": [],
+    "description": "Financial fundamental data and KPIs with hyperlinks",
+    "author": "vendor"
+  },
+  {
+    "name": "com-databricks-www-databricks",
+    "displayName": "Databricks",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-databricks-www-databricks"
+    ],
+    "toolNames": [],
+    "description": "Managed MCP servers with Unity Catalog and Mosaic AI",
+    "author": "vendor"
+  },
+  {
+    "name": "com-datagrail-mcp",
+    "displayName": "DataGrail",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-datagrail-mcp"
+    ],
+    "toolNames": [],
+    "description": "Secure, production-ready AI orchestration for privacy",
+    "author": "vendor"
+  },
+  {
+    "name": "com-docuseal-mcp",
+    "displayName": "DocuSeal",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-docuseal-mcp"
+    ],
+    "toolNames": [],
+    "description": "Sign, send & manage documents with DocuSeal",
+    "author": "vendor"
+  },
+  {
+    "name": "com-docusign-mcp",
+    "displayName": "Docusign",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-docusign-mcp"
+    ],
+    "toolNames": [],
+    "description": "Intelligent, secure contract management by Docusign",
+    "author": "vendor"
+  },
+  {
+    "name": "com-dremio-cloud-mcp",
+    "displayName": "Dremio Cloud",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-dremio-cloud-mcp"
+    ],
+    "toolNames": [],
+    "description": "Analyze and get insights from your lakehouse data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-egnyte-mcp-server",
+    "displayName": "Egnyte",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-egnyte-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Securely access and analyze Egnyte content",
+    "author": "vendor"
+  },
+  {
+    "name": "com-factset-mcp",
+    "displayName": "FactSet AI-Ready Data",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-factset-mcp"
+    ],
+    "toolNames": [],
+    "description": "Access institutional-quality financial data and analytics",
+    "author": "vendor"
+  },
+  {
+    "name": "com-figma-mcp-mcp",
+    "displayName": "Figma",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-figma-mcp-mcp"
+    ],
+    "toolNames": [],
+    "description": "Generate diagrams and better code from Figma context",
+    "author": "vendor"
+  },
+  {
+    "name": "com-g2-mcp",
+    "displayName": "G2",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-g2-mcp"
+    ],
+    "toolNames": [],
+    "description": "Bring real buyer signals into AI workflows",
+    "author": "vendor"
+  },
+  {
+    "name": "com-getguru-mcp-server",
+    "displayName": "Guru",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-getguru-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Search and interact with your company knowledge",
+    "author": "vendor"
+  },
+  {
+    "name": "com-glean-glean",
+    "displayName": "Glean",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-glean-glean"
+    ],
+    "toolNames": [],
+    "description": "Bring enterprise context to Claude and your AI tools",
+    "author": "vendor"
+  },
+  {
+    "name": "com-godaddy-api-godaddy",
+    "displayName": "GoDaddy",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-godaddy-api-godaddy"
+    ],
+    "toolNames": [],
+    "description": "Search domains and check availability",
+    "author": "vendor"
+  },
+  {
+    "name": "com-google-cloud-bigquery",
+    "displayName": "Google Cloud BigQuery",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-google-cloud-bigquery"
+    ],
+    "toolNames": [],
+    "description": "BigQuery: Advanced analytical insights for agents",
+    "author": "vendor"
+  },
+  {
+    "name": "com-google-cloud-compute-engine",
+    "displayName": "Google Compute Engine",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-google-cloud-compute-engine"
+    ],
+    "toolNames": [],
+    "description": "MCP server for Google Compute Engine",
+    "author": "vendor"
+  },
+  {
+    "name": "com-grantedai-mcp",
+    "displayName": "Granted",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-grantedai-mcp"
+    ],
+    "toolNames": [],
+    "description": "Discover every grant opportunity in existence.",
+    "author": "vendor"
+  },
+  {
+    "name": "com-gusto-mcp",
+    "displayName": "Gusto",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-gusto-mcp"
+    ],
+    "toolNames": [],
+    "description": "Query and analyze your Gusto data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-hubspot-mcp-hubspot",
+    "displayName": "HubSpot",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-hubspot-mcp-hubspot"
+    ],
+    "toolNames": [],
+    "description": "Chat with your CRM data to get personalized insights",
+    "author": "vendor"
+  },
+  {
+    "name": "com-imedidata-mcp-medidata",
+    "displayName": "Medidata",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-imedidata-mcp-medidata"
+    ],
+    "toolNames": [],
+    "description": "Clinical trial software and site ranking tools",
+    "author": "vendor"
+  },
+  {
+    "name": "com-indeed-mcp-indeed",
+    "displayName": "Indeed",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-indeed-mcp-indeed"
+    ],
+    "toolNames": [],
+    "description": "Search for jobs on Indeed",
+    "author": "vendor"
+  },
+  {
+    "name": "com-intapp-my-celeste",
+    "displayName": "Intapp Celeste",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-intapp-my-celeste"
+    ],
+    "toolNames": [],
+    "description": "Securely, compliantly access Intapp Celeste products",
+    "author": "vendor"
+  },
+  {
+    "name": "com-intercom-mcp-intercom",
+    "displayName": "Intercom",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-intercom-mcp-intercom"
+    ],
+    "toolNames": [],
+    "description": "Access to Intercom data for better customer insights",
+    "author": "vendor"
+  },
+  {
+    "name": "com-intuit-turbotax-mcp",
+    "displayName": "Intuit TurboTax",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-intuit-turbotax-mcp"
+    ],
+    "toolNames": [],
+    "description": "Estimate tax refunds and connect with live tax experts",
+    "author": "vendor"
+  },
+  {
+    "name": "com-jentic-jentic",
+    "displayName": "Jentic",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-jentic-jentic"
+    ],
+    "toolNames": [],
+    "description": "One connection to access all your tools securely",
+    "author": "vendor"
+  },
+  {
+    "name": "com-jotform-mcp",
+    "displayName": "Jotform",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-jotform-mcp"
+    ],
+    "toolNames": [],
+    "description": "Create forms & analyze submissions inside Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "com-kensho-kfinance-s-p-global",
+    "displayName": "S&P Global",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-kensho-kfinance-s-p-global"
+    ],
+    "toolNames": [],
+    "description": "Query a range of S&P Global datasets",
+    "author": "vendor"
+  },
+  {
+    "name": "com-klaviyo-mcp-klaviyo",
+    "displayName": "Klaviyo",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-klaviyo-mcp-klaviyo"
+    ],
+    "toolNames": [],
+    "description": "Report, strategize & create with real-time Klaviyo data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-legalzoom-mcp",
+    "displayName": "LegalZoom",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-legalzoom-mcp"
+    ],
+    "toolNames": [],
+    "description": "Attorney guidance & tools for business & personal needs",
+    "author": "vendor"
+  },
+  {
+    "name": "com-lilt-mcp",
+    "displayName": "LILT",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-lilt-mcp"
+    ],
+    "toolNames": [],
+    "description": "High-quality translation with human verification",
+    "author": "vendor"
+  },
+  {
+    "name": "com-localfalcon-mcp",
+    "displayName": "Local Falcon",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-localfalcon-mcp"
+    ],
+    "toolNames": [],
+    "description": "AI visibility and local search intelligence platform",
+    "author": "vendor"
+  },
+  {
+    "name": "com-lseg-analytics-api-lseg",
+    "displayName": "LSEG",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-lseg-analytics-api-lseg"
+    ],
+    "toolNames": [],
+    "description": "Access best in class data & analytics across a broad spectrum of asset classes.",
+    "author": "vendor"
+  },
+  {
+    "name": "com-luminpdf-lumin",
+    "displayName": "Lumin",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-luminpdf-lumin"
+    ],
+    "toolNames": [],
+    "description": "Manage documents, send signature requests, and convert Markdown to PDF",
+    "author": "vendor"
+  },
+  {
+    "name": "com-mailerlite-mcp",
+    "displayName": "MailerLite",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-mailerlite-mcp"
+    ],
+    "toolNames": [],
+    "description": "Turn Claude into your email marketing assistant",
+    "author": "vendor"
+  },
+  {
+    "name": "com-make-mcp",
+    "displayName": "Make",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-make-mcp"
+    ],
+    "toolNames": [],
+    "description": "Run Make scenarios and manage your Make account",
+    "author": "vendor"
+  },
+  {
+    "name": "com-meetcampfire-api-mcp",
+    "displayName": "Campfire",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-meetcampfire-api-mcp"
+    ],
+    "toolNames": [],
+    "description": "Search, analyze, and export Campfire data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-mercury-mcp-mercury",
+    "displayName": "Mercury",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-mercury-mcp-mercury"
+    ],
+    "toolNames": [],
+    "description": "Search, analyze and understand your finances on Mercury",
+    "author": "vendor"
+  },
+  {
+    "name": "com-mermaidchart-mermaid-mcp",
+    "displayName": "Mermaid Chart",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-mermaidchart-mermaid-mcp"
+    ],
+    "toolNames": [],
+    "description": "Validates Mermaid syntax, renders diagrams as high-quality SVG, and displays them instantly in an interactive UI where users can preview, zoom, and iterate in real time.",
+    "author": "vendor"
+  },
+  {
+    "name": "com-microsoft-microsoft-learn-mcp",
+    "displayName": "Microsoft Learn",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-microsoft-microsoft-learn-mcp"
+    ],
+    "toolNames": [],
+    "description": "Search trusted Microsoft docs to power your development",
+    "author": "vendor"
+  },
+  {
+    "name": "com-mixpanel-mixpanel",
+    "displayName": "Mixpanel",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-mixpanel-mixpanel"
+    ],
+    "toolNames": [],
+    "description": "Analyze, query, and manage your Mixpanel data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-monday-monday-com",
+    "displayName": "monday.com",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-monday-monday-com"
+    ],
+    "toolNames": [],
+    "description": "Manage projects, boards, and workflows in monday.com",
+    "author": "vendor"
+  },
+  {
+    "name": "com-moodys-api-moody-s",
+    "displayName": "Moody's",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-moodys-api-moody-s"
+    ],
+    "toolNames": [],
+    "description": "Risk insights, analytics, and decision intelligence",
+    "author": "vendor"
+  },
+  {
+    "name": "com-morningstar-mcp-morningstar",
+    "displayName": "Morningstar",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-morningstar-mcp-morningstar"
+    ],
+    "toolNames": [],
+    "description": "Up-to-date investment and market insights",
+    "author": "vendor"
+  },
+  {
+    "name": "com-motherduck-api-motherduck",
+    "displayName": "MotherDuck",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-motherduck-api-motherduck"
+    ],
+    "toolNames": [],
+    "description": "Get answers from your data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-msci-msci",
+    "displayName": "MSCI",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-msci-msci"
+    ],
+    "toolNames": [],
+    "description": "Converse, query and comprehend a world of MSCI indexes",
+    "author": "vendor"
+  },
+  {
+    "name": "com-netsuite-www-netsuite",
+    "displayName": "NetSuite",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-netsuite-www-netsuite"
+    ],
+    "toolNames": [],
+    "description": "Connect Claude to NetSuite data for analysis & insights",
+    "author": "vendor"
+  },
+  {
+    "name": "com-notion-mcp",
+    "displayName": "Notion",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-notion-mcp"
+    ],
+    "toolNames": [],
+    "description": "Connect your Notion workspace to search, update, and power workflows across tools",
+    "author": "vendor"
+  },
+  {
+    "name": "com-owkin-k-mcp-owkin",
+    "displayName": "Owkin",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-owkin-k-mcp-owkin"
+    ],
+    "toolNames": [],
+    "description": "Interact with AI agents built for biology",
+    "author": "vendor"
+  },
+  {
+    "name": "com-pagerduty-mcp",
+    "displayName": "PagerDuty",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-pagerduty-mcp"
+    ],
+    "toolNames": [],
+    "description": "Manage incidents, services and on-call schedules",
+    "author": "vendor"
+  },
+  {
+    "name": "com-paypal-mcp-mcp",
+    "displayName": "PayPal",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-paypal-mcp-mcp"
+    ],
+    "toolNames": [],
+    "description": "Access PayPal payments platform",
+    "author": "vendor"
+  },
+  {
+    "name": "com-pigment-app-pigment",
+    "displayName": "Pigment",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-pigment-app-pigment"
+    ],
+    "toolNames": [],
+    "description": "Analyze business data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-pitchbook-mcp-premium-pitchbook-premium",
+    "displayName": "PitchBook Premium",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-pitchbook-mcp-premium-pitchbook-premium"
+    ],
+    "toolNames": [],
+    "description": "PitchBook data, embedded in the way you work.",
+    "author": "vendor"
+  },
+  {
+    "name": "com-plaid-dashboard-api-plaid-developer-tools",
+    "displayName": "Plaid Developer Tools",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-plaid-dashboard-api-plaid-developer-tools"
+    ],
+    "toolNames": [],
+    "description": "Monitor, debug, and optimize your Plaid integration",
+    "author": "vendor"
+  },
+  {
+    "name": "com-postman-postman-mcp-server",
+    "displayName": "Postman",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-postman-postman-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Give API context to your coding agents",
+    "author": "vendor"
+  },
+  {
+    "name": "com-quartr-mcp",
+    "displayName": "Quartr",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-quartr-mcp"
+    ],
+    "toolNames": [],
+    "description": "Financial data and AI infrastructure for company research.",
+    "author": "vendor"
+  },
+  {
+    "name": "com-ramp-ramp-mcp-remote-ramp",
+    "displayName": "Ramp",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-ramp-ramp-mcp-remote-ramp"
+    ],
+    "toolNames": [],
+    "description": "Search, access, and analyze your Ramp financial data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-ravenpack-bigdata-bigdata",
+    "displayName": "Bigdata.com",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-ravenpack-bigdata-bigdata"
+    ],
+    "toolNames": [],
+    "description": "Access real-time financial data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-razorpay-razorpay",
+    "displayName": "Razorpay",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-razorpay-razorpay"
+    ],
+    "toolNames": [],
+    "description": "Turn Claude into your Razorpay Dashboard Assistant",
+    "author": "vendor"
+  },
+  {
+    "name": "com-signnow-mcp",
+    "displayName": "SignNow",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-signnow-mcp"
+    ],
+    "toolNames": [],
+    "description": "Automate eSignature workflows directly from Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "com-similarweb-mcp-similarweb",
+    "displayName": "Similarweb",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-similarweb-mcp-similarweb"
+    ],
+    "toolNames": [],
+    "description": "Real time web, mobile app, and market data.",
+    "author": "vendor"
+  },
+  {
+    "name": "com-slack-mcp-slack",
+    "displayName": "Slack",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-slack-mcp-slack"
+    ],
+    "toolNames": [],
+    "description": "Send messages, create canvases, and fetch Slack data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-smartsheet-mcp",
+    "displayName": "Smartsheet",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-smartsheet-mcp"
+    ],
+    "toolNames": [],
+    "description": "Analyze and manage Smartsheet data with Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "com-snowflake-snowflake",
+    "displayName": "Snowflake",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-snowflake-snowflake"
+    ],
+    "toolNames": [],
+    "description": "Retrieve both structured and unstructured data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-squareup-mcp-square",
+    "displayName": "Square",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-squareup-mcp-square"
+    ],
+    "toolNames": [],
+    "description": "Search and manage transaction, merchant, and payment data",
+    "author": "vendor"
+  },
+  {
+    "name": "com-stripe-mcp",
+    "displayName": "Stripe",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-stripe-mcp"
+    ],
+    "toolNames": [],
+    "description": "Payment processing and financial infrastructure tools",
+    "author": "vendor"
+  },
+  {
+    "name": "com-supabase-mcp",
+    "displayName": "Supabase",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-supabase-mcp"
+    ],
+    "toolNames": [],
+    "description": "Manage databases, authentication, and storage",
+    "author": "vendor"
+  },
+  {
+    "name": "com-supermetrics-supermetrics",
+    "displayName": "Supermetrics",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-supermetrics-supermetrics"
+    ],
+    "toolNames": [],
+    "description": "Analyze marketing performance across 200+ platforms",
+    "author": "vendor"
+  },
+  {
+    "name": "com-tavily-mcp",
+    "displayName": "Tavily",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-tavily-mcp"
+    ],
+    "toolNames": [],
+    "description": "Connect your AI agents to the web",
+    "author": "vendor"
+  },
+  {
+    "name": "com-udemy-api-udemy-business",
+    "displayName": "Udemy Business",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-udemy-api-udemy-business"
+    ],
+    "toolNames": [],
+    "description": "Search and explore skill-building resources",
+    "author": "vendor"
+  },
+  {
+    "name": "com-usepylon-mcp",
+    "displayName": "Pylon",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-usepylon-mcp"
+    ],
+    "toolNames": [],
+    "description": "Search and manage Pylon support issues",
+    "author": "vendor"
+  },
+  {
+    "name": "com-vercel-vercel-mcp",
+    "displayName": "Vercel",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-vercel-vercel-mcp"
+    ],
+    "toolNames": [],
+    "description": "Analyze, debug, and manage projects and deployments",
+    "author": "vendor"
+  },
+  {
+    "name": "com-visier-www-visier",
+    "displayName": "Visier",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-visier-www-visier"
+    ],
+    "toolNames": [],
+    "description": "Find people, productivity and business impact insights",
+    "author": "vendor"
+  },
+  {
+    "name": "com-webflow-mcp",
+    "displayName": "Webflow",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-webflow-mcp"
+    ],
+    "toolNames": [],
+    "description": "Manage Webflow CMS, pages, assets and sites",
+    "author": "vendor"
+  },
+  {
+    "name": "com-wix-mcp",
+    "displayName": "Wix",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-wix-mcp"
+    ],
+    "toolNames": [],
+    "description": "Manage and build sites and apps on Wix",
+    "author": "vendor"
+  },
+  {
+    "name": "com-wordpress-public-api-wordpress-com",
+    "displayName": "WordPress.com",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-wordpress-public-api-wordpress-com"
+    ],
+    "toolNames": [],
+    "description": "Secure AI access to manage your WordPress.com sites",
+    "author": "vendor"
+  },
+  {
+    "name": "com-workato-www-workato",
+    "displayName": "Workato",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-workato-www-workato"
+    ],
+    "toolNames": [],
+    "description": "Automate workflows and connect your business apps",
+    "author": "vendor"
+  },
+  {
+    "name": "com-yardi-virtuoso",
+    "displayName": "Yardi Virtuoso",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-yardi-virtuoso"
+    ],
+    "toolNames": [],
+    "description": "Real-time Yardi data & insights",
+    "author": "vendor"
+  },
+  {
+    "name": "com-zapier-zapier",
+    "displayName": "Zapier",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-zapier-zapier"
+    ],
+    "toolNames": [],
+    "description": "Automate workflows across thousands of apps via conversation",
+    "author": "vendor"
+  },
+  {
+    "name": "com-zoominfo-mcp-zoominfo",
+    "displayName": "ZoomInfo",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "com-zoominfo-mcp-zoominfo"
+    ],
+    "toolNames": [],
+    "description": "Enrich contacts & accounts with GTM intelligence",
+    "author": "vendor"
   },
   {
     "name": "concur",
@@ -4353,10 +6079,10 @@
       "delete_connector",
       "list_consumer_groups",
       "get_consumer_group",
+      "list_subjects",
       "list_schemas",
       "get_schema",
       "register_schema",
-      "list_subjects",
       "delete_subject"
     ],
     "description": "Confluent Cloud Kafka management: environments, clusters, topics, connectors, schema registry, and consumer groups via the Cloud REST API and Kafka REST Proxy.",
@@ -4530,11 +6256,11 @@
       "get_alerts",
       "update_alert",
       "get_endpoints",
+      "get_all_endpoints",
+      "delete_endpoints",
       "isolate_endpoint",
       "unisolate_endpoint",
       "scan_endpoint",
-      "get_all_endpoints",
-      "delete_endpoints",
       "run_xql_query",
       "get_xql_results",
       "list_scripts",
@@ -4812,50 +6538,6 @@
     "author": "protectnil"
   },
   {
-    "name": "crowdstrike-identity",
-    "displayName": "CrowdStrike Falcon Identity Protection",
-    "version": "1.0.0",
-    "category": "identity",
-    "keywords": [
-      "crowdstrike",
-      "falcon",
-      "identity",
-      "identity protection",
-      "itd",
-      "identity threat detection",
-      "lateral movement",
-      "compromised credentials",
-      "zero trust",
-      "zta",
-      "risk score",
-      "entity",
-      "service account",
-      "privileged account",
-      "credential exposure",
-      "password spray",
-      "kerberoasting",
-      "pass-the-hash",
-      "user risk",
-      "identity security"
-    ],
-    "toolNames": [
-      "list_identity_detections",
-      "get_identity_detection",
-      "update_identity_detection",
-      "list_identity_entities",
-      "get_identity_entity",
-      "get_entity_timeline",
-      "search_compromised_credentials",
-      "get_lateral_movement",
-      "get_zta_score",
-      "list_zta_assessments",
-      "query_identity_graphql",
-      "list_identity_incidents"
-    ],
-    "description": "CrowdStrike Falcon Identity Protection: detect identity-based threats, analyze lateral movement, query compromised credentials, assess Zero Trust scores, and investigate entity timelines via REST and GraphQL.",
-    "author": "protectnil"
-  },
-  {
     "name": "crowdstrike",
     "displayName": "CrowdStrike Falcon",
     "version": "1.0.0",
@@ -4907,6 +6589,50 @@
       "list_vulnerabilities"
     ],
     "description": "CrowdStrike Falcon endpoint detection and response: search detections, manage hosts, quarantine endpoints, query incidents and alerts, manage IOCs, prevention policies, and vulnerability spotlight.",
+    "author": "protectnil"
+  },
+  {
+    "name": "crowdstrike-identity",
+    "displayName": "CrowdStrike Falcon Identity Protection",
+    "version": "1.0.0",
+    "category": "identity",
+    "keywords": [
+      "crowdstrike",
+      "falcon",
+      "identity",
+      "identity protection",
+      "itd",
+      "identity threat detection",
+      "lateral movement",
+      "compromised credentials",
+      "zero trust",
+      "zta",
+      "risk score",
+      "entity",
+      "service account",
+      "privileged account",
+      "credential exposure",
+      "password spray",
+      "kerberoasting",
+      "pass-the-hash",
+      "user risk",
+      "identity security"
+    ],
+    "toolNames": [
+      "list_identity_detections",
+      "get_identity_detection",
+      "update_identity_detection",
+      "list_identity_entities",
+      "get_identity_entity",
+      "get_entity_timeline",
+      "search_compromised_credentials",
+      "get_lateral_movement",
+      "get_zta_score",
+      "list_zta_assessments",
+      "query_identity_graphql",
+      "list_identity_incidents"
+    ],
+    "description": "CrowdStrike Falcon Identity Protection: detect identity-based threats, analyze lateral movement, query compromised credentials, assess Zero Trust scores, and investigate entity timelines via REST and GraphQL.",
     "author": "protectnil"
   },
   {
@@ -5391,6 +7117,7 @@
       "semantic-layer"
     ],
     "toolNames": [
+      "get_account",
       "list_projects",
       "get_project",
       "list_environments",
@@ -5407,8 +7134,7 @@
       "list_run_artifacts",
       "get_run_artifact",
       "list_service_tokens",
-      "list_webhooks",
-      "get_account"
+      "list_webhooks"
     ],
     "description": "Manage dbt Cloud jobs, runs, projects, environments, service tokens, and webhooks. Trigger and monitor dbt transformation pipelines via the REST API.",
     "author": "protectnil"
@@ -5528,11 +7254,71 @@
       "get_user",
       "list_groups",
       "list_roles",
-      "get_secret_policy",
-      "list_secret_policies"
+      "list_secret_policies",
+      "get_secret_policy"
     ],
     "description": "Manage Delinea Secret Server vaults: search, retrieve, create, and rotate secrets; audit access; manage folders, users, groups, roles, and policies.",
     "author": "protectnil"
+  },
+  {
+    "name": "dev-govcon-mcp",
+    "displayName": "Tango",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "dev-govcon-mcp"
+    ],
+    "toolNames": [],
+    "description": "Search for US Government Contracting Data",
+    "author": "vendor"
+  },
+  {
+    "name": "dev-jam-mcp-jam",
+    "displayName": "Jam",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "dev-jam-mcp-jam"
+    ],
+    "toolNames": [],
+    "description": "Record screen and collect automatic context for issues",
+    "author": "vendor"
+  },
+  {
+    "name": "dev-pscale-mcp-planetscale",
+    "displayName": "PlanetScale",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "dev-pscale-mcp-planetscale"
+    ],
+    "toolNames": [],
+    "description": "Authenticated access to your Postgres and MySQL DB's",
+    "author": "vendor"
+  },
+  {
+    "name": "dev-sentry-mcp-sentry",
+    "displayName": "Sentry",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "dev-sentry-mcp-sentry"
+    ],
+    "toolNames": [],
+    "description": "Search, query, and debug errors intelligently",
+    "author": "vendor"
+  },
+  {
+    "name": "dev-stytch-mcp-stytch",
+    "displayName": "Stytch",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "dev-stytch-mcp-stytch"
+    ],
+    "toolNames": [],
+    "description": "Manage your Stytch Project",
+    "author": "vendor"
   },
   {
     "name": "devto",
@@ -7800,56 +9586,6 @@
     "author": "protectnil"
   },
   {
-    "name": "github-actions",
-    "displayName": "GitHub Actions",
-    "version": "1.0.0",
-    "category": "devops",
-    "keywords": [
-      "github",
-      "actions",
-      "ci",
-      "cd",
-      "cicd",
-      "pipeline",
-      "workflow",
-      "runner",
-      "artifact",
-      "secret",
-      "variable",
-      "job",
-      "deploy",
-      "build",
-      "test",
-      "automation"
-    ],
-    "toolNames": [
-      "list_workflows",
-      "get_workflow",
-      "enable_workflow",
-      "disable_workflow",
-      "list_workflow_runs",
-      "get_workflow_run",
-      "rerun_workflow",
-      "cancel_workflow_run",
-      "delete_workflow_run",
-      "list_workflow_jobs",
-      "get_workflow_job",
-      "download_job_logs",
-      "list_artifacts",
-      "get_artifact",
-      "delete_artifact",
-      "list_secrets",
-      "create_or_update_secret",
-      "delete_secret",
-      "list_variables",
-      "create_or_update_variable",
-      "delete_variable",
-      "list_self_hosted_runners"
-    ],
-    "description": "GitHub Actions CI/CD: manage workflows, runs, jobs, artifacts, secrets, variables, and self-hosted runners.",
-    "author": "protectnil"
-  },
-  {
     "name": "github",
     "displayName": "GitHub",
     "version": "1.0.0",
@@ -7902,6 +9638,56 @@
       "search_code"
     ],
     "description": "Source control and collaboration: manage repos, issues, pull requests, branches, releases, deployments, workflow runs, and code search.",
+    "author": "protectnil"
+  },
+  {
+    "name": "github-actions",
+    "displayName": "GitHub Actions",
+    "version": "1.0.0",
+    "category": "devops",
+    "keywords": [
+      "github",
+      "actions",
+      "ci",
+      "cd",
+      "cicd",
+      "pipeline",
+      "workflow",
+      "runner",
+      "artifact",
+      "secret",
+      "variable",
+      "job",
+      "deploy",
+      "build",
+      "test",
+      "automation"
+    ],
+    "toolNames": [
+      "list_workflows",
+      "get_workflow",
+      "enable_workflow",
+      "disable_workflow",
+      "list_workflow_runs",
+      "get_workflow_run",
+      "rerun_workflow",
+      "cancel_workflow_run",
+      "delete_workflow_run",
+      "list_workflow_jobs",
+      "get_workflow_job",
+      "download_job_logs",
+      "list_artifacts",
+      "get_artifact",
+      "delete_artifact",
+      "list_secrets",
+      "create_or_update_secret",
+      "delete_secret",
+      "list_variables",
+      "create_or_update_variable",
+      "delete_variable",
+      "list_self_hosted_runners"
+    ],
+    "description": "GitHub Actions CI/CD: manage workflows, runs, jobs, artifacts, secrets, variables, and self-hosted runners.",
     "author": "protectnil"
   },
   {
@@ -8745,7 +10531,6 @@
       "get_payroll",
       "list_pay_periods",
       "list_company_benefits",
-      "list_employee_benefits",
       "list_contractors",
       "get_contractor",
       "list_time_off_requests",
@@ -9327,6 +11112,46 @@
     "author": "protectnil"
   },
   {
+    "name": "hubspot",
+    "displayName": "HubSpot",
+    "version": "1.0.0",
+    "category": "crm",
+    "keywords": [
+      "hubspot",
+      "crm",
+      "contact",
+      "deal",
+      "company",
+      "ticket",
+      "pipeline",
+      "sales",
+      "marketing",
+      "owner"
+    ],
+    "toolNames": [
+      "list_contacts",
+      "get_contact",
+      "create_contact",
+      "update_contact",
+      "search_contacts",
+      "list_companies",
+      "get_company",
+      "create_company",
+      "update_company",
+      "list_deals",
+      "get_deal",
+      "create_deal",
+      "update_deal",
+      "list_tickets",
+      "get_ticket",
+      "list_owners",
+      "list_pipelines",
+      "search_crm"
+    ],
+    "description": "HubSpot CRM: manage contacts, companies, deals, tickets, pipelines, and owners. Full CRUD and search across CRM objects.",
+    "author": "protectnil"
+  },
+  {
     "name": "hubspot-marketing",
     "displayName": "HubSpot Marketing Hub",
     "version": "1.0.0",
@@ -9372,46 +11197,6 @@
       "create_marketing_event"
     ],
     "description": "HubSpot Marketing Hub: manage campaigns, marketing emails, forms, contact lists, subscriptions, and marketing events.",
-    "author": "protectnil"
-  },
-  {
-    "name": "hubspot",
-    "displayName": "HubSpot",
-    "version": "1.0.0",
-    "category": "crm",
-    "keywords": [
-      "hubspot",
-      "crm",
-      "contact",
-      "deal",
-      "company",
-      "ticket",
-      "pipeline",
-      "sales",
-      "marketing",
-      "owner"
-    ],
-    "toolNames": [
-      "list_contacts",
-      "get_contact",
-      "create_contact",
-      "update_contact",
-      "search_contacts",
-      "list_companies",
-      "get_company",
-      "create_company",
-      "update_company",
-      "list_deals",
-      "get_deal",
-      "create_deal",
-      "update_deal",
-      "list_tickets",
-      "get_ticket",
-      "list_owners",
-      "list_pipelines",
-      "search_crm"
-    ],
-    "description": "HubSpot CRM: manage contacts, companies, deals, tickets, pipelines, and owners. Full CRUD and search across CRM objects.",
     "author": "protectnil"
   },
   {
@@ -9931,6 +11716,174 @@
     "author": "protectnil"
   },
   {
+    "name": "io-apollo-mcp",
+    "displayName": "Apollo.io",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-apollo-mcp"
+    ],
+    "toolNames": [],
+    "description": "Find buyers. Book more meetings. Close more deals.",
+    "author": "vendor"
+  },
+  {
+    "name": "io-apollographql-mcp-graphos-tools",
+    "displayName": "GraphOS MCP Tools",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-apollographql-mcp-graphos-tools"
+    ],
+    "toolNames": [],
+    "description": "Search Apollo docs, specs, and best practices",
+    "author": "vendor"
+  },
+  {
+    "name": "io-commonroom-commonroom",
+    "displayName": "Common Room",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-commonroom-commonroom"
+    ],
+    "toolNames": [],
+    "description": "Your GTM Copilot",
+    "author": "vendor"
+  },
+  {
+    "name": "io-coupler-remote-mcp-server",
+    "displayName": "Coupler.io",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-coupler-remote-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Access business data from hundreds of sources",
+    "author": "vendor"
+  },
+  {
+    "name": "io-customer-mcp",
+    "displayName": "Customer.io",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-customer-mcp"
+    ],
+    "toolNames": [],
+    "description": "Explore customer data and generate insights via Claude",
+    "author": "vendor"
+  },
+  {
+    "name": "io-github-miroapp-mcp-server",
+    "displayName": "Miro",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-github-miroapp-mcp-server"
+    ],
+    "toolNames": [],
+    "description": "Access and create new content on Miro boards",
+    "author": "vendor"
+  },
+  {
+    "name": "io-github-posthog-mcp",
+    "displayName": "PostHog",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-github-posthog-mcp"
+    ],
+    "toolNames": [],
+    "description": "Query, analyze, and manage your PostHog insights",
+    "author": "vendor"
+  },
+  {
+    "name": "io-honeycomb-mcp-honeycomb",
+    "displayName": "Honeycomb",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-honeycomb-mcp-honeycomb"
+    ],
+    "toolNames": [],
+    "description": "Query and explore observability data and SLOs",
+    "author": "vendor"
+  },
+  {
+    "name": "io-n8n-n8n",
+    "displayName": "n8n",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-n8n-n8n"
+    ],
+    "toolNames": [],
+    "description": "Access and run your n8n workflows",
+    "author": "vendor"
+  },
+  {
+    "name": "io-outreach-mcp",
+    "displayName": "Outreach",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-outreach-mcp"
+    ],
+    "toolNames": [],
+    "description": "Unleash your team's best performance with Outreach AI",
+    "author": "vendor"
+  },
+  {
+    "name": "io-pendo-www-pendo",
+    "displayName": "Pendo",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-pendo-www-pendo"
+    ],
+    "toolNames": [],
+    "description": "Connect to Pendo for product and user insights",
+    "author": "vendor"
+  },
+  {
+    "name": "io-port-port",
+    "displayName": "Port IO",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-port-port"
+    ],
+    "toolNames": [],
+    "description": "Search your context lake and safely run actions",
+    "author": "vendor"
+  },
+  {
+    "name": "io-sanity-www-mcp",
+    "displayName": "Sanity",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-sanity-www-mcp"
+    ],
+    "toolNames": [],
+    "description": "Create, query, and manage structured content in Sanity",
+    "author": "vendor"
+  },
+  {
+    "name": "io-starburst-starburst",
+    "displayName": "Starburst",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "io-starburst-starburst"
+    ],
+    "toolNames": [],
+    "description": "Securely retrieve data from your federated data sources",
+    "author": "vendor"
+  },
+  {
     "name": "ironclad",
     "displayName": "Ironclad",
     "version": "1.0.0",
@@ -10086,47 +12039,6 @@
     "author": "protectnil"
   },
   {
-    "name": "jira-service-management",
-    "displayName": "Jira Service Management",
-    "version": "1.0.0",
-    "category": "devops",
-    "keywords": [
-      "jira",
-      "jsm",
-      "service management",
-      "service desk",
-      "itsm",
-      "helpdesk",
-      "ticket",
-      "request",
-      "sla",
-      "approval",
-      "queue",
-      "incident",
-      "atlassian"
-    ],
-    "toolNames": [
-      "list_service_desks",
-      "list_request_types",
-      "create_request",
-      "get_request",
-      "list_requests",
-      "add_comment",
-      "get_comments",
-      "add_attachment",
-      "get_request_sla",
-      "get_request_status",
-      "list_queues",
-      "get_queue_issues",
-      "get_approvals",
-      "answer_approval",
-      "list_organizations",
-      "transition_request"
-    ],
-    "description": "ITSM service desk management: create and track customer requests, manage queues, monitor SLAs, handle approvals, and manage organizations in Jira Service Management.",
-    "author": "protectnil"
-  },
-  {
     "name": "jira",
     "displayName": "Jira",
     "version": "1.0.0",
@@ -10166,6 +12078,47 @@
       "search_users"
     ],
     "description": "Issue and project tracking: create, update, transition, and query Jira issues using JQL; manage projects, priorities, worklogs, and comments.",
+    "author": "protectnil"
+  },
+  {
+    "name": "jira-service-management",
+    "displayName": "Jira Service Management",
+    "version": "1.0.0",
+    "category": "devops",
+    "keywords": [
+      "jira",
+      "jsm",
+      "service management",
+      "service desk",
+      "itsm",
+      "helpdesk",
+      "ticket",
+      "request",
+      "sla",
+      "approval",
+      "queue",
+      "incident",
+      "atlassian"
+    ],
+    "toolNames": [
+      "list_service_desks",
+      "list_request_types",
+      "create_request",
+      "get_request",
+      "list_requests",
+      "add_comment",
+      "get_comments",
+      "add_attachment",
+      "get_request_sla",
+      "get_request_status",
+      "list_queues",
+      "get_queue_issues",
+      "get_approvals",
+      "answer_approval",
+      "list_organizations",
+      "transition_request"
+    ],
+    "description": "ITSM service desk management: create and track customer requests, manage queues, monitor SLAs, handle approvals, and manage organizations in Jira Service Management.",
     "author": "protectnil"
   },
   {
@@ -10412,10 +12365,10 @@
       "list_phishing_campaigns",
       "get_phishing_campaign",
       "list_phishing_security_tests",
+      "get_phishing_campaign_results",
       "list_training_campaigns",
       "get_training_campaign",
-      "list_training_enrollments",
-      "get_phishing_campaign_results"
+      "list_training_enrollments"
     ],
     "description": "KnowBe4 security awareness: query phishing campaigns, training enrollments, user risk scores, phish-prone percentages, and group data.",
     "author": "protectnil"
@@ -10440,6 +12393,7 @@
     "toolNames": [
       "list_namespaces",
       "list_nodes",
+      "get_node",
       "list_pods",
       "get_pod",
       "get_pod_logs",
@@ -10454,9 +12408,8 @@
       "list_jobs",
       "list_cronjobs",
       "list_ingresses",
-      "list_events",
-      "get_node",
       "list_replicasets",
+      "list_events",
       "list_persistent_volumes"
     ],
     "description": "Kubernetes cluster management: inspect pods, deployments, services, nodes, and workloads. View logs, scale deployments, and monitor cluster events.",
@@ -10779,10 +12732,9 @@
       "get_news_article",
       "search_company",
       "get_company",
-      "get_shepards_report",
       "search_secondary_materials"
     ],
-    "description": "Search and retrieve LexisNexis legal case law, statutes, news, company profiles, and Shepard's citation reports.",
+    "description": "Search and retrieve LexisNexis legal case law, statutes, news, company profiles, and Shepard\\",
     "author": "protectnil"
   },
   {
@@ -10875,6 +12827,43 @@
     "author": "protectnil"
   },
   {
+    "name": "linkedin",
+    "displayName": "LinkedIn",
+    "version": "1.0.0",
+    "category": "social",
+    "keywords": [
+      "linkedin",
+      "professional network",
+      "profile",
+      "connections",
+      "posts",
+      "shares",
+      "company",
+      "organization",
+      "jobs",
+      "recruiter",
+      "social",
+      "network"
+    ],
+    "toolNames": [
+      "get_profile",
+      "get_connections",
+      "search_people",
+      "get_company",
+      "get_company_followers",
+      "search_companies",
+      "create_post",
+      "get_posts",
+      "delete_post",
+      "list_job_postings",
+      "get_job_posting",
+      "get_follower_statistics",
+      "get_post_analytics"
+    ],
+    "description": "Read LinkedIn profiles, connections, and company pages; create and manage posts; query follower and content analytics.",
+    "author": "protectnil"
+  },
+  {
     "name": "linkedin-ads",
     "displayName": "LinkedIn Ads",
     "version": "1.0.0",
@@ -10916,43 +12905,6 @@
       "list_matched_audiences"
     ],
     "description": "LinkedIn Campaign Manager: manage ad accounts, campaign groups, campaigns, creatives, and retrieve ad analytics and audience data.",
-    "author": "protectnil"
-  },
-  {
-    "name": "linkedin",
-    "displayName": "LinkedIn",
-    "version": "1.0.0",
-    "category": "social",
-    "keywords": [
-      "linkedin",
-      "professional network",
-      "profile",
-      "connections",
-      "posts",
-      "shares",
-      "company",
-      "organization",
-      "jobs",
-      "recruiter",
-      "social",
-      "network"
-    ],
-    "toolNames": [
-      "get_profile",
-      "get_connections",
-      "search_people",
-      "get_company",
-      "get_company_followers",
-      "search_companies",
-      "create_post",
-      "get_posts",
-      "delete_post",
-      "list_job_postings",
-      "get_job_posting",
-      "get_follower_statistics",
-      "get_post_analytics"
-    ],
-    "description": "Read LinkedIn profiles, connections, and company pages; create and manage posts; query follower and content analytics.",
     "author": "protectnil"
   },
   {
@@ -12722,14 +14674,14 @@
     ],
     "toolNames": [
       "run_suiteql",
+      "run_suiteql_paginated",
       "get_record",
       "list_records",
       "create_record",
       "update_record",
       "delete_record",
       "upsert_record",
-      "get_metadata",
-      "run_suiteql_paginated"
+      "get_metadata"
     ],
     "description": "Oracle NetSuite ERP: run SuiteQL queries, CRUD operations on records (customers, invoices, sales orders, vendors), metadata discovery.",
     "author": "protectnil"
@@ -12989,7 +14941,6 @@
       "search"
     ],
     "toolNames": [
-      "get_my_drive",
       "list_drives",
       "get_drive",
       "list_drive_items",
@@ -13003,7 +14954,6 @@
       "get_item_permissions",
       "create_sharing_link",
       "invite_item_access",
-      "list_sites",
       "get_site",
       "search_sites",
       "list_site_lists",
@@ -13079,7 +15029,6 @@
       "create_applicant",
       "get_applicant",
       "list_applicants",
-      "update_applicant",
       "delete_applicant",
       "generate_sdk_token",
       "list_documents",
@@ -13177,16 +15126,13 @@
       "create_response",
       "create_embedding",
       "create_image",
-      "edit_image",
       "create_image_variation",
       "create_speech",
       "create_transcription",
       "create_translation",
       "create_moderation",
       "list_files",
-      "upload_file",
       "delete_file",
-      "get_file",
       "list_fine_tuning_jobs",
       "create_fine_tuning_job",
       "get_fine_tuning_job",
@@ -13538,6 +15484,54 @@
     "author": "protectnil"
   },
   {
+    "name": "org-benevity-mcp-benevity",
+    "displayName": "Benevity",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "org-benevity-mcp-benevity"
+    ],
+    "toolNames": [],
+    "description": "Find and engage with verified nonprofits",
+    "author": "vendor"
+  },
+  {
+    "name": "org-candid-mcp-candid",
+    "displayName": "Candid",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "org-candid-mcp-candid"
+    ],
+    "toolNames": [],
+    "description": "Research nonprofits and funders using Candid's data",
+    "author": "vendor"
+  },
+  {
+    "name": "org-opentargets-platform-mcp-open-targets",
+    "displayName": "Open Targets",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "org-opentargets-platform-mcp-open-targets"
+    ],
+    "toolNames": [],
+    "description": "Drug target discovery and prioritisation platform",
+    "author": "vendor"
+  },
+  {
+    "name": "org-synapse-mcp-synapse-org",
+    "displayName": "Synapse.org",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "org-synapse-mcp-synapse-org"
+    ],
+    "toolNames": [],
+    "description": "Search and metadata tools for Synapse scientific data",
+    "author": "vendor"
+  },
+  {
     "name": "outreach",
     "displayName": "Outreach",
     "version": "1.0.0",
@@ -13669,6 +15663,7 @@
       "update_incident",
       "get_alerts",
       "get_endpoints",
+      "get_all_endpoints",
       "isolate_endpoint",
       "unisolate_endpoint",
       "scan_endpoint",
@@ -13677,8 +15672,7 @@
       "insert_iocs",
       "run_script",
       "get_script_execution_status",
-      "get_script_execution_results",
-      "get_all_endpoints"
+      "get_script_execution_results"
     ],
     "description": "Cortex XDR endpoint detection and response: manage incidents, alerts, endpoints, IOCs, and run scripts for investigation and remediation.",
     "author": "protectnil"
@@ -13710,15 +15704,15 @@
     "toolNames": [
       "list_documents",
       "get_document",
+      "get_document_status",
       "create_document_from_template",
       "create_document_from_pdf",
       "send_document",
       "delete_document",
       "download_document",
-      "get_document_status",
+      "get_document_session",
       "list_document_fields",
       "update_document_fields",
-      "get_document_session",
       "list_templates",
       "get_template",
       "delete_template",
@@ -13874,6 +15868,18 @@
     ],
     "description": "PayPal commerce: create and capture orders, manage invoices, process refunds, handle disputes, manage subscriptions and billing plans.",
     "author": "protectnil"
+  },
+  {
+    "name": "pe-chronograph-ai-chronograph",
+    "displayName": "Chronograph",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "pe-chronograph-ai-chronograph"
+    ],
+    "toolNames": [],
+    "description": "Interact with your Chronograph data directly in Claude",
+    "author": "vendor"
   },
   {
     "name": "pendo",
@@ -14102,31 +16108,6 @@
     "author": "protectnil"
   },
   {
-    "name": "plaid-investments",
-    "displayName": "Plaid Investments",
-    "version": "1.0.0",
-    "category": "finance",
-    "keywords": [
-      "plaid",
-      "investments",
-      "holdings",
-      "securities",
-      "portfolio",
-      "brokerage",
-      "stocks",
-      "dividends"
-    ],
-    "toolNames": [
-      "get_holdings",
-      "get_transactions",
-      "refresh_holdings",
-      "refresh_transactions",
-      "get_accounts"
-    ],
-    "description": "Plaid Investments: retrieve holdings, investment transactions, and account data from brokerage and retirement accounts.",
-    "author": "protectnil"
-  },
-  {
     "name": "plaid",
     "displayName": "Plaid",
     "version": "1.0.0",
@@ -14168,6 +16149,31 @@
       "get_recurring_transactions"
     ],
     "description": "Plaid financial data: retrieve bank accounts, transactions, balances, identity, investments, liabilities, and institution data via the Plaid API.",
+    "author": "protectnil"
+  },
+  {
+    "name": "plaid-investments",
+    "displayName": "Plaid Investments",
+    "version": "1.0.0",
+    "category": "finance",
+    "keywords": [
+      "plaid",
+      "investments",
+      "holdings",
+      "securities",
+      "portfolio",
+      "brokerage",
+      "stocks",
+      "dividends"
+    ],
+    "toolNames": [
+      "get_holdings",
+      "get_transactions",
+      "refresh_holdings",
+      "refresh_transactions",
+      "get_accounts"
+    ],
+    "description": "Plaid Investments: retrieve holdings, investment transactions, and account data from brokerage and retirement accounts.",
     "author": "protectnil"
   },
   {
@@ -15367,8 +17373,8 @@
       "mass_update_objects",
       "mass_delete_objects",
       "search_documents",
-      "run_saved_search",
       "list_saved_searches",
+      "run_saved_search",
       "list_fields",
       "list_choices",
       "list_matters",
@@ -15497,8 +17503,8 @@
       "create_folder",
       "list_resources",
       "get_resource",
-      "trigger_workflow",
       "list_workflows",
+      "trigger_workflow",
       "list_users",
       "get_user",
       "update_user",
@@ -15744,13 +17750,13 @@
       "get_object",
       "inspect_object",
       "create_ar_invoice",
+      "list_open_ar_invoices",
       "create_ap_bill",
+      "list_open_ap_bills",
       "create_journal_entry",
       "create_customer",
       "create_vendor",
       "get_gl_account_balance",
-      "list_open_ar_invoices",
-      "list_open_ap_bills",
       "list_departments"
     ],
     "description": "Sage Intacct XML API: query, read, and create financial records including AR invoices, AP bills, journal entries, customers, vendors, and GL accounts.",
@@ -15781,19 +17787,19 @@
       "get_record",
       "create_record",
       "update_record",
-      "delete_record",
       "upsert_record",
+      "delete_record",
       "describe_sobject",
       "list_sobjects",
+      "list_metadata_types",
+      "get_org_metadata",
       "search_sosl",
       "get_limits",
       "list_recent",
-      "composite_batch",
       "get_user_info",
-      "list_metadata_types",
+      "composite_batch",
       "execute_anonymous_apex",
-      "list_process_rules",
-      "get_org_metadata"
+      "list_process_rules"
     ],
     "description": "Salesforce CRM: SOQL queries, sObject CRUD, SOSL search, org limits, composite batch, Apex execution, and metadata access via REST API v66.",
     "author": "protectnil"
@@ -16199,7 +18205,7 @@
       "add_to_watchlist",
       "remove_from_watchlist"
     ],
-    "description": "Manage Securonix SNYPR/SIEM incidents, violations, and threats. Execute Spotter queries, retrieve user risk scores, and manage watchlists for UEBA and insider-threat programs.",
+    "description": "Manage Securonix SNYPR/SIEM incidents, violations, and threats. Execute Spotter queries, ",
     "author": "protectnil"
   },
   {
@@ -16246,7 +18252,7 @@
       "list_tracking_plans",
       "get_tracking_plan"
     ],
-    "description": "Send Segment tracking events (track, identify, group, page, screen, alias) and manage workspace resources including sources, destinations, warehouses, and tracking plans via the Public API.",
+    "description": "Send Segment tracking events (track, identify, group, page, screen, alias) and manage ",
     "author": "protectnil"
   },
   {
@@ -16372,7 +18378,7 @@
       "list_sender_identities",
       "create_sender_identity"
     ],
-    "description": "Send transactional email and manage SendGrid resources: templates, suppressions (bounces, blocks, spam, global unsubscribes), delivery statistics, unsubscribe groups, marketing contacts, and sender identities.",
+    "description": "Send transactional email and manage SendGrid resources: templates, suppressions (bounces, blocks, spam, ",
     "author": "protectnil"
   },
   {
@@ -16423,7 +18429,7 @@
       "list_entities",
       "get_entity"
     ],
-    "description": "Manage Microsoft Sentinel incidents, alerts, analytic rules, watchlists, bookmarks, and entities. Execute KQL hunting queries against Log Analytics. Full SecurityInsights REST API coverage.",
+    "description": "Manage Microsoft Sentinel incidents, alerts, analytic rules, watchlists, bookmarks, and entities. ",
     "author": "protectnil"
   },
   {
@@ -16502,7 +18508,6 @@
     "toolNames": [
       "list_organizations",
       "list_projects",
-      "list_teams",
       "list_issues",
       "get_issue",
       "update_issue",
@@ -17180,6 +19185,45 @@
     "author": "protectnil"
   },
   {
+    "name": "splunk",
+    "displayName": "Splunk",
+    "version": "1.0.0",
+    "category": "cybersecurity",
+    "keywords": [
+      "splunk",
+      "siem",
+      "spl",
+      "search",
+      "logs",
+      "events",
+      "alerts",
+      "notable",
+      "enterprise security",
+      "index",
+      "saved search",
+      "kv store",
+      "observability"
+    ],
+    "toolNames": [
+      "create_search_job",
+      "get_search_job_status",
+      "get_search_results",
+      "get_search_events",
+      "list_alerts",
+      "get_notable_events",
+      "list_saved_searches",
+      "get_saved_search",
+      "run_saved_search",
+      "list_indexes",
+      "get_index",
+      "list_kvstore_collections",
+      "query_kvstore_collection",
+      "list_apps"
+    ],
+    "description": "Splunk Enterprise/Cloud SIEM: create and run SPL searches, retrieve results and events, manage alerts and notable events, query saved searches, indexes, KV Store, and apps.",
+    "author": "protectnil"
+  },
+  {
     "name": "splunk-observability",
     "displayName": "Splunk Observability Cloud",
     "version": "1.0.0",
@@ -17217,45 +19261,6 @@
       "execute_signalflow"
     ],
     "description": "Splunk Observability Cloud (formerly SignalFx): manage detectors and alerts, query dashboards and charts, search metrics, and execute SignalFlow analytics programs.",
-    "author": "protectnil"
-  },
-  {
-    "name": "splunk",
-    "displayName": "Splunk",
-    "version": "1.0.0",
-    "category": "cybersecurity",
-    "keywords": [
-      "splunk",
-      "siem",
-      "spl",
-      "search",
-      "logs",
-      "events",
-      "alerts",
-      "notable",
-      "enterprise security",
-      "index",
-      "saved search",
-      "kv store",
-      "observability"
-    ],
-    "toolNames": [
-      "create_search_job",
-      "get_search_job_status",
-      "get_search_results",
-      "get_search_events",
-      "list_alerts",
-      "get_notable_events",
-      "list_saved_searches",
-      "get_saved_search",
-      "run_saved_search",
-      "list_indexes",
-      "get_index",
-      "list_kvstore_collections",
-      "query_kvstore_collection",
-      "list_apps"
-    ],
-    "description": "Splunk Enterprise/Cloud SIEM: create and run SPL searches, retrieve results and events, manage alerts and notable events, query saved searches, indexes, KV Store, and apps.",
     "author": "protectnil"
   },
   {
@@ -17359,13 +19364,11 @@
       "location"
     ],
     "toolNames": [
-      "list_locations",
       "list_payments",
       "get_payment",
       "create_payment",
       "refund_payment",
       "list_refunds",
-      "list_customers",
       "search_customers",
       "create_customer",
       "get_customer",
@@ -17423,6 +19426,18 @@
     "author": "protectnil"
   },
   {
+    "name": "st-process-mcp",
+    "displayName": "Process Street",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "st-process-mcp"
+    ],
+    "toolNames": [],
+    "description": "Explore and update your Process Street data",
+    "author": "vendor"
+  },
+  {
     "name": "stackoverflow",
     "displayName": "Stack Overflow",
     "version": "1.0.0",
@@ -17448,8 +19463,6 @@
       "get_comments",
       "get_user",
       "search_users",
-      "get_user_answers",
-      "get_user_questions",
       "search_tags",
       "get_tag_info",
       "list_badges",
@@ -17916,6 +19929,18 @@
     ],
     "description": "TeamCity CI/CD platform: manage projects, build configurations, trigger and monitor builds, inspect agents, and retrieve test results and artifacts.",
     "author": "protectnil"
+  },
+  {
+    "name": "tech-hex-hex",
+    "displayName": "Hex",
+    "version": "0.0.0",
+    "category": "misc",
+    "keywords": [
+      "tech-hex-hex"
+    ],
+    "toolNames": [],
+    "description": "Answer questions with the Hex agent",
+    "author": "vendor"
   },
   {
     "name": "telegram",
