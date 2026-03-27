@@ -639,7 +639,7 @@ export class AmazonBedrockMCPServer {
   private async listAsyncInvokes(args: Record<string, unknown>): Promise<ToolResult> {
     const params: string[] = [];
     if (args.status_equals) params.push(`statusEquals=${encodeURIComponent(args.status_equals as string)}`);
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     if (args.sort_order) params.push(`sortOrder=${encodeURIComponent(args.sort_order as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
@@ -665,7 +665,7 @@ export class AmazonBedrockMCPServer {
   private async listInferenceProfiles(args: Record<string, unknown>): Promise<ToolResult> {
     const params: string[] = [];
     if (args.type_equals) params.push(`typeEquals=${encodeURIComponent(args.type_equals as string)}`);
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     return this.signedGet(`${this.controlBase()}/inference-profiles${qs}`);
@@ -681,7 +681,7 @@ export class AmazonBedrockMCPServer {
     const params: string[] = [];
     if (args.name_contains) params.push(`nameContains=${encodeURIComponent(args.name_contains as string)}`);
     if (args.base_model_arn_equals) params.push(`baseModelArnEquals=${encodeURIComponent(args.base_model_arn_equals as string)}`);
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     if (args.sort_order) params.push(`sortOrder=${encodeURIComponent(args.sort_order as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
@@ -698,7 +698,7 @@ export class AmazonBedrockMCPServer {
     const params: string[] = [];
     if (args.name_contains) params.push(`nameContains=${encodeURIComponent(args.name_contains as string)}`);
     if (args.status_equals) params.push(`statusEquals=${encodeURIComponent(args.status_equals as string)}`);
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     if (args.sort_order) params.push(`sortOrder=${encodeURIComponent(args.sort_order as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
@@ -722,7 +722,7 @@ export class AmazonBedrockMCPServer {
     if (args.name_contains) params.push(`nameContains=${encodeURIComponent(args.name_contains as string)}`);
     if (args.status_equals) params.push(`statusEquals=${encodeURIComponent(args.status_equals as string)}`);
     if (args.model_arn_equals) params.push(`modelArnEquals=${encodeURIComponent(args.model_arn_equals as string)}`);
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     if (args.sort_order) params.push(`sortOrder=${encodeURIComponent(args.sort_order as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
@@ -738,7 +738,7 @@ export class AmazonBedrockMCPServer {
   private async listGuardrails(args: Record<string, unknown>): Promise<ToolResult> {
     const params: string[] = [];
     if (args.guardrail_identifier) params.push(`guardrailIdentifier=${encodeURIComponent(args.guardrail_identifier as string)}`);
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     return this.signedGet(`${this.controlBase()}/guardrails${qs}`);
@@ -762,7 +762,7 @@ export class AmazonBedrockMCPServer {
 
   private async listKnowledgeBases(args: Record<string, unknown>): Promise<ToolResult> {
     const params: string[] = [];
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     return this.signedGet(`${this.agentBase()}/knowledgebases${qs}`);
@@ -793,7 +793,7 @@ export class AmazonBedrockMCPServer {
 
   private async listAgents(args: Record<string, unknown>): Promise<ToolResult> {
     const params: string[] = [];
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     return this.signedGet(`${this.agentBase()}/agents${qs}`);
@@ -841,7 +841,7 @@ export class AmazonBedrockMCPServer {
     const params: string[] = [];
     if (args.status_equals) params.push(`statusEquals=${encodeURIComponent(args.status_equals as string)}`);
     if (args.name_contains) params.push(`nameContains=${encodeURIComponent(args.name_contains as string)}`);
-    if (args.max_results) params.push(`maxResults=${args.max_results}`);
+    if (args.max_results) params.push(`maxResults=${encodeURIComponent(args.max_results as string)}`);
     if (args.next_token) params.push(`nextToken=${encodeURIComponent(args.next_token as string)}`);
     if (args.sort_order) params.push(`sortOrder=${encodeURIComponent(args.sort_order as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';

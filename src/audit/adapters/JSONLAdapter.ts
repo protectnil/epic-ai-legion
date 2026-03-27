@@ -96,6 +96,20 @@ export class JSONLAdapter implements AuditStoreAdapter {
   }
 
   /**
+   * Append a status-update record for an existing pending entry.
+   * JSONL is append-only; this writes a supplementary line with the same `id`
+   * and the resolved status so log consumers can correlate pending → outcome.
+   */
+  async updateStatus(id: string, status: 'completed' | 'failed', output: Record<string, unknown>, durationMs: number): Promise<void> {
+    const dir = dirname(this.filePath);
+    if (!existsSync(dir)) {
+      await mkdir(dir, { recursive: true });
+    }
+    const update = JSON.stringify({ id, status, output, durationMs, updatedAt: new Date().toISOString() }, this.dateReplacer);
+    await appendFile(this.filePath, update + '\n', 'utf-8');
+  }
+
+  /**
    * Verify the hash chain integrity of the entire file.
    */
   async verify(): Promise<{ valid: boolean; chainLength: number; brokenAt?: number }> {

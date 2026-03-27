@@ -408,12 +408,12 @@ export class KnowBe4MCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.get(`/users/${args.user_id}`);
+    return this.get(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async getUserRiskScore(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.get(`/users/${args.user_id}/risk_score_history`);
+    return this.get(`/users/${encodeURIComponent(args.user_id as string)}/risk_score_history`);
   }
 
   private async listGroups(args: Record<string, unknown>): Promise<ToolResult> {
@@ -427,7 +427,7 @@ export class KnowBe4MCPServer {
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.group_id) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.get(`/groups/${args.group_id}`);
+    return this.get(`/groups/${encodeURIComponent(args.group_id as string)}`);
   }
 
   private async listGroupMembers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -436,7 +436,7 @@ export class KnowBe4MCPServer {
       page: String((args.page as number) || 1),
       per_page: String((args.per_page as number) || 500),
     };
-    return this.get(`/groups/${args.group_id}/members`, params);
+    return this.get(`/groups/${encodeURIComponent(args.group_id as string)}/members`, params);
   }
 
   private async listPhishingCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -450,7 +450,7 @@ export class KnowBe4MCPServer {
 
   private async getPhishingCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.get(`/phishing/campaigns/${args.campaign_id}`);
+    return this.get(`/phishing/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async listPhishingSecurityTests(args: Record<string, unknown>): Promise<ToolResult> {
@@ -459,7 +459,7 @@ export class KnowBe4MCPServer {
       page: String((args.page as number) || 1),
       per_page: String((args.per_page as number) || 500),
     };
-    return this.get(`/phishing/campaigns/${args.campaign_id}/security_tests`, params);
+    return this.get(`/phishing/campaigns/${encodeURIComponent(args.campaign_id as string)}/security_tests`, params);
   }
 
   private async getPhishingCampaignResults(args: Record<string, unknown>): Promise<ToolResult> {
@@ -470,7 +470,7 @@ export class KnowBe4MCPServer {
       page: String((args.page as number) || 1),
       per_page: String((args.per_page as number) || 500),
     };
-    return this.get(`/phishing/campaigns/${args.campaign_id}/security_tests/${args.pst_id}/recipients`, params);
+    return this.get(`/phishing/campaigns/${encodeURIComponent(args.campaign_id as string)}/security_tests/${encodeURIComponent(args.pst_id as string)}/recipients`, params);
   }
 
   private async listTrainingCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -484,7 +484,7 @@ export class KnowBe4MCPServer {
 
   private async getTrainingCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.get(`/training/campaigns/${args.campaign_id}`);
+    return this.get(`/training/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async listTrainingEnrollments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -494,6 +494,6 @@ export class KnowBe4MCPServer {
       per_page: String((args.per_page as number) || 500),
     };
     if (args.status) params.status = args.status as string;
-    return this.get(`/training/campaigns/${args.campaign_id}/enrollments`, params);
+    return this.get(`/training/campaigns/${encodeURIComponent(args.campaign_id as string)}/enrollments`, params);
   }
 }

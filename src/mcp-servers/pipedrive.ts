@@ -569,7 +569,7 @@ export class PipedriveMCPServer {
   }
 
   private async getDeal(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`deals/${args.id}`, new URLSearchParams());
+    return this.get(`deals/${encodeURIComponent(args.id as string)}`, new URLSearchParams());
   }
 
   private async createDeal(args: Record<string, unknown>): Promise<ToolResult> {
@@ -593,7 +593,7 @@ export class PipedriveMCPServer {
     if (args.stage_id !== undefined) body.stage_id = args.stage_id;
     if (args.expected_close_date) body.expected_close_date = args.expected_close_date;
     if (args.owner_id !== undefined) body.owner_id = args.owner_id;
-    return this.patch(`deals/${args.id}`, body);
+    return this.patch(`deals/${encodeURIComponent(args.id as string)}`, body);
   }
 
   private async searchDeals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -617,7 +617,7 @@ export class PipedriveMCPServer {
   }
 
   private async getPerson(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`persons/${args.id}`, new URLSearchParams());
+    return this.get(`persons/${encodeURIComponent(args.id as string)}`, new URLSearchParams());
   }
 
   private async createPerson(args: Record<string, unknown>): Promise<ToolResult> {
@@ -635,7 +635,7 @@ export class PipedriveMCPServer {
     if (args.email) body.email = [{ value: args.email, primary: true }];
     if (args.phone) body.phone = [{ value: args.phone, primary: true }];
     if (args.org_id !== undefined) body.org_id = args.org_id;
-    return this.patch(`persons/${args.id}`, body);
+    return this.patch(`persons/${encodeURIComponent(args.id as string)}`, body);
   }
 
   private async searchPersons(args: Record<string, unknown>): Promise<ToolResult> {
@@ -657,7 +657,7 @@ export class PipedriveMCPServer {
   }
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`organizations/${args.id}`, new URLSearchParams());
+    return this.get(`organizations/${encodeURIComponent(args.id as string)}`, new URLSearchParams());
   }
 
   private async createOrganization(args: Record<string, unknown>): Promise<ToolResult> {
@@ -672,7 +672,7 @@ export class PipedriveMCPServer {
     if (args.name) body.name = args.name;
     if (args.address) body.address = args.address;
     if (args.owner_id !== undefined) body.owner_id = args.owner_id;
-    return this.patch(`organizations/${args.id}`, body);
+    return this.patch(`organizations/${encodeURIComponent(args.id as string)}`, body);
   }
 
   private async searchOrganizations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -693,7 +693,7 @@ export class PipedriveMCPServer {
   }
 
   private async getLead(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`leads/${args.id}`, new URLSearchParams());
+    return this.get(`leads/${encodeURIComponent(args.id as string)}`, new URLSearchParams());
   }
 
   private async createLead(args: Record<string, unknown>): Promise<ToolResult> {
@@ -714,7 +714,7 @@ export class PipedriveMCPServer {
     if (args.value_amount !== undefined) {
       body.value = { amount: args.value_amount, currency: args.value_currency ?? 'USD' };
     }
-    return this.patch(`leads/${args.id}`, body);
+    return this.patch(`leads/${encodeURIComponent(args.id as string)}`, body);
   }
 
   // ── Activities ────────────────────────────────────────────────────────────
@@ -750,7 +750,7 @@ export class PipedriveMCPServer {
     if (args.due_date) body.due_date = args.due_date;
     if (args.due_time) body.due_time = args.due_time;
     if (typeof args.done === 'boolean') body.done = args.done ? 1 : 0;
-    return this.patch(`activities/${args.id}`, body);
+    return this.patch(`activities/${encodeURIComponent(args.id as string)}`, body);
   }
 
   // ── Notes ─────────────────────────────────────────────────────────────────

@@ -418,7 +418,7 @@ export class SonarQubeMCPServer {
     if (args.types) url += `&types=${encodeURIComponent(args.types as string)}`;
     if (args.severities) url += `&severities=${encodeURIComponent(args.severities as string)}`;
     if (args.statuses) url += `&statuses=${encodeURIComponent(args.statuses as string)}`;
-    if (typeof args.resolved === 'boolean') url += `&resolved=${args.resolved}`;
+    if (typeof args.resolved === 'boolean') url += `&resolved=${encodeURIComponent(String(args.resolved))}`;
     if (args.assignees) url += `&assignees=${encodeURIComponent(args.assignees as string)}`;
     if (args.branch) url += `&branch=${encodeURIComponent(args.branch as string)}`;
 

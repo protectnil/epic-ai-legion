@@ -347,14 +347,14 @@ export class HightouchMCPServer {
 
   private async getSync(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sync_id) return { content: [{ type: 'text', text: 'sync_id is required' }], isError: true };
-    return this.get(`/syncs/${args.sync_id}`);
+    return this.get(`/syncs/${encodeURIComponent(args.sync_id as string)}`);
   }
 
   private async triggerSync(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sync_id) return { content: [{ type: 'text', text: 'sync_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (typeof args.full_resync === 'boolean') body.fullResync = args.full_resync;
-    return this.post(`/syncs/${args.sync_id}/trigger`, body);
+    return this.post(`/syncs/${encodeURIComponent(args.sync_id as string)}/trigger`, body);
   }
 
   private async listSyncRuns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -363,14 +363,14 @@ export class HightouchMCPServer {
     if (args.limit) params.limit = String(args.limit);
     if (args.offset) params.offset = String(args.offset);
     if (args.orderBy) params.orderBy = args.orderBy as string;
-    return this.get(`/syncs/${args.sync_id}/sync-requests`, params);
+    return this.get(`/syncs/${encodeURIComponent(args.sync_id as string)}/sync-requests`, params);
   }
 
   private async getSyncRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sync_id || !args.sync_request_id) {
       return { content: [{ type: 'text', text: 'sync_id and sync_request_id are required' }], isError: true };
     }
-    return this.get(`/syncs/${args.sync_id}/sync-requests/${args.sync_request_id}`);
+    return this.get(`/syncs/${encodeURIComponent(args.sync_id as string)}/sync-requests/${encodeURIComponent(args.sync_request_id as string)}`);
   }
 
   private async listModels(args: Record<string, unknown>): Promise<ToolResult> {
@@ -384,7 +384,7 @@ export class HightouchMCPServer {
 
   private async getModel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.model_id) return { content: [{ type: 'text', text: 'model_id is required' }], isError: true };
-    return this.get(`/models/${args.model_id}`);
+    return this.get(`/models/${encodeURIComponent(args.model_id as string)}`);
   }
 
   private async listSources(args: Record<string, unknown>): Promise<ToolResult> {
@@ -396,7 +396,7 @@ export class HightouchMCPServer {
 
   private async getSource(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.source_id) return { content: [{ type: 'text', text: 'source_id is required' }], isError: true };
-    return this.get(`/sources/${args.source_id}`);
+    return this.get(`/sources/${encodeURIComponent(args.source_id as string)}`);
   }
 
   private async listDestinations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -408,6 +408,6 @@ export class HightouchMCPServer {
 
   private async getDestination(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.destination_id) return { content: [{ type: 'text', text: 'destination_id is required' }], isError: true };
-    return this.get(`/destinations/${args.destination_id}`);
+    return this.get(`/destinations/${encodeURIComponent(args.destination_id as string)}`);
   }
 }

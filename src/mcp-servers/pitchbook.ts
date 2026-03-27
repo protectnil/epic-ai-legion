@@ -474,7 +474,7 @@ export class PitchBookMCPServer {
 
   private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.company_id) return { content: [{ type: 'text', text: 'company_id is required' }], isError: true };
-    return this.apiGet(`/v2/companies/${args.company_id}`);
+    return this.apiGet(`/v2/companies/${encodeURIComponent(args.company_id as string)}`);
   }
 
   private async getCompanyDeals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -483,12 +483,12 @@ export class PitchBookMCPServer {
       limit: String((args.limit as number) ?? 25),
     };
     if (args.deal_type) params.dealType = args.deal_type as string;
-    return this.apiGet(`/v2/companies/${args.company_id}/deals`, params);
+    return this.apiGet(`/v2/companies/${encodeURIComponent(args.company_id as string)}/deals`, params);
   }
 
   private async getCompanyInvestors(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.company_id) return { content: [{ type: 'text', text: 'company_id is required' }], isError: true };
-    return this.apiGet(`/v2/companies/${args.company_id}/investors`);
+    return this.apiGet(`/v2/companies/${encodeURIComponent(args.company_id as string)}/investors`);
   }
 
   private async searchDeals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -508,7 +508,7 @@ export class PitchBookMCPServer {
 
   private async getDeal(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.deal_id) return { content: [{ type: 'text', text: 'deal_id is required' }], isError: true };
-    return this.apiGet(`/v2/deals/${args.deal_id}`);
+    return this.apiGet(`/v2/deals/${encodeURIComponent(args.deal_id as string)}`);
   }
 
   private async searchInvestors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -525,7 +525,7 @@ export class PitchBookMCPServer {
 
   private async getInvestor(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.investor_id) return { content: [{ type: 'text', text: 'investor_id is required' }], isError: true };
-    return this.apiGet(`/v2/investors/${args.investor_id}`);
+    return this.apiGet(`/v2/investors/${encodeURIComponent(args.investor_id as string)}`);
   }
 
   private async getInvestorPortfolio(args: Record<string, unknown>): Promise<ToolResult> {
@@ -534,7 +534,7 @@ export class PitchBookMCPServer {
       limit: String((args.limit as number) ?? 50),
     };
     if (args.status) params.status = args.status as string;
-    return this.apiGet(`/v2/investors/${args.investor_id}/portfolio`, params);
+    return this.apiGet(`/v2/investors/${encodeURIComponent(args.investor_id as string)}/portfolio`, params);
   }
 
   private async searchFunds(args: Record<string, unknown>): Promise<ToolResult> {
@@ -551,7 +551,7 @@ export class PitchBookMCPServer {
 
   private async getFund(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.fund_id) return { content: [{ type: 'text', text: 'fund_id is required' }], isError: true };
-    return this.apiGet(`/v2/funds/${args.fund_id}`);
+    return this.apiGet(`/v2/funds/${encodeURIComponent(args.fund_id as string)}`);
   }
 
   private async searchPeople(args: Record<string, unknown>): Promise<ToolResult> {
@@ -566,7 +566,7 @@ export class PitchBookMCPServer {
 
   private async getPerson(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.person_id) return { content: [{ type: 'text', text: 'person_id is required' }], isError: true };
-    return this.apiGet(`/v2/people/${args.person_id}`);
+    return this.apiGet(`/v2/people/${encodeURIComponent(args.person_id as string)}`);
   }
 
   private async getServiceProviders(args: Record<string, unknown>): Promise<ToolResult> {

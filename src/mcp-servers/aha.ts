@@ -353,8 +353,8 @@ export class AhaMCPServer {
 
   private buildPaginationParams(args: Record<string, unknown>): string {
     const params: string[] = [];
-    if (args.page) params.push(`page=${args.page}`);
-    if (args.per_page) params.push(`per_page=${args.per_page}`);
+    if (args.page) params.push(`page=${encodeURIComponent(args.page as string)}`);
+    if (args.per_page) params.push(`per_page=${encodeURIComponent(args.per_page as string)}`);
     return params.length ? '?' + params.join('&') : '';
   }
 
@@ -528,8 +528,8 @@ export class AhaMCPServer {
     const query = args.query as string;
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
     const params: string[] = [`q=${encodeURIComponent(query)}`];
-    if (args.page) params.push(`page=${args.page}`);
-    if (args.per_page) params.push(`per_page=${args.per_page}`);
+    if (args.page) params.push(`page=${encodeURIComponent(args.page as string)}`);
+    if (args.per_page) params.push(`per_page=${encodeURIComponent(args.per_page as string)}`);
     return this.get(`/search?${params.join('&')}`);
   }
 

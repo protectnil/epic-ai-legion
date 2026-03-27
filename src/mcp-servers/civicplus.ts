@@ -431,7 +431,7 @@ export class CivicPlusMCPServer {
 
   private async getIssue(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.issueId) return { content: [{ type: 'text', text: 'issueId is required' }], isError: true };
-    return this.civicGet(`/organizations/${this.organizationId}/issues/${args.issueId}`);
+    return this.civicGet(`/organizations/${this.organizationId}/issues/${encodeURIComponent(args.issueId as string)}`);
   }
 
   private async createIssue(args: Record<string, unknown>): Promise<ToolResult> {
@@ -451,12 +451,12 @@ export class CivicPlusMCPServer {
     const body: Record<string, unknown> = {};
     if (args.status) body.status = args.status;
     if (args.assignedTo) body.assigned_to = args.assignedTo;
-    return this.civicPatch(`/organizations/${this.organizationId}/issues/${args.issueId}`, body);
+    return this.civicPatch(`/organizations/${this.organizationId}/issues/${encodeURIComponent(args.issueId as string)}`, body);
   }
 
   private async listIssueComments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.issueId) return { content: [{ type: 'text', text: 'issueId is required' }], isError: true };
-    return this.civicGet(`/organizations/${this.organizationId}/issues/${args.issueId}/comments`);
+    return this.civicGet(`/organizations/${this.organizationId}/issues/${encodeURIComponent(args.issueId as string)}/comments`);
   }
 
   private async createIssueComment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -465,7 +465,7 @@ export class CivicPlusMCPServer {
       comment: args.comment,
       visibility: (args.visibility as string) ?? 'public',
     };
-    return this.civicPost(`/organizations/${this.organizationId}/issues/${args.issueId}/comments`, body);
+    return this.civicPost(`/organizations/${this.organizationId}/issues/${encodeURIComponent(args.issueId as string)}/comments`, body);
   }
 
   private async listZones(args: Record<string, unknown>): Promise<ToolResult> {
@@ -478,7 +478,7 @@ export class CivicPlusMCPServer {
 
   private async getZone(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zoneId) return { content: [{ type: 'text', text: 'zoneId is required' }], isError: true };
-    return this.civicGet(`/organizations/${this.organizationId}/zones/${args.zoneId}`);
+    return this.civicGet(`/organizations/${this.organizationId}/zones/${encodeURIComponent(args.zoneId as string)}`);
   }
 
   private async getOrganization(): Promise<ToolResult> {
@@ -493,12 +493,12 @@ export class CivicPlusMCPServer {
 
   private async getRequestType(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.requestTypeId) return { content: [{ type: 'text', text: 'requestTypeId is required' }], isError: true };
-    return this.civicGet(`/organizations/${this.organizationId}/request_types/${args.requestTypeId}`);
+    return this.civicGet(`/organizations/${this.organizationId}/request_types/${encodeURIComponent(args.requestTypeId as string)}`);
   }
 
   private async listIssueSubscribers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.issueId) return { content: [{ type: 'text', text: 'issueId is required' }], isError: true };
-    return this.civicGet(`/organizations/${this.organizationId}/issues/${args.issueId}/subscribers`);
+    return this.civicGet(`/organizations/${this.organizationId}/issues/${encodeURIComponent(args.issueId as string)}/subscribers`);
   }
 
   private async searchIssues(args: Record<string, unknown>): Promise<ToolResult> {

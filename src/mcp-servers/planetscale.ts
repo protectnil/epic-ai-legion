@@ -330,7 +330,7 @@ export class PlanetScaleMCPServer {
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization) return { content: [{ type: 'text', text: 'organization is required' }], isError: true };
-    return this.get(`/v1/organizations/${args.organization}`);
+    return this.get(`/v1/organizations/${encodeURIComponent(args.organization as string)}`);
   }
 
   private async listDatabases(args: Record<string, unknown>): Promise<ToolResult> {
@@ -338,12 +338,12 @@ export class PlanetScaleMCPServer {
     const params: Record<string, string> = {};
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
-    return this.get(`/v1/organizations/${args.organization}/databases`, params);
+    return this.get(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases`, params);
   }
 
   private async getDatabase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization || !args.database) return { content: [{ type: 'text', text: 'organization and database are required' }], isError: true };
-    return this.get(`/v1/organizations/${args.organization}/databases/${args.database}`);
+    return this.get(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}`);
   }
 
   private async createDatabase(args: Record<string, unknown>): Promise<ToolResult> {
@@ -351,12 +351,12 @@ export class PlanetScaleMCPServer {
     const body: Record<string, unknown> = { name: args.name };
     if (args.notes) body.notes = args.notes;
     if (args.region) body.region = args.region;
-    return this.post(`/v1/organizations/${args.organization}/databases`, body);
+    return this.post(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases`, body);
   }
 
   private async deleteDatabase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization || !args.database) return { content: [{ type: 'text', text: 'organization and database are required' }], isError: true };
-    return this.del(`/v1/organizations/${args.organization}/databases/${args.database}`);
+    return this.del(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}`);
   }
 
   private async listBranches(args: Record<string, unknown>): Promise<ToolResult> {
@@ -364,12 +364,12 @@ export class PlanetScaleMCPServer {
     const params: Record<string, string> = {};
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
-    return this.get(`/v1/organizations/${args.organization}/databases/${args.database}/branches`, params);
+    return this.get(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}/branches`, params);
   }
 
   private async getBranch(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization || !args.database || !args.branch) return { content: [{ type: 'text', text: 'organization, database, and branch are required' }], isError: true };
-    return this.get(`/v1/organizations/${args.organization}/databases/${args.database}/branches/${args.branch}`);
+    return this.get(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}/branches/${encodeURIComponent(args.branch as string)}`);
   }
 
   private async createBranch(args: Record<string, unknown>): Promise<ToolResult> {
@@ -377,12 +377,12 @@ export class PlanetScaleMCPServer {
     const body: Record<string, unknown> = { name: args.name };
     if (args.parent_branch) body.parent_branch = args.parent_branch;
     if (args.backup_id) body.backup_id = args.backup_id;
-    return this.post(`/v1/organizations/${args.organization}/databases/${args.database}/branches`, body);
+    return this.post(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}/branches`, body);
   }
 
   private async deleteBranch(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization || !args.database || !args.branch) return { content: [{ type: 'text', text: 'organization, database, and branch are required' }], isError: true };
-    return this.del(`/v1/organizations/${args.organization}/databases/${args.database}/branches/${args.branch}`);
+    return this.del(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}/branches/${encodeURIComponent(args.branch as string)}`);
   }
 
   private async listDeployRequests(args: Record<string, unknown>): Promise<ToolResult> {
@@ -391,7 +391,7 @@ export class PlanetScaleMCPServer {
     if (args.state) params.state = args.state as string;
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
-    return this.get(`/v1/organizations/${args.organization}/databases/${args.database}/deploy-requests`, params);
+    return this.get(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}/deploy-requests`, params);
   }
 
   private async createDeployRequest(args: Record<string, unknown>): Promise<ToolResult> {
@@ -399,7 +399,7 @@ export class PlanetScaleMCPServer {
     const body: Record<string, unknown> = { branch: args.branch };
     if (args.into_branch) body.into_branch = args.into_branch;
     if (args.notes) body.notes = args.notes;
-    return this.post(`/v1/organizations/${args.organization}/databases/${args.database}/deploy-requests`, body);
+    return this.post(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}/deploy-requests`, body);
   }
 
   private async listPasswords(args: Record<string, unknown>): Promise<ToolResult> {
@@ -407,13 +407,13 @@ export class PlanetScaleMCPServer {
     const params: Record<string, string> = {};
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
-    return this.get(`/v1/organizations/${args.organization}/databases/${args.database}/branches/${args.branch}/passwords`, params);
+    return this.get(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}/branches/${encodeURIComponent(args.branch as string)}/passwords`, params);
   }
 
   private async createPassword(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization || !args.database || !args.branch || !args.name) return { content: [{ type: 'text', text: 'organization, database, branch, and name are required' }], isError: true };
     const body: Record<string, unknown> = { name: args.name };
     if (args.role) body.role = args.role;
-    return this.post(`/v1/organizations/${args.organization}/databases/${args.database}/branches/${args.branch}/passwords`, body);
+    return this.post(`/v1/organizations/${encodeURIComponent(args.organization as string)}/databases/${encodeURIComponent(args.database as string)}/branches/${encodeURIComponent(args.branch as string)}/passwords`, body);
   }
 }

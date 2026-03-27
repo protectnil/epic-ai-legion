@@ -606,7 +606,7 @@ export class MicrosoftGraphMCPServer {
       return { content: [{ type: 'text', text: '$search and $filter are mutually exclusive' }], isError: true };
     }
     if (args.search) {
-      url += `&$search=${encodeURIComponent(`"${args.search as string}"`)}`;
+      url += `&$search=${encodeURIComponent(`"${encodeURIComponent(args.search as string)}"`)}`;
     } else if (args.filter) {
       url += `&$filter=${encodeURIComponent(args.filter as string)}`;
     }

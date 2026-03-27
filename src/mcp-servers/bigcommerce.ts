@@ -848,7 +848,7 @@ export class BigCommerceMCPServer {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.include) params['include'] = args.include as string;
-    return this.bcGet(`/v3/catalog/products/${args.product_id}`, params);
+    return this.bcGet(`/v3/catalog/products/${encodeURIComponent(args.product_id as string)}`, params);
   }
 
   private async createProduct(args: Record<string, unknown>): Promise<ToolResult> {
@@ -885,12 +885,12 @@ export class BigCommerceMCPServer {
     if (args.categories) {
       try { body['categories'] = JSON.parse(args.categories as string); } catch { /* ignore */ }
     }
-    return this.bcPut(`/v3/catalog/products/${args.product_id}`, body);
+    return this.bcPut(`/v3/catalog/products/${encodeURIComponent(args.product_id as string)}`, body);
   }
 
   private async deleteProduct(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
-    return this.bcDelete(`/v3/catalog/products/${args.product_id}`);
+    return this.bcDelete(`/v3/catalog/products/${encodeURIComponent(args.product_id as string)}`);
   }
 
   private async listProductVariants(args: Record<string, unknown>): Promise<ToolResult> {
@@ -899,12 +899,12 @@ export class BigCommerceMCPServer {
       page: String((args.page as number) || 1),
       limit: String((args.limit as number) || 50),
     };
-    return this.bcGet(`/v3/catalog/products/${args.product_id}/variants`, params);
+    return this.bcGet(`/v3/catalog/products/${encodeURIComponent(args.product_id as string)}/variants`, params);
   }
 
   private async getProductVariant(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id || !args.variant_id) return { content: [{ type: 'text', text: 'product_id and variant_id are required' }], isError: true };
-    return this.bcGet(`/v3/catalog/products/${args.product_id}/variants/${args.variant_id}`);
+    return this.bcGet(`/v3/catalog/products/${encodeURIComponent(args.product_id as string)}/variants/${encodeURIComponent(args.variant_id as string)}`);
   }
 
   // ── Category methods ──────────────────────────────────────────────────────
@@ -921,7 +921,7 @@ export class BigCommerceMCPServer {
 
   private async getCategory(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.category_id) return { content: [{ type: 'text', text: 'category_id is required' }], isError: true };
-    return this.bcGet(`/v3/catalog/categories/${args.category_id}`);
+    return this.bcGet(`/v3/catalog/categories/${encodeURIComponent(args.category_id as string)}`);
   }
 
   private async createCategory(args: Record<string, unknown>): Promise<ToolResult> {
@@ -955,7 +955,7 @@ export class BigCommerceMCPServer {
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.bcGet(`/v2/orders/${args.order_id}`);
+    return this.bcGet(`/v2/orders/${encodeURIComponent(args.order_id as string)}`);
   }
 
   private async updateOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -964,12 +964,12 @@ export class BigCommerceMCPServer {
     if (args.status_id !== undefined) body['status_id'] = args.status_id;
     if (args.staff_notes) body['staff_notes'] = args.staff_notes;
     if (args.customer_message) body['customer_message'] = args.customer_message;
-    return this.bcPut(`/v2/orders/${args.order_id}`, body);
+    return this.bcPut(`/v2/orders/${encodeURIComponent(args.order_id as string)}`, body);
   }
 
   private async listOrderProducts(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.bcGet(`/v2/orders/${args.order_id}/products`);
+    return this.bcGet(`/v2/orders/${encodeURIComponent(args.order_id as string)}/products`);
   }
 
   // ── Customer methods ──────────────────────────────────────────────────────
@@ -1029,7 +1029,7 @@ export class BigCommerceMCPServer {
 
   private async deleteCustomer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
-    return this.bcDelete(`/v3/customers?id:in=${args.customer_id}`);
+    return this.bcDelete(`/v3/customers?id:in=${encodeURIComponent(args.customer_id as string)}`);
   }
 
   // ── Coupon methods ────────────────────────────────────────────────────────
@@ -1065,7 +1065,7 @@ export class BigCommerceMCPServer {
 
   private async deleteCoupon(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.coupon_id) return { content: [{ type: 'text', text: 'coupon_id is required' }], isError: true };
-    return this.bcDelete(`/v2/coupons/${args.coupon_id}`);
+    return this.bcDelete(`/v2/coupons/${encodeURIComponent(args.coupon_id as string)}`);
   }
 
   // ── Store info ────────────────────────────────────────────────────────────

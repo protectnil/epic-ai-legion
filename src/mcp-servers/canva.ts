@@ -504,7 +504,7 @@ export class CanvaMCPServer {
 
   private async getDesign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.design_id) return { content: [{ type: 'text', text: 'design_id is required' }], isError: true };
-    return this.canvaGet(`/designs/${args.design_id}`);
+    return this.canvaGet(`/designs/${encodeURIComponent(args.design_id as string)}`);
   }
 
   private async createDesign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -532,7 +532,7 @@ export class CanvaMCPServer {
 
   private async getFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.folder_id) return { content: [{ type: 'text', text: 'folder_id is required' }], isError: true };
-    return this.canvaGet(`/folders/${args.folder_id}`);
+    return this.canvaGet(`/folders/${encodeURIComponent(args.folder_id as string)}`);
   }
 
   private async createFolder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -546,7 +546,7 @@ export class CanvaMCPServer {
 
   private async moveToFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.folder_id || !args.item_id) return { content: [{ type: 'text', text: 'folder_id and item_id are required' }], isError: true };
-    return this.canvaPost(`/folders/${args.folder_id}/items/move`, { item_id: args.item_id });
+    return this.canvaPost(`/folders/${encodeURIComponent(args.folder_id as string)}/items/move`, { item_id: args.item_id });
   }
 
   private async listAssets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -558,7 +558,7 @@ export class CanvaMCPServer {
 
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.canvaGet(`/assets/${args.asset_id}`);
+    return this.canvaGet(`/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async updateAsset(args: Record<string, unknown>): Promise<ToolResult> {
@@ -566,12 +566,12 @@ export class CanvaMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.tags) body.tags = args.tags;
-    return this.canvaPatch(`/assets/${args.asset_id}`, body);
+    return this.canvaPatch(`/assets/${encodeURIComponent(args.asset_id as string)}`, body);
   }
 
   private async deleteAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.canvaDelete(`/assets/${args.asset_id}`);
+    return this.canvaDelete(`/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async listBrandTemplates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -584,7 +584,7 @@ export class CanvaMCPServer {
 
   private async getBrandTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.brand_template_id) return { content: [{ type: 'text', text: 'brand_template_id is required' }], isError: true };
-    return this.canvaGet(`/brand-templates/${args.brand_template_id}`);
+    return this.canvaGet(`/brand-templates/${encodeURIComponent(args.brand_template_id as string)}`);
   }
 
   private async createExportJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -600,7 +600,7 @@ export class CanvaMCPServer {
 
   private async getExportJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.export_id) return { content: [{ type: 'text', text: 'export_id is required' }], isError: true };
-    return this.canvaGet(`/exports/${args.export_id}`);
+    return this.canvaGet(`/exports/${encodeURIComponent(args.export_id as string)}`);
   }
 
   private async createAutofillJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -615,7 +615,7 @@ export class CanvaMCPServer {
 
   private async getAutofillJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.canvaGet(`/autofills/${args.job_id}`);
+    return this.canvaGet(`/autofills/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async getUserProfile(): Promise<ToolResult> {

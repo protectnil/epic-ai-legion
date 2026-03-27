@@ -524,14 +524,14 @@ export class RobinMCPServer {
 
   private async getSpace(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.space_id) return { content: [{ type: 'text', text: 'space_id is required' }], isError: true };
-    return this.apiGet(`/spaces/${args.space_id}`);
+    return this.apiGet(`/spaces/${encodeURIComponent(args.space_id as string)}`);
   }
 
   private async listSpaceAvailability(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.space_id || !args.after || !args.before) {
       return { content: [{ type: 'text', text: 'space_id, after, and before are required' }], isError: true };
     }
-    return this.apiGet(`/spaces/${args.space_id}/availability` + this.buildQs({ after: args.after as string, before: args.before as string }));
+    return this.apiGet(`/spaces/${encodeURIComponent(args.space_id as string)}/availability` + this.buildQs({ after: args.after as string, before: args.before as string }));
   }
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -547,7 +547,7 @@ export class RobinMCPServer {
 
   private async getEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.apiGet(`/events/${args.event_id}`);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}`);
   }
 
   private async createEvent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -571,12 +571,12 @@ export class RobinMCPServer {
     if (args.start_time) body.start_time = args.start_time;
     if (args.end_time) body.end_time = args.end_time;
     if (args.description) body.description = args.description;
-    return this.apiPatch(`/events/${args.event_id}`, body);
+    return this.apiPatch(`/events/${encodeURIComponent(args.event_id as string)}`, body);
   }
 
   private async deleteEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.apiDelete(`/events/${args.event_id}`);
+    return this.apiDelete(`/events/${encodeURIComponent(args.event_id as string)}`);
   }
 
   private async listSeats(args: Record<string, unknown>): Promise<ToolResult> {
@@ -585,7 +585,7 @@ export class RobinMCPServer {
 
   private async getSeat(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.seat_id) return { content: [{ type: 'text', text: 'seat_id is required' }], isError: true };
-    return this.apiGet(`/seats/${args.seat_id}`);
+    return this.apiGet(`/seats/${encodeURIComponent(args.seat_id as string)}`);
   }
 
   private async listSeatReservations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -616,7 +616,7 @@ export class RobinMCPServer {
 
   private async getLocation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.location_id) return { content: [{ type: 'text', text: 'location_id is required' }], isError: true };
-    return this.apiGet(`/locations/${args.location_id}`);
+    return this.apiGet(`/locations/${encodeURIComponent(args.location_id as string)}`);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -625,7 +625,7 @@ export class RobinMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/users/${args.user_id}`);
+    return this.apiGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async getOrganization(): Promise<ToolResult> {

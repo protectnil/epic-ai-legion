@@ -342,7 +342,7 @@ export class GoogleAnalyticsMCPServer {
     if (args.metric_filter) body.metricFilter = args.metric_filter;
     if (args.order_bys) body.orderBys = args.order_bys;
     if (typeof args.keep_empty_rows === 'boolean') body.keepEmptyRows = args.keep_empty_rows;
-    return this.gaPost(`/properties/${args.property_id}:runReport`, body);
+    return this.gaPost(`/properties/${encodeURIComponent(args.property_id as string)}:runReport`, body);
   }
 
   private async runRealtimeReport(args: Record<string, unknown>): Promise<ToolResult> {
@@ -355,7 +355,7 @@ export class GoogleAnalyticsMCPServer {
       limit: (args.limit as number) || 1000,
     };
     if (args.dimension_filter) body.dimensionFilter = args.dimension_filter;
-    return this.gaPost(`/properties/${args.property_id}:runRealtimeReport`, body);
+    return this.gaPost(`/properties/${encodeURIComponent(args.property_id as string)}:runRealtimeReport`, body);
   }
 
   private async batchRunReports(args: Record<string, unknown>): Promise<ToolResult> {
@@ -366,7 +366,7 @@ export class GoogleAnalyticsMCPServer {
     if (requests.length > 5) {
       return { content: [{ type: 'text', text: 'batch_run_reports accepts a maximum of 5 requests per call' }], isError: true };
     }
-    return this.gaPost(`/properties/${args.property_id}:batchRunReports`, { requests });
+    return this.gaPost(`/properties/${encodeURIComponent(args.property_id as string)}:batchRunReports`, { requests });
   }
 
   private async runPivotReport(args: Record<string, unknown>): Promise<ToolResult> {
@@ -380,12 +380,12 @@ export class GoogleAnalyticsMCPServer {
       pivots: args.pivots,
     };
     if (args.dimension_filter) body.dimensionFilter = args.dimension_filter;
-    return this.gaPost(`/properties/${args.property_id}:runPivotReport`, body);
+    return this.gaPost(`/properties/${encodeURIComponent(args.property_id as string)}:runPivotReport`, body);
   }
 
   private async getMetadata(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.property_id) return { content: [{ type: 'text', text: 'property_id is required' }], isError: true };
-    return this.gaGet(`/properties/${args.property_id}/metadata`);
+    return this.gaGet(`/properties/${encodeURIComponent(args.property_id as string)}/metadata`);
   }
 
   private async checkCompatibility(args: Record<string, unknown>): Promise<ToolResult> {
@@ -393,7 +393,7 @@ export class GoogleAnalyticsMCPServer {
     const body: Record<string, unknown> = {};
     if (args.dimensions) body.dimensions = this.buildDimensions(args.dimensions);
     if (args.metrics) body.metrics = this.buildMetrics(args.metrics);
-    return this.gaPost(`/properties/${args.property_id}:checkCompatibility`, body);
+    return this.gaPost(`/properties/${encodeURIComponent(args.property_id as string)}:checkCompatibility`, body);
   }
 
   private async runFunnelReport(args: Record<string, unknown>): Promise<ToolResult> {
@@ -407,6 +407,6 @@ export class GoogleAnalyticsMCPServer {
     };
     if (args.funnel_breakdown_dimension) body.funnelBreakdown = { breakdownDimension: args.funnel_breakdown_dimension };
     if (args.segment) body.userSegment = args.segment;
-    return this.gaPost(`/properties/${args.property_id}:runFunnelReport`, body);
+    return this.gaPost(`/properties/${encodeURIComponent(args.property_id as string)}:runFunnelReport`, body);
   }
 }

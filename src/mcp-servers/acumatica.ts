@@ -731,9 +731,9 @@ export class AcumaticaMCPServer {
 
   private async listCustomers(args: Record<string, unknown>): Promise<ToolResult> {
     const conditions: Array<string | undefined> = [];
-    if (args.name) conditions.push(`CustomerName eq '${args.name}'`);
-    if (args.status) conditions.push(`Status eq '${args.status}'`);
-    if (args.customer_class) conditions.push(`CustomerClassID eq '${args.customer_class}'`);
+    if (args.name) conditions.push(`CustomerName eq '${encodeURIComponent(args.name as string)}'`);
+    if (args.status) conditions.push(`Status eq '${encodeURIComponent(args.status as string)}'`);
+    if (args.customer_class) conditions.push(`CustomerClassID eq '${encodeURIComponent(args.customer_class as string)}'`);
     return this.apiGet('Customer', this.buildFilter(conditions), (args.top as number) ?? 20, (args.skip as number) ?? 0);
   }
 
@@ -767,9 +767,9 @@ export class AcumaticaMCPServer {
 
   private async listVendors(args: Record<string, unknown>): Promise<ToolResult> {
     const conditions: Array<string | undefined> = [];
-    if (args.name) conditions.push(`VendorName eq '${args.name}'`);
-    if (args.status) conditions.push(`Status eq '${args.status}'`);
-    if (args.vendor_class) conditions.push(`VendorClassID eq '${args.vendor_class}'`);
+    if (args.name) conditions.push(`VendorName eq '${encodeURIComponent(args.name as string)}'`);
+    if (args.status) conditions.push(`Status eq '${encodeURIComponent(args.status as string)}'`);
+    if (args.vendor_class) conditions.push(`VendorClassID eq '${encodeURIComponent(args.vendor_class as string)}'`);
     return this.apiGet('Vendor', this.buildFilter(conditions), (args.top as number) ?? 20, (args.skip as number) ?? 0);
   }
 
@@ -792,18 +792,18 @@ export class AcumaticaMCPServer {
 
   private async listInvoices(args: Record<string, unknown>): Promise<ToolResult> {
     const conditions: Array<string | undefined> = [];
-    if (args.customer_id) conditions.push(`CustomerID eq '${args.customer_id}'`);
-    if (args.status) conditions.push(`Status eq '${args.status}'`);
-    if (args.doc_type) conditions.push(`Type eq '${args.doc_type}'`);
-    if (args.date_from) conditions.push(`Date ge datetimeoffset'${args.date_from}T00:00:00+00:00'`);
-    if (args.date_to) conditions.push(`Date le datetimeoffset'${args.date_to}T23:59:59+00:00'`);
+    if (args.customer_id) conditions.push(`CustomerID eq '${encodeURIComponent(args.customer_id as string)}'`);
+    if (args.status) conditions.push(`Status eq '${encodeURIComponent(args.status as string)}'`);
+    if (args.doc_type) conditions.push(`Type eq '${encodeURIComponent(args.doc_type as string)}'`);
+    if (args.date_from) conditions.push(`Date ge datetimeoffset'${encodeURIComponent(args.date_from as string)}T00:00:00+00:00'`);
+    if (args.date_to) conditions.push(`Date le datetimeoffset'${encodeURIComponent(args.date_to as string)}T23:59:59+00:00'`);
     return this.apiGet('ARInvoice', this.buildFilter(conditions), (args.top as number) ?? 20, (args.skip as number) ?? 0);
   }
 
   private async getInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.reference_nbr) return { content: [{ type: 'text', text: 'reference_nbr is required' }], isError: true };
     const docType = (args.doc_type as string) ?? 'Invoice';
-    return this.apiGetSingle('ARInvoice', `${docType}%2F${args.reference_nbr}`);
+    return this.apiGetSingle('ARInvoice', `${docType}%2F${encodeURIComponent(args.reference_nbr as string)}`);
   }
 
   private async createInvoice(args: Record<string, unknown>): Promise<ToolResult> {
@@ -835,9 +835,9 @@ export class AcumaticaMCPServer {
 
   private async listSalesOrders(args: Record<string, unknown>): Promise<ToolResult> {
     const conditions: Array<string | undefined> = [];
-    if (args.customer_id) conditions.push(`CustomerID eq '${args.customer_id}'`);
-    if (args.order_type) conditions.push(`OrderType eq '${args.order_type}'`);
-    if (args.status) conditions.push(`Status eq '${args.status}'`);
+    if (args.customer_id) conditions.push(`CustomerID eq '${encodeURIComponent(args.customer_id as string)}'`);
+    if (args.order_type) conditions.push(`OrderType eq '${encodeURIComponent(args.order_type as string)}'`);
+    if (args.status) conditions.push(`Status eq '${encodeURIComponent(args.status as string)}'`);
     return this.apiGet('SalesOrder', this.buildFilter(conditions), (args.top as number) ?? 20, (args.skip as number) ?? 0);
   }
 
@@ -845,7 +845,7 @@ export class AcumaticaMCPServer {
     if (!args.order_type || !args.order_nbr) {
       return { content: [{ type: 'text', text: 'order_type and order_nbr are required' }], isError: true };
     }
-    return this.apiGetSingle('SalesOrder', `${args.order_type}%2F${args.order_nbr}`);
+    return this.apiGetSingle('SalesOrder', `${encodeURIComponent(args.order_type as string)}%2F${encodeURIComponent(args.order_nbr as string)}`);
   }
 
   private async createSalesOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -864,9 +864,9 @@ export class AcumaticaMCPServer {
 
   private async listStockItems(args: Record<string, unknown>): Promise<ToolResult> {
     const conditions: Array<string | undefined> = [];
-    if (args.item_class) conditions.push(`ItemClass eq '${args.item_class}'`);
-    if (args.status) conditions.push(`ItemStatus eq '${args.status}'`);
-    if (args.description) conditions.push(`Description eq '${args.description}'`);
+    if (args.item_class) conditions.push(`ItemClass eq '${encodeURIComponent(args.item_class as string)}'`);
+    if (args.status) conditions.push(`ItemStatus eq '${encodeURIComponent(args.status as string)}'`);
+    if (args.description) conditions.push(`Description eq '${encodeURIComponent(args.description as string)}'`);
     return this.apiGet('StockItem', this.buildFilter(conditions), (args.top as number) ?? 20, (args.skip as number) ?? 0);
   }
 
@@ -877,16 +877,16 @@ export class AcumaticaMCPServer {
 
   private async listPayments(args: Record<string, unknown>): Promise<ToolResult> {
     const conditions: Array<string | undefined> = [];
-    if (args.customer_id) conditions.push(`CustomerID eq '${args.customer_id}'`);
-    if (args.status) conditions.push(`Status eq '${args.status}'`);
-    if (args.date_from) conditions.push(`ApplicationDate ge datetimeoffset'${args.date_from}T00:00:00+00:00'`);
-    if (args.date_to) conditions.push(`ApplicationDate le datetimeoffset'${args.date_to}T23:59:59+00:00'`);
+    if (args.customer_id) conditions.push(`CustomerID eq '${encodeURIComponent(args.customer_id as string)}'`);
+    if (args.status) conditions.push(`Status eq '${encodeURIComponent(args.status as string)}'`);
+    if (args.date_from) conditions.push(`ApplicationDate ge datetimeoffset'${encodeURIComponent(args.date_from as string)}T00:00:00+00:00'`);
+    if (args.date_to) conditions.push(`ApplicationDate le datetimeoffset'${encodeURIComponent(args.date_to as string)}T23:59:59+00:00'`);
     return this.apiGet('ARPayment', this.buildFilter(conditions), (args.top as number) ?? 20, (args.skip as number) ?? 0);
   }
 
   private async getPayment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.reference_nbr) return { content: [{ type: 'text', text: 'reference_nbr is required' }], isError: true };
     const docType = (args.doc_type as string) ?? 'Payment';
-    return this.apiGetSingle('ARPayment', `${docType}%2F${args.reference_nbr}`);
+    return this.apiGetSingle('ARPayment', `${docType}%2F${encodeURIComponent(args.reference_nbr as string)}`);
   }
 }

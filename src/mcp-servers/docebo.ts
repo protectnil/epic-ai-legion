@@ -648,7 +648,7 @@ export class DoceboMCPServer {
 
   private async getCourse(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
-    return this.doceboGet(`/learn/v1/courses/${args.course_id}`);
+    return this.doceboGet(`/learn/v1/courses/${encodeURIComponent(args.course_id as string)}`);
   }
 
   private async createCourse(args: Record<string, unknown>): Promise<ToolResult> {
@@ -669,12 +669,12 @@ export class DoceboMCPServer {
     if (args.description) body.description = args.description;
     if (args.status) body.status = args.status;
     if (args.duration) body.duration = args.duration;
-    return this.doceboPut(`/learn/v1/courses/${args.course_id}`, body);
+    return this.doceboPut(`/learn/v1/courses/${encodeURIComponent(args.course_id as string)}`, body);
   }
 
   private async deleteCourse(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
-    return this.doceboDelete(`/learn/v1/courses/${args.course_id}`);
+    return this.doceboDelete(`/learn/v1/courses/${encodeURIComponent(args.course_id as string)}`);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -690,7 +690,7 @@ export class DoceboMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.doceboGet(`/manage/v1/user/${args.user_id}`);
+    return this.doceboGet(`/manage/v1/user/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async createUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -716,12 +716,12 @@ export class DoceboMCPServer {
     if (args.first_name) body.firstname = args.first_name;
     if (args.last_name) body.lastname = args.last_name;
     if (args.language) body.language = args.language;
-    return this.doceboPut(`/manage/v1/user/${args.user_id}`, body);
+    return this.doceboPut(`/manage/v1/user/${encodeURIComponent(args.user_id as string)}`, body);
   }
 
   private async deactivateUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.doceboPut(`/manage/v1/user/${args.user_id}`, { active: false });
+    return this.doceboPut(`/manage/v1/user/${encodeURIComponent(args.user_id as string)}`, { active: false });
   }
 
   private async listEnrollments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -732,7 +732,7 @@ export class DoceboMCPServer {
     if (args.status) params.status = args.status as string;
     if (args.user_id) params.user_id = String(args.user_id);
     if (args.course_id) {
-      return this.doceboGet(`/learn/v1/enrollments/${args.course_id}`, params);
+      return this.doceboGet(`/learn/v1/enrollments/${encodeURIComponent(args.course_id as string)}`, params);
     }
     return this.doceboGet('/learn/v1/enrollments', params);
   }
@@ -750,14 +750,14 @@ export class DoceboMCPServer {
         },
       ],
     };
-    return this.doceboPost(`/learn/v1/enrollments/${args.course_id}`, body);
+    return this.doceboPost(`/learn/v1/enrollments/${encodeURIComponent(args.course_id as string)}`, body);
   }
 
   private async unenrollUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id || !args.course_id) {
       return { content: [{ type: 'text', text: 'user_id and course_id are required' }], isError: true };
     }
-    return this.doceboDelete(`/learn/v1/enrollments/${args.course_id}/${args.user_id}`);
+    return this.doceboDelete(`/learn/v1/enrollments/${encodeURIComponent(args.course_id as string)}/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listLearningPlans(args: Record<string, unknown>): Promise<ToolResult> {
@@ -772,7 +772,7 @@ export class DoceboMCPServer {
 
   private async getLearningPlan(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.learning_plan_id) return { content: [{ type: 'text', text: 'learning_plan_id is required' }], isError: true };
-    return this.doceboGet(`/learn/v1/lp/${args.learning_plan_id}`);
+    return this.doceboGet(`/learn/v1/lp/${encodeURIComponent(args.learning_plan_id as string)}`);
   }
 
   private async listCertifications(args: Record<string, unknown>): Promise<ToolResult> {
@@ -790,7 +790,7 @@ export class DoceboMCPServer {
       page: String((args.page as number) || 1),
       pageSize: String((args.page_size as number) || 20),
     };
-    return this.doceboGet(`/learn/v1/certifications/user/${args.user_id}`, params);
+    return this.doceboGet(`/learn/v1/certifications/user/${encodeURIComponent(args.user_id as string)}`, params);
   }
 
   private async getReports(args: Record<string, unknown>): Promise<ToolResult> {

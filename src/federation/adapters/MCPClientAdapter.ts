@@ -15,6 +15,58 @@ import type { ServerConnection } from '../../types/index.js';
 const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /**
+ * Validate and normalize MCP tool result content.
+ * Accepts:
+ *   - string
+ *   - Array of {type: string, text: string} objects (MCP content blocks)
+ * Anything else is rejected: a warning is emitted and a sanitized string
+ * representation is returned so callers always receive a usable value.
+ */
+function validateMCPContent(
+  content: unknown,
+  serverName: string,
+  toolName: string,
+): string | Array<{ type: string; text: string }> {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    const normalized: Array<{ type: string; text: string }> = [];
+    let allValid = true;
+    for (const item of content) {
+      if (
+        item !== null &&
+        typeof item === 'object' &&
+        typeof (item as Record<string, unknown>).type === 'string' &&
+        typeof (item as Record<string, unknown>).text === 'string'
+      ) {
+        normalized.push({
+          type: (item as { type: string; text: string }).type,
+          text: (item as { type: string; text: string }).text,
+        });
+      } else {
+        allValid = false;
+        break;
+      }
+    }
+    if (allValid) return normalized;
+  }
+
+  // Unexpected shape — warn and return sanitized string representation
+  console.warn(
+    `[MCPClientAdapter] server="${serverName}" tool="${toolName}": ` +
+    `unexpected content shape (type=${Array.isArray(content) ? 'array' : typeof content}). ` +
+    `Content rejected; returning string representation.`,
+  );
+  try {
+    return JSON.stringify(content);
+  } catch {
+    return String(content);
+  }
+}
+
+/**
  * Recursively remove prototype-pollution keys from an object tree.
  * Handles nested objects and arrays. Uses a seen set for cycle safety.
  */
@@ -161,7 +213,7 @@ export class MCPClientAdapter implements MCPAdapter {
       const safeArgs = sanitizeKeys(args);
       const result = await this.client.callTool({ name, arguments: safeArgs });
       return {
-        content: result.content,
+        content: validateMCPContent(result.content, this.name, name),
         isError: Boolean(result.isError),
         server: this.name,
         tool: name,

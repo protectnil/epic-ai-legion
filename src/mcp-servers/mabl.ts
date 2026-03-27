@@ -363,7 +363,7 @@ export class MablMCPServer {
 
   private async getPlan(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.plan_id) return { content: [{ type: 'text', text: 'plan_id is required' }], isError: true };
-    return this.apiGet(`schedule/runpolicies/v1/${args.plan_id}`);
+    return this.apiGet(`schedule/runpolicies/v1/${encodeURIComponent(args.plan_id as string)}`);
   }
 
   private async listEnvironments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -374,7 +374,7 @@ export class MablMCPServer {
 
   private async getEnvironment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.environment_id) return { content: [{ type: 'text', text: 'environment_id is required' }], isError: true };
-    return this.apiGet(`environments/v1/${args.environment_id}`);
+    return this.apiGet(`environments/v1/${encodeURIComponent(args.environment_id as string)}`);
   }
 
   private async createEnvironment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -393,7 +393,7 @@ export class MablMCPServer {
 
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id) return { content: [{ type: 'text', text: 'application_id is required' }], isError: true };
-    return this.apiGet(`applications/v1/${args.application_id}`);
+    return this.apiGet(`applications/v1/${encodeURIComponent(args.application_id as string)}`);
   }
 
   private async triggerDeployment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -413,7 +413,7 @@ export class MablMCPServer {
 
   private async getDeploymentResult(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.apiGet(`execution/result/event/${args.event_id}`);
+    return this.apiGet(`execution/result/event/${encodeURIComponent(args.event_id as string)}`);
   }
 
   private async listExecutions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -428,7 +428,7 @@ export class MablMCPServer {
 
   private async getExecution(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.plan_run_id) return { content: [{ type: 'text', text: 'plan_run_id is required' }], isError: true };
-    return this.apiGet(`execution/plan/result/v7/${args.plan_run_id}`);
+    return this.apiGet(`execution/plan/result/v7/${encodeURIComponent(args.plan_run_id as string)}`);
   }
 
   private async listLabels(): Promise<ToolResult> {
@@ -441,6 +441,6 @@ export class MablMCPServer {
 
   private async getDeploymentStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.apiGet(`execution/result/event/${args.event_id}`);
+    return this.apiGet(`execution/result/event/${encodeURIComponent(args.event_id as string)}`);
   }
 }

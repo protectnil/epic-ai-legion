@@ -625,7 +625,7 @@ export class ModernTreasuryMCPServer {
 
   private async getPaymentOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.mtGet(`payment_orders/${args.id}`);
+    return this.mtGet(`payment_orders/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createPaymentOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -651,7 +651,7 @@ export class ModernTreasuryMCPServer {
     if (args.amount) body.amount = args.amount;
     if (args.description) body.description = args.description;
     if (args.status) body.status = args.status;
-    return this.mtPatch(`payment_orders/${args.id}`, body);
+    return this.mtPatch(`payment_orders/${encodeURIComponent(args.id as string)}`, body);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -667,7 +667,7 @@ export class ModernTreasuryMCPServer {
 
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.mtGet(`transactions/${args.id}`);
+    return this.mtGet(`transactions/${encodeURIComponent(args.id as string)}`);
   }
 
   private async listCounterparties(args: Record<string, unknown>): Promise<ToolResult> {
@@ -681,7 +681,7 @@ export class ModernTreasuryMCPServer {
 
   private async getCounterparty(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.mtGet(`counterparties/${args.id}`);
+    return this.mtGet(`counterparties/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createCounterparty(args: Record<string, unknown>): Promise<ToolResult> {
@@ -705,7 +705,7 @@ export class ModernTreasuryMCPServer {
 
   private async getInternalAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.mtGet(`internal_accounts/${args.id}`);
+    return this.mtGet(`internal_accounts/${encodeURIComponent(args.id as string)}`);
   }
 
   private async listExternalAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -719,7 +719,7 @@ export class ModernTreasuryMCPServer {
 
   private async getExternalAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.mtGet(`external_accounts/${args.id}`);
+    return this.mtGet(`external_accounts/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createExternalAccount(args: Record<string, unknown>): Promise<ToolResult> {
@@ -755,7 +755,7 @@ export class ModernTreasuryMCPServer {
 
   private async getLedger(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.mtGet(`ledgers/${args.id}`);
+    return this.mtGet(`ledgers/${encodeURIComponent(args.id as string)}`);
   }
 
   private async listLedgerAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -770,7 +770,7 @@ export class ModernTreasuryMCPServer {
 
   private async getLedgerAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.mtGet(`ledger_accounts/${args.id}`);
+    return this.mtGet(`ledger_accounts/${encodeURIComponent(args.id as string)}`);
   }
 
   private async listLedgerTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -788,6 +788,6 @@ export class ModernTreasuryMCPServer {
 
   private async getLedgerTransaction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.mtGet(`ledger_transactions/${args.id}`);
+    return this.mtGet(`ledger_transactions/${encodeURIComponent(args.id as string)}`);
   }
 }

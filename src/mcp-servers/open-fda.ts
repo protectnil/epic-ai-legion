@@ -535,6 +535,6 @@ export class OpenFDAMCPServer {
 
   private async getDevice510k(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.k_number) return { content: [{ type: 'text', text: 'k_number is required' }], isError: true };
-    return this.query('/device/510k.json', { search: `k_number:${args.k_number}`, limit: 1 });
+    return this.query('/device/510k.json', { search: `k_number:${encodeURIComponent(args.k_number as string)}`, limit: 1 });
   }
 }

@@ -408,12 +408,12 @@ export class LansweeperMCPServer {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const limit = (args.limit as number) || 100;
     const filters: string[] = [];
-    if (args.asset_type) filters.push(`{operator: EQUAL, path: "assetBasicInfo.type", value: "${args.asset_type}"}`);
+    if (args.asset_type) filters.push(`{operator: EQUAL, path: "assetBasicInfo.type", value: "${encodeURIComponent(args.asset_type as string)}"}`);
     const filterStr = filters.length > 0 ? `filters: [${filters.join(', ')}],` : '';
-    const cursorStr = args.cursor ? `cursor: "${args.cursor}",` : '';
+    const cursorStr = args.cursor ? `cursor: "${encodeURIComponent(args.cursor as string)}",` : '';
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(${filterStr} ${cursorStr} pagination: { limit: ${limit} }) {
             total
             pagination { cursor nextPage }
@@ -433,8 +433,8 @@ export class LansweeperMCPServer {
     }
     const query = `
       query {
-        site(id: "${args.site_id}") {
-          assetResources(filters: [{operator: EQUAL, path: "assetBasicInfo.key", value: "${args.asset_key}"}]) {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
+          assetResources(filters: [{operator: EQUAL, path: "assetBasicInfo.key", value: "${encodeURIComponent(args.asset_key as string)}"}]) {
             items {
               assetBasicInfo { key name description type domain ipAddress macAddress lastSeen firstSeen operatingSystem }
               assetCustom { manufacturer model serialNumber purchaseDate warrantyDate }
@@ -453,9 +453,9 @@ export class LansweeperMCPServer {
     const limit = (args.limit as number) || 50;
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(
-            filters: [{operator: LIKE, path: "assetBasicInfo.name", value: "${args.query}"}]
+            filters: [{operator: LIKE, path: "assetBasicInfo.name", value: "${encodeURIComponent(args.query as string)}"}]
             pagination: { limit: ${limit} }
           ) {
             total
@@ -476,9 +476,9 @@ export class LansweeperMCPServer {
     const limit = (args.limit as number) || 200;
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(
-            filters: [{operator: EQUAL, path: "assetBasicInfo.key", value: "${args.asset_key}"}]
+            filters: [{operator: EQUAL, path: "assetBasicInfo.key", value: "${encodeURIComponent(args.asset_key as string)}"}]
           ) {
             items {
               assetBasicInfo { name }
@@ -499,9 +499,9 @@ export class LansweeperMCPServer {
     }
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(
-            filters: [{operator: EQUAL, path: "assetBasicInfo.key", value: "${args.asset_key}"}]
+            filters: [{operator: EQUAL, path: "assetBasicInfo.key", value: "${encodeURIComponent(args.asset_key as string)}"}]
           ) {
             items {
               assetBasicInfo { name }
@@ -520,13 +520,13 @@ export class LansweeperMCPServer {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const limit = (args.limit as number) || 100;
     const filters: string[] = [];
-    if (args.software_name) filters.push(`{operator: LIKE, path: "software.name", value: "${args.software_name}"}`);
-    if (args.publisher) filters.push(`{operator: LIKE, path: "software.publisher", value: "${args.publisher}"}`);
+    if (args.software_name) filters.push(`{operator: LIKE, path: "software.name", value: "${encodeURIComponent(args.software_name as string)}"}`);
+    if (args.publisher) filters.push(`{operator: LIKE, path: "software.publisher", value: "${encodeURIComponent(args.publisher as string)}"}`);
     const filterStr = filters.length > 0 ? `filters: [${filters.join(', ')}],` : '';
-    const cursorStr = args.cursor ? `cursor: "${args.cursor}",` : '';
+    const cursorStr = args.cursor ? `cursor: "${encodeURIComponent(args.cursor as string)}",` : '';
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(${filterStr} ${cursorStr} pagination: { limit: ${limit} }) {
             total
             pagination { cursor nextPage }
@@ -547,12 +547,12 @@ export class LansweeperMCPServer {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const limit = (args.limit as number) || 100;
     const filters: string[] = [];
-    if (args.domain) filters.push(`{operator: EQUAL, path: "assetBasicInfo.domain", value: "${args.domain}"}`);
+    if (args.domain) filters.push(`{operator: EQUAL, path: "assetBasicInfo.domain", value: "${encodeURIComponent(args.domain as string)}"}`);
     const filterStr = filters.length > 0 ? `filters: [${filters.join(', ')}],` : '';
-    const cursorStr = args.cursor ? `cursor: "${args.cursor}",` : '';
+    const cursorStr = args.cursor ? `cursor: "${encodeURIComponent(args.cursor as string)}",` : '';
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(
             ${filterStr} ${cursorStr}
             filters: [{operator: EQUAL, path: "assetBasicInfo.type", value: "User"}]
@@ -573,10 +573,10 @@ export class LansweeperMCPServer {
   private async getWindowsAssets(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const limit = (args.limit as number) || 100;
-    const cursorStr = args.cursor ? `cursor: "${args.cursor}",` : '';
+    const cursorStr = args.cursor ? `cursor: "${encodeURIComponent(args.cursor as string)}",` : '';
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(
             filters: [{operator: LIKE, path: "assetBasicInfo.type", value: "Windows"}]
             ${cursorStr} pagination: { limit: ${limit} }
@@ -596,10 +596,10 @@ export class LansweeperMCPServer {
   private async getLinuxAssets(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const limit = (args.limit as number) || 100;
-    const cursorStr = args.cursor ? `cursor: "${args.cursor}",` : '';
+    const cursorStr = args.cursor ? `cursor: "${encodeURIComponent(args.cursor as string)}",` : '';
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(
             filters: [{operator: LIKE, path: "assetBasicInfo.type", value: "Linux"}]
             ${cursorStr} pagination: { limit: ${limit} }
@@ -619,13 +619,13 @@ export class LansweeperMCPServer {
   private async getNetworkDevices(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const limit = (args.limit as number) || 100;
-    const cursorStr = args.cursor ? `cursor: "${args.cursor}",` : '';
+    const cursorStr = args.cursor ? `cursor: "${encodeURIComponent(args.cursor as string)}",` : '';
     const deviceFilter = args.device_type
-      ? `{operator: EQUAL, path: "assetBasicInfo.type", value: "${args.device_type}"}`
+      ? `{operator: EQUAL, path: "assetBasicInfo.type", value: "${encodeURIComponent(args.device_type as string)}"}`
       : `{operator: IN, path: "assetBasicInfo.type", value: "Router,Switch,Firewall,Printer,Access Point"}`;
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(
             filters: [${deviceFilter}]
             ${cursorStr} pagination: { limit: ${limit} }
@@ -647,13 +647,13 @@ export class LansweeperMCPServer {
       return { content: [{ type: 'text', text: 'site_id and asset_key are required' }], isError: true };
     }
     const severityFilter = args.severity
-      ? `filters: [{operator: EQUAL, path: "severity", value: "${args.severity}"}]`
+      ? `filters: [{operator: EQUAL, path: "severity", value: "${encodeURIComponent(args.severity as string)}"}]`
       : '';
     const query = `
       query {
-        site(id: "${args.site_id}") {
+        site(id: "${encodeURIComponent(args.site_id as string)}") {
           assetResources(
-            filters: [{operator: EQUAL, path: "assetBasicInfo.key", value: "${args.asset_key}"}]
+            filters: [{operator: EQUAL, path: "assetBasicInfo.key", value: "${encodeURIComponent(args.asset_key as string)}"}]
           ) {
             items {
               assetBasicInfo { name }

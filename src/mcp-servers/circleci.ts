@@ -439,14 +439,14 @@ export class CircleCIMCPServer {
     if (args.org_slug) {
       return this.get(`/pipeline?org-slug=${encodeURIComponent(String(args.org_slug))}${qs ? '&' + params.toString() : ''}`);
     } else if (args.project_slug) {
-      return this.get(`/project/${args.project_slug}/pipeline${qs}`);
+      return this.get(`/project/${encodeURIComponent(args.project_slug as string)}/pipeline${qs}`);
     } else {
       return this.get(`/pipeline${qs}`);
     }
   }
 
   private async getPipeline(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/pipeline/${args.pipeline_id}`);
+    return this.get(`/pipeline/${encodeURIComponent(args.pipeline_id as string)}`);
   }
 
   private async triggerPipeline(args: Record<string, unknown>): Promise<ToolResult> {
@@ -465,22 +465,22 @@ export class CircleCIMCPServer {
     const params = new URLSearchParams();
     if (args.page_token) params.set('page-token', String(args.page_token));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    return this.get(`/pipeline/${args.pipeline_id}/workflow${qs}`);
+    return this.get(`/pipeline/${encodeURIComponent(args.pipeline_id as string)}/workflow${qs}`);
   }
 
   private async getWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/workflow/${args.workflow_id}`);
+    return this.get(`/workflow/${encodeURIComponent(args.workflow_id as string)}`);
   }
 
   private async cancelWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.post(`/workflow/${args.workflow_id}/cancel`, {});
+    return this.post(`/workflow/${encodeURIComponent(args.workflow_id as string)}/cancel`, {});
   }
 
   private async rerunWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {
       from_failed: (args.from_failed as boolean) ?? false,
     };
-    return this.post(`/workflow/${args.workflow_id}/rerun`, body);
+    return this.post(`/workflow/${encodeURIComponent(args.workflow_id as string)}/rerun`, body);
   }
 
   private async approveJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -496,7 +496,7 @@ export class CircleCIMCPServer {
     const params = new URLSearchParams();
     if (args.page_token) params.set('page-token', String(args.page_token));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    return this.get(`/workflow/${args.workflow_id}/job${qs}`);
+    return this.get(`/workflow/${encodeURIComponent(args.workflow_id as string)}/job${qs}`);
   }
 
   private async getJobDetails(args: Record<string, unknown>): Promise<ToolResult> {

@@ -511,7 +511,7 @@ export class FreshdeskMCPServer {
   }
 
   private async getTicket(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fdRequest(`${this.baseUrl}/tickets/${args.ticket_id}`);
+    return this.fdRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}`);
   }
 
   private async createTicket(args: Record<string, unknown>): Promise<ToolResult> {
@@ -543,11 +543,11 @@ export class FreshdeskMCPServer {
   }
 
   private async deleteTicket(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fdRequest(`${this.baseUrl}/tickets/${args.ticket_id}`, { method: 'DELETE' });
+    return this.fdRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}`, { method: 'DELETE' });
   }
 
   private async searchTickets(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams({ query: `"${args.query}"` });
+    const params = new URLSearchParams({ query: `"${encodeURIComponent(args.query as string)}"` });
     if (args.page) params.set('page', String(args.page));
     return this.fdRequest(`${this.baseUrl}/search/tickets?${params.toString()}`);
   }
@@ -555,7 +555,7 @@ export class FreshdeskMCPServer {
   private async filterTickets(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.page) params.set('page', String(args.page));
-    return this.fdRequest(`${this.baseUrl}/tickets/filter?view_id=${args.view_id}&${params.toString()}`);
+    return this.fdRequest(`${this.baseUrl}/tickets/filter?view_id=${encodeURIComponent(args.view_id as string)}&${params.toString()}`);
   }
 
   // ── Conversations ─────────────────────────────────────────────────────────
@@ -564,7 +564,7 @@ export class FreshdeskMCPServer {
     const body: Record<string, unknown> = { body: args.body };
     if (args.cc_emails) body.cc_emails = args.cc_emails;
     if (args.bcc_emails) body.bcc_emails = args.bcc_emails;
-    return this.fdRequest(`${this.baseUrl}/tickets/${args.ticket_id}/reply`, { method: 'POST', body: JSON.stringify(body) });
+    return this.fdRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}/reply`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   private async addNoteToTicket(args: Record<string, unknown>): Promise<ToolResult> {
@@ -573,13 +573,13 @@ export class FreshdeskMCPServer {
       private: typeof args.private === 'boolean' ? args.private : true,
     };
     if (args.notify_emails) body.notify_emails = args.notify_emails;
-    return this.fdRequest(`${this.baseUrl}/tickets/${args.ticket_id}/notes`, { method: 'POST', body: JSON.stringify(body) });
+    return this.fdRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}/notes`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   private async listTicketConversations(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.page) params.set('page', String(args.page));
-    return this.fdRequest(`${this.baseUrl}/tickets/${args.ticket_id}/conversations?${params.toString()}`);
+    return this.fdRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}/conversations?${params.toString()}`);
   }
 
   // ── Contacts ──────────────────────────────────────────────────────────────
@@ -596,7 +596,7 @@ export class FreshdeskMCPServer {
   }
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fdRequest(`${this.baseUrl}/contacts/${args.contact_id}`);
+    return this.fdRequest(`${this.baseUrl}/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async createContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -636,7 +636,7 @@ export class FreshdeskMCPServer {
   }
 
   private async getAgent(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fdRequest(`${this.baseUrl}/agents/${args.agent_id}`);
+    return this.fdRequest(`${this.baseUrl}/agents/${encodeURIComponent(args.agent_id as string)}`);
   }
 
   // ── Companies ─────────────────────────────────────────────────────────────
@@ -649,7 +649,7 @@ export class FreshdeskMCPServer {
   }
 
   private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fdRequest(`${this.baseUrl}/companies/${args.company_id}`);
+    return this.fdRequest(`${this.baseUrl}/companies/${encodeURIComponent(args.company_id as string)}`);
   }
 
   private async createCompany(args: Record<string, unknown>): Promise<ToolResult> {
@@ -669,7 +669,7 @@ export class FreshdeskMCPServer {
   }
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fdRequest(`${this.baseUrl}/groups/${args.group_id}`);
+    return this.fdRequest(`${this.baseUrl}/groups/${encodeURIComponent(args.group_id as string)}`);
   }
 
   // ── Products ──────────────────────────────────────────────────────────────
@@ -710,7 +710,7 @@ export class FreshdeskMCPServer {
     if (args.note) body.note = args.note;
     if (args.executed_at) body.executed_at = args.executed_at;
     return this.fdRequest(
-      `${this.baseUrl}/tickets/${args.ticket_id}/time_entries`,
+      `${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}/time_entries`,
       { method: 'POST', body: JSON.stringify(body) },
     );
   }

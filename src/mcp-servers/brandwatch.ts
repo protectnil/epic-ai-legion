@@ -428,19 +428,19 @@ export class BrandwatchMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.get(`/projects/${args.project_id}`);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async listQueries(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.get(`/projects/${args.project_id}/queries`);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/queries`);
   }
 
   private async getQuery(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.query_id) {
       return { content: [{ type: 'text', text: 'project_id and query_id are required' }], isError: true };
     }
-    return this.get(`/projects/${args.project_id}/queries/${args.query_id}`);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/queries/${encodeURIComponent(args.query_id as string)}`);
   }
 
   private async createQuery(args: Record<string, unknown>): Promise<ToolResult> {
@@ -453,19 +453,19 @@ export class BrandwatchMCPServer {
     };
     if (args.languages) body.languages = (args.languages as string).split(',');
     if (args.startDate) body.startDate = args.startDate;
-    return this.post(`/projects/${args.project_id}/queries`, body);
+    return this.post(`/projects/${encodeURIComponent(args.project_id as string)}/queries`, body);
   }
 
   private async listQueryGroups(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.get(`/projects/${args.project_id}/querygroups`);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/querygroups`);
   }
 
   private async getQueryGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.group_id) {
       return { content: [{ type: 'text', text: 'project_id and group_id are required' }], isError: true };
     }
-    return this.get(`/projects/${args.project_id}/querygroups/${args.group_id}`);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/querygroups/${encodeURIComponent(args.group_id as string)}`);
   }
 
   private async listMentions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -481,14 +481,14 @@ export class BrandwatchMCPServer {
       orderDirection: (args.orderDirection as string) ?? 'desc',
     };
     if (args.sentiment) params.sentiment = args.sentiment as string;
-    return this.get(`/projects/${args.project_id}/data/mentions/fulltext`, params);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/data/mentions/fulltext`, params);
   }
 
   private async getMention(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.mention_id) {
       return { content: [{ type: 'text', text: 'project_id and mention_id are required' }], isError: true };
     }
-    return this.get(`/projects/${args.project_id}/data/mentions/${args.mention_id}`);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/data/mentions/${encodeURIComponent(args.mention_id as string)}`);
   }
 
   private async searchMentions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -505,7 +505,7 @@ export class BrandwatchMCPServer {
     if (args.site) params.site = args.site as string;
     if (args.country) params.country = args.country as string;
     if (args.sentiment) params.sentiment = args.sentiment as string;
-    return this.get(`/projects/${args.project_id}/data/mentions`, params);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/data/mentions`, params);
   }
 
   private async getMentionVolume(args: Record<string, unknown>): Promise<ToolResult> {
@@ -517,7 +517,7 @@ export class BrandwatchMCPServer {
       endDate: args.endDate as string,
       granularity: (args.granularity as string) ?? 'daily',
     };
-    return this.get(`/projects/${args.project_id}/data/volume`, params);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/data/volume`, params);
   }
 
   private async getMentionSentiment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -528,7 +528,7 @@ export class BrandwatchMCPServer {
       startDate: args.startDate as string,
       endDate: args.endDate as string,
     };
-    return this.get(`/projects/${args.project_id}/data/sentiment`, params);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/data/sentiment`, params);
   }
 
   private async getTopics(args: Record<string, unknown>): Promise<ToolResult> {
@@ -540,7 +540,7 @@ export class BrandwatchMCPServer {
       endDate: args.endDate as string,
       limit: String((args.limit as number) ?? 20),
     };
-    return this.get(`/projects/${args.project_id}/data/volume/topics`, params);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/data/volume/topics`, params);
   }
 
   private async getTopSites(args: Record<string, unknown>): Promise<ToolResult> {
@@ -552,7 +552,7 @@ export class BrandwatchMCPServer {
       endDate: args.endDate as string,
       limit: String((args.limit as number) ?? 20),
     };
-    return this.get(`/projects/${args.project_id}/data/topsites`, params);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/data/topsites`, params);
   }
 
   private async getTopAuthors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -564,16 +564,16 @@ export class BrandwatchMCPServer {
       endDate: args.endDate as string,
       limit: String((args.limit as number) ?? 20),
     };
-    return this.get(`/projects/${args.project_id}/data/authors`, params);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/data/authors`, params);
   }
 
   private async listCategories(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.get(`/projects/${args.project_id}/categories`);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/categories`);
   }
 
   private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.get(`/projects/${args.project_id}/tags`);
+    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}/tags`);
   }
 }

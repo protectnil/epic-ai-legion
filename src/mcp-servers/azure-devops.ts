@@ -458,8 +458,8 @@ export class AzureDevOpsMCPServer {
   private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {
     let url = `${this.orgUrl()}/_apis/projects?api-version=7.1`;
     if (args.stateFilter) url += `&stateFilter=${encodeURIComponent(String(args.stateFilter))}`;
-    if (args.top) url += `&$top=${args.top}`;
-    if (args.skip) url += `&$skip=${args.skip}`;
+    if (args.top) url += `&$top=${encodeURIComponent(args.top as string)}`;
+    if (args.skip) url += `&$skip=${encodeURIComponent(args.skip as string)}`;
     return this.fetchJSON(url);
   }
 
@@ -484,8 +484,8 @@ export class AzureDevOpsMCPServer {
     let url = `${this.orgUrl(project)}/_apis/git/repositories/${repo}/pullrequests?api-version=7.1`;
     url += `&searchCriteria.status=${encodeURIComponent(String(args.status ?? 'active'))}`;
     if (args.createdBy) url += `&searchCriteria.creatorId=${encodeURIComponent(String(args.createdBy))}`;
-    if (args.top) url += `&$top=${args.top}`;
-    if (args.skip) url += `&$skip=${args.skip}`;
+    if (args.top) url += `&$top=${encodeURIComponent(args.top as string)}`;
+    if (args.skip) url += `&$skip=${encodeURIComponent(args.skip as string)}`;
     return this.fetchJSON(url);
   }
 
@@ -536,7 +536,7 @@ export class AzureDevOpsMCPServer {
   private async queryWorkItems(args: Record<string, unknown>): Promise<ToolResult> {
     const project = args.project as string;
     const wiql = args.wiql as string;
-    const url = `${this.orgUrl(project)}/_apis/wit/wiql?api-version=7.1${args.top ? `&$top=${args.top}` : ''}`;
+    const url = `${this.orgUrl(project)}/_apis/wit/wiql?api-version=7.1${args.top ? `&$top=${encodeURIComponent(args.top as string)}` : ''}`;
     return this.fetchJSON(url, { method: 'POST', body: JSON.stringify({ query: wiql }) });
   }
 
@@ -614,7 +614,7 @@ export class AzureDevOpsMCPServer {
     const project = args.project as string;
     const top = (args.top as number) ?? 25;
     let url = `${this.orgUrl(project)}/_apis/build/builds?api-version=7.1&$top=${top}`;
-    if (args.definitionId) url += `&definitions=${args.definitionId}`;
+    if (args.definitionId) url += `&definitions=${encodeURIComponent(args.definitionId as string)}`;
     if (args.statusFilter) url += `&statusFilter=${encodeURIComponent(String(args.statusFilter))}`;
     if (args.resultFilter) url += `&resultFilter=${encodeURIComponent(String(args.resultFilter))}`;
     if (args.branchName) url += `&branchName=${encodeURIComponent(String(args.branchName))}`;
@@ -622,7 +622,7 @@ export class AzureDevOpsMCPServer {
   }
 
   private async getBuild(args: Record<string, unknown>): Promise<ToolResult> {
-    const url = `${this.orgUrl(args.project as string)}/_apis/build/builds/${args.buildId}?api-version=7.1`;
+    const url = `${this.orgUrl(args.project as string)}/_apis/build/builds/${encodeURIComponent(args.buildId as string)}?api-version=7.1`;
     return this.fetchJSON(url);
   }
 
@@ -646,7 +646,7 @@ export class AzureDevOpsMCPServer {
   }
 
   private async getPipelineDefinition(args: Record<string, unknown>): Promise<ToolResult> {
-    const url = `${this.orgUrl(args.project as string)}/_apis/build/definitions/${args.definitionId}?api-version=7.1`;
+    const url = `${this.orgUrl(args.project as string)}/_apis/build/definitions/${encodeURIComponent(args.definitionId as string)}?api-version=7.1`;
     return this.fetchJSON(url);
   }
 
@@ -656,14 +656,14 @@ export class AzureDevOpsMCPServer {
     const project = args.project as string;
     const top = (args.top as number) ?? 25;
     let url = `${this.vsrmBaseUrl}/${this.organization}/${encodeURIComponent(project)}/_apis/release/releases?api-version=7.1&$top=${top}`;
-    if (args.definitionId) url += `&definitionId=${args.definitionId}`;
+    if (args.definitionId) url += `&definitionId=${encodeURIComponent(args.definitionId as string)}`;
     if (args.statusFilter) url += `&statusFilter=${encodeURIComponent(String(args.statusFilter))}`;
     return this.fetchJSON(url);
   }
 
   private async getRelease(args: Record<string, unknown>): Promise<ToolResult> {
     const project = encodeURIComponent(String(args.project));
-    const url = `${this.vsrmBaseUrl}/${this.organization}/${project}/_apis/release/releases/${args.releaseId}?api-version=7.1`;
+    const url = `${this.vsrmBaseUrl}/${this.organization}/${project}/_apis/release/releases/${encodeURIComponent(args.releaseId as string)}?api-version=7.1`;
     return this.fetchJSON(url);
   }
 

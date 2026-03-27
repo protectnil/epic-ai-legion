@@ -515,7 +515,7 @@ export class VertaforeMCPServer {
 
   private async getCustomer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
-    return this.apiGet(`/customers/${args.customer_id}`);
+    return this.apiGet(`/customers/${encodeURIComponent(args.customer_id as string)}`);
   }
 
   private async searchCustomers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -558,7 +558,7 @@ export class VertaforeMCPServer {
 
   private async getPolicy(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.policy_id) return { content: [{ type: 'text', text: 'policy_id is required' }], isError: true };
-    return this.apiGet(`/policies/${args.policy_id}`);
+    return this.apiGet(`/policies/${encodeURIComponent(args.policy_id as string)}`);
   }
 
   private async searchPolicies(args: Record<string, unknown>): Promise<ToolResult> {

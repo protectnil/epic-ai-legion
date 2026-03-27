@@ -490,7 +490,7 @@ export class OptimizelyMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.apiGet(`/projects/${args.project_id}`);
+    return this.apiGet(`/projects/${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async listExperiments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -507,7 +507,7 @@ export class OptimizelyMCPServer {
 
   private async getExperiment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.experiment_id) return { content: [{ type: 'text', text: 'experiment_id is required' }], isError: true };
-    return this.apiGet(`/experiments/${args.experiment_id}`);
+    return this.apiGet(`/experiments/${encodeURIComponent(args.experiment_id as string)}`);
   }
 
   private async createExperiment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -531,12 +531,12 @@ export class OptimizelyMCPServer {
     if (args.description) body.description = args.description;
     if (args.status) body.status = args.status;
     if (args.holdback !== undefined) body.holdback = args.holdback;
-    return this.apiPatch(`/experiments/${args.experiment_id}`, body);
+    return this.apiPatch(`/experiments/${encodeURIComponent(args.experiment_id as string)}`, body);
   }
 
   private async archiveExperiment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.experiment_id) return { content: [{ type: 'text', text: 'experiment_id is required' }], isError: true };
-    return this.apiPatch(`/experiments/${args.experiment_id}`, { status: 'archived' });
+    return this.apiPatch(`/experiments/${encodeURIComponent(args.experiment_id as string)}`, { status: 'archived' });
   }
 
   private async listFeatures(args: Record<string, unknown>): Promise<ToolResult> {
@@ -551,7 +551,7 @@ export class OptimizelyMCPServer {
 
   private async getFeature(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.feature_id) return { content: [{ type: 'text', text: 'feature_id is required' }], isError: true };
-    return this.apiGet(`/features/${args.feature_id}`);
+    return this.apiGet(`/features/${encodeURIComponent(args.feature_id as string)}`);
   }
 
   private async createFeature(args: Record<string, unknown>): Promise<ToolResult> {
@@ -572,7 +572,7 @@ export class OptimizelyMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.description) body.description = args.description;
-    return this.apiPatch(`/features/${args.feature_id}`, body);
+    return this.apiPatch(`/features/${encodeURIComponent(args.feature_id as string)}`, body);
   }
 
   private async listAudiences(args: Record<string, unknown>): Promise<ToolResult> {
@@ -587,7 +587,7 @@ export class OptimizelyMCPServer {
 
   private async getAudience(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.audience_id) return { content: [{ type: 'text', text: 'audience_id is required' }], isError: true };
-    return this.apiGet(`/audiences/${args.audience_id}`);
+    return this.apiGet(`/audiences/${encodeURIComponent(args.audience_id as string)}`);
   }
 
   private async createAudience(args: Record<string, unknown>): Promise<ToolResult> {
@@ -611,7 +611,7 @@ export class OptimizelyMCPServer {
 
   private async getResults(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.experiment_id) return { content: [{ type: 'text', text: 'experiment_id is required' }], isError: true };
-    return this.apiGet(`/experiments/${args.experiment_id}/results`);
+    return this.apiGet(`/experiments/${encodeURIComponent(args.experiment_id as string)}/results`);
   }
 
   private async listEnvironments(args: Record<string, unknown>): Promise<ToolResult> {

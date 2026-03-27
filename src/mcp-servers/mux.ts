@@ -616,7 +616,7 @@ export class MuxMCPServer {
 
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.muxGet(`video/v1/assets/${args.asset_id}`);
+    return this.muxGet(`video/v1/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async createAsset(args: Record<string, unknown>): Promise<ToolResult> {
@@ -633,24 +633,24 @@ export class MuxMCPServer {
 
   private async deleteAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.muxDelete(`video/v1/assets/${args.asset_id}`);
+    return this.muxDelete(`video/v1/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async updateAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.passthrough) body.passthrough = args.passthrough;
-    return this.muxPatch(`video/v1/assets/${args.asset_id}`, body);
+    return this.muxPatch(`video/v1/assets/${encodeURIComponent(args.asset_id as string)}`, body);
   }
 
   private async getAssetInputInfo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.muxGet(`video/v1/assets/${args.asset_id}/input-info`);
+    return this.muxGet(`video/v1/assets/${encodeURIComponent(args.asset_id as string)}/input-info`);
   }
 
   private async getAssetPlaybackId(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id || !args.playback_id) return { content: [{ type: 'text', text: 'asset_id and playback_id are required' }], isError: true };
-    return this.muxGet(`video/v1/assets/${args.asset_id}/playback-ids/${args.playback_id}`);
+    return this.muxGet(`video/v1/assets/${encodeURIComponent(args.asset_id as string)}/playback-ids/${encodeURIComponent(args.playback_id as string)}`);
   }
 
   private async createAssetPlaybackId(args: Record<string, unknown>): Promise<ToolResult> {
@@ -658,12 +658,12 @@ export class MuxMCPServer {
     const body: Record<string, unknown> = {
       policy: (args.policy as string) || 'public',
     };
-    return this.muxPost(`video/v1/assets/${args.asset_id}/playback-ids`, body);
+    return this.muxPost(`video/v1/assets/${encodeURIComponent(args.asset_id as string)}/playback-ids`, body);
   }
 
   private async deleteAssetPlaybackId(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id || !args.playback_id) return { content: [{ type: 'text', text: 'asset_id and playback_id are required' }], isError: true };
-    return this.muxDelete(`video/v1/assets/${args.asset_id}/playback-ids/${args.playback_id}`);
+    return this.muxDelete(`video/v1/assets/${encodeURIComponent(args.asset_id as string)}/playback-ids/${encodeURIComponent(args.playback_id as string)}`);
   }
 
   private async listLiveStreams(args: Record<string, unknown>): Promise<ToolResult> {
@@ -678,7 +678,7 @@ export class MuxMCPServer {
 
   private async getLiveStream(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.live_stream_id) return { content: [{ type: 'text', text: 'live_stream_id is required' }], isError: true };
-    return this.muxGet(`video/v1/live-streams/${args.live_stream_id}`);
+    return this.muxGet(`video/v1/live-streams/${encodeURIComponent(args.live_stream_id as string)}`);
   }
 
   private async createLiveStream(args: Record<string, unknown>): Promise<ToolResult> {
@@ -698,22 +698,22 @@ export class MuxMCPServer {
     if (args.reconnect_window) body.reconnect_window = args.reconnect_window;
     if (args.latency_mode) body.latency_mode = args.latency_mode;
     if (args.passthrough) body.passthrough = args.passthrough;
-    return this.muxPatch(`video/v1/live-streams/${args.live_stream_id}`, body);
+    return this.muxPatch(`video/v1/live-streams/${encodeURIComponent(args.live_stream_id as string)}`, body);
   }
 
   private async disableLiveStream(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.live_stream_id) return { content: [{ type: 'text', text: 'live_stream_id is required' }], isError: true };
-    return this.muxPut(`video/v1/live-streams/${args.live_stream_id}/disable`);
+    return this.muxPut(`video/v1/live-streams/${encodeURIComponent(args.live_stream_id as string)}/disable`);
   }
 
   private async enableLiveStream(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.live_stream_id) return { content: [{ type: 'text', text: 'live_stream_id is required' }], isError: true };
-    return this.muxPut(`video/v1/live-streams/${args.live_stream_id}/enable`);
+    return this.muxPut(`video/v1/live-streams/${encodeURIComponent(args.live_stream_id as string)}/enable`);
   }
 
   private async completeLiveStream(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.live_stream_id) return { content: [{ type: 'text', text: 'live_stream_id is required' }], isError: true };
-    return this.muxPut(`video/v1/live-streams/${args.live_stream_id}/complete`);
+    return this.muxPut(`video/v1/live-streams/${encodeURIComponent(args.live_stream_id as string)}/complete`);
   }
 
   private async listUploads(args: Record<string, unknown>): Promise<ToolResult> {
@@ -726,7 +726,7 @@ export class MuxMCPServer {
 
   private async getUpload(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.upload_id) return { content: [{ type: 'text', text: 'upload_id is required' }], isError: true };
-    return this.muxGet(`video/v1/uploads/${args.upload_id}`);
+    return this.muxGet(`video/v1/uploads/${encodeURIComponent(args.upload_id as string)}`);
   }
 
   private async createDirectUpload(args: Record<string, unknown>): Promise<ToolResult> {

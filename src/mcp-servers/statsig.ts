@@ -538,7 +538,7 @@ export class StatsigMCPServer {
 
   private async getGate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.gate_name) return { content: [{ type: 'text', text: 'gate_name is required' }], isError: true };
-    return this.consoleGet(`/gates/${args.gate_name}`);
+    return this.consoleGet(`/gates/${encodeURIComponent(args.gate_name as string)}`);
   }
 
   private async createGate(args: Record<string, unknown>): Promise<ToolResult> {
@@ -554,12 +554,12 @@ export class StatsigMCPServer {
     const body: Record<string, unknown> = {};
     if (typeof args.isEnabled === 'boolean') body.isEnabled = args.isEnabled;
     if (args.description) body.description = args.description;
-    return this.consolePatch(`/gates/${args.gate_name}`, body);
+    return this.consolePatch(`/gates/${encodeURIComponent(args.gate_name as string)}`, body);
   }
 
   private async deleteGate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.gate_name) return { content: [{ type: 'text', text: 'gate_name is required' }], isError: true };
-    return this.consoleDelete(`/gates/${args.gate_name}`);
+    return this.consoleDelete(`/gates/${encodeURIComponent(args.gate_name as string)}`);
   }
 
   private async listExperiments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -572,7 +572,7 @@ export class StatsigMCPServer {
 
   private async getExperimentDetails(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.experiment_name) return { content: [{ type: 'text', text: 'experiment_name is required' }], isError: true };
-    return this.consoleGet(`/experiments/${args.experiment_name}`);
+    return this.consoleGet(`/experiments/${encodeURIComponent(args.experiment_name as string)}`);
   }
 
   private async createExperiment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -596,7 +596,7 @@ export class StatsigMCPServer {
 
   private async getConfigDetails(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.config_name) return { content: [{ type: 'text', text: 'config_name is required' }], isError: true };
-    return this.consoleGet(`/dynamic_configs/${args.config_name}`);
+    return this.consoleGet(`/dynamic_configs/${encodeURIComponent(args.config_name as string)}`);
   }
 
   private async listLayers(args: Record<string, unknown>): Promise<ToolResult> {

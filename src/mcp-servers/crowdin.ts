@@ -648,7 +648,7 @@ export class CrowdinMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.crowdinGet(`/projects/${args.project_id as number}`);
+    return this.crowdinGet(`/projects/${encodeURIComponent(args.project_id as number)}`);
   }
 
   private async createProject(args: Record<string, unknown>): Promise<ToolResult> {
@@ -670,12 +670,12 @@ export class CrowdinMCPServer {
     if (args.description) ops.push({ op: 'replace', path: '/description', value: args.description });
     if (args.target_languages) ops.push({ op: 'replace', path: '/targetLanguageIds', value: args.target_languages });
     if (ops.length === 0) return { content: [{ type: 'text', text: 'At least one field to update is required' }], isError: true };
-    return this.crowdinPatch(`/projects/${args.project_id as number}`, ops);
+    return this.crowdinPatch(`/projects/${encodeURIComponent(args.project_id as number)}`, ops);
   }
 
   private async deleteProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.crowdinDelete(`/projects/${args.project_id as number}`);
+    return this.crowdinDelete(`/projects/${encodeURIComponent(args.project_id as number)}`);
   }
 
   private async listProjectFiles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -686,12 +686,12 @@ export class CrowdinMCPServer {
     };
     if (args.branch_id) params.branchId = String(args.branch_id);
     if (args.directory_id) params.directoryId = String(args.directory_id);
-    return this.crowdinGet(`/projects/${args.project_id as number}/files`, params);
+    return this.crowdinGet(`/projects/${encodeURIComponent(args.project_id as number)}/files`, params);
   }
 
   private async getFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.file_id) return { content: [{ type: 'text', text: 'project_id and file_id are required' }], isError: true };
-    return this.crowdinGet(`/projects/${args.project_id as number}/files/${args.file_id as number}`);
+    return this.crowdinGet(`/projects/${encodeURIComponent(args.project_id as number)}/files/${encodeURIComponent(args.file_id as number)}`);
   }
 
   private async addFile(args: Record<string, unknown>): Promise<ToolResult> {
@@ -701,21 +701,21 @@ export class CrowdinMCPServer {
     const body: Record<string, unknown> = { storageId: args.storage_id, name: args.name };
     if (args.branch_id) body.branchId = args.branch_id;
     if (args.directory_id) body.directoryId = args.directory_id;
-    return this.crowdinPost(`/projects/${args.project_id as number}/files`, body);
+    return this.crowdinPost(`/projects/${encodeURIComponent(args.project_id as number)}/files`, body);
   }
 
   private async updateFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.file_id || !args.storage_id) {
       return { content: [{ type: 'text', text: 'project_id, file_id, and storage_id are required' }], isError: true };
     }
-    return this.crowdinPatch(`/projects/${args.project_id as number}/files/${args.file_id as number}`, [
+    return this.crowdinPatch(`/projects/${encodeURIComponent(args.project_id as number)}/files/${encodeURIComponent(args.file_id as number)}`, [
       { op: 'replace', path: '/storageId', value: args.storage_id },
     ]);
   }
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.file_id) return { content: [{ type: 'text', text: 'project_id and file_id are required' }], isError: true };
-    return this.crowdinDelete(`/projects/${args.project_id as number}/files/${args.file_id as number}`);
+    return this.crowdinDelete(`/projects/${encodeURIComponent(args.project_id as number)}/files/${encodeURIComponent(args.file_id as number)}`);
   }
 
   private async listStrings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -726,12 +726,12 @@ export class CrowdinMCPServer {
     };
     if (args.file_id) params.fileId = String(args.file_id);
     if (args.search) params.filter = args.search as string;
-    return this.crowdinGet(`/projects/${args.project_id as number}/strings`, params);
+    return this.crowdinGet(`/projects/${encodeURIComponent(args.project_id as number)}/strings`, params);
   }
 
   private async getString(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.string_id) return { content: [{ type: 'text', text: 'project_id and string_id are required' }], isError: true };
-    return this.crowdinGet(`/projects/${args.project_id as number}/strings/${args.string_id as number}`);
+    return this.crowdinGet(`/projects/${encodeURIComponent(args.project_id as number)}/strings/${encodeURIComponent(args.string_id as number)}`);
   }
 
   private async addString(args: Record<string, unknown>): Promise<ToolResult> {
@@ -745,7 +745,7 @@ export class CrowdinMCPServer {
     };
     if (args.context) body.context = args.context;
     if (typeof args.is_hidden === 'boolean') body.isHidden = args.is_hidden;
-    return this.crowdinPost(`/projects/${args.project_id as number}/strings`, body);
+    return this.crowdinPost(`/projects/${encodeURIComponent(args.project_id as number)}/strings`, body);
   }
 
   private async updateString(args: Record<string, unknown>): Promise<ToolResult> {
@@ -755,7 +755,7 @@ export class CrowdinMCPServer {
     if (args.context) ops.push({ op: 'replace', path: '/context', value: args.context });
     if (typeof args.is_hidden === 'boolean') ops.push({ op: 'replace', path: '/isHidden', value: args.is_hidden });
     if (ops.length === 0) return { content: [{ type: 'text', text: 'At least one field to update is required' }], isError: true };
-    return this.crowdinPatch(`/projects/${args.project_id as number}/strings/${args.string_id as number}`, ops);
+    return this.crowdinPatch(`/projects/${encodeURIComponent(args.project_id as number)}/strings/${encodeURIComponent(args.string_id as number)}`, ops);
   }
 
   private async listTranslations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -765,12 +765,12 @@ export class CrowdinMCPServer {
       offset: String((args.offset as number) ?? 0),
     };
     if (args.string_id) params.stringId = String(args.string_id);
-    return this.crowdinGet(`/projects/${args.project_id as number}/languages/${args.language_id as string}/translations`, params);
+    return this.crowdinGet(`/projects/${encodeURIComponent(args.project_id as number)}/languages/${encodeURIComponent(args.language_id as string)}/translations`, params);
   }
 
   private async getTranslation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.translation_id) return { content: [{ type: 'text', text: 'project_id and translation_id are required' }], isError: true };
-    return this.crowdinGet(`/projects/${args.project_id as number}/translations/${args.translation_id as number}`);
+    return this.crowdinGet(`/projects/${encodeURIComponent(args.project_id as number)}/translations/${encodeURIComponent(args.translation_id as number)}`);
   }
 
   private async listLanguages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -788,7 +788,7 @@ export class CrowdinMCPServer {
       offset: String((args.offset as number) ?? 0),
     };
     if (args.role && args.role !== 'all') params.role = args.role as string;
-    return this.crowdinGet(`/projects/${args.project_id as number}/members`, params);
+    return this.crowdinGet(`/projects/${encodeURIComponent(args.project_id as number)}/members`, params);
   }
 
   private async listGlossaries(args: Record<string, unknown>): Promise<ToolResult> {
@@ -801,6 +801,6 @@ export class CrowdinMCPServer {
 
   private async getGlossary(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.glossary_id) return { content: [{ type: 'text', text: 'glossary_id is required' }], isError: true };
-    return this.crowdinGet(`/glossaries/${args.glossary_id as number}`);
+    return this.crowdinGet(`/glossaries/${encodeURIComponent(args.glossary_id as number)}`);
   }
 }

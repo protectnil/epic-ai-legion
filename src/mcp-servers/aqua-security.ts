@@ -417,7 +417,7 @@ export class AquaSecurityMCPServer {
     let path = `/v2/vulnerabilities?page=${page}&pagesize=${pagesize}`;
     if (args.cve_id) path += `&cve_id=${encodeURIComponent(args.cve_id as string)}`;
     if (args.severity) path += `&severity=${encodeURIComponent(args.severity as string)}`;
-    if (typeof args.fix_available === 'boolean') path += `&fix_available=${args.fix_available}`;
+    if (typeof args.fix_available === 'boolean') path += `&fix_available=${encodeURIComponent(String(args.fix_available))}`;
     if (args.resource_type) path += `&resource_type=${encodeURIComponent(args.resource_type as string)}`;
     return this.request(path);
   }

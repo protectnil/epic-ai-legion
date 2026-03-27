@@ -744,22 +744,22 @@ export class GitHubActionsMCPServer {
       per_page: String((args.per_page as number) || 30),
       page: String((args.page as number) || 1),
     };
-    return this.ghGet(`/repos/${args.owner}/${args.repo}/actions/workflows`, params);
+    return this.ghGet(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/workflows`, params);
   }
 
   private async getWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || !args.workflow_id) return { content: [{ type: 'text', text: 'owner, repo, and workflow_id are required' }], isError: true };
-    return this.ghGet(`/repos/${args.owner}/${args.repo}/actions/workflows/${args.workflow_id}`);
+    return this.ghGet(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/workflows/${encodeURIComponent(args.workflow_id as string)}`);
   }
 
   private async enableWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || !args.workflow_id) return { content: [{ type: 'text', text: 'owner, repo, and workflow_id are required' }], isError: true };
-    return this.ghPut(`/repos/${args.owner}/${args.repo}/actions/workflows/${args.workflow_id}/enable`, {});
+    return this.ghPut(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/workflows/${encodeURIComponent(args.workflow_id as string)}/enable`, {});
   }
 
   private async disableWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || !args.workflow_id) return { content: [{ type: 'text', text: 'owner, repo, and workflow_id are required' }], isError: true };
-    return this.ghPut(`/repos/${args.owner}/${args.repo}/actions/workflows/${args.workflow_id}/disable`, {});
+    return this.ghPut(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/workflows/${encodeURIComponent(args.workflow_id as string)}/disable`, {});
   }
 
   private async listWorkflowRuns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -773,32 +773,32 @@ export class GitHubActionsMCPServer {
     if (args.conclusion) params.conclusion = args.conclusion as string;
 
     const basePath = args.workflow_id
-      ? `/repos/${args.owner}/${args.repo}/actions/workflows/${args.workflow_id}/runs`
-      : `/repos/${args.owner}/${args.repo}/actions/runs`;
+      ? `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/workflows/${encodeURIComponent(args.workflow_id as string)}/runs`
+      : `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runs`;
     return this.ghGet(basePath, params);
   }
 
   private async getWorkflowRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.run_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and run_id are required' }], isError: true };
-    return this.ghGet(`/repos/${args.owner}/${args.repo}/actions/runs/${args.run_id}`);
+    return this.ghGet(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runs/${encodeURIComponent(args.run_id as string)}`);
   }
 
   private async rerunWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.run_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and run_id are required' }], isError: true };
     if (args.failed_jobs_only) {
-      return this.ghPost(`/repos/${args.owner}/${args.repo}/actions/runs/${args.run_id}/rerun-failed-jobs`);
+      return this.ghPost(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runs/${encodeURIComponent(args.run_id as string)}/rerun-failed-jobs`);
     }
-    return this.ghPost(`/repos/${args.owner}/${args.repo}/actions/runs/${args.run_id}/rerun`);
+    return this.ghPost(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runs/${encodeURIComponent(args.run_id as string)}/rerun`);
   }
 
   private async cancelWorkflowRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.run_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and run_id are required' }], isError: true };
-    return this.ghPost(`/repos/${args.owner}/${args.repo}/actions/runs/${args.run_id}/cancel`);
+    return this.ghPost(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runs/${encodeURIComponent(args.run_id as string)}/cancel`);
   }
 
   private async deleteWorkflowRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.run_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and run_id are required' }], isError: true };
-    return this.ghDelete(`/repos/${args.owner}/${args.repo}/actions/runs/${args.run_id}`);
+    return this.ghDelete(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runs/${encodeURIComponent(args.run_id as string)}`);
   }
 
   private async listWorkflowJobs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -806,19 +806,19 @@ export class GitHubActionsMCPServer {
     const params: Record<string, string> = {
       filter: (args.filter as string) || 'latest',
     };
-    return this.ghGet(`/repos/${args.owner}/${args.repo}/actions/runs/${args.run_id}/jobs`, params);
+    return this.ghGet(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runs/${encodeURIComponent(args.run_id as string)}/jobs`, params);
   }
 
   private async getWorkflowJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.job_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and job_id are required' }], isError: true };
-    return this.ghGet(`/repos/${args.owner}/${args.repo}/actions/jobs/${args.job_id}`);
+    return this.ghGet(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/jobs/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async downloadJobLogs(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.job_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and job_id are required' }], isError: true };
     // This endpoint returns a 302 redirect to the log download URL — capture the Location header
     const response = await fetch(
-      `${this.baseUrl}/repos/${args.owner}/${args.repo}/actions/jobs/${args.job_id}/logs`,
+      `${this.baseUrl}/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/jobs/${encodeURIComponent(args.job_id as string)}/logs`,
       { method: 'GET', headers: this.headers, redirect: 'manual' },
     );
     if (response.status === 302) {
@@ -840,19 +840,19 @@ export class GitHubActionsMCPServer {
     if (args.name) params.name = args.name as string;
 
     const basePath = args.run_id
-      ? `/repos/${args.owner}/${args.repo}/actions/runs/${args.run_id}/artifacts`
-      : `/repos/${args.owner}/${args.repo}/actions/artifacts`;
+      ? `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runs/${encodeURIComponent(args.run_id as string)}/artifacts`
+      : `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/artifacts`;
     return this.ghGet(basePath, params);
   }
 
   private async getArtifact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.artifact_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and artifact_id are required' }], isError: true };
-    return this.ghGet(`/repos/${args.owner}/${args.repo}/actions/artifacts/${args.artifact_id}`);
+    return this.ghGet(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/artifacts/${encodeURIComponent(args.artifact_id as string)}`);
   }
 
   private async deleteArtifact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.artifact_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and artifact_id are required' }], isError: true };
-    return this.ghDelete(`/repos/${args.owner}/${args.repo}/actions/artifacts/${args.artifact_id}`);
+    return this.ghDelete(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/artifacts/${encodeURIComponent(args.artifact_id as string)}`);
   }
 
   private async listSecrets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -862,8 +862,8 @@ export class GitHubActionsMCPServer {
       page: String((args.page as number) || 1),
     };
     const path = args.repo
-      ? `/repos/${args.owner}/${args.repo}/actions/secrets`
-      : `/orgs/${args.owner}/actions/secrets`;
+      ? `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/secrets`
+      : `/orgs/${encodeURIComponent(args.owner as string)}/actions/secrets`;
     return this.ghGet(path, params);
   }
 
@@ -871,7 +871,7 @@ export class GitHubActionsMCPServer {
     if (!args.owner || !args.repo || !args.secret_name || !args.encrypted_value || !args.key_id) {
       return { content: [{ type: 'text', text: 'owner, repo, secret_name, encrypted_value, and key_id are required' }], isError: true };
     }
-    return this.ghPut(`/repos/${args.owner}/${args.repo}/actions/secrets/${args.secret_name}`, {
+    return this.ghPut(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/secrets/${encodeURIComponent(args.secret_name as string)}`, {
       encrypted_value: args.encrypted_value,
       key_id: args.key_id,
     });
@@ -879,7 +879,7 @@ export class GitHubActionsMCPServer {
 
   private async deleteSecret(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || !args.secret_name) return { content: [{ type: 'text', text: 'owner, repo, and secret_name are required' }], isError: true };
-    return this.ghDelete(`/repos/${args.owner}/${args.repo}/actions/secrets/${args.secret_name}`);
+    return this.ghDelete(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/secrets/${encodeURIComponent(args.secret_name as string)}`);
   }
 
   private async listVariables(args: Record<string, unknown>): Promise<ToolResult> {
@@ -889,8 +889,8 @@ export class GitHubActionsMCPServer {
       page: String((args.page as number) || 1),
     };
     const path = args.repo
-      ? `/repos/${args.owner}/${args.repo}/actions/variables`
-      : `/orgs/${args.owner}/actions/variables`;
+      ? `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/variables`
+      : `/orgs/${encodeURIComponent(args.owner as string)}/actions/variables`;
     return this.ghGet(path, params);
   }
 
@@ -899,7 +899,7 @@ export class GitHubActionsMCPServer {
       return { content: [{ type: 'text', text: 'owner, repo, name, and value are required' }], isError: true };
     }
     // Try PATCH (update) first, fall back to POST (create)
-    const path = `/repos/${args.owner}/${args.repo}/actions/variables/${args.name}`;
+    const path = `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/variables/${encodeURIComponent(args.name as string)}`;
     const patchResponse = await fetch(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: { ...this.headers, 'Content-Type': 'application/json' },
@@ -907,7 +907,7 @@ export class GitHubActionsMCPServer {
     });
     if (patchResponse.status === 404) {
       // Variable does not exist — create it
-      return this.ghPost(`/repos/${args.owner}/${args.repo}/actions/variables`, { name: args.name, value: args.value });
+      return this.ghPost(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/variables`, { name: args.name, value: args.value });
     }
     if (!patchResponse.ok) {
       return { content: [{ type: 'text', text: `API error: ${patchResponse.status} ${patchResponse.statusText}` }], isError: true };
@@ -917,7 +917,7 @@ export class GitHubActionsMCPServer {
 
   private async deleteVariable(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || !args.name) return { content: [{ type: 'text', text: 'owner, repo, and name are required' }], isError: true };
-    return this.ghDelete(`/repos/${args.owner}/${args.repo}/actions/variables/${args.name}`);
+    return this.ghDelete(`/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/variables/${encodeURIComponent(args.name as string)}`);
   }
 
   private async listSelfHostedRunners(args: Record<string, unknown>): Promise<ToolResult> {
@@ -927,8 +927,8 @@ export class GitHubActionsMCPServer {
       page: String((args.page as number) || 1),
     };
     const path = args.repo
-      ? `/repos/${args.owner}/${args.repo}/actions/runners`
-      : `/orgs/${args.owner}/actions/runners`;
+      ? `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/runners`
+      : `/orgs/${encodeURIComponent(args.owner as string)}/actions/runners`;
     return this.ghGet(path, params);
   }
 }

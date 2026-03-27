@@ -57,6 +57,19 @@ export class InMemoryAuditAdapter implements AuditStoreAdapter {
   }
 
   /**
+   * Update the status and output of a pending record by ID.
+   * Mutates in-place for in-memory store.
+   */
+  async updateStatus(id: string, status: 'completed' | 'failed', output: Record<string, unknown>, durationMs: number): Promise<void> {
+    const record = this.records.find(r => r.id === id);
+    if (record) {
+      record.status = status;
+      record.output = output;
+      record.durationMs = durationMs;
+    }
+  }
+
+  /**
    * Get all records. For testing.
    */
   all(): ActionRecord[] {

@@ -638,7 +638,7 @@ export class EpicFhirMCPServer {
 
   private async getPatient(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.patient_id) return { content: [{ type: 'text', text: 'patient_id is required' }], isError: true };
-    return this.fhirGet(`Patient/${args.patient_id as string}`);
+    return this.fhirGet(`Patient/${encodeURIComponent(args.patient_id as string)}`);
   }
 
   private async searchPatients(args: Record<string, unknown>): Promise<ToolResult> {

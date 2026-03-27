@@ -353,7 +353,7 @@ export class UnitMCPServer {
   }
 
   private async getCustomer(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request('GET', `/customers/${args.customer_id}`);
+    return this.request('GET', `/customers/${encodeURIComponent(args.customer_id as string)}`);
   }
 
   private async createIndividualCustomer(args: Record<string, unknown>): Promise<ToolResult> {
@@ -384,7 +384,7 @@ export class UnitMCPServer {
   }
 
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request('GET', `/accounts/${args.account_id}`);
+    return this.request('GET', `/accounts/${encodeURIComponent(args.account_id as string)}`);
   }
 
   private async createDepositAccount(args: Record<string, unknown>): Promise<ToolResult> {
@@ -405,7 +405,7 @@ export class UnitMCPServer {
   }
 
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request('GET', `/accounts/${args.account_id}/transactions/${args.transaction_id}`);
+    return this.request('GET', `/accounts/${encodeURIComponent(args.account_id as string)}/transactions/${encodeURIComponent(args.transaction_id as string)}`);
   }
 
   private async createBookPayment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -450,7 +450,7 @@ export class UnitMCPServer {
   }
 
   private async getPayment(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request('GET', `/payments/${args.payment_id}`);
+    return this.request('GET', `/payments/${encodeURIComponent(args.payment_id as string)}`);
   }
 
   private async listCards(args: Record<string, unknown>): Promise<ToolResult> {
@@ -481,11 +481,11 @@ export class UnitMCPServer {
   }
 
   private async freezeCard(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request('POST', `/cards/${args.card_id}/freeze`);
+    return this.request('POST', `/cards/${encodeURIComponent(args.card_id as string)}/freeze`);
   }
 
   private async unfreezeCard(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request('POST', `/cards/${args.card_id}/unfreeze`);
+    return this.request('POST', `/cards/${encodeURIComponent(args.card_id as string)}/unfreeze`);
   }
 
   private async listStatements(args: Record<string, unknown>): Promise<ToolResult> {

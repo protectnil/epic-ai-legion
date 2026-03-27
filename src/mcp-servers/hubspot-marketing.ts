@@ -561,7 +561,7 @@ export class HubSpotMarketingMCPServer {
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.apiGet(`/marketing/v3/campaigns/${args.campaign_id}`);
+    return this.apiGet(`/marketing/v3/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async createCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -581,7 +581,7 @@ export class HubSpotMarketingMCPServer {
     if (args.startDate) body.startDate = args.startDate;
     if (args.endDate) body.endDate = args.endDate;
     if (args.notes) body.notes = args.notes;
-    return this.apiPatch(`/marketing/v3/campaigns/${args.campaign_id}`, body);
+    return this.apiPatch(`/marketing/v3/campaigns/${encodeURIComponent(args.campaign_id as string)}`, body);
   }
 
   private async listMarketingEmails(args: Record<string, unknown>): Promise<ToolResult> {
@@ -596,19 +596,19 @@ export class HubSpotMarketingMCPServer {
 
   private async getMarketingEmail(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.email_id) return { content: [{ type: 'text', text: 'email_id is required' }], isError: true };
-    return this.apiGet(`/marketing-emails/v1/emails/${args.email_id}`);
+    return this.apiGet(`/marketing-emails/v1/emails/${encodeURIComponent(args.email_id as string)}`);
   }
 
   private async sendMarketingEmail(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.email_id) return { content: [{ type: 'text', text: 'email_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.scheduledAt) body.scheduledAt = args.scheduledAt;
-    return this.apiPost(`/marketing-emails/v1/emails/${args.email_id}/send-test`, body);
+    return this.apiPost(`/marketing-emails/v1/emails/${encodeURIComponent(args.email_id as string)}/send-test`, body);
   }
 
   private async getEmailStatistics(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.email_id) return { content: [{ type: 'text', text: 'email_id is required' }], isError: true };
-    return this.apiGet(`/marketing-emails/v1/emails/${args.email_id}/statistics`);
+    return this.apiGet(`/marketing-emails/v1/emails/${encodeURIComponent(args.email_id as string)}/statistics`);
   }
 
   private async listForms(args: Record<string, unknown>): Promise<ToolResult> {
@@ -620,7 +620,7 @@ export class HubSpotMarketingMCPServer {
 
   private async getForm(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_id) return { content: [{ type: 'text', text: 'form_id is required' }], isError: true };
-    return this.apiGet(`/marketing/v3/forms/${args.form_id}`);
+    return this.apiGet(`/marketing/v3/forms/${encodeURIComponent(args.form_id as string)}`);
   }
 
   private async listContactLists(args: Record<string, unknown>): Promise<ToolResult> {
@@ -634,7 +634,7 @@ export class HubSpotMarketingMCPServer {
 
   private async getContactList(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.list_id) return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
-    return this.apiGet(`/contacts/v1/lists/${args.list_id}`);
+    return this.apiGet(`/contacts/v1/lists/${encodeURIComponent(args.list_id as string)}`);
   }
 
   private async createContactList(args: Record<string, unknown>): Promise<ToolResult> {
@@ -654,14 +654,14 @@ export class HubSpotMarketingMCPServer {
     if (!args.vids && !args.emails) {
       return { content: [{ type: 'text', text: 'At least one of vids or emails is required' }], isError: true };
     }
-    return this.apiPost(`/contacts/v1/lists/${args.list_id}/add`, body);
+    return this.apiPost(`/contacts/v1/lists/${encodeURIComponent(args.list_id as string)}/add`, body);
   }
 
   private async removeContactsFromList(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.list_id || !args.vids) {
       return { content: [{ type: 'text', text: 'list_id and vids are required' }], isError: true };
     }
-    return this.apiPost(`/contacts/v1/lists/${args.list_id}/remove`, { vids: args.vids });
+    return this.apiPost(`/contacts/v1/lists/${encodeURIComponent(args.list_id as string)}/remove`, { vids: args.vids });
   }
 
   private async getSubscriptionTypes(): Promise<ToolResult> {

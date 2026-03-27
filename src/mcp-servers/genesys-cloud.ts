@@ -588,14 +588,14 @@ export class GenesysCloudMCPServer {
     const extra: Record<string, string> = {};
     if (args.expand) extra.expand = args.expand as string;
     const qs = Object.keys(extra).length ? '?' + new URLSearchParams(extra).toString() : '';
-    return this.apiGet(`/api/v2/users/${args.user_id}${qs}`);
+    return this.apiGet(`/api/v2/users/${encodeURIComponent(args.user_id as string)}${qs}`);
   }
 
   private async getUserQueues(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) {
       return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
     }
-    return this.apiGet(`/api/v2/users/${args.user_id}/queues`);
+    return this.apiGet(`/api/v2/users/${encodeURIComponent(args.user_id as string)}/queues`);
   }
 
   private async listQueues(args: Record<string, unknown>): Promise<ToolResult> {
@@ -609,7 +609,7 @@ export class GenesysCloudMCPServer {
     if (!args.queue_id) {
       return { content: [{ type: 'text', text: 'queue_id is required' }], isError: true };
     }
-    return this.apiGet(`/api/v2/routing/queues/${args.queue_id}`);
+    return this.apiGet(`/api/v2/routing/queues/${encodeURIComponent(args.queue_id as string)}`);
   }
 
   private async listConversations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -622,7 +622,7 @@ export class GenesysCloudMCPServer {
     if (!args.conversation_id) {
       return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
     }
-    return this.apiGet(`/api/v2/conversations/${args.conversation_id}`);
+    return this.apiGet(`/api/v2/conversations/${encodeURIComponent(args.conversation_id as string)}`);
   }
 
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -635,7 +635,7 @@ export class GenesysCloudMCPServer {
     if (!args.campaign_id) {
       return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
     }
-    return this.apiGet(`/api/v2/outbound/campaigns/${args.campaign_id}`);
+    return this.apiGet(`/api/v2/outbound/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async listSkills(args: Record<string, unknown>): Promise<ToolResult> {
@@ -680,7 +680,7 @@ export class GenesysCloudMCPServer {
     if (!args.conversation_id || !args.recording_id) {
       return { content: [{ type: 'text', text: 'conversation_id and recording_id are required' }], isError: true };
     }
-    return this.apiGet(`/api/v2/conversations/${args.conversation_id}/recordings/${args.recording_id}`);
+    return this.apiGet(`/api/v2/conversations/${encodeURIComponent(args.conversation_id as string)}/recordings/${encodeURIComponent(args.recording_id as string)}`);
   }
 
   private async listFlows(args: Record<string, unknown>): Promise<ToolResult> {
@@ -693,7 +693,7 @@ export class GenesysCloudMCPServer {
     if (!args.flow_id) {
       return { content: [{ type: 'text', text: 'flow_id is required' }], isError: true };
     }
-    return this.apiGet(`/api/v2/flows/${args.flow_id}`);
+    return this.apiGet(`/api/v2/flows/${encodeURIComponent(args.flow_id as string)}`);
   }
 
   private async listDids(args: Record<string, unknown>): Promise<ToolResult> {

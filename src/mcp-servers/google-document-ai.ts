@@ -421,7 +421,7 @@ export class GoogleDocumentAIMCPServer {
 
   private async getProcessor(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.processor_name) return { content: [{ type: 'text', text: 'processor_name is required' }], isError: true };
-    return this.docaiGet(`/${args.processor_name}`);
+    return this.docaiGet(`/${encodeURIComponent(args.processor_name as string)}`);
   }
 
   private async createProcessor(args: Record<string, unknown>): Promise<ToolResult> {
@@ -436,17 +436,17 @@ export class GoogleDocumentAIMCPServer {
 
   private async deleteProcessor(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.processor_name) return { content: [{ type: 'text', text: 'processor_name is required' }], isError: true };
-    return this.docaiDelete(`/${args.processor_name}`);
+    return this.docaiDelete(`/${encodeURIComponent(args.processor_name as string)}`);
   }
 
   private async enableProcessor(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.processor_name) return { content: [{ type: 'text', text: 'processor_name is required' }], isError: true };
-    return this.docaiPost(`/${args.processor_name}:enable`, {});
+    return this.docaiPost(`/${encodeURIComponent(args.processor_name as string)}:enable`, {});
   }
 
   private async disableProcessor(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.processor_name) return { content: [{ type: 'text', text: 'processor_name is required' }], isError: true };
-    return this.docaiPost(`/${args.processor_name}:disable`, {});
+    return this.docaiPost(`/${encodeURIComponent(args.processor_name as string)}:disable`, {});
   }
 
   private async listProcessorVersions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -455,12 +455,12 @@ export class GoogleDocumentAIMCPServer {
       pageSize: String((args.page_size as number) || 20),
     };
     if (args.page_token) params.pageToken = args.page_token as string;
-    return this.docaiGet(`/${args.processor_name}/processorVersions`, params);
+    return this.docaiGet(`/${encodeURIComponent(args.processor_name as string)}/processorVersions`, params);
   }
 
   private async getProcessorVersion(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.processor_version_name) return { content: [{ type: 'text', text: 'processor_version_name is required' }], isError: true };
-    return this.docaiGet(`/${args.processor_version_name}`);
+    return this.docaiGet(`/${encodeURIComponent(args.processor_version_name as string)}`);
   }
 
   private async processDocument(args: Record<string, unknown>): Promise<ToolResult> {
@@ -478,7 +478,7 @@ export class GoogleDocumentAIMCPServer {
     if (typeof args.skip_human_review === 'boolean') body.skipHumanReview = args.skip_human_review;
     if (args.field_mask) body.fieldMask = args.field_mask;
 
-    return this.docaiPost(`/${args.processor_name}:process`, body);
+    return this.docaiPost(`/${encodeURIComponent(args.processor_name as string)}:process`, body);
   }
 
   private async batchProcessDocuments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -498,12 +498,12 @@ export class GoogleDocumentAIMCPServer {
     };
     if (typeof args.skip_human_review === 'boolean') body.skipHumanReview = args.skip_human_review;
 
-    return this.docaiPost(`/${args.processor_name}:batchProcess`, body);
+    return this.docaiPost(`/${encodeURIComponent(args.processor_name as string)}:batchProcess`, body);
   }
 
   private async getOperation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.operation_name) return { content: [{ type: 'text', text: 'operation_name is required' }], isError: true };
-    return this.docaiGet(`/${args.operation_name}`);
+    return this.docaiGet(`/${encodeURIComponent(args.operation_name as string)}`);
   }
 
   private async listOperations(args: Record<string, unknown>): Promise<ToolResult> {

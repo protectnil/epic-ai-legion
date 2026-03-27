@@ -467,7 +467,7 @@ export class CockroachDBMCPServer {
 
   private async getCluster(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id) return { content: [{ type: 'text', text: 'cluster_id is required' }], isError: true };
-    return this.crdbGet(`/clusters/${args.cluster_id}`);
+    return this.crdbGet(`/clusters/${encodeURIComponent(args.cluster_id as string)}`);
   }
 
   private async createCluster(args: Record<string, unknown>): Promise<ToolResult> {
@@ -499,12 +499,12 @@ export class CockroachDBMCPServer {
     if (args.maintenance_window) {
       try { body.maintenance_window = JSON.parse(args.maintenance_window as string); } catch { /* keep */ }
     }
-    return this.crdbPatch(`/clusters/${args.cluster_id}`, body);
+    return this.crdbPatch(`/clusters/${encodeURIComponent(args.cluster_id as string)}`, body);
   }
 
   private async deleteCluster(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id) return { content: [{ type: 'text', text: 'cluster_id is required' }], isError: true };
-    return this.crdbDelete(`/clusters/${args.cluster_id}`);
+    return this.crdbDelete(`/clusters/${encodeURIComponent(args.cluster_id as string)}`);
   }
 
   private async listDatabases(args: Record<string, unknown>): Promise<ToolResult> {
@@ -512,21 +512,21 @@ export class CockroachDBMCPServer {
     const params: Record<string, string> = {};
     if (args.pagination_page) params['pagination.page'] = String(args.pagination_page);
     if (args.pagination_limit) params['pagination.limit'] = String(args.pagination_limit);
-    return this.crdbGet(`/clusters/${args.cluster_id}/databases`, params);
+    return this.crdbGet(`/clusters/${encodeURIComponent(args.cluster_id as string)}/databases`, params);
   }
 
   private async createDatabase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id || !args.name) {
       return { content: [{ type: 'text', text: 'cluster_id and name are required' }], isError: true };
     }
-    return this.crdbPost(`/clusters/${args.cluster_id}/databases`, { name: args.name });
+    return this.crdbPost(`/clusters/${encodeURIComponent(args.cluster_id as string)}/databases`, { name: args.name });
   }
 
   private async deleteDatabase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id || !args.database_name) {
       return { content: [{ type: 'text', text: 'cluster_id and database_name are required' }], isError: true };
     }
-    return this.crdbDelete(`/clusters/${args.cluster_id}/databases/${args.database_name}`);
+    return this.crdbDelete(`/clusters/${encodeURIComponent(args.cluster_id as string)}/databases/${encodeURIComponent(args.database_name as string)}`);
   }
 
   private async listSqlUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -534,14 +534,14 @@ export class CockroachDBMCPServer {
     const params: Record<string, string> = {};
     if (args.pagination_page) params['pagination.page'] = String(args.pagination_page);
     if (args.pagination_limit) params['pagination.limit'] = String(args.pagination_limit);
-    return this.crdbGet(`/clusters/${args.cluster_id}/sql-users`, params);
+    return this.crdbGet(`/clusters/${encodeURIComponent(args.cluster_id as string)}/sql-users`, params);
   }
 
   private async createSqlUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id || !args.name || !args.password) {
       return { content: [{ type: 'text', text: 'cluster_id, name, and password are required' }], isError: true };
     }
-    return this.crdbPost(`/clusters/${args.cluster_id}/sql-users`, {
+    return this.crdbPost(`/clusters/${encodeURIComponent(args.cluster_id as string)}/sql-users`, {
       name: args.name,
       password: args.password,
     });
@@ -551,14 +551,14 @@ export class CockroachDBMCPServer {
     if (!args.cluster_id || !args.username) {
       return { content: [{ type: 'text', text: 'cluster_id and username are required' }], isError: true };
     }
-    return this.crdbDelete(`/clusters/${args.cluster_id}/sql-users/${args.username}`);
+    return this.crdbDelete(`/clusters/${encodeURIComponent(args.cluster_id as string)}/sql-users/${encodeURIComponent(args.username as string)}`);
   }
 
   private async updateSqlUserPassword(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id || !args.username || !args.password) {
       return { content: [{ type: 'text', text: 'cluster_id, username, and password are required' }], isError: true };
     }
-    return this.crdbPut(`/clusters/${args.cluster_id}/sql-users/${args.username}/password`, {
+    return this.crdbPut(`/clusters/${encodeURIComponent(args.cluster_id as string)}/sql-users/${encodeURIComponent(args.username as string)}/password`, {
       password: args.password,
     });
   }
@@ -568,14 +568,14 @@ export class CockroachDBMCPServer {
     const params: Record<string, string> = {};
     if (args.pagination_page) params['pagination.page'] = String(args.pagination_page);
     if (args.pagination_limit) params['pagination.limit'] = String(args.pagination_limit);
-    return this.crdbGet(`/clusters/${args.cluster_id}/backups`, params);
+    return this.crdbGet(`/clusters/${encodeURIComponent(args.cluster_id as string)}/backups`, params);
   }
 
   private async getBackup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id || !args.backup_id) {
       return { content: [{ type: 'text', text: 'cluster_id and backup_id are required' }], isError: true };
     }
-    return this.crdbGet(`/clusters/${args.cluster_id}/backups/${args.backup_id}`);
+    return this.crdbGet(`/clusters/${encodeURIComponent(args.cluster_id as string)}/backups/${encodeURIComponent(args.backup_id as string)}`);
   }
 
   private async listRegions(args: Record<string, unknown>): Promise<ToolResult> {

@@ -647,7 +647,7 @@ export class AppStoreConnectMCPServer {
 
   private async getApp(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.app_id) return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
-    return this.ascGet(`/v1/apps/${args.app_id as string}`);
+    return this.ascGet(`/v1/apps/${encodeURIComponent(args.app_id as string)}`);
   }
 
   private async listAppStoreVersions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -657,12 +657,12 @@ export class AppStoreConnectMCPServer {
     };
     if (args.filter_platform) params['filter[platform]'] = args.filter_platform as string;
     if (args.filter_app_store_state) params['filter[appStoreState]'] = args.filter_app_store_state as string;
-    return this.ascGet(`/v1/apps/${args.app_id as string}/appStoreVersions`, params);
+    return this.ascGet(`/v1/apps/${encodeURIComponent(args.app_id as string)}/appStoreVersions`, params);
   }
 
   private async getAppInfo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.app_id) return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
-    return this.ascGet(`/v1/apps/${args.app_id as string}/appInfos`);
+    return this.ascGet(`/v1/apps/${encodeURIComponent(args.app_id as string)}/appInfos`);
   }
 
   private async listBuilds(args: Record<string, unknown>): Promise<ToolResult> {
@@ -679,12 +679,12 @@ export class AppStoreConnectMCPServer {
 
   private async getBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.ascGet(`/v1/builds/${args.build_id as string}`);
+    return this.ascGet(`/v1/builds/${encodeURIComponent(args.build_id as string)}`);
   }
 
   private async expireBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.ascPatch(`/v1/builds/${args.build_id as string}`, {
+    return this.ascPatch(`/v1/builds/${encodeURIComponent(args.build_id as string)}`, {
       data: {
         type: 'builds',
         id: args.build_id,
@@ -707,7 +707,7 @@ export class AppStoreConnectMCPServer {
 
   private async getBetaGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.beta_group_id) return { content: [{ type: 'text', text: 'beta_group_id is required' }], isError: true };
-    return this.ascGet(`/v1/betaGroups/${args.beta_group_id as string}`);
+    return this.ascGet(`/v1/betaGroups/${encodeURIComponent(args.beta_group_id as string)}`);
   }
 
   private async createBetaGroup(args: Record<string, unknown>): Promise<ToolResult> {
@@ -739,7 +739,7 @@ export class AppStoreConnectMCPServer {
     } catch {
       return { content: [{ type: 'text', text: 'testers must be a valid JSON array' }], isError: true };
     }
-    return this.ascPost(`/v1/betaGroups/${args.beta_group_id as string}/relationships/betaTesters`, {
+    return this.ascPost(`/v1/betaGroups/${encodeURIComponent(args.beta_group_id as string)}/relationships/betaTesters`, {
       data: parsedTesters,
     });
   }
@@ -791,7 +791,7 @@ export class AppStoreConnectMCPServer {
 
   private async getBundleId(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.bundle_id) return { content: [{ type: 'text', text: 'bundle_id is required' }], isError: true };
-    return this.ascGet(`/v1/bundleIds/${args.bundle_id as string}`);
+    return this.ascGet(`/v1/bundleIds/${encodeURIComponent(args.bundle_id as string)}`);
   }
 
   private async registerBundleId(args: Record<string, unknown>): Promise<ToolResult> {
@@ -841,6 +841,6 @@ export class AppStoreConnectMCPServer {
     if (!args.app_store_version_id) {
       return { content: [{ type: 'text', text: 'app_store_version_id is required' }], isError: true };
     }
-    return this.ascGet(`/v1/appStoreVersions/${args.app_store_version_id as string}/appStoreReviewDetail`);
+    return this.ascGet(`/v1/appStoreVersions/${encodeURIComponent(args.app_store_version_id as string)}/appStoreReviewDetail`);
   }
 }

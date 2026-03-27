@@ -627,7 +627,7 @@ export class OktaMCPServer {
     let path = `/api/v1/users/${encodeURIComponent(args.user_id as string)}/lifecycle/${action}`;
     const emailActions = ['activate', 'deactivate', 'reactivate'];
     if (emailActions.includes(action) && typeof args.send_email === 'boolean') {
-      path += `?sendEmail=${args.send_email}`;
+      path += `?sendEmail=${encodeURIComponent(String(args.send_email))}`;
     }
     return this.post(path);
   }

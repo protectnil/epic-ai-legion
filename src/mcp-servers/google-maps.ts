@@ -475,7 +475,7 @@ export class GoogleMapsMCPServer {
 
   private async reverseGeocode(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.lat === undefined || args.lng === undefined) return { content: [{ type: 'text', text: 'lat and lng are required' }], isError: true };
-    const params: Record<string, string> = { latlng: `${args.lat},${args.lng}` };
+    const params: Record<string, string> = { latlng: `${encodeURIComponent(args.lat as string)},${encodeURIComponent(args.lng as string)}` };
     if (args.result_type) params.result_type = args.result_type as string;
     if (args.location_type) params.location_type = args.location_type as string;
     if (args.language) params.language = args.language as string;
@@ -543,7 +543,7 @@ export class GoogleMapsMCPServer {
     const defaultFields = 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.regularOpeningHours,places.internationalPhoneNumber,places.websiteUri,places.types,places.priceLevel';
     const fieldMask = (args.fields as string) || defaultFields;
     return this.placesNewPost('places:searchByText', {
-      textQuery: `place_id:${args.place_id}`,
+      textQuery: `place_id:${encodeURIComponent(args.place_id as string)}`,
       languageCode: (args.language as string) || 'en',
     }, fieldMask);
   }

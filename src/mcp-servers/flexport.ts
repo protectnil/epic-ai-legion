@@ -551,7 +551,7 @@ export class FlexportMCPServer {
     if (!args.shipment_id) {
       return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/shipments/${args.shipment_id}`);
+    return this.apiGet(`/v2/shipments/${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async listBookings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -566,7 +566,7 @@ export class FlexportMCPServer {
     if (!args.booking_id) {
       return { content: [{ type: 'text', text: 'booking_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/bookings/${args.booking_id}`);
+    return this.apiGet(`/v2/bookings/${encodeURIComponent(args.booking_id as string)}`);
   }
 
   private async createBooking(args: Record<string, unknown>): Promise<ToolResult> {
@@ -586,7 +586,7 @@ export class FlexportMCPServer {
     if (!args.booking_id) {
       return { content: [{ type: 'text', text: 'booking_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/booking_line_items?f.booking_id=${args.booking_id}`);
+    return this.apiGet(`/v2/booking_line_items?f.booking_id=${encodeURIComponent(args.booking_id as string)}`);
   }
 
   private async listPurchaseOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -602,7 +602,7 @@ export class FlexportMCPServer {
     if (!args.purchase_order_id) {
       return { content: [{ type: 'text', text: 'purchase_order_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/purchase_orders/${args.purchase_order_id}`);
+    return this.apiGet(`/v2/purchase_orders/${encodeURIComponent(args.purchase_order_id as string)}`);
   }
 
   private async createPurchaseOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -624,7 +624,7 @@ export class FlexportMCPServer {
     const body: Record<string, unknown> = {};
     if (args.status) body.status = args.status;
     if (args.expected_departure_date) body.expected_departure_date = args.expected_departure_date;
-    return this.apiPatch(`/v2/purchase_orders/${args.purchase_order_id}`, body);
+    return this.apiPatch(`/v2/purchase_orders/${encodeURIComponent(args.purchase_order_id as string)}`, body);
   }
 
   private async listDocuments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -640,35 +640,35 @@ export class FlexportMCPServer {
     if (!args.document_id) {
       return { content: [{ type: 'text', text: 'document_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/documents/${args.document_id}`);
+    return this.apiGet(`/v2/documents/${encodeURIComponent(args.document_id as string)}`);
   }
 
   private async listCommercialInvoices(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) {
       return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/commercial_invoices?f.shipment_id=${args.shipment_id}`);
+    return this.apiGet(`/v2/commercial_invoices?f.shipment_id=${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async getCommercialInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.commercial_invoice_id) {
       return { content: [{ type: 'text', text: 'commercial_invoice_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/commercial_invoices/${args.commercial_invoice_id}`);
+    return this.apiGet(`/v2/commercial_invoices/${encodeURIComponent(args.commercial_invoice_id as string)}`);
   }
 
   private async listCustomsEntries(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) {
       return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/customs_entries?f.shipment_id=${args.shipment_id}`);
+    return this.apiGet(`/v2/customs_entries?f.shipment_id=${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async getCustomsEntry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customs_entry_id) {
       return { content: [{ type: 'text', text: 'customs_entry_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/customs_entries/${args.customs_entry_id}`);
+    return this.apiGet(`/v2/customs_entries/${encodeURIComponent(args.customs_entry_id as string)}`);
   }
 
   private async listProducts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -683,6 +683,6 @@ export class FlexportMCPServer {
     if (!args.product_id) {
       return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
     }
-    return this.apiGet(`/v2/products/${args.product_id}`);
+    return this.apiGet(`/v2/products/${encodeURIComponent(args.product_id as string)}`);
   }
 }

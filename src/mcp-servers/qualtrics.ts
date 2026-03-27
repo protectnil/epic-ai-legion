@@ -361,7 +361,7 @@ export class QualtricsMCPServer {
 
   private async getSurvey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.surveyId) return { content: [{ type: 'text', text: 'surveyId is required' }], isError: true };
-    return this.get(`/surveys/${args.surveyId}`);
+    return this.get(`/surveys/${encodeURIComponent(args.surveyId as string)}`);
   }
 
   private async createSurvey(args: Record<string, unknown>): Promise<ToolResult> {
@@ -380,7 +380,7 @@ export class QualtricsMCPServer {
 
   private async deleteSurvey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.surveyId) return { content: [{ type: 'text', text: 'surveyId is required' }], isError: true };
-    return this.del(`/surveys/${args.surveyId}`);
+    return this.del(`/surveys/${encodeURIComponent(args.surveyId as string)}`);
   }
 
   private async exportResponses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -390,17 +390,17 @@ export class QualtricsMCPServer {
     if (args.endDate) body.endDate = args.endDate;
     if (args.limit) body.limit = args.limit;
     if (typeof args.useLabels === 'boolean') body.useLabels = args.useLabels;
-    return this.post(`/surveys/${args.surveyId}/export-responses`, body);
+    return this.post(`/surveys/${encodeURIComponent(args.surveyId as string)}/export-responses`, body);
   }
 
   private async getResponseExportProgress(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.surveyId || !args.exportProgressId) return { content: [{ type: 'text', text: 'surveyId and exportProgressId are required' }], isError: true };
-    return this.get(`/surveys/${args.surveyId}/export-responses/${args.exportProgressId}`);
+    return this.get(`/surveys/${encodeURIComponent(args.surveyId as string)}/export-responses/${encodeURIComponent(args.exportProgressId as string)}`);
   }
 
   private async getResponseExportFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.surveyId || !args.fileId) return { content: [{ type: 'text', text: 'surveyId and fileId are required' }], isError: true };
-    return this.get(`/surveys/${args.surveyId}/export-responses/${args.fileId}/file`);
+    return this.get(`/surveys/${encodeURIComponent(args.surveyId as string)}/export-responses/${encodeURIComponent(args.fileId as string)}/file`);
   }
 
   private async listDistributions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -434,8 +434,8 @@ export class QualtricsMCPServer {
     const params: Record<string, string> = {};
     if (args.skipToken) params.skipToken = args.skipToken as string;
     const path = args.mailingListId
-      ? `/directories/${args.directoryId}/mailinglists/${args.mailingListId}/contacts`
-      : `/directories/${args.directoryId}/contacts`;
+      ? `/directories/${encodeURIComponent(args.directoryId as string)}/mailinglists/${encodeURIComponent(args.mailingListId as string)}/contacts`
+      : `/directories/${encodeURIComponent(args.directoryId as string)}/contacts`;
     return this.get(path, params);
   }
 
@@ -447,12 +447,12 @@ export class QualtricsMCPServer {
     if (args.phone) body.phone = args.phone;
     if (args.extRef) body.extRef = args.extRef;
     if (args.embeddedData) body.embeddedData = args.embeddedData;
-    return this.post(`/directories/${args.directoryId}/contacts`, body);
+    return this.post(`/directories/${encodeURIComponent(args.directoryId as string)}/contacts`, body);
   }
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.directoryId || !args.contactId) return { content: [{ type: 'text', text: 'directoryId and contactId are required' }], isError: true };
-    return this.get(`/directories/${args.directoryId}/contacts/${args.contactId}`);
+    return this.get(`/directories/${encodeURIComponent(args.directoryId as string)}/contacts/${encodeURIComponent(args.contactId as string)}`);
   }
 
   private async updateContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -463,7 +463,7 @@ export class QualtricsMCPServer {
 
   private async deleteContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.directoryId || !args.contactId) return { content: [{ type: 'text', text: 'directoryId and contactId are required' }], isError: true };
-    return this.del(`/directories/${args.directoryId}/contacts/${args.contactId}`);
+    return this.del(`/directories/${encodeURIComponent(args.directoryId as string)}/contacts/${encodeURIComponent(args.contactId as string)}`);
   }
 
   private async getWhoami(): Promise<ToolResult> {

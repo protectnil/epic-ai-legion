@@ -420,7 +420,7 @@ export class CrunchbaseMCPServer {
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.entity_id) return { content: [{ type: 'text', text: 'entity_id is required' }], isError: true };
     const fieldIds = (args.field_ids as string) || 'identifier,short_description,funding_total,employee_count,founded_on,categories,location_identifiers,website_url,social_media';
-    return this.apiGet(`/entities/organizations/${args.entity_id}`, { field_ids: fieldIds });
+    return this.apiGet(`/entities/organizations/${encodeURIComponent(args.entity_id as string)}`, { field_ids: fieldIds });
   }
 
   private async searchPeople(args: Record<string, unknown>): Promise<ToolResult> {
@@ -441,7 +441,7 @@ export class CrunchbaseMCPServer {
   private async getPerson(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.entity_id) return { content: [{ type: 'text', text: 'entity_id is required' }], isError: true };
     const fieldIds = (args.field_ids as string) || 'identifier,first_name,last_name,primary_job_title,primary_organization,location_identifiers,short_bio,investor_stage,investor_type';
-    return this.apiGet(`/entities/people/${args.entity_id}`, { field_ids: fieldIds });
+    return this.apiGet(`/entities/people/${encodeURIComponent(args.entity_id as string)}`, { field_ids: fieldIds });
   }
 
   private async searchFundingRounds(args: Record<string, unknown>): Promise<ToolResult> {
@@ -477,7 +477,7 @@ export class CrunchbaseMCPServer {
   private async getFundingRound(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.entity_id) return { content: [{ type: 'text', text: 'entity_id is required' }], isError: true };
     const fieldIds = (args.field_ids as string) || 'identifier,announced_on,investment_type,money_raised,funded_organization_identifier,lead_investor_identifiers,investor_identifiers,num_investors';
-    return this.apiGet(`/entities/funding_rounds/${args.entity_id}`, { field_ids: fieldIds });
+    return this.apiGet(`/entities/funding_rounds/${encodeURIComponent(args.entity_id as string)}`, { field_ids: fieldIds });
   }
 
   private async searchAcquisitions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -510,7 +510,7 @@ export class CrunchbaseMCPServer {
   private async getAcquisition(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.entity_id) return { content: [{ type: 'text', text: 'entity_id is required' }], isError: true };
     const fieldIds = (args.field_ids as string) || 'identifier,announced_on,price,acquirer_identifier,acquiree_identifier,acquisition_type,acquisition_status';
-    return this.apiGet(`/entities/acquisitions/${args.entity_id}`, { field_ids: fieldIds });
+    return this.apiGet(`/entities/acquisitions/${encodeURIComponent(args.entity_id as string)}`, { field_ids: fieldIds });
   }
 
   private async searchInvestments(args: Record<string, unknown>): Promise<ToolResult> {

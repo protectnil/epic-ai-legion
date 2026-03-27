@@ -675,15 +675,15 @@ export class MagentoMCPServer {
   private async listCategories(args: Record<string, unknown>): Promise<ToolResult> {
     let path = '/categories';
     const params: string[] = [];
-    if (args.root_category_id) params.push(`rootCategoryId=${args.root_category_id}`);
-    if (args.depth) params.push(`depth=${args.depth}`);
+    if (args.root_category_id) params.push(`rootCategoryId=${encodeURIComponent(args.root_category_id as string)}`);
+    if (args.depth) params.push(`depth=${encodeURIComponent(args.depth as string)}`);
     if (params.length) path += '?' + params.join('&');
     return this.apiGet(path);
   }
 
   private async getCategory(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.category_id) return { content: [{ type: 'text', text: 'category_id is required' }], isError: true };
-    return this.apiGet(`/categories/${args.category_id}`);
+    return this.apiGet(`/categories/${encodeURIComponent(args.category_id as string)}`);
   }
 
   private async searchOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -703,12 +703,12 @@ export class MagentoMCPServer {
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.apiGet(`/orders/${args.order_id}`);
+    return this.apiGet(`/orders/${encodeURIComponent(args.order_id as string)}`);
   }
 
   private async cancelOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.apiPost(`/orders/${args.order_id}/cancel`, {});
+    return this.apiPost(`/orders/${encodeURIComponent(args.order_id as string)}/cancel`, {});
   }
 
   private async createInvoice(args: Record<string, unknown>): Promise<ToolResult> {
@@ -717,7 +717,7 @@ export class MagentoMCPServer {
     if (typeof args.capture === 'boolean') body.capture = args.capture;
     if (typeof args.notify === 'boolean') body.notify = args.notify;
     if (args.comment) body.comment = { comment: args.comment };
-    return this.apiPost(`/order/${args.order_id}/invoice`, body);
+    return this.apiPost(`/order/${encodeURIComponent(args.order_id as string)}/invoice`, body);
   }
 
   private async createShipment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -731,7 +731,7 @@ export class MagentoMCPServer {
         track_number: args.track_number,
       }];
     }
-    return this.apiPost(`/order/${args.order_id}/ship`, body);
+    return this.apiPost(`/order/${encodeURIComponent(args.order_id as string)}/ship`, body);
   }
 
   private async createCreditMemo(args: Record<string, unknown>): Promise<ToolResult> {
@@ -743,7 +743,7 @@ export class MagentoMCPServer {
     if (args.adjustment_negative !== undefined) items.adjustment_negative = args.adjustment_negative;
     if (Object.keys(items).length) body.items = items;
     if (typeof args.notify === 'boolean') body.notify = args.notify;
-    return this.apiPost(`/order/${args.order_id}/refund`, body);
+    return this.apiPost(`/order/${encodeURIComponent(args.order_id as string)}/refund`, body);
   }
 
   private async searchCustomers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -752,8 +752,8 @@ export class MagentoMCPServer {
     const filters: Array<{ field: string; value: unknown; conditionType?: string }> = [];
 
     if (args.email) filters.push({ field: 'email', value: args.email });
-    if (args.firstname) filters.push({ field: 'firstname', value: `%${args.firstname}%`, conditionType: 'like' });
-    if (args.lastname) filters.push({ field: 'lastname', value: `%${args.lastname}%`, conditionType: 'like' });
+    if (args.firstname) filters.push({ field: 'firstname', value: `%${encodeURIComponent(args.firstname as string)}%`, conditionType: 'like' });
+    if (args.lastname) filters.push({ field: 'lastname', value: `%${encodeURIComponent(args.lastname as string)}%`, conditionType: 'like' });
     if (args.group_id !== undefined) filters.push({ field: 'group_id', value: args.group_id });
 
     let qs = this.buildSearchCriteria(filters);
@@ -763,7 +763,7 @@ export class MagentoMCPServer {
 
   private async getCustomer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
-    return this.apiGet(`/customers/${args.customer_id}`);
+    return this.apiGet(`/customers/${encodeURIComponent(args.customer_id as string)}`);
   }
 
   private async createCustomer(args: Record<string, unknown>): Promise<ToolResult> {
@@ -788,7 +788,7 @@ export class MagentoMCPServer {
     if (args.firstname !== undefined) customer.firstname = args.firstname;
     if (args.lastname !== undefined) customer.lastname = args.lastname;
     if (args.group_id !== undefined) customer.group_id = args.group_id;
-    return this.apiPut(`/customers/${args.customer_id}`, { customer });
+    return this.apiPut(`/customers/${encodeURIComponent(args.customer_id as string)}`, { customer });
   }
 
   private async getStockItem(args: Record<string, unknown>): Promise<ToolResult> {

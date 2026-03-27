@@ -436,7 +436,7 @@ export class RipplingMCPServer {
 
   private async getEmployee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.employee_id) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    return this.apiGet(`/workers/${args.employee_id}`);
+    return this.apiGet(`/workers/${encodeURIComponent(args.employee_id as string)}`);
   }
 
   private async listDepartments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -445,7 +445,7 @@ export class RipplingMCPServer {
 
   private async getDepartment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.department_id) return { content: [{ type: 'text', text: 'department_id is required' }], isError: true };
-    return this.apiGet(`/departments/${args.department_id}`);
+    return this.apiGet(`/departments/${encodeURIComponent(args.department_id as string)}`);
   }
 
   private async listLeaveRequests(args: Record<string, unknown>): Promise<ToolResult> {
@@ -461,7 +461,7 @@ export class RipplingMCPServer {
 
   private async getLeaveRequest(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.leave_request_id) return { content: [{ type: 'text', text: 'leave_request_id is required' }], isError: true };
-    return this.apiGet(`/leave-requests/${args.leave_request_id}`);
+    return this.apiGet(`/leave-requests/${encodeURIComponent(args.leave_request_id as string)}`);
   }
 
   private async listLeaveTypes(args: Record<string, unknown>): Promise<ToolResult> {
@@ -474,12 +474,12 @@ export class RipplingMCPServer {
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.group_id) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.apiGet(`/groups/${args.group_id}`);
+    return this.apiGet(`/groups/${encodeURIComponent(args.group_id as string)}`);
   }
 
   private async listGroupMembers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.group_id) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.apiGet(`/groups/${args.group_id}/members` + this.buildQs({ limit: args.limit as number, offset: args.offset as number }));
+    return this.apiGet(`/groups/${encodeURIComponent(args.group_id as string)}/members` + this.buildQs({ limit: args.limit as number, offset: args.offset as number }));
   }
 
   private async getCompany(): Promise<ToolResult> {

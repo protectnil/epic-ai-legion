@@ -85,6 +85,17 @@ export interface GatewayConfig {
   };
   autoDiscover: boolean;
   shutdownDrainMs: number;
+  /** Max requests per minute per client IP. Default: 100. */
+  rateLimitPerMinute: number;
+  /**
+   * Allowed CORS origins. When empty (default) no Access-Control-Allow-Origin
+   * header is set, effectively denying cross-origin requests.
+   */
+  corsOrigins: string[];
+  /** Path to TLS certificate file (.crt / .pem). When set, HTTPS is used. */
+  tlsCertPath?: string;
+  /** Path to TLS private key file (.key / .pem). Required when tlsCertPath is set. */
+  tlsKeyPath?: string;
 }
 
 export const DEFAULT_GATEWAY_CONFIG: GatewayConfig = {
@@ -104,6 +115,8 @@ export const DEFAULT_GATEWAY_CONFIG: GatewayConfig = {
   },
   autoDiscover: true,
   shutdownDrainMs: 30_000,
+  rateLimitPerMinute: 100,
+  corsOrigins: [],
 };
 
 // =============================================================================

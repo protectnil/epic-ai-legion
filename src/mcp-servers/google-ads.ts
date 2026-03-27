@@ -675,7 +675,7 @@ export class GoogleAdsMCPServer {
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     const statusFilter = args.status
-      ? `AND campaign.status = '${args.status}'`
+      ? `AND campaign.status = '${encodeURIComponent(args.status as string)}'`
       : `AND campaign.status IN ('ENABLED', 'PAUSED')`;
     const query = `SELECT campaign.id, campaign.name, campaign.status,
       campaign.advertising_channel_type, campaign.bidding_strategy_type,
@@ -690,7 +690,7 @@ export class GoogleAdsMCPServer {
     const query = `SELECT campaign.id, campaign.name, campaign.status,
       campaign.advertising_channel_type, campaign.bidding_strategy_type,
       campaign.start_date, campaign.end_date, campaign.campaign_budget
-      FROM campaign WHERE campaign.id = ${args.campaign_id}`;
+      FROM campaign WHERE campaign.id = ${encodeURIComponent(args.campaign_id as string)}`;
     return this.gaqlSearch(args.customer_id as string, query);
   }
 
@@ -698,7 +698,7 @@ export class GoogleAdsMCPServer {
     if (!args.customer_id || !args.name || !args.advertising_channel_type || !args.campaign_budget_resource_name) {
       return { content: [{ type: 'text', text: 'customer_id, name, advertising_channel_type, and campaign_budget_resource_name are required' }], isError: true };
     }
-    return this.adsPost(`/customers/${args.customer_id}/campaigns:mutate`, {
+    return this.adsPost(`/customers/${encodeURIComponent(args.customer_id as string)}/campaigns:mutate`, {
       operations: [{
         create: {
           name: args.name,
@@ -713,29 +713,29 @@ export class GoogleAdsMCPServer {
   private async updateCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id || !args.campaign_id) return { content: [{ type: 'text', text: 'customer_id and campaign_id are required' }], isError: true };
     const updateFields: Record<string, unknown> = {
-      resourceName: `customers/${args.customer_id}/campaigns/${args.campaign_id}`,
+      resourceName: `customers/${encodeURIComponent(args.customer_id as string)}/campaigns/${encodeURIComponent(args.campaign_id as string)}`,
     };
     const updateMask: string[] = [];
     if (args.name) { updateFields.name = args.name; updateMask.push('name'); }
     if (args.status) { updateFields.status = args.status; updateMask.push('status'); }
-    return this.adsPost(`/customers/${args.customer_id}/campaigns:mutate`, {
+    return this.adsPost(`/customers/${encodeURIComponent(args.customer_id as string)}/campaigns:mutate`, {
       operations: [{ update: updateFields, updateMask: updateMask.join(',') }],
     });
   }
 
   private async removeCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id || !args.campaign_id) return { content: [{ type: 'text', text: 'customer_id and campaign_id are required' }], isError: true };
-    return this.adsPost(`/customers/${args.customer_id}/campaigns:mutate`, {
-      operations: [{ remove: `customers/${args.customer_id}/campaigns/${args.campaign_id}` }],
+    return this.adsPost(`/customers/${encodeURIComponent(args.customer_id as string)}/campaigns:mutate`, {
+      operations: [{ remove: `customers/${encodeURIComponent(args.customer_id as string)}/campaigns/${encodeURIComponent(args.campaign_id as string)}` }],
     });
   }
 
   private async listAdGroups(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     const statusFilter = args.status
-      ? `AND ad_group.status = '${args.status}'`
+      ? `AND ad_group.status = '${encodeURIComponent(args.status as string)}'`
       : `AND ad_group.status IN ('ENABLED', 'PAUSED')`;
-    const campaignFilter = args.campaign_id ? `AND campaign.id = ${args.campaign_id}` : '';
+    const campaignFilter = args.campaign_id ? `AND campaign.id = ${encodeURIComponent(args.campaign_id as string)}` : '';
     const query = `SELECT ad_group.id, ad_group.name, ad_group.status,
       ad_group.type, ad_group.cpc_bid_micros, campaign.id, campaign.name
       FROM ad_group
@@ -747,7 +747,7 @@ export class GoogleAdsMCPServer {
     if (!args.customer_id || !args.ad_group_id) return { content: [{ type: 'text', text: 'customer_id and ad_group_id are required' }], isError: true };
     const query = `SELECT ad_group.id, ad_group.name, ad_group.status,
       ad_group.type, ad_group.cpc_bid_micros, campaign.id
-      FROM ad_group WHERE ad_group.id = ${args.ad_group_id}`;
+      FROM ad_group WHERE ad_group.id = ${encodeURIComponent(args.ad_group_id as string)}`;
     return this.gaqlSearch(args.customer_id as string, query);
   }
 
@@ -757,11 +757,11 @@ export class GoogleAdsMCPServer {
     }
     const adGroup: Record<string, unknown> = {
       name: args.name,
-      campaign: `customers/${args.customer_id}/campaigns/${args.campaign_id}`,
+      campaign: `customers/${encodeURIComponent(args.customer_id as string)}/campaigns/${encodeURIComponent(args.campaign_id as string)}`,
       status: (args.status as string) || 'PAUSED',
     };
     if (args.cpc_bid_micros) adGroup.cpcBidMicros = args.cpc_bid_micros;
-    return this.adsPost(`/customers/${args.customer_id}/adGroups:mutate`, {
+    return this.adsPost(`/customers/${encodeURIComponent(args.customer_id as string)}/adGroups:mutate`, {
       operations: [{ create: adGroup }],
     });
   }
@@ -769,13 +769,13 @@ export class GoogleAdsMCPServer {
   private async updateAdGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id || !args.ad_group_id) return { content: [{ type: 'text', text: 'customer_id and ad_group_id are required' }], isError: true };
     const updateFields: Record<string, unknown> = {
-      resourceName: `customers/${args.customer_id}/adGroups/${args.ad_group_id}`,
+      resourceName: `customers/${encodeURIComponent(args.customer_id as string)}/adGroups/${encodeURIComponent(args.ad_group_id as string)}`,
     };
     const updateMask: string[] = [];
     if (args.name) { updateFields.name = args.name; updateMask.push('name'); }
     if (args.status) { updateFields.status = args.status; updateMask.push('status'); }
     if (args.cpc_bid_micros) { updateFields.cpcBidMicros = args.cpc_bid_micros; updateMask.push('cpc_bid_micros'); }
-    return this.adsPost(`/customers/${args.customer_id}/adGroups:mutate`, {
+    return this.adsPost(`/customers/${encodeURIComponent(args.customer_id as string)}/adGroups:mutate`, {
       operations: [{ update: updateFields, updateMask: updateMask.join(',') }],
     });
   }
@@ -783,9 +783,9 @@ export class GoogleAdsMCPServer {
   private async listAds(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     const statusFilter = args.status
-      ? `AND ad_group_ad.status = '${args.status}'`
+      ? `AND ad_group_ad.status = '${encodeURIComponent(args.status as string)}'`
       : `AND ad_group_ad.status IN ('ENABLED', 'PAUSED')`;
-    const adGroupFilter = args.ad_group_id ? `AND ad_group.id = ${args.ad_group_id}` : '';
+    const adGroupFilter = args.ad_group_id ? `AND ad_group.id = ${encodeURIComponent(args.ad_group_id as string)}` : '';
     const query = `SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.ad.type,
       ad_group_ad.status, ad_group.id, campaign.id
       FROM ad_group_ad
@@ -798,16 +798,16 @@ export class GoogleAdsMCPServer {
     const query = `SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.ad.type,
       ad_group_ad.ad.final_urls, ad_group_ad.status
       FROM ad_group_ad
-      WHERE ad_group.id = ${args.ad_group_id} AND ad_group_ad.ad.id = ${args.ad_id}`;
+      WHERE ad_group.id = ${encodeURIComponent(args.ad_group_id as string)} AND ad_group_ad.ad.id = ${encodeURIComponent(args.ad_id as string)}`;
     return this.gaqlSearch(args.customer_id as string, query);
   }
 
   private async listKeywords(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     const statusFilter = args.status
-      ? `AND ad_group_criterion.status = '${args.status}'`
+      ? `AND ad_group_criterion.status = '${encodeURIComponent(args.status as string)}'`
       : `AND ad_group_criterion.status = 'ENABLED'`;
-    const adGroupFilter = args.ad_group_id ? `AND ad_group.id = ${args.ad_group_id}` : '';
+    const adGroupFilter = args.ad_group_id ? `AND ad_group.id = ${encodeURIComponent(args.ad_group_id as string)}` : '';
     const query = `SELECT ad_group_criterion.criterion_id, ad_group_criterion.keyword.text,
       ad_group_criterion.keyword.match_type, ad_group_criterion.status,
       ad_group_criterion.cpc_bid_micros, ad_group.id, campaign.id
@@ -822,12 +822,12 @@ export class GoogleAdsMCPServer {
       return { content: [{ type: 'text', text: 'customer_id, ad_group_id, keyword_text, and match_type are required' }], isError: true };
     }
     const criterion: Record<string, unknown> = {
-      adGroup: `customers/${args.customer_id}/adGroups/${args.ad_group_id}`,
+      adGroup: `customers/${encodeURIComponent(args.customer_id as string)}/adGroups/${encodeURIComponent(args.ad_group_id as string)}`,
       status: 'ENABLED',
       keyword: { text: args.keyword_text, matchType: args.match_type },
     };
     if (args.cpc_bid_micros) criterion.cpcBidMicros = args.cpc_bid_micros;
-    return this.adsPost(`/customers/${args.customer_id}/adGroupCriteria:mutate`, {
+    return this.adsPost(`/customers/${encodeURIComponent(args.customer_id as string)}/adGroupCriteria:mutate`, {
       operations: [{ create: criterion }],
     });
   }
@@ -837,12 +837,12 @@ export class GoogleAdsMCPServer {
       return { content: [{ type: 'text', text: 'customer_id, ad_group_id, and criterion_id are required' }], isError: true };
     }
     const updateFields: Record<string, unknown> = {
-      resourceName: `customers/${args.customer_id}/adGroupCriteria/${args.ad_group_id}~${args.criterion_id}`,
+      resourceName: `customers/${encodeURIComponent(args.customer_id as string)}/adGroupCriteria/${encodeURIComponent(args.ad_group_id as string)}~${encodeURIComponent(args.criterion_id as string)}`,
     };
     const updateMask: string[] = [];
     if (args.status) { updateFields.status = args.status; updateMask.push('status'); }
     if (args.cpc_bid_micros) { updateFields.cpcBidMicros = args.cpc_bid_micros; updateMask.push('cpc_bid_micros'); }
-    return this.adsPost(`/customers/${args.customer_id}/adGroupCriteria:mutate`, {
+    return this.adsPost(`/customers/${encodeURIComponent(args.customer_id as string)}/adGroupCriteria:mutate`, {
       operations: [{ update: updateFields, updateMask: updateMask.join(',') }],
     });
   }
@@ -855,7 +855,7 @@ export class GoogleAdsMCPServer {
   private async getCampaignPerformance(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     const dateRange = (args.date_range as string) || 'LAST_30_DAYS';
-    const campaignFilter = args.campaign_id ? `AND campaign.id = ${args.campaign_id}` : '';
+    const campaignFilter = args.campaign_id ? `AND campaign.id = ${encodeURIComponent(args.campaign_id as string)}` : '';
     const query = `SELECT campaign.id, campaign.name, campaign.status,
       metrics.clicks, metrics.impressions, metrics.cost_micros,
       metrics.conversions, metrics.conversions_value, metrics.ctr, metrics.average_cpc
@@ -868,7 +868,7 @@ export class GoogleAdsMCPServer {
   private async getKeywordPerformance(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     const dateRange = (args.date_range as string) || 'LAST_30_DAYS';
-    const adGroupFilter = args.ad_group_id ? `AND ad_group.id = ${args.ad_group_id}` : '';
+    const adGroupFilter = args.ad_group_id ? `AND ad_group.id = ${encodeURIComponent(args.ad_group_id as string)}` : '';
     const query = `SELECT ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type,
       ad_group.id, campaign.id, campaign.name,
       metrics.clicks, metrics.impressions, metrics.cost_micros,
@@ -893,7 +893,7 @@ export class GoogleAdsMCPServer {
     if (!args.customer_id || !args.name || !args.amount_micros) {
       return { content: [{ type: 'text', text: 'customer_id, name, and amount_micros are required' }], isError: true };
     }
-    return this.adsPost(`/customers/${args.customer_id}/campaignBudgets:mutate`, {
+    return this.adsPost(`/customers/${encodeURIComponent(args.customer_id as string)}/campaignBudgets:mutate`, {
       operations: [{
         create: {
           name: args.name,

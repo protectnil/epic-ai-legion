@@ -308,7 +308,7 @@ export class PolygonIoMCPServer {
     if (!args.ticker) return { content: [{ type: 'text', text: 'ticker is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.date) params.date = args.date as string;
-    return this.fetch(`/v3/reference/tickers/${args.ticker}`, params);
+    return this.fetch(`/v3/reference/tickers/${encodeURIComponent(args.ticker as string)}`, params);
   }
 
   private async searchTickers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -340,21 +340,21 @@ export class PolygonIoMCPServer {
     if (typeof args.adjusted === 'boolean') params.adjusted = String(args.adjusted);
     if (args.limit) params.limit = String(args.limit);
     if (args.sort) params.sort = args.sort as string;
-    return this.fetch(`/v2/aggs/ticker/${args.ticker}/range/${args.multiplier}/${args.timespan}/${args.from}/${args.to}`, params);
+    return this.fetch(`/v2/aggs/ticker/${encodeURIComponent(args.ticker as string)}/range/${encodeURIComponent(args.multiplier as string)}/${encodeURIComponent(args.timespan as string)}/${encodeURIComponent(args.from as string)}/${encodeURIComponent(args.to as string)}`, params);
   }
 
   private async getDailyOpenClose(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ticker || !args.date) return { content: [{ type: 'text', text: 'ticker and date are required' }], isError: true };
     const params: Record<string, string> = {};
     if (typeof args.adjusted === 'boolean') params.adjusted = String(args.adjusted);
-    return this.fetch(`/v1/open-close/${args.ticker}/${args.date}`, params);
+    return this.fetch(`/v1/open-close/${encodeURIComponent(args.ticker as string)}/${encodeURIComponent(args.date as string)}`, params);
   }
 
   private async getPreviousClose(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ticker) return { content: [{ type: 'text', text: 'ticker is required' }], isError: true };
     const params: Record<string, string> = {};
     if (typeof args.adjusted === 'boolean') params.adjusted = String(args.adjusted);
-    return this.fetch(`/v2/aggs/ticker/${args.ticker}/prev`, params);
+    return this.fetch(`/v2/aggs/ticker/${encodeURIComponent(args.ticker as string)}/prev`, params);
   }
 
   private async listTrades(args: Record<string, unknown>): Promise<ToolResult> {
@@ -364,7 +364,7 @@ export class PolygonIoMCPServer {
     if (args.order) params.order = args.order as string;
     if (args.limit) params.limit = String(args.limit);
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.fetch(`/v3/trades/${args.ticker}`, params);
+    return this.fetch(`/v3/trades/${encodeURIComponent(args.ticker as string)}`, params);
   }
 
   private async listQuotes(args: Record<string, unknown>): Promise<ToolResult> {
@@ -374,12 +374,12 @@ export class PolygonIoMCPServer {
     if (args.order) params.order = args.order as string;
     if (args.limit) params.limit = String(args.limit);
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.fetch(`/v3/quotes/${args.ticker}`, params);
+    return this.fetch(`/v3/quotes/${encodeURIComponent(args.ticker as string)}`, params);
   }
 
   private async getSnapshotTicker(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ticker) return { content: [{ type: 'text', text: 'ticker is required' }], isError: true };
-    return this.fetch(`/v2/snapshot/locale/us/markets/stocks/tickers/${args.ticker}`);
+    return this.fetch(`/v2/snapshot/locale/us/markets/stocks/tickers/${encodeURIComponent(args.ticker as string)}`);
   }
 
   private async listGainersLosers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -422,7 +422,7 @@ export class PolygonIoMCPServer {
     }
     const params: Record<string, string> = {};
     if (args.limit) params.limit = String(args.limit);
-    return this.fetch(`/v2/aggs/ticker/${args.forex_ticker}/range/${args.multiplier}/${args.timespan}/${args.from}/${args.to}`, params);
+    return this.fetch(`/v2/aggs/ticker/${encodeURIComponent(args.forex_ticker as string)}/range/${encodeURIComponent(args.multiplier as string)}/${encodeURIComponent(args.timespan as string)}/${encodeURIComponent(args.from as string)}/${encodeURIComponent(args.to as string)}`, params);
   }
 
   private async getMarketStatus(): Promise<ToolResult> {

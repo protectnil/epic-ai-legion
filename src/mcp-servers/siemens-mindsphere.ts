@@ -477,7 +477,7 @@ export class SiemensMindSphereMCPServer {
 
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.msGet(`/api/assetmanagement/v3/assets/${args.asset_id}`);
+    return this.msGet(`/api/assetmanagement/v3/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async listAssetTypes(args: Record<string, unknown>): Promise<ToolResult> {
@@ -514,21 +514,21 @@ export class SiemensMindSphereMCPServer {
       limit: String((args.limit as number) || 2000),
     };
     if (args.select) params.select = args.select as string;
-    return this.msGet(`/api/iottimeseries/v3/timeseries/${args.asset_id}/${args.aspect_name}`, params);
+    return this.msGet(`/api/iottimeseries/v3/timeseries/${encodeURIComponent(args.asset_id as string)}/${encodeURIComponent(args.aspect_name as string)}`, params);
   }
 
   private async putTimeseries(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id || !args.aspect_name || !args.data) {
       return { content: [{ type: 'text', text: 'asset_id, aspect_name, and data are required' }], isError: true };
     }
-    return this.msPut(`/api/iottimeseries/v3/timeseries/${args.asset_id}/${args.aspect_name}`, args.data);
+    return this.msPut(`/api/iottimeseries/v3/timeseries/${encodeURIComponent(args.asset_id as string)}/${encodeURIComponent(args.aspect_name as string)}`, args.data);
   }
 
   private async deleteTimeseries(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id || !args.aspect_name || !args.from || !args.to) {
       return { content: [{ type: 'text', text: 'asset_id, aspect_name, from, and to are required' }], isError: true };
     }
-    return this.msDelete(`/api/iottimeseries/v3/timeseries/${args.asset_id}/${args.aspect_name}`, {
+    return this.msDelete(`/api/iottimeseries/v3/timeseries/${encodeURIComponent(args.asset_id as string)}/${encodeURIComponent(args.aspect_name as string)}`, {
       from: args.from as string,
       to: args.to as string,
     });
@@ -562,6 +562,6 @@ export class SiemensMindSphereMCPServer {
 
   private async getEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.msGet(`/api/eventmanagement/v3/events/${args.event_id}`);
+    return this.msGet(`/api/eventmanagement/v3/events/${encodeURIComponent(args.event_id as string)}`);
   }
 }

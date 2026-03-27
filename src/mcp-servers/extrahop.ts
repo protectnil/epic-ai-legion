@@ -607,7 +607,7 @@ export class ExtraHopMCPServer {
 
   private async getDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.device_id === undefined) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.ehGet(`/devices/${args.device_id as number}`);
+    return this.ehGet(`/devices/${encodeURIComponent(args.device_id as number)}`);
   }
 
   private async listDeviceProtocols(args: Record<string, unknown>): Promise<ToolResult> {
@@ -615,7 +615,7 @@ export class ExtraHopMCPServer {
     const params: Record<string, string> = {};
     if (args.from) params.from = String(args.from as number);
     if (args.until) params.until = String(args.until as number);
-    return this.ehGet(`/devices/${args.device_id as number}/protocols`, params);
+    return this.ehGet(`/devices/${encodeURIComponent(args.device_id as number)}/protocols`, params);
   }
 
   private async listDetections(args: Record<string, unknown>): Promise<ToolResult> {
@@ -633,7 +633,7 @@ export class ExtraHopMCPServer {
 
   private async getDetection(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.detection_id === undefined) return { content: [{ type: 'text', text: 'detection_id is required' }], isError: true };
-    return this.ehGet(`/detections/${args.detection_id as number}`);
+    return this.ehGet(`/detections/${encodeURIComponent(args.detection_id as number)}`);
   }
 
   private async updateDetection(args: Record<string, unknown>): Promise<ToolResult> {
@@ -643,7 +643,7 @@ export class ExtraHopMCPServer {
     if (args.assignee) body.assignee = args.assignee;
     if (args.resolution) body.resolution = args.resolution;
     if (args.note) body.note = args.note;
-    return this.ehPatch(`/detections/${args.detection_id as number}`, body);
+    return this.ehPatch(`/detections/${encodeURIComponent(args.detection_id as number)}`, body);
   }
 
   private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -657,7 +657,7 @@ export class ExtraHopMCPServer {
 
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.alert_id === undefined) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    return this.ehGet(`/alerts/${args.alert_id as number}`);
+    return this.ehGet(`/alerts/${encodeURIComponent(args.alert_id as number)}`);
   }
 
   private async createAlert(args: Record<string, unknown>): Promise<ToolResult> {
@@ -682,7 +682,7 @@ export class ExtraHopMCPServer {
 
   private async getNetwork(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.network_id === undefined) return { content: [{ type: 'text', text: 'network_id is required' }], isError: true };
-    return this.ehGet(`/networks/${args.network_id as number}`);
+    return this.ehGet(`/networks/${encodeURIComponent(args.network_id as number)}`);
   }
 
   private async listAppliances(args: Record<string, unknown>): Promise<ToolResult> {
@@ -695,7 +695,7 @@ export class ExtraHopMCPServer {
 
   private async getAppliance(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.appliance_id === undefined) return { content: [{ type: 'text', text: 'appliance_id is required' }], isError: true };
-    return this.ehGet(`/appliances/${args.appliance_id as number}`);
+    return this.ehGet(`/appliances/${encodeURIComponent(args.appliance_id as number)}`);
   }
 
   private async queryMetrics(args: Record<string, unknown>): Promise<ToolResult> {

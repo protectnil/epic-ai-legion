@@ -468,8 +468,8 @@ export class PowerBIMCPServer {
   private async listWorkspaces(args: Record<string, unknown>): Promise<ToolResult> {
     const params: string[] = [];
     if (args.filter) params.push(`$filter=${encodeURIComponent(args.filter as string)}`);
-    if (args.top) params.push(`$top=${args.top as number}`);
-    if (args.skip) params.push(`$skip=${args.skip as number}`);
+    if (args.top) params.push(`$top=${encodeURIComponent(args.top as number)}`);
+    if (args.skip) params.push(`$skip=${encodeURIComponent(args.skip as number)}`);
     const qs = params.length ? `?${params.join('&')}` : '';
     return this.fetchJSON(`${this.baseUrl}/groups${qs}`);
   }
@@ -528,7 +528,7 @@ export class PowerBIMCPServer {
     const datasetId = args.datasetId as string;
     if (!datasetId) return { content: [{ type: 'text', text: 'datasetId is required' }], isError: true };
     const prefix = this.groupPath(args.workspaceId as string | undefined);
-    const qs = args.top ? `?$top=${args.top as number}` : '';
+    const qs = args.top ? `?$top=${encodeURIComponent(args.top as number)}` : '';
     return this.fetchJSON(`${this.baseUrl}${prefix}/datasets/${encodeURIComponent(datasetId)}/refreshes${qs}`);
   }
 

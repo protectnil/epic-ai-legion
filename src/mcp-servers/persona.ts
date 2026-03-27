@@ -497,7 +497,7 @@ export class PersonaMCPServer {
 
   private async getInquiry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.inquiry_id) return { content: [{ type: 'text', text: 'inquiry_id is required' }], isError: true };
-    return this.apiGet(`/inquiries/${args.inquiry_id}`);
+    return this.apiGet(`/inquiries/${encodeURIComponent(args.inquiry_id as string)}`);
   }
 
   private async createInquiry(args: Record<string, unknown>): Promise<ToolResult> {
@@ -521,26 +521,26 @@ export class PersonaMCPServer {
 
   private async resumeInquiry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.inquiry_id) return { content: [{ type: 'text', text: 'inquiry_id is required' }], isError: true };
-    return this.apiPost(`/inquiries/${args.inquiry_id}/resume`, {});
+    return this.apiPost(`/inquiries/${encodeURIComponent(args.inquiry_id as string)}/resume`, {});
   }
 
   private async approveInquiry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.inquiry_id) return { content: [{ type: 'text', text: 'inquiry_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.comment) body.data = { attributes: { comment: args.comment } };
-    return this.apiPost(`/inquiries/${args.inquiry_id}/approve`, body);
+    return this.apiPost(`/inquiries/${encodeURIComponent(args.inquiry_id as string)}/approve`, body);
   }
 
   private async declineInquiry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.inquiry_id) return { content: [{ type: 'text', text: 'inquiry_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.comment) body.data = { attributes: { comment: args.comment } };
-    return this.apiPost(`/inquiries/${args.inquiry_id}/decline`, body);
+    return this.apiPost(`/inquiries/${encodeURIComponent(args.inquiry_id as string)}/decline`, body);
   }
 
   private async redactInquiry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.inquiry_id) return { content: [{ type: 'text', text: 'inquiry_id is required' }], isError: true };
-    return this.apiDelete(`/inquiries/${args.inquiry_id}`);
+    return this.apiDelete(`/inquiries/${encodeURIComponent(args.inquiry_id as string)}`);
   }
 
   private async listAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -554,7 +554,7 @@ export class PersonaMCPServer {
 
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    return this.apiGet(`/accounts/${args.account_id}`);
+    return this.apiGet(`/accounts/${encodeURIComponent(args.account_id as string)}`);
   }
 
   private async createAccount(args: Record<string, unknown>): Promise<ToolResult> {
@@ -574,14 +574,14 @@ export class PersonaMCPServer {
     if (!args.target_account_id || !args.source_account_id) {
       return { content: [{ type: 'text', text: 'target_account_id and source_account_id are required' }], isError: true };
     }
-    return this.apiPost(`/accounts/${args.target_account_id}/merge`, {
+    return this.apiPost(`/accounts/${encodeURIComponent(args.target_account_id as string)}/merge`, {
       data: { type: 'account', id: args.source_account_id },
     });
   }
 
   private async redactAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    return this.apiDelete(`/accounts/${args.account_id}`);
+    return this.apiDelete(`/accounts/${encodeURIComponent(args.account_id as string)}`);
   }
 
   private async listVerifications(args: Record<string, unknown>): Promise<ToolResult> {
@@ -595,7 +595,7 @@ export class PersonaMCPServer {
 
   private async getVerification(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.verification_id) return { content: [{ type: 'text', text: 'verification_id is required' }], isError: true };
-    return this.apiGet(`/verifications/${args.verification_id}`);
+    return this.apiGet(`/verifications/${encodeURIComponent(args.verification_id as string)}`);
   }
 
   private async listReports(args: Record<string, unknown>): Promise<ToolResult> {
@@ -609,7 +609,7 @@ export class PersonaMCPServer {
 
   private async getReport(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.report_id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-    return this.apiGet(`/reports/${args.report_id}`);
+    return this.apiGet(`/reports/${encodeURIComponent(args.report_id as string)}`);
   }
 
   private async listCases(args: Record<string, unknown>): Promise<ToolResult> {
@@ -623,6 +623,6 @@ export class PersonaMCPServer {
 
   private async getCase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.case_id) return { content: [{ type: 'text', text: 'case_id is required' }], isError: true };
-    return this.apiGet(`/cases/${args.case_id}`);
+    return this.apiGet(`/cases/${encodeURIComponent(args.case_id as string)}`);
   }
 }

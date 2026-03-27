@@ -651,7 +651,7 @@ export class RingCentralMCPServer {
 
   private async getExtension(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.extension_id) return { content: [{ type: 'text', text: 'extension_id is required' }], isError: true };
-    return this.apiGet(`/account/~/extension/${args.extension_id}`);
+    return this.apiGet(`/account/~/extension/${encodeURIComponent(args.extension_id as string)}`);
   }
 
   private async listCallLogs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -670,7 +670,7 @@ export class RingCentralMCPServer {
   private async getCallLog(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_log_id) return { content: [{ type: 'text', text: 'call_log_id is required' }], isError: true };
     const extId = args.extension_id as string | undefined;
-    return this.apiGet(`${this.extPath(extId)}/call-log/${args.call_log_id}`);
+    return this.apiGet(`${this.extPath(extId)}/call-log/${encodeURIComponent(args.call_log_id as string)}`);
   }
 
   private async listMessages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -688,13 +688,13 @@ export class RingCentralMCPServer {
   private async getMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
     const extId = args.extension_id as string | undefined;
-    return this.apiGet(`${this.extPath(extId)}/message-store/${args.message_id}`);
+    return this.apiGet(`${this.extPath(extId)}/message-store/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async deleteMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
     const extId = args.extension_id as string | undefined;
-    return this.apiDelete(`${this.extPath(extId)}/message-store/${args.message_id}`);
+    return this.apiDelete(`${this.extPath(extId)}/message-store/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async sendSms(args: Record<string, unknown>): Promise<ToolResult> {
@@ -722,7 +722,7 @@ export class RingCentralMCPServer {
   private async getVoicemail(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
     const extId = args.extension_id as string | undefined;
-    return this.apiGet(`${this.extPath(extId)}/message-store/${args.message_id}`);
+    return this.apiGet(`${this.extPath(extId)}/message-store/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async listMeetings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -746,13 +746,13 @@ export class RingCentralMCPServer {
   private async getMeeting(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.meeting_id) return { content: [{ type: 'text', text: 'meeting_id is required' }], isError: true };
     const extId = args.extension_id as string | undefined;
-    return this.apiGet(`${this.extPath(extId)}/meeting/${args.meeting_id}`);
+    return this.apiGet(`${this.extPath(extId)}/meeting/${encodeURIComponent(args.meeting_id as string)}`);
   }
 
   private async deleteMeeting(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.meeting_id) return { content: [{ type: 'text', text: 'meeting_id is required' }], isError: true };
     const extId = args.extension_id as string | undefined;
-    return this.apiDelete(`${this.extPath(extId)}/meeting/${args.meeting_id}`);
+    return this.apiDelete(`${this.extPath(extId)}/meeting/${encodeURIComponent(args.meeting_id as string)}`);
   }
 
   private async listFaxMessages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -786,7 +786,7 @@ export class RingCentralMCPServer {
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
     const extId = args.extension_id as string | undefined;
-    return this.apiGet(`${this.extPath(extId)}/address-book/contact/${args.contact_id}`);
+    return this.apiGet(`${this.extPath(extId)}/address-book/contact/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async createContact(args: Record<string, unknown>): Promise<ToolResult> {

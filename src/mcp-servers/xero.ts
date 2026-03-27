@@ -401,7 +401,7 @@ export class XeroMCPServer {
     if (args.where) {
       params.set('where', args.where as string);
     } else if (args.type) {
-      params.set('where', `Type=="${args.type}"`);
+      params.set('where', `Type=="${encodeURIComponent(args.type as string)}"`);
     }
     const qs = params.toString() ? `?${params.toString()}` : '';
     return this.fetchJson(`${this.baseUrl}/Accounts${qs}`);
@@ -409,7 +409,7 @@ export class XeroMCPServer {
 
   private async listPayments(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
-    if (args.status) params.set('where', `Status=="${args.status}"`);
+    if (args.status) params.set('where', `Status=="${encodeURIComponent(args.status as string)}"`);
     if (args.where) params.set('where', args.where as string);
     if (args.page) params.set('page', String(args.page));
     const qs = params.toString() ? `?${params.toString()}` : '';
@@ -434,7 +434,7 @@ export class XeroMCPServer {
 
   private async listCreditNotes(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
-    if (args.status) params.set('where', `Status=="${args.status}"`);
+    if (args.status) params.set('where', `Status=="${encodeURIComponent(args.status as string)}"`);
     if (args.where) params.set('where', args.where as string);
     if (args.page) params.set('page', String(args.page));
     const qs = params.toString() ? `?${params.toString()}` : '';
@@ -448,8 +448,8 @@ export class XeroMCPServer {
   private async listBankTransactions(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     const whereClauses: string[] = [];
-    if (args.bankAccountId) whereClauses.push(`BankAccount.AccountID=GUID("${args.bankAccountId}")`);
-    if (args.type) whereClauses.push(`Type=="${args.type}"`);
+    if (args.bankAccountId) whereClauses.push(`BankAccount.AccountID=GUID("${encodeURIComponent(args.bankAccountId as string)}")`);
+    if (args.type) whereClauses.push(`Type=="${encodeURIComponent(args.type as string)}"`);
     if (args.where) whereClauses.push(args.where as string);
     if (whereClauses.length > 0) params.set('where', whereClauses.join('&&'));
     if (args.page) params.set('page', String(args.page));

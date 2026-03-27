@@ -738,7 +738,7 @@ export class MarqetaMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_token) return { content: [{ type: 'text', text: 'user_token is required' }], isError: true };
-    return this.apiGet(`/users/${args.user_token}`);
+    return this.apiGet(`/users/${encodeURIComponent(args.user_token as string)}`);
   }
 
   private async createUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -775,13 +775,13 @@ export class MarqetaMCPServer {
     if (args.metadata) {
       try { body.metadata = JSON.parse(args.metadata as string); } catch { /* ignore parse error */ }
     }
-    return this.apiPut(`/users/${args.user_token}`, body);
+    return this.apiPut(`/users/${encodeURIComponent(args.user_token as string)}`, body);
   }
 
   private async listCards(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.user_token) {
       const params = this.buildPaginationParams(args);
-      return this.apiGet(`/cards/user/${args.user_token}`, params);
+      return this.apiGet(`/cards/user/${encodeURIComponent(args.user_token as string)}`, params);
     }
     const params = this.buildPaginationParams(args);
     if (args.card_product_token) params.set('card_product_token', args.card_product_token as string);
@@ -790,7 +790,7 @@ export class MarqetaMCPServer {
 
   private async getCard(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.card_token) return { content: [{ type: 'text', text: 'card_token is required' }], isError: true };
-    return this.apiGet(`/cards/${args.card_token}`);
+    return this.apiGet(`/cards/${encodeURIComponent(args.card_token as string)}`);
   }
 
   private async createCard(args: Record<string, unknown>): Promise<ToolResult> {
@@ -832,7 +832,7 @@ export class MarqetaMCPServer {
     if (!args.card_product_token) {
       return { content: [{ type: 'text', text: 'card_product_token is required' }], isError: true };
     }
-    return this.apiGet(`/cardproducts/${args.card_product_token}`);
+    return this.apiGet(`/cardproducts/${encodeURIComponent(args.card_product_token as string)}`);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -848,7 +848,7 @@ export class MarqetaMCPServer {
     if (!args.transaction_token) {
       return { content: [{ type: 'text', text: 'transaction_token is required' }], isError: true };
     }
-    return this.apiGet(`/transactions/${args.transaction_token}`);
+    return this.apiGet(`/transactions/${encodeURIComponent(args.transaction_token as string)}`);
   }
 
   private async listTransactionsForUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -857,7 +857,7 @@ export class MarqetaMCPServer {
     if (args.type) params.set('type', args.type as string);
     if (args.start_date) params.set('start_date', args.start_date as string);
     if (args.end_date) params.set('end_date', args.end_date as string);
-    return this.apiGet(`/transactions/user/${args.user_token}`, params);
+    return this.apiGet(`/transactions/user/${encodeURIComponent(args.user_token as string)}`, params);
   }
 
   private async listTransactionsForCard(args: Record<string, unknown>): Promise<ToolResult> {
@@ -866,7 +866,7 @@ export class MarqetaMCPServer {
     if (args.type) params.set('type', args.type as string);
     if (args.start_date) params.set('start_date', args.start_date as string);
     if (args.end_date) params.set('end_date', args.end_date as string);
-    return this.apiGet(`/transactions/card/${args.card_token}`, params);
+    return this.apiGet(`/transactions/card/${encodeURIComponent(args.card_token as string)}`, params);
   }
 
   private async listVelocityControls(args: Record<string, unknown>): Promise<ToolResult> {
@@ -880,7 +880,7 @@ export class MarqetaMCPServer {
     if (!args.velocity_control_token) {
       return { content: [{ type: 'text', text: 'velocity_control_token is required' }], isError: true };
     }
-    return this.apiGet(`/velocitycontrols/${args.velocity_control_token}`);
+    return this.apiGet(`/velocitycontrols/${encodeURIComponent(args.velocity_control_token as string)}`);
   }
 
   private async createVelocityControl(args: Record<string, unknown>): Promise<ToolResult> {
@@ -912,14 +912,14 @@ export class MarqetaMCPServer {
     if (args.usage_limit !== undefined) body.usage_limit = args.usage_limit;
     if (args.amount_limit !== undefined) body.amount_limit = args.amount_limit;
     if (typeof args.active === 'boolean') body.active = args.active;
-    return this.apiPut(`/velocitycontrols/${args.velocity_control_token}`, body);
+    return this.apiPut(`/velocitycontrols/${encodeURIComponent(args.velocity_control_token as string)}`, body);
   }
 
   private async listFundingSources(args: Record<string, unknown>): Promise<ToolResult> {
     const params = this.buildPaginationParams(args);
     if (args.type) params.set('type', args.type as string);
     if (args.user_token) {
-      return this.apiGet(`/fundingsources/user/${args.user_token}`, params);
+      return this.apiGet(`/fundingsources/user/${encodeURIComponent(args.user_token as string)}`, params);
     }
     return this.apiGet('/fundingsources/program', params);
   }
@@ -928,6 +928,6 @@ export class MarqetaMCPServer {
     if (!args.funding_source_token) {
       return { content: [{ type: 'text', text: 'funding_source_token is required' }], isError: true };
     }
-    return this.apiGet(`/fundingsources/${args.funding_source_token}`);
+    return this.apiGet(`/fundingsources/${encodeURIComponent(args.funding_source_token as string)}`);
   }
 }

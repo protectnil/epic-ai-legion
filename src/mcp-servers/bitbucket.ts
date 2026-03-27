@@ -622,7 +622,7 @@ export class BitbucketMCPServer {
   }
 
   private async getPullRequest(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${args.pull_request_id}`);
+    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${encodeURIComponent(args.pull_request_id as string)}`);
   }
 
   private async createPullRequest(args: Record<string, unknown>): Promise<ToolResult> {
@@ -643,23 +643,23 @@ export class BitbucketMCPServer {
     const body: Record<string, unknown> = { merge_strategy: (args.merge_strategy as string) ?? 'merge_commit' };
     if (args.message) body.message = args.message;
     if (typeof args.close_source_branch === 'boolean') body.close_source_branch = args.close_source_branch;
-    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${args.pull_request_id}/merge`, 'POST', body);
+    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${encodeURIComponent(args.pull_request_id as string)}/merge`, 'POST', body);
   }
 
   private async declinePullRequest(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${args.pull_request_id}/decline`, 'POST', {});
+    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${encodeURIComponent(args.pull_request_id as string)}/decline`, 'POST', {});
   }
 
   private async listPrComments(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     params.set('pagelen', String((args.pagelen as number) ?? 10));
     params.set('page', String((args.page as number) ?? 1));
-    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${args.pull_request_id}/comments?${params}`);
+    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${encodeURIComponent(args.pull_request_id as string)}/comments?${params}`);
   }
 
   private async createPrComment(args: Record<string, unknown>): Promise<ToolResult> {
     return this.request(
-      `${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${args.pull_request_id}/comments`,
+      `${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/pullrequests/${encodeURIComponent(args.pull_request_id as string)}/comments`,
       'POST',
       { content: { raw: args.content } },
     );
@@ -750,7 +750,7 @@ export class BitbucketMCPServer {
   }
 
   private async getIssue(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/issues/${args.issue_id}`);
+    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/issues/${encodeURIComponent(args.issue_id as string)}`);
   }
 
   private async createIssue(args: Record<string, unknown>): Promise<ToolResult> {
@@ -766,7 +766,7 @@ export class BitbucketMCPServer {
     if (args.status) body.status = args.status;
     if (args.priority) body.priority = args.priority;
     if (args.assignee) body.assignee = { account_id: args.assignee };
-    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/issues/${args.issue_id}`, 'PUT', body);
+    return this.request(`${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/issues/${encodeURIComponent(args.issue_id as string)}`, 'PUT', body);
   }
 
   private async listWebhooks(args: Record<string, unknown>): Promise<ToolResult> {
@@ -801,7 +801,7 @@ export class BitbucketMCPServer {
   }
 
   private async getSrcFile(args: Record<string, unknown>): Promise<ToolResult> {
-    const url = `${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/src/${encodeURIComponent(args.commit as string)}/${args.path}`;
+    const url = `${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/src/${encodeURIComponent(args.commit as string)}/${encodeURIComponent(args.path as string)}`;
     const response = await fetch(url, { headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
@@ -812,7 +812,7 @@ export class BitbucketMCPServer {
   }
 
   private async listSrcDirectory(args: Record<string, unknown>): Promise<ToolResult> {
-    const path = args.path ? `/${args.path}` : '';
+    const path = args.path ? `/${encodeURIComponent(args.path as string)}` : '';
     const params = new URLSearchParams();
     params.set('pagelen', String((args.pagelen as number) ?? 10));
     params.set('page', String((args.page as number) ?? 1));

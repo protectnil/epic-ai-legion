@@ -546,7 +546,7 @@ export class OctopusDeployMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.get(`/api/${this.spaceId}/projects/${args.project_id}`);
+    return this.get(`/api/${this.spaceId}/projects/${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async listEnvironments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -560,7 +560,7 @@ export class OctopusDeployMCPServer {
 
   private async getEnvironment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.environment_id) return { content: [{ type: 'text', text: 'environment_id is required' }], isError: true };
-    return this.get(`/api/${this.spaceId}/environments/${args.environment_id}`);
+    return this.get(`/api/${this.spaceId}/environments/${encodeURIComponent(args.environment_id as string)}`);
   }
 
   private async listReleases(args: Record<string, unknown>): Promise<ToolResult> {
@@ -570,12 +570,12 @@ export class OctopusDeployMCPServer {
       take: String((args.take as number) ?? 30),
     };
     if (args.channel_id) params.channelId = args.channel_id as string;
-    return this.get(`/api/${this.spaceId}/projects/${args.project_id}/releases`, params);
+    return this.get(`/api/${this.spaceId}/projects/${encodeURIComponent(args.project_id as string)}/releases`, params);
   }
 
   private async getRelease(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.release_id) return { content: [{ type: 'text', text: 'release_id is required' }], isError: true };
-    return this.get(`/api/${this.spaceId}/releases/${args.release_id}`);
+    return this.get(`/api/${this.spaceId}/releases/${encodeURIComponent(args.release_id as string)}`);
   }
 
   private async createRelease(args: Record<string, unknown>): Promise<ToolResult> {
@@ -602,7 +602,7 @@ export class OctopusDeployMCPServer {
 
   private async getDeployment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.deployment_id) return { content: [{ type: 'text', text: 'deployment_id is required' }], isError: true };
-    return this.get(`/api/${this.spaceId}/deployments/${args.deployment_id}`);
+    return this.get(`/api/${this.spaceId}/deployments/${encodeURIComponent(args.deployment_id as string)}`);
   }
 
   private async createDeployment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -623,7 +623,7 @@ export class OctopusDeployMCPServer {
       skip: String((args.skip as number) ?? 0),
       take: String((args.take as number) ?? 30),
     };
-    return this.get(`/api/${this.spaceId}/projects/${args.project_id}/runbooks`, params);
+    return this.get(`/api/${this.spaceId}/projects/${encodeURIComponent(args.project_id as string)}/runbooks`, params);
   }
 
   private async runRunbook(args: Record<string, unknown>): Promise<ToolResult> {
@@ -649,7 +649,7 @@ export class OctopusDeployMCPServer {
 
   private async getTenant(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tenant_id) return { content: [{ type: 'text', text: 'tenant_id is required' }], isError: true };
-    return this.get(`/api/${this.spaceId}/tenants/${args.tenant_id}`);
+    return this.get(`/api/${this.spaceId}/tenants/${encodeURIComponent(args.tenant_id as string)}`);
   }
 
   private async listDeploymentTargets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -665,14 +665,14 @@ export class OctopusDeployMCPServer {
 
   private async getDeploymentTarget(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.machine_id) return { content: [{ type: 'text', text: 'machine_id is required' }], isError: true };
-    return this.get(`/api/${this.spaceId}/machines/${args.machine_id}`);
+    return this.get(`/api/${this.spaceId}/machines/${encodeURIComponent(args.machine_id as string)}`);
   }
 
   private async getDeploymentProcess(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.release_id) {
-      return this.get(`/api/${this.spaceId}/releases/${args.release_id}/deploymentprocesses`);
+      return this.get(`/api/${this.spaceId}/releases/${encodeURIComponent(args.release_id as string)}/deploymentprocesses`);
     }
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id or release_id is required' }], isError: true };
-    return this.get(`/api/${this.spaceId}/deploymentprocesses/deploymentprocess-${args.project_id}`);
+    return this.get(`/api/${this.spaceId}/deploymentprocesses/deploymentprocess-${encodeURIComponent(args.project_id as string)}`);
   }
 }

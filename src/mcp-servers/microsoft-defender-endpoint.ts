@@ -700,7 +700,7 @@ export class MicrosoftDefenderEndpointMCPServer {
     const top = (args.top as number) || defaultTop;
     let url = `${base}?$top=${top}`;
     if (args.filter) url += `&$filter=${encodeURIComponent(args.filter as string)}`;
-    if (args.skip) url += `&$skip=${args.skip as number}`;
+    if (args.skip) url += `&$skip=${encodeURIComponent(args.skip as number)}`;
     if (args.expand) url += `&$expand=${encodeURIComponent(args.expand as string)}`;
     return url;
   }

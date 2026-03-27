@@ -545,7 +545,7 @@ export class NetskopeMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.nsGet(`/api/v2/scim/Users/${args.user_id}`);
+    return this.nsGet(`/api/v2/scim/Users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listClients(args: Record<string, unknown>): Promise<ToolResult> {
@@ -576,7 +576,7 @@ export class NetskopeMCPServer {
     const params = this.timeRangeParams(args);
     params.query = args.query as string;
     const eventPath = args.event_type
-      ? `/api/v2/events/data/${args.event_type}`
+      ? `/api/v2/events/data/${encodeURIComponent(args.event_type as string)}`
       : '/api/v2/events/data/events';
     return this.nsGet(eventPath, params);
   }

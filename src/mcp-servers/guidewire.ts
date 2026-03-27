@@ -497,7 +497,7 @@ export class GuidewireMCPServer {
 
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    return this.gwGet(`/common/v1/accounts/${args.account_id}`);
+    return this.gwGet(`/common/v1/accounts/${encodeURIComponent(args.account_id as string)}`);
   }
 
   private async searchAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -519,7 +519,7 @@ export class GuidewireMCPServer {
 
   private async getPolicy(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.policy_id) return { content: [{ type: 'text', text: 'policy_id is required' }], isError: true };
-    return this.gwGet(`/policy/v1/policies/${args.policy_id}`);
+    return this.gwGet(`/policy/v1/policies/${encodeURIComponent(args.policy_id as string)}`);
   }
 
   private async searchPolicies(args: Record<string, unknown>): Promise<ToolResult> {
@@ -539,7 +539,7 @@ export class GuidewireMCPServer {
 
   private async getSubmission(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.submission_id) return { content: [{ type: 'text', text: 'submission_id is required' }], isError: true };
-    return this.gwGet(`/policy/v1/submissions/${args.submission_id}`);
+    return this.gwGet(`/policy/v1/submissions/${encodeURIComponent(args.submission_id as string)}`);
   }
 
   private async createSubmission(args: Record<string, unknown>): Promise<ToolResult> {
@@ -570,7 +570,7 @@ export class GuidewireMCPServer {
 
   private async getPolicyDocuments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.policy_id) return { content: [{ type: 'text', text: 'policy_id is required' }], isError: true };
-    return this.gwGet(`/policy/v1/policies/${args.policy_id}/documents`);
+    return this.gwGet(`/policy/v1/policies/${encodeURIComponent(args.policy_id as string)}/documents`);
   }
 
   private async listActivities(args: Record<string, unknown>): Promise<ToolResult> {
@@ -583,6 +583,6 @@ export class GuidewireMCPServer {
 
   private async getActivity(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.activity_id) return { content: [{ type: 'text', text: 'activity_id is required' }], isError: true };
-    return this.gwGet(`/common/v1/activities/${args.activity_id}`);
+    return this.gwGet(`/common/v1/activities/${encodeURIComponent(args.activity_id as string)}`);
   }
 }

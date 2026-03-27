@@ -657,7 +657,7 @@ export class BuildkiteMCPServer {
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug) return { content: [{ type: 'text', text: 'org_slug is required' }], isError: true };
-    return this.bkGet(`/organizations/${args.org_slug}`);
+    return this.bkGet(`/organizations/${encodeURIComponent(args.org_slug as string)}`);
   }
 
   private async listPipelines(args: Record<string, unknown>): Promise<ToolResult> {
@@ -665,12 +665,12 @@ export class BuildkiteMCPServer {
     const params: Record<string, string> = {};
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
-    return this.bkGet(`/organizations/${args.org_slug}/pipelines`, params);
+    return this.bkGet(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines`, params);
   }
 
   private async getPipeline(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.pipeline_slug) return { content: [{ type: 'text', text: 'org_slug and pipeline_slug are required' }], isError: true };
-    return this.bkGet(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}`);
+    return this.bkGet(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}`);
   }
 
   private async createPipeline(args: Record<string, unknown>): Promise<ToolResult> {
@@ -678,7 +678,7 @@ export class BuildkiteMCPServer {
     const body: Record<string, unknown> = { name: args.name, repository: args.repository };
     if (args.description) body.description = args.description;
     if (args.default_branch) body.default_branch = args.default_branch;
-    return this.bkPost(`/organizations/${args.org_slug}/pipelines`, body);
+    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines`, body);
   }
 
   private async updatePipeline(args: Record<string, unknown>): Promise<ToolResult> {
@@ -688,12 +688,12 @@ export class BuildkiteMCPServer {
     if (args.description) body.description = args.description;
     if (args.default_branch) body.default_branch = args.default_branch;
     if (args.visibility) body.visibility = args.visibility;
-    return this.bkPatch(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}`, body);
+    return this.bkPatch(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}`, body);
   }
 
   private async deletePipeline(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.pipeline_slug) return { content: [{ type: 'text', text: 'org_slug and pipeline_slug are required' }], isError: true };
-    return this.bkDelete(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}`);
+    return this.bkDelete(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}`);
   }
 
   private async listBuilds(args: Record<string, unknown>): Promise<ToolResult> {
@@ -706,8 +706,8 @@ export class BuildkiteMCPServer {
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
     const path = args.pipeline_slug
-      ? `/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds`
-      : `/organizations/${args.org_slug}/builds`;
+      ? `/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds`
+      : `/organizations/${encodeURIComponent(args.org_slug as string)}/builds`;
     return this.bkGet(path, params);
   }
 
@@ -715,7 +715,7 @@ export class BuildkiteMCPServer {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, and build_number are required' }], isError: true };
     }
-    return this.bkGet(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds/${args.build_number}`);
+    return this.bkGet(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}`);
   }
 
   private async createBuild(args: Record<string, unknown>): Promise<ToolResult> {
@@ -731,42 +731,42 @@ export class BuildkiteMCPServer {
     if (args.meta_data) {
       try { body.meta_data = JSON.parse(args.meta_data as string); } catch { body.meta_data = args.meta_data; }
     }
-    return this.bkPost(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds`, body);
+    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds`, body);
   }
 
   private async cancelBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, and build_number are required' }], isError: true };
     }
-    return this.bkPost(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds/${args.build_number}/cancel`);
+    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/cancel`);
   }
 
   private async rebuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, and build_number are required' }], isError: true };
     }
-    return this.bkPost(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds/${args.build_number}/rebuild`);
+    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/rebuild`);
   }
 
   private async listJobs(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, and build_number are required' }], isError: true };
     }
-    return this.bkGet(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds/${args.build_number}/jobs`);
+    return this.bkGet(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/jobs`);
   }
 
   private async getJobLog(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined || !args.job_id) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, build_number, and job_id are required' }], isError: true };
     }
-    return this.bkGet(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds/${args.build_number}/jobs/${args.job_id}/log`);
+    return this.bkGet(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/jobs/${encodeURIComponent(args.job_id as string)}/log`);
   }
 
   private async retryJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined || !args.job_id) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, build_number, and job_id are required' }], isError: true };
     }
-    return this.bkPost(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds/${args.build_number}/jobs/${args.job_id}/retry`);
+    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/jobs/${encodeURIComponent(args.job_id as string)}/retry`);
   }
 
   private async unblockJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -775,7 +775,7 @@ export class BuildkiteMCPServer {
     }
     const body: Record<string, unknown> = {};
     if (args.unblocker_uuid) body.unblocker_uuid = args.unblocker_uuid;
-    return this.bkPost(`/organizations/${args.org_slug}/pipelines/${args.pipeline_slug}/builds/${args.build_number}/jobs/${args.job_id}/unblock`, body);
+    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/jobs/${encodeURIComponent(args.job_id as string)}/unblock`, body);
   }
 
   private async listAgents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -784,19 +784,19 @@ export class BuildkiteMCPServer {
     if (args.hostname) params.hostname = args.hostname as string;
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
-    return this.bkGet(`/organizations/${args.org_slug}/agents`, params);
+    return this.bkGet(`/organizations/${encodeURIComponent(args.org_slug as string)}/agents`, params);
   }
 
   private async getAgent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.agent_id) return { content: [{ type: 'text', text: 'org_slug and agent_id are required' }], isError: true };
-    return this.bkGet(`/organizations/${args.org_slug}/agents/${args.agent_id}`);
+    return this.bkGet(`/organizations/${encodeURIComponent(args.org_slug as string)}/agents/${encodeURIComponent(args.agent_id as string)}`);
   }
 
   private async stopAgent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.agent_id) return { content: [{ type: 'text', text: 'org_slug and agent_id are required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (typeof args.force === 'boolean') body.force = args.force;
-    return this.bkPatch(`/organizations/${args.org_slug}/agents/${args.agent_id}/stop`, body);
+    return this.bkPatch(`/organizations/${encodeURIComponent(args.org_slug as string)}/agents/${encodeURIComponent(args.agent_id as string)}/stop`, body);
   }
 
   private async getUser(): Promise<ToolResult> {

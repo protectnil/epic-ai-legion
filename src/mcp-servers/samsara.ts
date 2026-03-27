@@ -592,7 +592,7 @@ export class SamsaraMCPServer {
 
   private async getVehicle(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.vehicle_id) return { content: [{ type: 'text', text: 'vehicle_id is required' }], isError: true };
-    return this.apiGet(`/fleet/vehicles/${args.vehicle_id}`);
+    return this.apiGet(`/fleet/vehicles/${encodeURIComponent(args.vehicle_id as string)}`);
   }
 
   private async getVehicleLocations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -620,7 +620,7 @@ export class SamsaraMCPServer {
 
   private async getDriver(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.driver_id) return { content: [{ type: 'text', text: 'driver_id is required' }], isError: true };
-    return this.apiGet(`/fleet/drivers/${args.driver_id}`);
+    return this.apiGet(`/fleet/drivers/${encodeURIComponent(args.driver_id as string)}`);
   }
 
   private async updateDriver(args: Record<string, unknown>): Promise<ToolResult> {
@@ -630,7 +630,7 @@ export class SamsaraMCPServer {
     if (args.phone) body.phone = args.phone;
     if (args.license_number) body.licenseNumber = args.license_number;
     if (args.license_state) body.licenseState = args.license_state;
-    return this.apiPatch(`/fleet/drivers/${args.driver_id}`, body);
+    return this.apiPatch(`/fleet/drivers/${encodeURIComponent(args.driver_id as string)}`, body);
   }
 
   private async listHosLogs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -646,7 +646,7 @@ export class SamsaraMCPServer {
     if (!args.driver_id || !args.start_ms || !args.end_ms) {
       return { content: [{ type: 'text', text: 'driver_id, start_ms, and end_ms are required' }], isError: true };
     }
-    return this.apiGet(`/fleet/drivers/${args.driver_id}/safety/score?startMs=${args.start_ms}&endMs=${args.end_ms}`);
+    return this.apiGet(`/fleet/drivers/${encodeURIComponent(args.driver_id as string)}/safety/score?startMs=${encodeURIComponent(args.start_ms as string)}&endMs=${encodeURIComponent(args.end_ms as string)}`);
   }
 
   private async listRoutes(args: Record<string, unknown>): Promise<ToolResult> {
@@ -661,7 +661,7 @@ export class SamsaraMCPServer {
 
   private async getRoute(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.route_id) return { content: [{ type: 'text', text: 'route_id is required' }], isError: true };
-    return this.apiGet(`/fleet/routes/${args.route_id}`);
+    return this.apiGet(`/fleet/routes/${encodeURIComponent(args.route_id as string)}`);
   }
 
   private async createRoute(args: Record<string, unknown>): Promise<ToolResult> {
@@ -679,12 +679,12 @@ export class SamsaraMCPServer {
     if (args.name) body.name = args.name;
     if (args.driver_id) body.driverId = args.driver_id;
     if (args.vehicle_id) body.vehicleId = args.vehicle_id;
-    return this.apiPatch(`/fleet/routes/${args.route_id}`, body);
+    return this.apiPatch(`/fleet/routes/${encodeURIComponent(args.route_id as string)}`, body);
   }
 
   private async deleteRoute(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.route_id) return { content: [{ type: 'text', text: 'route_id is required' }], isError: true };
-    return this.apiDelete(`/fleet/routes/${args.route_id}`);
+    return this.apiDelete(`/fleet/routes/${encodeURIComponent(args.route_id as string)}`);
   }
 
   private async listAssets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -693,7 +693,7 @@ export class SamsaraMCPServer {
 
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.apiGet(`/fleet/assets/${args.asset_id}`);
+    return this.apiGet(`/fleet/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async getAssetLocations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -706,7 +706,7 @@ export class SamsaraMCPServer {
 
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.alert_id) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    return this.apiGet(`/fleet/alerts/${args.alert_id}`);
+    return this.apiGet(`/fleet/alerts/${encodeURIComponent(args.alert_id as string)}`);
   }
 
   private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
@@ -715,6 +715,6 @@ export class SamsaraMCPServer {
 
   private async getTag(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tag_id) return { content: [{ type: 'text', text: 'tag_id is required' }], isError: true };
-    return this.apiGet(`/tags/${args.tag_id}`);
+    return this.apiGet(`/tags/${encodeURIComponent(args.tag_id as string)}`);
   }
 }

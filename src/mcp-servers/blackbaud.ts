@@ -730,7 +730,7 @@ export class BlackbaudMCPServer {
 
   private async getConstituent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.constituent_id) return { content: [{ type: 'text', text: 'constituent_id is required' }], isError: true };
-    return this.bbGet(`/constituent/v1/constituents/${args.constituent_id}`);
+    return this.bbGet(`/constituent/v1/constituents/${encodeURIComponent(args.constituent_id as string)}`);
   }
 
   private async createConstituent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -756,7 +756,7 @@ export class BlackbaudMCPServer {
     if (args.lookup_id) body['lookup_id'] = args.lookup_id;
     if (typeof args.inactive === 'boolean') body['inactive'] = args.inactive;
     if (args.birthdate) body['birthdate'] = { d: parseInt((args.birthdate as string).split('-')[2]), m: parseInt((args.birthdate as string).split('-')[1]), y: parseInt((args.birthdate as string).split('-')[0]) };
-    return this.bbPatch(`/constituent/v1/constituents/${args.constituent_id}`, body);
+    return this.bbPatch(`/constituent/v1/constituents/${encodeURIComponent(args.constituent_id as string)}`, body);
   }
 
   private async searchConstituents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -770,17 +770,17 @@ export class BlackbaudMCPServer {
 
   private async listConstituentAddresses(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.constituent_id) return { content: [{ type: 'text', text: 'constituent_id is required' }], isError: true };
-    return this.bbGet(`/constituent/v1/constituents/${args.constituent_id}/addresses`);
+    return this.bbGet(`/constituent/v1/constituents/${encodeURIComponent(args.constituent_id as string)}/addresses`);
   }
 
   private async listConstituentPhones(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.constituent_id) return { content: [{ type: 'text', text: 'constituent_id is required' }], isError: true };
-    return this.bbGet(`/constituent/v1/constituents/${args.constituent_id}/phones`);
+    return this.bbGet(`/constituent/v1/constituents/${encodeURIComponent(args.constituent_id as string)}/phones`);
   }
 
   private async listConstituentEmails(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.constituent_id) return { content: [{ type: 'text', text: 'constituent_id is required' }], isError: true };
-    return this.bbGet(`/constituent/v1/constituents/${args.constituent_id}/emailaddresses`);
+    return this.bbGet(`/constituent/v1/constituents/${encodeURIComponent(args.constituent_id as string)}/emailaddresses`);
   }
 
   // ── Gift methods ──────────────────────────────────────────────────────────
@@ -801,7 +801,7 @@ export class BlackbaudMCPServer {
 
   private async getGift(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.gift_id) return { content: [{ type: 'text', text: 'gift_id is required' }], isError: true };
-    return this.bbGet(`/gift/v1/gifts/${args.gift_id}`);
+    return this.bbGet(`/gift/v1/gifts/${encodeURIComponent(args.gift_id as string)}`);
   }
 
   private async createGift(args: Record<string, unknown>): Promise<ToolResult> {
@@ -835,7 +835,7 @@ export class BlackbaudMCPServer {
     if (args.date) body['date'] = args.date;
     if (args.acknowledgement_status) body['acknowledgements'] = { status: args.acknowledgement_status };
     if (args.post_status) body['post_status'] = args.post_status;
-    return this.bbPatch(`/gift/v1/gifts/${args.gift_id}`, body);
+    return this.bbPatch(`/gift/v1/gifts/${encodeURIComponent(args.gift_id as string)}`, body);
   }
 
   // ── Fund, Campaign, Appeal methods ───────────────────────────────────────
@@ -851,7 +851,7 @@ export class BlackbaudMCPServer {
 
   private async getFund(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.fund_id) return { content: [{ type: 'text', text: 'fund_id is required' }], isError: true };
-    return this.bbGet(`/gift/v1/funds/${args.fund_id}`);
+    return this.bbGet(`/gift/v1/funds/${encodeURIComponent(args.fund_id as string)}`);
   }
 
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -865,7 +865,7 @@ export class BlackbaudMCPServer {
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.bbGet(`/gift/v1/campaigns/${args.campaign_id}`);
+    return this.bbGet(`/gift/v1/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async listAppeals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -879,7 +879,7 @@ export class BlackbaudMCPServer {
 
   private async getAppeal(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.appeal_id) return { content: [{ type: 'text', text: 'appeal_id is required' }], isError: true };
-    return this.bbGet(`/gift/v1/appeals/${args.appeal_id}`);
+    return this.bbGet(`/gift/v1/appeals/${encodeURIComponent(args.appeal_id as string)}`);
   }
 
   private async listGiftTypes(): Promise<ToolResult> {
@@ -888,6 +888,6 @@ export class BlackbaudMCPServer {
 
   private async getConstituentGivingSummary(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.constituent_id) return { content: [{ type: 'text', text: 'constituent_id is required' }], isError: true };
-    return this.bbGet(`/constituent/v1/constituents/${args.constituent_id}/givingsummary/latestgifts`);
+    return this.bbGet(`/constituent/v1/constituents/${encodeURIComponent(args.constituent_id as string)}/givingsummary/latestgifts`);
   }
 }

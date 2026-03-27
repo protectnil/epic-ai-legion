@@ -455,7 +455,7 @@ export class WorkOSMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.get(`/user_management/users/${args.user_id}`);
+    return this.get(`/user_management/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async createUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -471,7 +471,7 @@ export class WorkOSMCPServer {
 
   private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.del(`/user_management/users/${args.user_id}`);
+    return this.del(`/user_management/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listOrganizations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -481,7 +481,7 @@ export class WorkOSMCPServer {
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
-    return this.get(`/organizations/${args.organization_id}`);
+    return this.get(`/organizations/${encodeURIComponent(args.organization_id as string)}`);
   }
 
   private async createOrganization(args: Record<string, unknown>): Promise<ToolResult> {
@@ -497,7 +497,7 @@ export class WorkOSMCPServer {
 
   private async deleteOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
-    return this.del(`/organizations/${args.organization_id}`);
+    return this.del(`/organizations/${encodeURIComponent(args.organization_id as string)}`);
   }
 
   private async listOrganizationMemberships(args: Record<string, unknown>): Promise<ToolResult> {
@@ -509,7 +509,7 @@ export class WorkOSMCPServer {
 
   private async getOrganizationMembership(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.membership_id) return { content: [{ type: 'text', text: 'membership_id is required' }], isError: true };
-    return this.get(`/user_management/organization_memberships/${args.membership_id}`);
+    return this.get(`/user_management/organization_memberships/${encodeURIComponent(args.membership_id as string)}`);
   }
 
   private async createOrganizationMembership(args: Record<string, unknown>): Promise<ToolResult> {
@@ -521,7 +521,7 @@ export class WorkOSMCPServer {
 
   private async deleteOrganizationMembership(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.membership_id) return { content: [{ type: 'text', text: 'membership_id is required' }], isError: true };
-    return this.del(`/user_management/organization_memberships/${args.membership_id}`);
+    return this.del(`/user_management/organization_memberships/${encodeURIComponent(args.membership_id as string)}`);
   }
 
   private async listConnections(args: Record<string, unknown>): Promise<ToolResult> {
@@ -531,12 +531,12 @@ export class WorkOSMCPServer {
 
   private async getConnection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connection_id) return { content: [{ type: 'text', text: 'connection_id is required' }], isError: true };
-    return this.get(`/connections/${args.connection_id}`);
+    return this.get(`/connections/${encodeURIComponent(args.connection_id as string)}`);
   }
 
   private async deleteConnection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connection_id) return { content: [{ type: 'text', text: 'connection_id is required' }], isError: true };
-    return this.del(`/connections/${args.connection_id}`);
+    return this.del(`/connections/${encodeURIComponent(args.connection_id as string)}`);
   }
 
   private async listDirectories(args: Record<string, unknown>): Promise<ToolResult> {
@@ -546,7 +546,7 @@ export class WorkOSMCPServer {
 
   private async getDirectory(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.directory_id) return { content: [{ type: 'text', text: 'directory_id is required' }], isError: true };
-    return this.get(`/directories/${args.directory_id}`);
+    return this.get(`/directories/${encodeURIComponent(args.directory_id as string)}`);
   }
 
   private async listDirectoryUsers(args: Record<string, unknown>): Promise<ToolResult> {

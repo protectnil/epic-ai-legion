@@ -550,7 +550,7 @@ export class BloomerangMCPServer {
 
   private async getConstituent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/constituent/${args.id}`);
+    return this.get(`/constituent/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createConstituent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -588,7 +588,7 @@ export class BloomerangMCPServer {
 
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/transaction/${args.id}`);
+    return this.get(`/transaction/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createTransaction(args: Record<string, unknown>): Promise<ToolResult> {
@@ -609,7 +609,7 @@ export class BloomerangMCPServer {
 
   private async getFund(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/fund/${args.id}`);
+    return this.get(`/fund/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createFund(args: Record<string, unknown>): Promise<ToolResult> {
@@ -628,7 +628,7 @@ export class BloomerangMCPServer {
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/campaign/${args.id}`);
+    return this.get(`/campaign/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -647,7 +647,7 @@ export class BloomerangMCPServer {
 
   private async getAppeal(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/appeal/${args.id}`);
+    return this.get(`/appeal/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createAppeal(args: Record<string, unknown>): Promise<ToolResult> {
@@ -678,6 +678,6 @@ export class BloomerangMCPServer {
       skip: String((args.skip as number) ?? 0),
       take: String((args.take as number) ?? 50),
     };
-    return this.get(`/constituent/${args.id}/timeline`, params);
+    return this.get(`/constituent/${encodeURIComponent(args.id as string)}/timeline`, params);
   }
 }

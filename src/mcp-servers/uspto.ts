@@ -454,7 +454,7 @@ export class USPTOMCPServer {
 
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_number) return { content: [{ type: 'text', text: 'application_number is required' }], isError: true };
-    const response = await fetch(`${this.openDataBaseUrl}/ibd/v1/applications/${args.application_number}`, {
+    const response = await fetch(`${this.openDataBaseUrl}/ibd/v1/applications/${encodeURIComponent(args.application_number as string)}`, {
       headers: { 'X-Api-Key': this.apiKey, 'Accept': 'application/json' },
     });
     if (!response.ok) {

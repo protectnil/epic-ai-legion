@@ -938,7 +938,7 @@ export class ArgoWorkflowsMCPServer {
 
   private async listArchivedWorkflows(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
-    if (args.namespace) params.append('listOptions.fieldSelector', `metadata.namespace=${args.namespace}`);
+    if (args.namespace) params.append('listOptions.fieldSelector', `metadata.namespace=${encodeURIComponent(args.namespace as string)}`);
     if (args.labelSelector) params.append('listOptions.labelSelector', args.labelSelector as string);
     if (args.limit) params.append('listOptions.limit', String(args.limit));
     const qs = params.toString();

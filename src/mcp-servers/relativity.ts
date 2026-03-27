@@ -539,7 +539,7 @@ export class RelativityMCPServer {
     if (!queryRequest.Condition) queryRequest.Condition = '';
     if (!queryRequest.Sorts) queryRequest.Sorts = [];
     return this.httpPost(
-      `/Relativity.Services.Objects.IObjectsModule/Object%20Manager/${encodeURIComponent(`v1/workspaces/${args.workspaceId}/objects/query`)}`,
+      `/Relativity.Services.Objects.IObjectsModule/Object%20Manager/${encodeURIComponent(`v1/workspaces/${encodeURIComponent(args.workspaceId as string)}/objects/query`)}`,
       {
         workspaceArtifactID: args.workspaceId,
         queryRequest,
@@ -712,7 +712,7 @@ export class RelativityMCPServer {
         workspaceArtifactID: args.workspaceId,
         queryRequest: {
           Fields: [{ Name: 'Name' }, { Name: 'Artifact ID' }, { Name: 'Order' }],
-          Condition: `'Field' SUBQUERY (ArtifactID == ${args.fieldArtifactId})`,
+          Condition: `'Field' SUBQUERY (ArtifactID == ${encodeURIComponent(args.fieldArtifactId as string)})`,
           Sorts: [{ FieldIdentifier: { Name: 'Order' }, Direction: 'Ascending' }],
         },
         start: 1,

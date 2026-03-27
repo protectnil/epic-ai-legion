@@ -318,7 +318,7 @@ export class ZapierMCPServer {
 
   private async getAiAction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.action_id) return { content: [{ type: 'text', text: 'action_id is required' }], isError: true };
-    return this.nlaGet(`/exposed/${args.action_id}`);
+    return this.nlaGet(`/exposed/${encodeURIComponent(args.action_id as string)}`);
   }
 
   private async executeAiAction(args: Record<string, unknown>): Promise<ToolResult> {
@@ -328,12 +328,12 @@ export class ZapierMCPServer {
     const body: Record<string, unknown> = { instructions: args.instructions };
     if (args.params) body.params = args.params;
     if (typeof args.preview_only === 'boolean') body.preview_only = args.preview_only;
-    return this.nlaPost(`/exposed/${args.action_id}/execute`, body);
+    return this.nlaPost(`/exposed/${encodeURIComponent(args.action_id as string)}/execute`, body);
   }
 
   private async checkAiActionExecution(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.execution_log_id) return { content: [{ type: 'text', text: 'execution_log_id is required' }], isError: true };
-    return this.nlaGet(`/execution-log/${args.execution_log_id}`);
+    return this.nlaGet(`/execution-log/${encodeURIComponent(args.execution_log_id as string)}`);
   }
 
   private async listZaps(args: Record<string, unknown>): Promise<ToolResult> {
@@ -348,17 +348,17 @@ export class ZapierMCPServer {
 
   private async getZap(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zap_id) return { content: [{ type: 'text', text: 'zap_id is required' }], isError: true };
-    return this.zapGet(`/zaps/${args.zap_id}`);
+    return this.zapGet(`/zaps/${encodeURIComponent(args.zap_id as string)}`);
   }
 
   private async enableZap(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zap_id) return { content: [{ type: 'text', text: 'zap_id is required' }], isError: true };
-    return this.zapPost(`/zaps/${args.zap_id}/enable`);
+    return this.zapPost(`/zaps/${encodeURIComponent(args.zap_id as string)}/enable`);
   }
 
   private async disableZap(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zap_id) return { content: [{ type: 'text', text: 'zap_id is required' }], isError: true };
-    return this.zapPost(`/zaps/${args.zap_id}/disable`);
+    return this.zapPost(`/zaps/${encodeURIComponent(args.zap_id as string)}/disable`);
   }
 
   private async listZapRuns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -370,21 +370,21 @@ export class ZapierMCPServer {
     if (args.status) params.status = args.status as string;
     if (args.start_datetime) params.start_datetime = args.start_datetime as string;
     if (args.stop_datetime) params.stop_datetime = args.stop_datetime as string;
-    return this.zapGet(`/zaps/${args.zap_id}/runs`, params);
+    return this.zapGet(`/zaps/${encodeURIComponent(args.zap_id as string)}/runs`, params);
   }
 
   private async getZapRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zap_id || !args.run_id) {
       return { content: [{ type: 'text', text: 'zap_id and run_id are required' }], isError: true };
     }
-    return this.zapGet(`/zaps/${args.zap_id}/runs/${args.run_id}`);
+    return this.zapGet(`/zaps/${encodeURIComponent(args.zap_id as string)}/runs/${encodeURIComponent(args.run_id as string)}`);
   }
 
   private async replayZapRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zap_id || !args.run_id) {
       return { content: [{ type: 'text', text: 'zap_id and run_id are required' }], isError: true };
     }
-    return this.zapPost(`/zaps/${args.zap_id}/runs/${args.run_id}/replay`);
+    return this.zapPost(`/zaps/${encodeURIComponent(args.zap_id as string)}/runs/${encodeURIComponent(args.run_id as string)}/replay`);
   }
 
   private async listFolders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -397,7 +397,7 @@ export class ZapierMCPServer {
 
   private async getAppInfo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.app_id) return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
-    return this.zapGet(`/apps/${args.app_id}`);
+    return this.zapGet(`/apps/${encodeURIComponent(args.app_id as string)}`);
   }
 
   private async listApps(args: Record<string, unknown>): Promise<ToolResult> {

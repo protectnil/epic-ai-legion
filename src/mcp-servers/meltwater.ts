@@ -436,7 +436,7 @@ export class MeltwaterMCPServer {
 
   private async getSearch(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.search_id) return { content: [{ type: 'text', text: 'search_id is required' }], isError: true };
-    return this.mwGet(`/searches/${args.search_id}`);
+    return this.mwGet(`/searches/${encodeURIComponent(args.search_id as string)}`);
   }
 
   private async createSearch(args: Record<string, unknown>): Promise<ToolResult> {
@@ -450,7 +450,7 @@ export class MeltwaterMCPServer {
 
   private async deleteSearch(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.search_id) return { content: [{ type: 'text', text: 'search_id is required' }], isError: true };
-    return this.mwDelete(`/searches/${args.search_id}`);
+    return this.mwDelete(`/searches/${encodeURIComponent(args.search_id as string)}`);
   }
 
   private async listMentions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -461,7 +461,7 @@ export class MeltwaterMCPServer {
     };
     if (args.start_date) params.startDate = args.start_date as string;
     if (args.end_date) params.endDate = args.end_date as string;
-    return this.mwGet(`/searches/${args.search_id}/mentions`, params);
+    return this.mwGet(`/searches/${encodeURIComponent(args.search_id as string)}/mentions`, params);
   }
 
   private async searchMentions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -483,7 +483,7 @@ export class MeltwaterMCPServer {
     };
     if (args.start_date) params.startDate = args.start_date as string;
     if (args.end_date) params.endDate = args.end_date as string;
-    return this.mwGet(`/analytics/${args.search_id}/custom`, params);
+    return this.mwGet(`/analytics/${encodeURIComponent(args.search_id as string)}/custom`, params);
   }
 
   private async listSocialAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -508,7 +508,7 @@ export class MeltwaterMCPServer {
     const params: Record<string, string> = {};
     if (args.start_date) params.startDate = args.start_date as string;
     if (args.end_date) params.endDate = args.end_date as string;
-    return this.mwGet(`/owned/accounts/${args.account_id}/metrics`, params);
+    return this.mwGet(`/owned/accounts/${encodeURIComponent(args.account_id as string)}/metrics`, params);
   }
 
   private async listNewsletters(args: Record<string, unknown>): Promise<ToolResult> {
@@ -521,7 +521,7 @@ export class MeltwaterMCPServer {
 
   private async getNewsletter(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.newsletter_id) return { content: [{ type: 'text', text: 'newsletter_id is required' }], isError: true };
-    return this.mwGet(`/newsletters/${args.newsletter_id}`);
+    return this.mwGet(`/newsletters/${encodeURIComponent(args.newsletter_id as string)}`);
   }
 
   private async getUsageStats(): Promise<ToolResult> {

@@ -631,7 +631,7 @@ export class AccelaMCPServer {
     const params: Record<string, string | undefined> = {
       fields: args.fields as string | undefined,
     };
-    return this.get(`/v4/records/${args.record_id}`, params);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}`, params);
   }
 
   private async createRecord(args: Record<string, unknown>): Promise<ToolResult> {
@@ -649,7 +649,7 @@ export class AccelaMCPServer {
     if (args.status) body.status = { value: args.status };
     if (args.description) body.description = args.description;
     if (args.name) body.name = args.name;
-    return this.put(`/v4/records/${args.record_id}`, body);
+    return this.put(`/v4/records/${encodeURIComponent(args.record_id as string)}`, body);
   }
 
   private async listRecordDocuments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -657,12 +657,12 @@ export class AccelaMCPServer {
     const params: Record<string, string | undefined> = {
       fields: args.fields as string | undefined,
     };
-    return this.get(`/v4/records/${args.record_id}/documents`, params);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/documents`, params);
   }
 
   private async getRecordDocument(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_id || !args.document_id) return { content: [{ type: 'text', text: 'record_id and document_id are required' }], isError: true };
-    return this.get(`/v4/records/${args.record_id}/documents/${args.document_id}`);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/documents/${encodeURIComponent(args.document_id as string)}`);
   }
 
   private async listInspections(args: Record<string, unknown>): Promise<ToolResult> {
@@ -674,12 +674,12 @@ export class AccelaMCPServer {
       limit: args.limit !== undefined ? String(args.limit) : '20',
       offset: args.offset !== undefined ? String(args.offset) : '0',
     };
-    return this.get(`/v4/records/${args.record_id}/inspections`, params);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/inspections`, params);
   }
 
   private async getInspection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_id || !args.inspection_id) return { content: [{ type: 'text', text: 'record_id and inspection_id are required' }], isError: true };
-    return this.get(`/v4/records/${args.record_id}/inspections/${args.inspection_id}`);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/inspections/${encodeURIComponent(args.inspection_id as string)}`);
   }
 
   private async scheduleInspection(args: Record<string, unknown>): Promise<ToolResult> {
@@ -690,7 +690,7 @@ export class AccelaMCPServer {
     if (args.scheduled_date) body.scheduledDate = args.scheduled_date;
     if (args.scheduled_time) body.scheduledTime = args.scheduled_time;
     if (args.request_comment) body.requestComment = args.request_comment;
-    return this.post(`/v4/records/${args.record_id}/inspections`, body);
+    return this.post(`/v4/records/${encodeURIComponent(args.record_id as string)}/inspections`, body);
   }
 
   private async updateInspectionResult(args: Record<string, unknown>): Promise<ToolResult> {
@@ -700,7 +700,7 @@ export class AccelaMCPServer {
     const body: Record<string, unknown> = { result: args.result };
     if (args.result_comment) body.resultComment = args.result_comment;
     if (args.completed_date) body.completedDate = args.completed_date;
-    return this.put(`/v4/records/${args.record_id}/inspections/${args.inspection_id}`, body);
+    return this.put(`/v4/records/${encodeURIComponent(args.record_id as string)}/inspections/${encodeURIComponent(args.inspection_id as string)}`, body);
   }
 
   private async listRecordContacts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -708,17 +708,17 @@ export class AccelaMCPServer {
     const params: Record<string, string | undefined> = {
       fields: args.fields as string | undefined,
     };
-    return this.get(`/v4/records/${args.record_id}/contacts`, params);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/contacts`, params);
   }
 
   private async getRecordContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_id || !args.contact_id) return { content: [{ type: 'text', text: 'record_id and contact_id are required' }], isError: true };
-    return this.get(`/v4/records/${args.record_id}/contacts/${args.contact_id}`);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async listRecordAddresses(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_id) return { content: [{ type: 'text', text: 'record_id is required' }], isError: true };
-    return this.get(`/v4/records/${args.record_id}/addresses`);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/addresses`);
   }
 
   private async listRecordParcels(args: Record<string, unknown>): Promise<ToolResult> {
@@ -726,7 +726,7 @@ export class AccelaMCPServer {
     const params: Record<string, string | undefined> = {
       fields: args.fields as string | undefined,
     };
-    return this.get(`/v4/records/${args.record_id}/parcels`, params);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/parcels`, params);
   }
 
   private async listRecordConditions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -734,7 +734,7 @@ export class AccelaMCPServer {
     const params: Record<string, string | undefined> = {
       status: args.status as string | undefined,
     };
-    return this.get(`/v4/records/${args.record_id}/conditions`, params);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/conditions`, params);
   }
 
   private async addRecordCondition(args: Record<string, unknown>): Promise<ToolResult> {
@@ -746,17 +746,17 @@ export class AccelaMCPServer {
       description: args.condition_description,
     };
     if (args.status) body.status = { value: args.status };
-    return this.post(`/v4/records/${args.record_id}/conditions`, body);
+    return this.post(`/v4/records/${encodeURIComponent(args.record_id as string)}/conditions`, body);
   }
 
   private async listRecordFees(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_id) return { content: [{ type: 'text', text: 'record_id is required' }], isError: true };
-    return this.get(`/v4/records/${args.record_id}/fees`);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/fees`);
   }
 
   private async listRecordCustomForms(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_id) return { content: [{ type: 'text', text: 'record_id is required' }], isError: true };
-    return this.get(`/v4/records/${args.record_id}/customForms`);
+    return this.get(`/v4/records/${encodeURIComponent(args.record_id as string)}/customForms`);
   }
 
   private async searchRecords(args: Record<string, unknown>): Promise<ToolResult> {

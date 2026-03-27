@@ -408,7 +408,7 @@ export class AccuWeatherMCPServer {
       return { content: [{ type: 'text', text: 'latitude and longitude are required' }], isError: true };
     }
     const params: Record<string, string | undefined> = {
-      q: `${args.latitude},${args.longitude}`,
+      q: `${encodeURIComponent(args.latitude as string)},${encodeURIComponent(args.longitude as string)}`,
       language: (args.language as string) ?? 'en-us',
     };
     return this.fetch('/locations/v1/cities/geoposition/search', params);
@@ -420,7 +420,7 @@ export class AccuWeatherMCPServer {
       language: (args.language as string) ?? 'en-us',
       details: args.details ? 'true' : 'false',
     };
-    return this.fetch(`/currentconditions/v1/${args.location_key}`, params);
+    return this.fetch(`/currentconditions/v1/${encodeURIComponent(args.location_key as string)}`, params);
   }
 
   private async getHourlyForecast(args: Record<string, unknown>): Promise<ToolResult> {
@@ -433,7 +433,7 @@ export class AccuWeatherMCPServer {
       details: args.details ? 'true' : 'false',
       metric: args.metric ? 'true' : 'false',
     };
-    return this.fetch(`/forecasts/v1/hourly/${h}hour/${args.location_key}`, params);
+    return this.fetch(`/forecasts/v1/hourly/${h}hour/${encodeURIComponent(args.location_key as string)}`, params);
   }
 
   private async getDailyForecast(args: Record<string, unknown>): Promise<ToolResult> {
@@ -446,7 +446,7 @@ export class AccuWeatherMCPServer {
       details: args.details ? 'true' : 'false',
       metric: args.metric ? 'true' : 'false',
     };
-    return this.fetch(`/forecasts/v1/daily/${d}day/${args.location_key}`, params);
+    return this.fetch(`/forecasts/v1/daily/${d}day/${encodeURIComponent(args.location_key as string)}`, params);
   }
 
   private async getMinuteCast(args: Record<string, unknown>): Promise<ToolResult> {
@@ -454,7 +454,7 @@ export class AccuWeatherMCPServer {
     const params: Record<string, string | undefined> = {
       language: (args.language as string) ?? 'en-us',
     };
-    return this.fetch(`/forecasts/v1/minute/${args.location_key}`, params);
+    return this.fetch(`/forecasts/v1/minute/${encodeURIComponent(args.location_key as string)}`, params);
   }
 
   private async getWeatherAlerts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -463,7 +463,7 @@ export class AccuWeatherMCPServer {
       language: (args.language as string) ?? 'en-us',
       details: args.details ? 'true' : 'false',
     };
-    return this.fetch(`/alerts/v1/${args.location_key}`, params);
+    return this.fetch(`/alerts/v1/${encodeURIComponent(args.location_key as string)}`, params);
   }
 
   private async getAlertDetails(args: Record<string, unknown>): Promise<ToolResult> {
@@ -471,7 +471,7 @@ export class AccuWeatherMCPServer {
     const params: Record<string, string | undefined> = {
       language: (args.language as string) ?? 'en-us',
     };
-    return this.fetch(`/alerts/v1/${args.alert_id}`, params);
+    return this.fetch(`/alerts/v1/${encodeURIComponent(args.alert_id as string)}`, params);
   }
 
   private async getDailyIndices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -482,8 +482,8 @@ export class AccuWeatherMCPServer {
     const params: Record<string, string | undefined> = {
       language: (args.language as string) ?? 'en-us',
     };
-    const base = `/indices/v1/daily/${d}day/${args.location_key}`;
-    const path = args.index_id !== undefined ? `${base}/${args.index_id}` : base;
+    const base = `/indices/v1/daily/${d}day/${encodeURIComponent(args.location_key as string)}`;
+    const path = args.index_id !== undefined ? `${base}/${encodeURIComponent(args.index_id as string)}` : base;
     return this.fetch(path, params);
   }
 
@@ -501,6 +501,6 @@ export class AccuWeatherMCPServer {
     if (!validTypes.includes(type)) {
       return { content: [{ type: 'text', text: `type must be one of: ${validTypes.join(', ')}` }], isError: true };
     }
-    return this.fetch(`/imagery/v1/maps/${type}/${args.location_key}`);
+    return this.fetch(`/imagery/v1/maps/${type}/${encodeURIComponent(args.location_key as string)}`);
   }
 }

@@ -692,7 +692,7 @@ export class QuickBooksMCPServer {
     const maxResults = (args.max_results as number) ?? 100;
     let where = '';
     if (args.account_type) {
-      where = ` WHERE AccountType = '${args.account_type}'`;
+      where = ` WHERE AccountType = '${encodeURIComponent(args.account_type as string)}'`;
     }
     const q = `SELECT * FROM Account${where} MAXRESULTS ${maxResults}`;
     const params = new URLSearchParams({ query: q });

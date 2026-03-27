@@ -432,7 +432,7 @@ export class JiraMCPServer {
 
   private async listIssues(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({
-      jql: `project = ${args.project_key}`,
+      jql: `project = ${encodeURIComponent(args.project_key as string)}`,
       maxResults: String(args.max_results ?? 50),
       startAt: String(args.start_at ?? 0),
     });

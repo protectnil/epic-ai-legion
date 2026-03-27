@@ -401,7 +401,7 @@ export class DatadogRUMMCPServer {
 
   private async getRumApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.app_id) return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
-    return this.apiGet(`/api/v2/rum/applications/${args.app_id}`);
+    return this.apiGet(`/api/v2/rum/applications/${encodeURIComponent(args.app_id as string)}`);
   }
 
   private async createRumApplication(args: Record<string, unknown>): Promise<ToolResult> {
@@ -430,12 +430,12 @@ export class DatadogRUMMCPServer {
         type: 'rum_application_update',
       },
     };
-    return this.apiPatch(`/api/v2/rum/applications/${args.app_id}`, body);
+    return this.apiPatch(`/api/v2/rum/applications/${encodeURIComponent(args.app_id as string)}`, body);
   }
 
   private async deleteRumApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.app_id) return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
-    return this.apiDelete(`/api/v2/rum/applications/${args.app_id}`);
+    return this.apiDelete(`/api/v2/rum/applications/${encodeURIComponent(args.app_id as string)}`);
   }
 
   private async searchRumEvents(args: Record<string, unknown>): Promise<ToolResult> {

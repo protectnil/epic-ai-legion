@@ -645,14 +645,14 @@ export class HarnessCICDMCPServer {
     if (!args.org || !args.project) return { content: [{ type: 'text', text: 'org and project are required' }], isError: true };
     const params = this.buildPageParams(args);
     if (args.search_term) params['searchTerm'] = args.search_term as string;
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/pipelines`, params);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/pipelines`, params);
   }
 
   private async getPipeline(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project || !args.pipeline) {
       return { content: [{ type: 'text', text: 'org, project, and pipeline are required' }], isError: true };
     }
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/pipelines/${args.pipeline}`);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/pipelines/${encodeURIComponent(args.pipeline as string)}`);
   }
 
   private async executePipeline(args: Record<string, unknown>): Promise<ToolResult> {
@@ -670,7 +670,7 @@ export class HarnessCICDMCPServer {
     }
 
     return this.harnessPost(
-      `/orgs/${args.org}/projects/${args.project}/pipelines/${args.pipeline}/execute`,
+      `/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/pipelines/${encodeURIComponent(args.pipeline as string)}/execute`,
       body,
       params,
     );
@@ -682,14 +682,14 @@ export class HarnessCICDMCPServer {
     if (args.pipeline) params['pipelineIdentifier'] = args.pipeline as string;
     if (args.status) params['status'] = args.status as string;
     if (args.branch_name) params['branch'] = args.branch_name as string;
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/pipeline-executions`, params);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/pipeline-executions`, params);
   }
 
   private async getExecution(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project || !args.execution_id) {
       return { content: [{ type: 'text', text: 'org, project, and execution_id are required' }], isError: true };
     }
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/pipeline-executions/${args.execution_id}`);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/pipeline-executions/${encodeURIComponent(args.execution_id as string)}`);
   }
 
   private async retryExecution(args: Record<string, unknown>): Promise<ToolResult> {
@@ -703,7 +703,7 @@ export class HarnessCICDMCPServer {
       body.retryStages = (args.retry_stages as string).split(',').map(s => s.trim());
     }
     return this.harnessPost(
-      `/orgs/${args.org}/projects/${args.project}/pipelines/${args.pipeline}/execute/retry/${args.execution_id}`,
+      `/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/pipelines/${encodeURIComponent(args.pipeline as string)}/execute/retry/${encodeURIComponent(args.execution_id as string)}`,
       body,
     );
   }
@@ -713,7 +713,7 @@ export class HarnessCICDMCPServer {
       return { content: [{ type: 'text', text: 'org, project, pipeline, and execution_id are required' }], isError: true };
     }
     return this.harnessPost(
-      `/orgs/${args.org}/projects/${args.project}/pipelines/${args.pipeline}/execute/interrupt/${args.execution_id}`,
+      `/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/pipelines/${encodeURIComponent(args.pipeline as string)}/execute/interrupt/${encodeURIComponent(args.execution_id as string)}`,
       { interruptType: 'AbortAll' },
     );
   }
@@ -722,12 +722,12 @@ export class HarnessCICDMCPServer {
     if (!args.org) return { content: [{ type: 'text', text: 'org is required' }], isError: true };
     const params = this.buildPageParams(args);
     if (args.search_term) params['searchTerm'] = args.search_term as string;
-    return this.harnessGet(`/orgs/${args.org}/projects`, params);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects`, params);
   }
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project) return { content: [{ type: 'text', text: 'org and project are required' }], isError: true };
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}`);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}`);
   }
 
   private async listConnectors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -735,14 +735,14 @@ export class HarnessCICDMCPServer {
     const params = this.buildPageParams(args);
     if (args.type) params['type'] = args.type as string;
     if (args.search_term) params['searchTerm'] = args.search_term as string;
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/connectors`, params);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/connectors`, params);
   }
 
   private async getConnector(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project || !args.connector) {
       return { content: [{ type: 'text', text: 'org, project, and connector are required' }], isError: true };
     }
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/connectors/${args.connector}`);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/connectors/${encodeURIComponent(args.connector as string)}`);
   }
 
   private async listSecrets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -750,41 +750,41 @@ export class HarnessCICDMCPServer {
     const params = this.buildPageParams(args);
     if (args.type) params['type'] = args.type as string;
     if (args.search_term) params['searchTerm'] = args.search_term as string;
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/secrets`, params);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/secrets`, params);
   }
 
   private async getSecret(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project || !args.secret) {
       return { content: [{ type: 'text', text: 'org, project, and secret are required' }], isError: true };
     }
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/secrets/${args.secret}`);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/secrets/${encodeURIComponent(args.secret as string)}`);
   }
 
   private async listEnvironments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project) return { content: [{ type: 'text', text: 'org and project are required' }], isError: true };
     const params = this.buildPageParams(args);
     if (args.type) params['type'] = args.type as string;
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/environments`, params);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/environments`, params);
   }
 
   private async getEnvironment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project || !args.environment) {
       return { content: [{ type: 'text', text: 'org, project, and environment are required' }], isError: true };
     }
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/environments/${args.environment}`);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/environments/${encodeURIComponent(args.environment as string)}`);
   }
 
   private async listServices(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project) return { content: [{ type: 'text', text: 'org and project are required' }], isError: true };
     const params = this.buildPageParams(args);
     if (args.search_term) params['searchTerm'] = args.search_term as string;
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/services`, params);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/services`, params);
   }
 
   private async getService(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org || !args.project || !args.service) {
       return { content: [{ type: 'text', text: 'org, project, and service are required' }], isError: true };
     }
-    return this.harnessGet(`/orgs/${args.org}/projects/${args.project}/services/${args.service}`);
+    return this.harnessGet(`/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/services/${encodeURIComponent(args.service as string)}`);
   }
 }

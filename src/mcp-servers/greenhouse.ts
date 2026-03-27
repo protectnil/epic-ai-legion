@@ -535,7 +535,7 @@ export class GreenhouseMCPServer {
 
   private async getCandidate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.candidate_id) return { content: [{ type: 'text', text: 'candidate_id is required' }], isError: true };
-    return this.ghGet(`/candidates/${args.candidate_id}`);
+    return this.ghGet(`/candidates/${encodeURIComponent(args.candidate_id as string)}`);
   }
 
   private async searchCandidates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -553,7 +553,7 @@ export class GreenhouseMCPServer {
 
   private async getJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.ghGet(`/jobs/${args.job_id}`);
+    return this.ghGet(`/jobs/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async listApplications(args: Record<string, unknown>): Promise<ToolResult> {
@@ -566,14 +566,14 @@ export class GreenhouseMCPServer {
 
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id) return { content: [{ type: 'text', text: 'application_id is required' }], isError: true };
-    return this.ghGet(`/applications/${args.application_id}`);
+    return this.ghGet(`/applications/${encodeURIComponent(args.application_id as string)}`);
   }
 
   private async advanceApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id || !args.from_stage_id) {
       return { content: [{ type: 'text', text: 'application_id and from_stage_id are required' }], isError: true };
     }
-    return this.ghPost(`/applications/${args.application_id}/advance`, { from_stage_id: args.from_stage_id });
+    return this.ghPost(`/applications/${encodeURIComponent(args.application_id as string)}/advance`, { from_stage_id: args.from_stage_id });
   }
 
   private async rejectApplication(args: Record<string, unknown>): Promise<ToolResult> {
@@ -583,17 +583,17 @@ export class GreenhouseMCPServer {
     const body: Record<string, unknown> = { rejection_reason: { id: args.rejection_reason_id } };
     if (args.notes) body.notes = args.notes;
     if (args.on_behalf_of) body.on_behalf_of = args.on_behalf_of;
-    return this.ghPost(`/applications/${args.application_id}/reject`, body);
+    return this.ghPost(`/applications/${encodeURIComponent(args.application_id as string)}/reject`, body);
   }
 
   private async listOffers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id) return { content: [{ type: 'text', text: 'application_id is required' }], isError: true };
-    return this.ghGet(`/applications/${args.application_id}/offers`);
+    return this.ghGet(`/applications/${encodeURIComponent(args.application_id as string)}/offers`);
   }
 
   private async getOffer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.offer_id) return { content: [{ type: 'text', text: 'offer_id is required' }], isError: true };
-    return this.ghGet(`/offers/${args.offer_id}`);
+    return this.ghGet(`/offers/${encodeURIComponent(args.offer_id as string)}`);
   }
 
   private async listScheduledInterviews(args: Record<string, unknown>): Promise<ToolResult> {
@@ -607,13 +607,13 @@ export class GreenhouseMCPServer {
 
   private async getScheduledInterview(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.interview_id) return { content: [{ type: 'text', text: 'interview_id is required' }], isError: true };
-    return this.ghGet(`/scheduled_interviews/${args.interview_id}`);
+    return this.ghGet(`/scheduled_interviews/${encodeURIComponent(args.interview_id as string)}`);
   }
 
   private async listScorecards(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id) return { content: [{ type: 'text', text: 'application_id is required' }], isError: true };
     const params = this.buildListParams(args);
-    return this.ghGet(`/applications/${args.application_id}/scorecards`, params);
+    return this.ghGet(`/applications/${encodeURIComponent(args.application_id as string)}/scorecards`, params);
   }
 
   private async listDepartments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -629,6 +629,6 @@ export class GreenhouseMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.ghGet(`/users/${args.user_id}`);
+    return this.ghGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 }

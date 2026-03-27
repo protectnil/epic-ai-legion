@@ -619,13 +619,13 @@ export class TypeformMCPServer {
 
   private async getForm(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_id) return { content: [{ type: 'text', text: 'form_id is required' }], isError: true };
-    return this.tfGet(`/forms/${args.form_id}`);
+    return this.tfGet(`/forms/${encodeURIComponent(args.form_id as string)}`);
   }
 
   private async createForm(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.title) return { content: [{ type: 'text', text: 'title is required' }], isError: true };
     const body: Record<string, unknown> = { title: args.title };
-    if (args.workspace_id) body.workspace = { href: `${this.baseUrl}/workspaces/${args.workspace_id}` };
+    if (args.workspace_id) body.workspace = { href: `${this.baseUrl}/workspaces/${encodeURIComponent(args.workspace_id as string)}` };
     if (args.fields) {
       try { body.fields = JSON.parse(args.fields as string); } catch { return { content: [{ type: 'text', text: 'fields must be a valid JSON array string' }], isError: true }; }
     }
@@ -645,12 +645,12 @@ export class TypeformMCPServer {
     if (args.settings) {
       try { body.settings = JSON.parse(args.settings as string); } catch { return { content: [{ type: 'text', text: 'settings must be a valid JSON object string' }], isError: true }; }
     }
-    return this.tfPatch(`/forms/${args.form_id}`, body);
+    return this.tfPatch(`/forms/${encodeURIComponent(args.form_id as string)}`, body);
   }
 
   private async deleteForm(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_id) return { content: [{ type: 'text', text: 'form_id is required' }], isError: true };
-    return this.tfDelete(`/forms/${args.form_id}`);
+    return this.tfDelete(`/forms/${encodeURIComponent(args.form_id as string)}`);
   }
 
   private async getResponses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -665,17 +665,17 @@ export class TypeformMCPServer {
     if (args.sort) params.sort = args.sort as string;
     if (args.query) params.query = args.query as string;
     if (args.fields) params.fields = args.fields as string;
-    return this.tfGet(`/forms/${args.form_id}/responses`, params);
+    return this.tfGet(`/forms/${encodeURIComponent(args.form_id as string)}/responses`, params);
   }
 
   private async deleteResponses(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_id || !args.included_tokens) return { content: [{ type: 'text', text: 'form_id and included_tokens are required' }], isError: true };
-    return this.tfDelete(`/forms/${args.form_id}/responses`, { included_tokens: args.included_tokens as string });
+    return this.tfDelete(`/forms/${encodeURIComponent(args.form_id as string)}/responses`, { included_tokens: args.included_tokens as string });
   }
 
   private async getFormInsights(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_id) return { content: [{ type: 'text', text: 'form_id is required' }], isError: true };
-    return this.tfGet(`/insights/${args.form_id}/summary`);
+    return this.tfGet(`/insights/${encodeURIComponent(args.form_id as string)}/summary`);
   }
 
   private async listWorkspaces(args: Record<string, unknown>): Promise<ToolResult> {
@@ -689,7 +689,7 @@ export class TypeformMCPServer {
 
   private async getWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workspace_id) return { content: [{ type: 'text', text: 'workspace_id is required' }], isError: true };
-    return this.tfGet(`/workspaces/${args.workspace_id}`);
+    return this.tfGet(`/workspaces/${encodeURIComponent(args.workspace_id as string)}`);
   }
 
   private async createWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
@@ -701,22 +701,22 @@ export class TypeformMCPServer {
     if (!args.workspace_id) return { content: [{ type: 'text', text: 'workspace_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
-    return this.tfPatch(`/workspaces/${args.workspace_id}`, body);
+    return this.tfPatch(`/workspaces/${encodeURIComponent(args.workspace_id as string)}`, body);
   }
 
   private async deleteWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workspace_id) return { content: [{ type: 'text', text: 'workspace_id is required' }], isError: true };
-    return this.tfDelete(`/workspaces/${args.workspace_id}`);
+    return this.tfDelete(`/workspaces/${encodeURIComponent(args.workspace_id as string)}`);
   }
 
   private async listWebhooks(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_id) return { content: [{ type: 'text', text: 'form_id is required' }], isError: true };
-    return this.tfGet(`/forms/${args.form_id}/webhooks`);
+    return this.tfGet(`/forms/${encodeURIComponent(args.form_id as string)}/webhooks`);
   }
 
   private async getWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_id || !args.tag) return { content: [{ type: 'text', text: 'form_id and tag are required' }], isError: true };
-    return this.tfGet(`/forms/${args.form_id}/webhooks/${args.tag}`);
+    return this.tfGet(`/forms/${encodeURIComponent(args.form_id as string)}/webhooks/${encodeURIComponent(args.tag as string)}`);
   }
 
   private async createWebhook(args: Record<string, unknown>): Promise<ToolResult> {
@@ -726,7 +726,7 @@ export class TypeformMCPServer {
       enabled: (args.enabled as boolean) ?? true,
     };
     if (args.secret) body.secret = args.secret;
-    return this.tfPut(`/forms/${args.form_id}/webhooks/${args.tag}`, body);
+    return this.tfPut(`/forms/${encodeURIComponent(args.form_id as string)}/webhooks/${encodeURIComponent(args.tag as string)}`, body);
   }
 
   private async updateWebhook(args: Record<string, unknown>): Promise<ToolResult> {
@@ -735,12 +735,12 @@ export class TypeformMCPServer {
     if (args.url) body.url = args.url;
     if (typeof args.enabled === 'boolean') body.enabled = args.enabled;
     if (args.secret) body.secret = args.secret;
-    return this.tfPut(`/forms/${args.form_id}/webhooks/${args.tag}`, body);
+    return this.tfPut(`/forms/${encodeURIComponent(args.form_id as string)}/webhooks/${encodeURIComponent(args.tag as string)}`, body);
   }
 
   private async deleteWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_id || !args.tag) return { content: [{ type: 'text', text: 'form_id and tag are required' }], isError: true };
-    return this.tfDelete(`/forms/${args.form_id}/webhooks/${args.tag}`);
+    return this.tfDelete(`/forms/${encodeURIComponent(args.form_id as string)}/webhooks/${encodeURIComponent(args.tag as string)}`);
   }
 
   private async listThemes(args: Record<string, unknown>): Promise<ToolResult> {
@@ -752,6 +752,6 @@ export class TypeformMCPServer {
 
   private async getTheme(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.theme_id) return { content: [{ type: 'text', text: 'theme_id is required' }], isError: true };
-    return this.tfGet(`/themes/${args.theme_id}`);
+    return this.tfGet(`/themes/${encodeURIComponent(args.theme_id as string)}`);
   }
 }

@@ -471,12 +471,12 @@ export class BrowserStackMCPServer {
 
   private async getAutomateBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.bsGet(`${this.automateBaseUrl}/automate/builds/${args.build_id}.json`);
+    return this.bsGet(`${this.automateBaseUrl}/automate/builds/${encodeURIComponent(args.build_id as string)}.json`);
   }
 
   private async deleteAutomateBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.bsDelete(`${this.automateBaseUrl}/automate/builds/${args.build_id}.json`);
+    return this.bsDelete(`${this.automateBaseUrl}/automate/builds/${encodeURIComponent(args.build_id as string)}.json`);
   }
 
   private async listAutomateSessions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -485,12 +485,12 @@ export class BrowserStackMCPServer {
     params.set('limit', String((args.limit as number) ?? 10));
     params.set('offset', String((args.offset as number) ?? 0));
     if (args.status) params.set('status', args.status as string);
-    return this.bsGet(`${this.automateBaseUrl}/automate/builds/${args.build_id}/sessions.json?${params}`);
+    return this.bsGet(`${this.automateBaseUrl}/automate/builds/${encodeURIComponent(args.build_id as string)}/sessions.json?${params}`);
   }
 
   private async getAutomateSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    return this.bsGet(`${this.automateBaseUrl}/automate/sessions/${args.session_id}.json`);
+    return this.bsGet(`${this.automateBaseUrl}/automate/sessions/${encodeURIComponent(args.session_id as string)}.json`);
   }
 
   private async updateAutomateSession(args: Record<string, unknown>): Promise<ToolResult> {
@@ -499,12 +499,12 @@ export class BrowserStackMCPServer {
     if (args.name) body.name = args.name;
     if (args.status) body.status = args.status;
     if (args.reason) body.reason = args.reason;
-    return this.bsPut(`${this.automateBaseUrl}/automate/sessions/${args.session_id}.json`, body);
+    return this.bsPut(`${this.automateBaseUrl}/automate/sessions/${encodeURIComponent(args.session_id as string)}.json`, body);
   }
 
   private async deleteAutomateSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    return this.bsDelete(`${this.automateBaseUrl}/automate/sessions/${args.session_id}.json`);
+    return this.bsDelete(`${this.automateBaseUrl}/automate/sessions/${encodeURIComponent(args.session_id as string)}.json`);
   }
 
   private async getAutomatePlan(): Promise<ToolResult> {
@@ -530,12 +530,12 @@ export class BrowserStackMCPServer {
 
   private async getAppAutomateBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.bsGet(`${this.appAutomateBaseUrl}/app-automate/builds/${args.build_id}.json`);
+    return this.bsGet(`${this.appAutomateBaseUrl}/app-automate/builds/${encodeURIComponent(args.build_id as string)}.json`);
   }
 
   private async deleteAppAutomateBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.bsDelete(`${this.appAutomateBaseUrl}/app-automate/builds/${args.build_id}.json`);
+    return this.bsDelete(`${this.appAutomateBaseUrl}/app-automate/builds/${encodeURIComponent(args.build_id as string)}.json`);
   }
 
   private async listAppAutomateSessions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -544,12 +544,12 @@ export class BrowserStackMCPServer {
     params.set('limit', String((args.limit as number) ?? 10));
     params.set('offset', String((args.offset as number) ?? 0));
     if (args.status) params.set('status', args.status as string);
-    return this.bsGet(`${this.appAutomateBaseUrl}/app-automate/builds/${args.build_id}/sessions.json?${params}`);
+    return this.bsGet(`${this.appAutomateBaseUrl}/app-automate/builds/${encodeURIComponent(args.build_id as string)}/sessions.json?${params}`);
   }
 
   private async getAppAutomateSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    return this.bsGet(`${this.appAutomateBaseUrl}/app-automate/sessions/${args.session_id}.json`);
+    return this.bsGet(`${this.appAutomateBaseUrl}/app-automate/sessions/${encodeURIComponent(args.session_id as string)}.json`);
   }
 
   private async updateAppAutomateSession(args: Record<string, unknown>): Promise<ToolResult> {
@@ -558,7 +558,7 @@ export class BrowserStackMCPServer {
     if (args.name) body.name = args.name;
     if (args.status) body.status = args.status;
     if (args.reason) body.reason = args.reason;
-    return this.bsPut(`${this.appAutomateBaseUrl}/app-automate/sessions/${args.session_id}.json`, body);
+    return this.bsPut(`${this.appAutomateBaseUrl}/app-automate/sessions/${encodeURIComponent(args.session_id as string)}.json`, body);
   }
 
   private async getAccountUsage(): Promise<ToolResult> {

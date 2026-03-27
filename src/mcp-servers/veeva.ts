@@ -474,7 +474,7 @@ export class VeevaMCPServer {
 
   private async getDocument(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id) return { content: [{ type: 'text', text: 'doc_id is required' }], isError: true };
-    return this.apiGet(`/objects/documents/${args.doc_id}`);
+    return this.apiGet(`/objects/documents/${encodeURIComponent(args.doc_id as string)}`);
   }
 
   private async searchDocuments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -487,9 +487,9 @@ export class VeevaMCPServer {
 
   private async downloadDocument(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id) return { content: [{ type: 'text', text: 'doc_id is required' }], isError: true };
-    let path = `/objects/documents/${args.doc_id}/file`;
+    let path = `/objects/documents/${encodeURIComponent(args.doc_id as string)}/file`;
     if (args.major_version !== undefined && args.minor_version !== undefined) {
-      path = `/objects/documents/${args.doc_id}/versions/${args.major_version}/${args.minor_version}/file`;
+      path = `/objects/documents/${encodeURIComponent(args.doc_id as string)}/versions/${encodeURIComponent(args.major_version as string)}/${encodeURIComponent(args.minor_version as string)}/file`;
     }
     return this.apiGet(path);
   }
@@ -511,12 +511,12 @@ export class VeevaMCPServer {
 
   private async updateDocument(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id || !args.fields) return { content: [{ type: 'text', text: 'doc_id and fields are required' }], isError: true };
-    return this.apiPut(`/objects/documents/${args.doc_id}`, args.fields as Record<string, unknown>);
+    return this.apiPut(`/objects/documents/${encodeURIComponent(args.doc_id as string)}`, args.fields as Record<string, unknown>);
   }
 
   private async deleteDocument(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id) return { content: [{ type: 'text', text: 'doc_id is required' }], isError: true };
-    return this.apiDelete(`/objects/documents/${args.doc_id}`);
+    return this.apiDelete(`/objects/documents/${encodeURIComponent(args.doc_id as string)}`);
   }
 
   private async listObjects(): Promise<ToolResult> {
@@ -525,22 +525,22 @@ export class VeevaMCPServer {
 
   private async getObjectRecord(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.object_name || !args.record_id) return { content: [{ type: 'text', text: 'object_name and record_id are required' }], isError: true };
-    return this.apiGet(`/objects/${args.object_name}/${args.record_id}`);
+    return this.apiGet(`/objects/${encodeURIComponent(args.object_name as string)}/${encodeURIComponent(args.record_id as string)}`);
   }
 
   private async createObjectRecord(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.object_name || !args.fields) return { content: [{ type: 'text', text: 'object_name and fields are required' }], isError: true };
-    return this.apiPost(`/objects/${args.object_name}`, args.fields as Record<string, unknown>);
+    return this.apiPost(`/objects/${encodeURIComponent(args.object_name as string)}`, args.fields as Record<string, unknown>);
   }
 
   private async updateObjectRecord(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.object_name || !args.record_id || !args.fields) return { content: [{ type: 'text', text: 'object_name, record_id, and fields are required' }], isError: true };
-    return this.apiPut(`/objects/${args.object_name}/${args.record_id}`, args.fields as Record<string, unknown>);
+    return this.apiPut(`/objects/${encodeURIComponent(args.object_name as string)}/${encodeURIComponent(args.record_id as string)}`, args.fields as Record<string, unknown>);
   }
 
   private async deleteObjectRecord(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.object_name || !args.record_id) return { content: [{ type: 'text', text: 'object_name and record_id are required' }], isError: true };
-    return this.apiDelete(`/objects/${args.object_name}/${args.record_id}`);
+    return this.apiDelete(`/objects/${encodeURIComponent(args.object_name as string)}/${encodeURIComponent(args.record_id as string)}`);
   }
 
   private async queryVault(args: Record<string, unknown>): Promise<ToolResult> {
@@ -550,7 +550,7 @@ export class VeevaMCPServer {
 
   private async listPicklists(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.picklist_name) return { content: [{ type: 'text', text: 'picklist_name is required' }], isError: true };
-    return this.apiGet(`/objects/picklists/${args.picklist_name}`);
+    return this.apiGet(`/objects/picklists/${encodeURIComponent(args.picklist_name as string)}`);
   }
 
   private async getVaultInfo(): Promise<ToolResult> {

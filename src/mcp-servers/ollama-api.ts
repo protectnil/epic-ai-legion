@@ -399,7 +399,7 @@ export class OllamaMCPServer {
     });
     if (response.status === 404) {
       return {
-        content: [{ type: 'text', text: `Model not found: ${args.source}` }],
+        content: [{ type: 'text', text: `Model not found: ${encodeURIComponent(args.source as string)}` }],
         isError: true,
       };
     }
@@ -423,7 +423,7 @@ export class OllamaMCPServer {
     });
     if (response.status === 404) {
       return {
-        content: [{ type: 'text', text: `Model not found: ${args.name}` }],
+        content: [{ type: 'text', text: `Model not found: ${encodeURIComponent(args.name as string)}` }],
         isError: true,
       };
     }

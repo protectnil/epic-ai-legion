@@ -588,7 +588,7 @@ export class DialpadMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.dialpadGet(`/users/${args.user_id}`);
+    return this.dialpadGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async getCurrentUser(): Promise<ToolResult> {
@@ -607,7 +607,7 @@ export class DialpadMCPServer {
 
   private async getCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_id) return { content: [{ type: 'text', text: 'call_id is required' }], isError: true };
-    return this.dialpadGet(`/calls/${args.call_id}`);
+    return this.dialpadGet(`/calls/${encodeURIComponent(args.call_id as string)}`);
   }
 
   private async initiateCall(args: Record<string, unknown>): Promise<ToolResult> {
@@ -653,7 +653,7 @@ export class DialpadMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.dialpadGet(`/contacts/${args.contact_id}`);
+    return this.dialpadGet(`/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async createContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -676,12 +676,12 @@ export class DialpadMCPServer {
     if (args.email) body.emails = [{ email: args.email }];
     if (args.company_name) body.company_name = args.company_name;
     if (args.job_title) body.job_title = args.job_title;
-    return this.dialpadPatch(`/contacts/${args.contact_id}`, body);
+    return this.dialpadPatch(`/contacts/${encodeURIComponent(args.contact_id as string)}`, body);
   }
 
   private async deleteContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.dialpadDelete(`/contacts/${args.contact_id}`);
+    return this.dialpadDelete(`/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async listCallLogs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -715,7 +715,7 @@ export class DialpadMCPServer {
 
   private async getDepartment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.department_id) return { content: [{ type: 'text', text: 'department_id is required' }], isError: true };
-    return this.dialpadGet(`/departments/${args.department_id}`);
+    return this.dialpadGet(`/departments/${encodeURIComponent(args.department_id as string)}`);
   }
 
   private async listNumbers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -726,6 +726,6 @@ export class DialpadMCPServer {
 
   private async getNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.number_id) return { content: [{ type: 'text', text: 'number_id is required' }], isError: true };
-    return this.dialpadGet(`/numbers/${args.number_id}`);
+    return this.dialpadGet(`/numbers/${encodeURIComponent(args.number_id as string)}`);
   }
 }

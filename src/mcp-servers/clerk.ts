@@ -588,7 +588,7 @@ export class ClerkMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.clerkGet(`/v1/users/${args.user_id}`);
+    return this.clerkGet(`/v1/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async getUserByEmail(args: Record<string, unknown>): Promise<ToolResult> {
@@ -628,22 +628,22 @@ export class ClerkMCPServer {
     if (args.private_metadata) {
       try { body.private_metadata = JSON.parse(args.private_metadata as string); } catch { /* keep as string */ }
     }
-    return this.clerkPatch(`/v1/users/${args.user_id}`, body);
+    return this.clerkPatch(`/v1/users/${encodeURIComponent(args.user_id as string)}`, body);
   }
 
   private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.clerkDelete(`/v1/users/${args.user_id}`);
+    return this.clerkDelete(`/v1/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async banUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.clerkPost(`/v1/users/${args.user_id}/ban`, {});
+    return this.clerkPost(`/v1/users/${encodeURIComponent(args.user_id as string)}/ban`, {});
   }
 
   private async unbanUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.clerkPost(`/v1/users/${args.user_id}/unban`, {});
+    return this.clerkPost(`/v1/users/${encodeURIComponent(args.user_id as string)}/unban`, {});
   }
 
   private async listOrganizations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -658,7 +658,7 @@ export class ClerkMCPServer {
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
-    return this.clerkGet(`/v1/organizations/${args.organization_id}`);
+    return this.clerkGet(`/v1/organizations/${encodeURIComponent(args.organization_id as string)}`);
   }
 
   private async createOrganization(args: Record<string, unknown>): Promise<ToolResult> {
@@ -686,12 +686,12 @@ export class ClerkMCPServer {
     if (args.private_metadata) {
       try { body.private_metadata = JSON.parse(args.private_metadata as string); } catch { /* keep */ }
     }
-    return this.clerkPatch(`/v1/organizations/${args.organization_id}`, body);
+    return this.clerkPatch(`/v1/organizations/${encodeURIComponent(args.organization_id as string)}`, body);
   }
 
   private async deleteOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
-    return this.clerkDelete(`/v1/organizations/${args.organization_id}`);
+    return this.clerkDelete(`/v1/organizations/${encodeURIComponent(args.organization_id as string)}`);
   }
 
   private async listOrganizationMembers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -701,7 +701,7 @@ export class ClerkMCPServer {
       offset: String((args.offset as number) ?? 0),
     };
     if (args.order_by) params.order_by = args.order_by as string;
-    return this.clerkGet(`/v1/organizations/${args.organization_id}/memberships`, params);
+    return this.clerkGet(`/v1/organizations/${encodeURIComponent(args.organization_id as string)}/memberships`, params);
   }
 
   private async createOrganizationInvitation(args: Record<string, unknown>): Promise<ToolResult> {
@@ -716,7 +716,7 @@ export class ClerkMCPServer {
     if (args.public_metadata) {
       try { body.public_metadata = JSON.parse(args.public_metadata as string); } catch { /* keep */ }
     }
-    return this.clerkPost(`/v1/organizations/${args.organization_id}/invitations`, body);
+    return this.clerkPost(`/v1/organizations/${encodeURIComponent(args.organization_id as string)}/invitations`, body);
   }
 
   private async revokeOrganizationInvitation(args: Record<string, unknown>): Promise<ToolResult> {
@@ -724,7 +724,7 @@ export class ClerkMCPServer {
       return { content: [{ type: 'text', text: 'organization_id, invitation_id, and requesting_user_id are required' }], isError: true };
     }
     return this.clerkPost(
-      `/v1/organizations/${args.organization_id}/invitations/${args.invitation_id}/revoke`,
+      `/v1/organizations/${encodeURIComponent(args.organization_id as string)}/invitations/${encodeURIComponent(args.invitation_id as string)}/revoke`,
       { requesting_user_id: args.requesting_user_id },
     );
   }
@@ -741,6 +741,6 @@ export class ClerkMCPServer {
 
   private async revokeSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    return this.clerkPost(`/v1/sessions/${args.session_id}/revoke`, {});
+    return this.clerkPost(`/v1/sessions/${encodeURIComponent(args.session_id as string)}/revoke`, {});
   }
 }

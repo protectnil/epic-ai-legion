@@ -389,8 +389,8 @@ export class YardiMCPServer {
     const pid = this.propId(args);
     const body = `<AddGuestCard_Login xmlns="http://tempuri.org/YSI.Interfaces.WebServices/ItfILSGuestCard">
       ${this.credentials(pid)}
-      <FirstName>${args.first_name}</FirstName>
-      <LastName>${args.last_name}</LastName>
+      <FirstName>${encodeURIComponent(args.first_name as string)}</FirstName>
+      <LastName>${encodeURIComponent(args.last_name as string)}</LastName>
       <EmailAddress>${args.email ?? ''}</EmailAddress>
       <PhoneNumber>${args.phone ?? ''}</PhoneNumber>
       <DesiredMoveIn>${args.desired_move_in ?? ''}</DesiredMoveIn>
@@ -407,7 +407,7 @@ export class YardiMCPServer {
     const pid = this.propId(args);
     const body = `<EditGuestCard_Login xmlns="http://tempuri.org/YSI.Interfaces.WebServices/ItfILSGuestCard">
       ${this.credentials(pid)}
-      <GuestCardId>${args.guest_card_id}</GuestCardId>
+      <GuestCardId>${encodeURIComponent(args.guest_card_id as string)}</GuestCardId>
       <FirstName>${args.first_name ?? ''}</FirstName>
       <LastName>${args.last_name ?? ''}</LastName>
       <EmailAddress>${args.email ?? ''}</EmailAddress>
@@ -435,9 +435,9 @@ export class YardiMCPServer {
     const pid = this.propId(args);
     const body = `<PostResidentTransaction_Login xmlns="http://tempuri.org/YSI.Interfaces.WebServices/ItfResidentTransactions20">
       ${this.credentials(pid)}
-      <TenantCode>${args.tenant_code}</TenantCode>
-      <ChargeCode>${args.charge_code}</ChargeCode>
-      <Amount>${args.amount}</Amount>
+      <TenantCode>${encodeURIComponent(args.tenant_code as string)}</TenantCode>
+      <ChargeCode>${encodeURIComponent(args.charge_code as string)}</ChargeCode>
+      <Amount>${encodeURIComponent(args.amount as string)}</Amount>
       <TransactionDate>${args.transaction_date ?? ''}</TransactionDate>
       <Description>${args.description ?? ''}</Description>
     </PostResidentTransaction_Login>`;

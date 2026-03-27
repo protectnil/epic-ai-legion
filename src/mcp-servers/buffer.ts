@@ -461,17 +461,17 @@ export class BufferMCPServer {
 
   private async getProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_id) return { content: [{ type: 'text', text: 'profile_id is required' }], isError: true };
-    return this.bufferGet(`/profiles/${args.profile_id}`);
+    return this.bufferGet(`/profiles/${encodeURIComponent(args.profile_id as string)}`);
   }
 
   private async getProfileSchedules(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_id) return { content: [{ type: 'text', text: 'profile_id is required' }], isError: true };
-    return this.bufferGet(`/profiles/${args.profile_id}/schedules`);
+    return this.bufferGet(`/profiles/${encodeURIComponent(args.profile_id as string)}/schedules`);
   }
 
   private async updateProfileSchedules(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_id || !args.schedules) return { content: [{ type: 'text', text: 'profile_id and schedules are required' }], isError: true };
-    const url = `${this.baseUrl}/profiles/${args.profile_id}/schedules/update.json`;
+    const url = `${this.baseUrl}/profiles/${encodeURIComponent(args.profile_id as string)}/schedules/update.json`;
     const response = await fetch(url, {
       method: 'POST',
       headers: this.headers,
@@ -491,7 +491,7 @@ export class BufferMCPServer {
     if (args.count) params.count = String(args.count);
     if (args.since) params.since = String(args.since);
     if (typeof args.utc === 'boolean') params.utc = args.utc ? 'true' : 'false';
-    return this.bufferGet(`/profiles/${args.profile_id}/updates/pending`, params);
+    return this.bufferGet(`/profiles/${encodeURIComponent(args.profile_id as string)}/updates/pending`, params);
   }
 
   private async listSentUpdates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -501,12 +501,12 @@ export class BufferMCPServer {
     if (args.count) params.count = String(args.count);
     if (args.since) params.since = String(args.since);
     if (typeof args.utc === 'boolean') params.utc = args.utc ? 'true' : 'false';
-    return this.bufferGet(`/profiles/${args.profile_id}/updates/sent`, params);
+    return this.bufferGet(`/profiles/${encodeURIComponent(args.profile_id as string)}/updates/sent`, params);
   }
 
   private async getUpdate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.update_id) return { content: [{ type: 'text', text: 'update_id is required' }], isError: true };
-    return this.bufferGet(`/updates/${args.update_id}`);
+    return this.bufferGet(`/updates/${encodeURIComponent(args.update_id as string)}`);
   }
 
   private async createUpdate(args: Record<string, unknown>): Promise<ToolResult> {
@@ -527,12 +527,12 @@ export class BufferMCPServer {
     if (args.text) body.text = args.text as string;
     if (args.scheduled_at) body.scheduled_at = args.scheduled_at as string;
     if (typeof args.now === 'boolean') body.now = args.now ? 'true' : 'false';
-    return this.bufferPost(`/updates/${args.update_id}/update`, body);
+    return this.bufferPost(`/updates/${encodeURIComponent(args.update_id as string)}/update`, body);
   }
 
   private async deleteUpdate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.update_id) return { content: [{ type: 'text', text: 'update_id is required' }], isError: true };
-    return this.bufferPost(`/updates/${args.update_id}/destroy`);
+    return this.bufferPost(`/updates/${encodeURIComponent(args.update_id as string)}/destroy`);
   }
 
   private async reorderUpdates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -541,7 +541,7 @@ export class BufferMCPServer {
     const ids = (args.order as string).split(',').map(s => s.trim());
     ids.forEach((id, i) => { body[`order[${i}]`] = id; });
     if (args.offset) body.offset = String(args.offset);
-    return this.bufferPost(`/profiles/${args.profile_id}/updates/reorder`, body);
+    return this.bufferPost(`/profiles/${encodeURIComponent(args.profile_id as string)}/updates/reorder`, body);
   }
 
   private async shuffleUpdates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -549,17 +549,17 @@ export class BufferMCPServer {
     const body: Record<string, string> = {};
     if (args.count) body.count = String(args.count);
     if (typeof args.utc === 'boolean') body.utc = args.utc ? 'true' : 'false';
-    return this.bufferPost(`/profiles/${args.profile_id}/updates/shuffle`, body);
+    return this.bufferPost(`/profiles/${encodeURIComponent(args.profile_id as string)}/updates/shuffle`, body);
   }
 
   private async shareUpdate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.update_id) return { content: [{ type: 'text', text: 'update_id is required' }], isError: true };
-    return this.bufferPost(`/updates/${args.update_id}/share`);
+    return this.bufferPost(`/updates/${encodeURIComponent(args.update_id as string)}/share`);
   }
 
   private async moveUpdateToTop(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.update_id) return { content: [{ type: 'text', text: 'update_id is required' }], isError: true };
-    return this.bufferPost(`/updates/${args.update_id}/move_to_top`);
+    return this.bufferPost(`/updates/${encodeURIComponent(args.update_id as string)}/move_to_top`);
   }
 
   private async getInteractions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -568,6 +568,6 @@ export class BufferMCPServer {
     if (args.event) params.event = args.event as string;
     if (args.page) params.page = String(args.page);
     if (args.count) params.count = String(args.count);
-    return this.bufferGet(`/updates/${args.update_id}/interactions`, params);
+    return this.bufferGet(`/updates/${encodeURIComponent(args.update_id as string)}/interactions`, params);
   }
 }

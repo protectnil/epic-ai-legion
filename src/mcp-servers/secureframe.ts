@@ -337,7 +337,7 @@ export class SecureframeMCPServer {
 
   private async getControl(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.control_id) return { content: [{ type: 'text', text: 'control_id is required' }], isError: true };
-    return this.get(`/v1/controls/${args.control_id}`);
+    return this.get(`/v1/controls/${encodeURIComponent(args.control_id as string)}`);
   }
 
   private async listTests(args: Record<string, unknown>): Promise<ToolResult> {
@@ -352,7 +352,7 @@ export class SecureframeMCPServer {
 
   private async getTest(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.test_id) return { content: [{ type: 'text', text: 'test_id is required' }], isError: true };
-    return this.get(`/v1/tests/${args.test_id}`);
+    return this.get(`/v1/tests/${encodeURIComponent(args.test_id as string)}`);
   }
 
   private async listVendors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -364,7 +364,7 @@ export class SecureframeMCPServer {
 
   private async getVendor(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.vendor_id) return { content: [{ type: 'text', text: 'vendor_id is required' }], isError: true };
-    return this.get(`/v1/vendors/${args.vendor_id}`);
+    return this.get(`/v1/vendors/${encodeURIComponent(args.vendor_id as string)}`);
   }
 
   private async listPersonnel(args: Record<string, unknown>): Promise<ToolResult> {
@@ -378,7 +378,7 @@ export class SecureframeMCPServer {
 
   private async getPersonnelMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.personnel_id) return { content: [{ type: 'text', text: 'personnel_id is required' }], isError: true };
-    return this.get(`/v1/personnel/${args.personnel_id}`);
+    return this.get(`/v1/personnel/${encodeURIComponent(args.personnel_id as string)}`);
   }
 
   private async listEvidence(args: Record<string, unknown>): Promise<ToolResult> {

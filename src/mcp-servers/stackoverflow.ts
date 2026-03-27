@@ -707,7 +707,7 @@ export class StackOverflowMCPServer {
     this.addAuth(params, args.site as string | undefined);
 
     const path = args.userId !== undefined
-      ? `/users/${args.userId as number}/badges`
+      ? `/users/${encodeURIComponent(args.userId as number)}/badges`
       : '/badges';
     return this.get(path, params);
   }

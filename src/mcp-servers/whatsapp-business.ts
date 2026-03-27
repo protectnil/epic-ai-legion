@@ -386,7 +386,7 @@ export class WhatsAppBusinessMCPServer {
       type: 'text',
       text: { body: args.body, preview_url: args.preview_url ?? false },
     };
-    return this.post(`/${args.phone_number_id}/messages`, payload);
+    return this.post(`/${encodeURIComponent(args.phone_number_id as string)}/messages`, payload);
   }
 
   private async sendTemplateMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -398,7 +398,7 @@ export class WhatsAppBusinessMCPServer {
       language: { code: args.language_code },
     };
     if (args.components) template.components = args.components;
-    return this.post(`/${args.phone_number_id}/messages`, {
+    return this.post(`/${encodeURIComponent(args.phone_number_id as string)}/messages`, {
       messaging_product: 'whatsapp',
       to: args.to,
       type: 'template',
@@ -415,7 +415,7 @@ export class WhatsAppBusinessMCPServer {
     else if (args.link) media.link = args.link;
     if (args.caption) media.caption = args.caption;
     if (args.filename) media.filename = args.filename;
-    return this.post(`/${args.phone_number_id}/messages`, {
+    return this.post(`/${encodeURIComponent(args.phone_number_id as string)}/messages`, {
       messaging_product: 'whatsapp',
       to: args.to,
       type: args.media_type,
@@ -427,7 +427,7 @@ export class WhatsAppBusinessMCPServer {
     if (!args.phone_number_id || !args.to || !args.interactive_type || !args.interactive_body) {
       return { content: [{ type: 'text', text: 'phone_number_id, to, interactive_type, and interactive_body are required' }], isError: true };
     }
-    return this.post(`/${args.phone_number_id}/messages`, {
+    return this.post(`/${encodeURIComponent(args.phone_number_id as string)}/messages`, {
       messaging_product: 'whatsapp',
       to: args.to,
       type: 'interactive',
@@ -437,28 +437,28 @@ export class WhatsAppBusinessMCPServer {
 
   private async getMessageStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
-    return this.get(`/${args.message_id}`);
+    return this.get(`/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async listPhoneNumbers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.waba_id) return { content: [{ type: 'text', text: 'waba_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.fields) params.fields = args.fields as string;
-    return this.get(`/${args.waba_id}/phone_numbers`, params);
+    return this.get(`/${encodeURIComponent(args.waba_id as string)}/phone_numbers`, params);
   }
 
   private async getPhoneNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.phone_number_id) return { content: [{ type: 'text', text: 'phone_number_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.fields) params.fields = args.fields as string;
-    return this.get(`/${args.phone_number_id}`, params);
+    return this.get(`/${encodeURIComponent(args.phone_number_id as string)}`, params);
   }
 
   private async registerPhoneNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.phone_number_id || !args.pin) {
       return { content: [{ type: 'text', text: 'phone_number_id and pin are required' }], isError: true };
     }
-    return this.post(`/${args.phone_number_id}/register`, { messaging_product: 'whatsapp', pin: args.pin });
+    return this.post(`/${encodeURIComponent(args.phone_number_id as string)}/register`, { messaging_product: 'whatsapp', pin: args.pin });
   }
 
   private async listTemplates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -466,19 +466,19 @@ export class WhatsAppBusinessMCPServer {
     const params: Record<string, string> = {};
     if (args.status) params.status = args.status as string;
     if (args.limit) params.limit = String(args.limit);
-    return this.get(`/${args.waba_id}/message_templates`, params);
+    return this.get(`/${encodeURIComponent(args.waba_id as string)}/message_templates`, params);
   }
 
   private async getTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.template_id) return { content: [{ type: 'text', text: 'template_id is required' }], isError: true };
-    return this.get(`/${args.template_id}`);
+    return this.get(`/${encodeURIComponent(args.template_id as string)}`);
   }
 
   private async createTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.waba_id || !args.name || !args.category || !args.language || !args.components) {
       return { content: [{ type: 'text', text: 'waba_id, name, category, language, and components are required' }], isError: true };
     }
-    return this.post(`/${args.waba_id}/message_templates`, {
+    return this.post(`/${encodeURIComponent(args.waba_id as string)}/message_templates`, {
       name: args.name,
       category: args.category,
       language: args.language,
@@ -490,12 +490,12 @@ export class WhatsAppBusinessMCPServer {
     if (!args.waba_id || !args.template_name) {
       return { content: [{ type: 'text', text: 'waba_id and template_name are required' }], isError: true };
     }
-    return this.del(`/${args.waba_id}/message_templates`, { name: args.template_name as string });
+    return this.del(`/${encodeURIComponent(args.waba_id as string)}/message_templates`, { name: args.template_name as string });
   }
 
   private async getBusinessProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.phone_number_id) return { content: [{ type: 'text', text: 'phone_number_id is required' }], isError: true };
-    return this.get(`/${args.phone_number_id}/whatsapp_business_profile`, {
+    return this.get(`/${encodeURIComponent(args.phone_number_id as string)}/whatsapp_business_profile`, {
       fields: 'about,address,description,email,profile_picture_url,websites,vertical',
     });
   }
@@ -508,19 +508,19 @@ export class WhatsAppBusinessMCPServer {
     if (args.email) body.email = args.email;
     if (args.websites) body.websites = args.websites;
     if (args.vertical) body.vertical = args.vertical;
-    return this.post(`/${args.phone_number_id}/whatsapp_business_profile`, body);
+    return this.post(`/${encodeURIComponent(args.phone_number_id as string)}/whatsapp_business_profile`, body);
   }
 
   private async listMedia(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.media_id) return { content: [{ type: 'text', text: 'media_id is required' }], isError: true };
-    return this.get(`/${args.media_id}`);
+    return this.get(`/${encodeURIComponent(args.media_id as string)}`);
   }
 
   private async uploadMedia(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.phone_number_id || !args.type || !args.url) {
       return { content: [{ type: 'text', text: 'phone_number_id, type, and url are required' }], isError: true };
     }
-    return this.post(`/${args.phone_number_id}/media`, {
+    return this.post(`/${encodeURIComponent(args.phone_number_id as string)}/media`, {
       messaging_product: 'whatsapp',
       type: args.type,
       url: args.url,
@@ -529,18 +529,18 @@ export class WhatsAppBusinessMCPServer {
 
   private async deleteMedia(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.media_id) return { content: [{ type: 'text', text: 'media_id is required' }], isError: true };
-    return this.del(`/${args.media_id}`);
+    return this.del(`/${encodeURIComponent(args.media_id as string)}`);
   }
 
   private async getWabaInfo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.waba_id) return { content: [{ type: 'text', text: 'waba_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.fields) params.fields = args.fields as string;
-    return this.get(`/${args.waba_id}`, params);
+    return this.get(`/${encodeURIComponent(args.waba_id as string)}`, params);
   }
 
   private async listSubscribedApps(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.waba_id) return { content: [{ type: 'text', text: 'waba_id is required' }], isError: true };
-    return this.get(`/${args.waba_id}/subscribed_apps`);
+    return this.get(`/${encodeURIComponent(args.waba_id as string)}/subscribed_apps`);
   }
 }

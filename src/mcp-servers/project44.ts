@@ -327,7 +327,7 @@ export class Project44MCPServer {
 
   private async getLtlShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tracking_id) return { content: [{ type: 'text', text: 'tracking_id is required' }], isError: true };
-    return this.get(`/api/v4/ltl/trackedshipments/${args.tracking_id}`);
+    return this.get(`/api/v4/ltl/trackedshipments/${encodeURIComponent(args.tracking_id as string)}`);
   }
 
   private async listLtlShipments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -341,7 +341,7 @@ export class Project44MCPServer {
 
   private async deleteLtlShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tracking_id) return { content: [{ type: 'text', text: 'tracking_id is required' }], isError: true };
-    return this.del(`/api/v4/ltl/trackedshipments/${args.tracking_id}`);
+    return this.del(`/api/v4/ltl/trackedshipments/${encodeURIComponent(args.tracking_id as string)}`);
   }
 
   private async createTruckloadShipment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -366,7 +366,7 @@ export class Project44MCPServer {
 
   private async getTruckloadShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
-    return this.get(`/api/v4/tl/trackedshipments/${args.shipment_id}`);
+    return this.get(`/api/v4/tl/trackedshipments/${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async updateTruckloadShipment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -380,12 +380,12 @@ export class Project44MCPServer {
         country: 'US',
       };
     }
-    return this.put(`/api/v4/tl/trackedshipments/${args.shipment_id}`, body);
+    return this.put(`/api/v4/tl/trackedshipments/${encodeURIComponent(args.shipment_id as string)}`, body);
   }
 
   private async deleteTruckloadShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
-    return this.del(`/api/v4/tl/trackedshipments/${args.shipment_id}`);
+    return this.del(`/api/v4/tl/trackedshipments/${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async createOceanShipment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -399,7 +399,7 @@ export class Project44MCPServer {
 
   private async getOceanShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
-    return this.get(`/api/v4/ocean/shipments/${args.shipment_id}`);
+    return this.get(`/api/v4/ocean/shipments/${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async listOceanShipments(args: Record<string, unknown>): Promise<ToolResult> {

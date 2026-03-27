@@ -594,7 +594,7 @@ export class LightspeedMCPServer {
     if (!args.item_id) return { content: [{ type: 'text', text: 'item_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.load_relations) params['load_relations'] = args.load_relations as string;
-    return this.apiGet(`Item/${args.item_id}`, params);
+    return this.apiGet(`Item/${encodeURIComponent(args.item_id as string)}`, params);
   }
 
   private async createItem(args: Record<string, unknown>): Promise<ToolResult> {
@@ -614,12 +614,12 @@ export class LightspeedMCPServer {
     if (args.defaultCost) body['defaultCost'] = args.defaultCost;
     if (args.categoryID) body['categoryID'] = args.categoryID;
     if (typeof args.archived === 'boolean') body['archived'] = args.archived;
-    return this.apiPut(`Item/${args.item_id}`, body);
+    return this.apiPut(`Item/${encodeURIComponent(args.item_id as string)}`, body);
   }
 
   private async deleteItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.item_id) return { content: [{ type: 'text', text: 'item_id is required' }], isError: true };
-    return this.apiPut(`Item/${args.item_id}`, { archived: true });
+    return this.apiPut(`Item/${encodeURIComponent(args.item_id as string)}`, { archived: true });
   }
 
   private async listSales(args: Record<string, unknown>): Promise<ToolResult> {
@@ -639,7 +639,7 @@ export class LightspeedMCPServer {
     const params: Record<string, string> = {};
     if (args.load_relations) params['load_relations'] = args.load_relations as string;
     else params['load_relations'] = 'all';
-    return this.apiGet(`Sale/${args.sale_id}`, params);
+    return this.apiGet(`Sale/${encodeURIComponent(args.sale_id as string)}`, params);
   }
 
   private async createSale(args: Record<string, unknown>): Promise<ToolResult> {
@@ -667,7 +667,7 @@ export class LightspeedMCPServer {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.load_relations) params['load_relations'] = args.load_relations as string;
-    return this.apiGet(`Customer/${args.customer_id}`, params);
+    return this.apiGet(`Customer/${encodeURIComponent(args.customer_id as string)}`, params);
   }
 
   private async createCustomer(args: Record<string, unknown>): Promise<ToolResult> {
@@ -697,7 +697,7 @@ export class LightspeedMCPServer {
       if (args.phone) contact['phone'] = args.phone;
       body['Contact'] = contact;
     }
-    return this.apiPut(`Customer/${args.customer_id}`, body);
+    return this.apiPut(`Customer/${encodeURIComponent(args.customer_id as string)}`, body);
   }
 
   private async listCategories(args: Record<string, unknown>): Promise<ToolResult> {
@@ -710,7 +710,7 @@ export class LightspeedMCPServer {
 
   private async getCategory(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.category_id) return { content: [{ type: 'text', text: 'category_id is required' }], isError: true };
-    return this.apiGet(`Category/${args.category_id}`);
+    return this.apiGet(`Category/${encodeURIComponent(args.category_id as string)}`);
   }
 
   private async listInventory(args: Record<string, unknown>): Promise<ToolResult> {
@@ -742,6 +742,6 @@ export class LightspeedMCPServer {
 
   private async getEmployee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.employee_id) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    return this.apiGet(`Employee/${args.employee_id}`);
+    return this.apiGet(`Employee/${encodeURIComponent(args.employee_id as string)}`);
   }
 }

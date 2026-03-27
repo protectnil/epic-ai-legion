@@ -337,6 +337,6 @@ export class SecEdgarMCPServer {
     }
     const cik = this.padCik(args.cik as string);
     const accession = (args.accession_number as string).replace(/-/g, '');
-    return this.edgarGet(`${this.baseUrl}/Archives/edgar/data/${parseInt(cik, 10)}/${accession}/${args.accession_number}-index.json`);
+    return this.edgarGet(`${this.baseUrl}/Archives/edgar/data/${parseInt(cik, 10)}/${accession}/${encodeURIComponent(args.accession_number as string)}-index.json`);
   }
 }

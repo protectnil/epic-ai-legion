@@ -569,21 +569,21 @@ export class AzureBlobMCPServer {
         return { content: [{ type: 'text', text: 'metadata must be valid JSON object' }], isError: true };
       }
     }
-    return this.blobRequest('PUT', `${args.container_name}`, { restype: 'container' }, extraHeaders);
+    return this.blobRequest('PUT', `${encodeURIComponent(args.container_name as string)}`, { restype: 'container' }, extraHeaders);
   }
 
   private async deleteContainer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.container_name) {
       return { content: [{ type: 'text', text: 'container_name is required' }], isError: true };
     }
-    return this.blobRequest('DELETE', `${args.container_name}`, { restype: 'container' });
+    return this.blobRequest('DELETE', `${encodeURIComponent(args.container_name as string)}`, { restype: 'container' });
   }
 
   private async getContainerProperties(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.container_name) {
       return { content: [{ type: 'text', text: 'container_name is required' }], isError: true };
     }
-    return this.blobRequest('HEAD', `${args.container_name}`, { restype: 'container' });
+    return this.blobRequest('HEAD', `${encodeURIComponent(args.container_name as string)}`, { restype: 'container' });
   }
 
   private async setContainerMetadata(args: Record<string, unknown>): Promise<ToolResult> {
@@ -599,7 +599,7 @@ export class AzureBlobMCPServer {
     } catch {
       return { content: [{ type: 'text', text: 'metadata must be valid JSON object' }], isError: true };
     }
-    return this.blobRequest('PUT', `${args.container_name}`, { restype: 'container', comp: 'metadata' }, extraHeaders);
+    return this.blobRequest('PUT', `${encodeURIComponent(args.container_name as string)}`, { restype: 'container', comp: 'metadata' }, extraHeaders);
   }
 
   // ── Blob operations ───────────────────────────────────────────────────────
@@ -617,7 +617,7 @@ export class AzureBlobMCPServer {
     if (args.include_metadata) includes.push('metadata');
     if (args.include_snapshots) includes.push('snapshots');
     if (includes.length > 0) params['include'] = includes.join(',');
-    return this.blobRequest('GET', `${args.container_name}`, params);
+    return this.blobRequest('GET', `${encodeURIComponent(args.container_name as string)}`, params);
   }
 
   private async putBlob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -640,7 +640,7 @@ export class AzureBlobMCPServer {
     }
     return this.blobRequest(
       'PUT',
-      `${args.container_name}/${args.blob_name}`,
+      `${encodeURIComponent(args.container_name as string)}/${encodeURIComponent(args.blob_name as string)}`,
       {},
       extraHeaders,
       args.content as string,
@@ -653,7 +653,7 @@ export class AzureBlobMCPServer {
     }
     const params: Record<string, string> = {};
     if (args.snapshot) params['snapshot'] = args.snapshot as string;
-    return this.blobRequest('GET', `${args.container_name}/${args.blob_name}`, params);
+    return this.blobRequest('GET', `${encodeURIComponent(args.container_name as string)}/${encodeURIComponent(args.blob_name as string)}`, params);
   }
 
   private async deleteBlob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -662,7 +662,7 @@ export class AzureBlobMCPServer {
     }
     const extraHeaders: Record<string, string> = {};
     if (args.delete_snapshots) extraHeaders['x-ms-delete-snapshots'] = args.delete_snapshots as string;
-    return this.blobRequest('DELETE', `${args.container_name}/${args.blob_name}`, {}, extraHeaders);
+    return this.blobRequest('DELETE', `${encodeURIComponent(args.container_name as string)}/${encodeURIComponent(args.blob_name as string)}`, {}, extraHeaders);
   }
 
   private async getBlobProperties(args: Record<string, unknown>): Promise<ToolResult> {
@@ -670,7 +670,7 @@ export class AzureBlobMCPServer {
       return { content: [{ type: 'text', text: 'container_name and blob_name are required' }], isError: true };
     }
     const response = await fetch(
-      `${this.baseUrl}/${args.container_name}/${args.blob_name}`,
+      `${this.baseUrl}/${encodeURIComponent(args.container_name as string)}/${encodeURIComponent(args.blob_name as string)}`,
       { method: 'HEAD', headers: await this.getHeaders() },
     );
     if (!response.ok) {
@@ -699,7 +699,7 @@ export class AzureBlobMCPServer {
     }
     return this.blobRequest(
       'PUT',
-      `${args.container_name}/${args.blob_name}`,
+      `${encodeURIComponent(args.container_name as string)}/${encodeURIComponent(args.blob_name as string)}`,
       { comp: 'metadata' },
       extraHeaders,
     );
@@ -714,7 +714,7 @@ export class AzureBlobMCPServer {
     };
     return this.blobRequest(
       'PUT',
-      `${args.destination_container}/${args.destination_blob}`,
+      `${encodeURIComponent(args.destination_container as string)}/${encodeURIComponent(args.destination_blob as string)}`,
       {},
       extraHeaders,
     );
@@ -737,7 +737,7 @@ export class AzureBlobMCPServer {
     }
     return this.blobRequest(
       'PUT',
-      `${args.container_name}/${args.blob_name}`,
+      `${encodeURIComponent(args.container_name as string)}/${encodeURIComponent(args.blob_name as string)}`,
       { comp: 'snapshot' },
       extraHeaders,
     );
@@ -749,7 +749,7 @@ export class AzureBlobMCPServer {
     }
     return this.blobRequest(
       'GET',
-      `${args.container_name}/${args.blob_name}`,
+      `${encodeURIComponent(args.container_name as string)}/${encodeURIComponent(args.blob_name as string)}`,
       { comp: 'tags' },
     );
   }

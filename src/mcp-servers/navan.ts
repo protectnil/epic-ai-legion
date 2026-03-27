@@ -424,7 +424,7 @@ export class NavanMCPServer {
 
   private async getExpense(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.expense_id) return { content: [{ type: 'text', text: 'expense_id is required' }], isError: true };
-    return this.navanGet(`/expenses/${args.expense_id}`);
+    return this.navanGet(`/expenses/${encodeURIComponent(args.expense_id as string)}`);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -438,7 +438,7 @@ export class NavanMCPServer {
 
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.transaction_id) return { content: [{ type: 'text', text: 'transaction_id is required' }], isError: true };
-    return this.navanGet(`/transactions/${args.transaction_id}`);
+    return this.navanGet(`/transactions/${encodeURIComponent(args.transaction_id as string)}`);
   }
 
   private async listPolicies(args: Record<string, unknown>): Promise<ToolResult> {

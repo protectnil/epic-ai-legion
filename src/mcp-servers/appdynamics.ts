@@ -640,7 +640,7 @@ export class AppDynamicsMCPServer {
 
     let url = `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/request-snapshots?${this.buildTimeParams(args)}&maximum-results=${maximumResults}&output=JSON`;
     if (args.business_transaction_id) {
-      url += `&business-transaction-id=${args.business_transaction_id}`;
+      url += `&business-transaction-id=${encodeURIComponent(args.business_transaction_id as string)}`;
     }
 
     const response = await fetch(url, { method: 'GET', headers: this.headers });

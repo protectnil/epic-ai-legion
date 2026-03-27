@@ -484,7 +484,7 @@ export class OpenWeatherMapMCPServer {
     if (!args.layer || args.z === undefined || args.x === undefined || args.y === undefined) {
       return { content: [{ type: 'text', text: 'layer, z, x, and y are required' }], isError: true };
     }
-    const url = `${this.baseUrl}/map/${args.layer}/${args.z}/${args.x}/${args.y}.png?appid=${this.apiKey}`;
+    const url = `${this.baseUrl}/map/${encodeURIComponent(args.layer as string)}/${encodeURIComponent(args.z as string)}/${encodeURIComponent(args.x as string)}/${encodeURIComponent(args.y as string)}.png?appid=${this.apiKey}`;
     return {
       content: [{ type: 'text', text: JSON.stringify({ tile_url: url }, null, 2) }],
       isError: false,

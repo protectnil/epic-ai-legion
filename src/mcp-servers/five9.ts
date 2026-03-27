@@ -438,7 +438,7 @@ export class Five9MCPServer {
     if (args.start_date) params.push(`startDate=${encodeURIComponent(args.start_date as string)}`);
     if (args.end_date) params.push(`endDate=${encodeURIComponent(args.end_date as string)}`);
     if (args.agent_username) params.push(`agentUsername=${encodeURIComponent(args.agent_username as string)}`);
-    if (args.limit) params.push(`limit=${args.limit}`);
+    if (args.limit) params.push(`limit=${encodeURIComponent(args.limit as string)}`);
     const qs = params.length ? '?' + params.join('&') : '';
     return this.apiGet(`/orgs/this/call_logs${qs}`);
   }

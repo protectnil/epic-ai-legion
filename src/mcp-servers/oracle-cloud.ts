@@ -603,7 +603,7 @@ export class OracleCloudMCPServer {
 
   private async getInstance(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.instance_id) return { content: [{ type: 'text', text: 'instance_id is required' }], isError: true };
-    return this.apiGet(this.computeUrl(`/instances/${args.instance_id}`));
+    return this.apiGet(this.computeUrl(`/instances/${encodeURIComponent(args.instance_id as string)}`));
   }
 
   private async launchInstance(args: Record<string, unknown>): Promise<ToolResult> {
@@ -631,12 +631,12 @@ export class OracleCloudMCPServer {
   private async stopInstance(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.instance_id) return { content: [{ type: 'text', text: 'instance_id is required' }], isError: true };
     const action = (args.action as string) ?? 'SOFTSTOP';
-    return this.apiAction(this.computeUrl(`/instances/${args.instance_id}`), action);
+    return this.apiAction(this.computeUrl(`/instances/${encodeURIComponent(args.instance_id as string)}`), action);
   }
 
   private async startInstance(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.instance_id) return { content: [{ type: 'text', text: 'instance_id is required' }], isError: true };
-    return this.apiAction(this.computeUrl(`/instances/${args.instance_id}`), 'START');
+    return this.apiAction(this.computeUrl(`/instances/${encodeURIComponent(args.instance_id as string)}`), 'START');
   }
 
   private async terminateInstance(args: Record<string, unknown>): Promise<ToolResult> {
@@ -645,7 +645,7 @@ export class OracleCloudMCPServer {
     if (typeof args.preserve_boot_volume === 'boolean') {
       params.preserveBootVolume = String(args.preserve_boot_volume);
     }
-    return this.apiDelete(this.computeUrl(`/instances/${args.instance_id}`), params);
+    return this.apiDelete(this.computeUrl(`/instances/${encodeURIComponent(args.instance_id as string)}`), params);
   }
 
   private async listVcns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -660,7 +660,7 @@ export class OracleCloudMCPServer {
 
   private async getVcn(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.vcn_id) return { content: [{ type: 'text', text: 'vcn_id is required' }], isError: true };
-    return this.apiGet(this.computeUrl(`/vcns/${args.vcn_id}`));
+    return this.apiGet(this.computeUrl(`/vcns/${encodeURIComponent(args.vcn_id as string)}`));
   }
 
   private async listSubnets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -693,7 +693,7 @@ export class OracleCloudMCPServer {
     };
     if (args.prefix) params.prefix = args.prefix as string;
     if (args.start) params.start = args.start as string;
-    return this.apiGet(this.objectStorageUrl(args.namespace as string, `/b/${args.bucket_name}/o`), params);
+    return this.apiGet(this.objectStorageUrl(args.namespace as string, `/b/${encodeURIComponent(args.bucket_name as string)}/o`), params);
   }
 
   private async getObject(args: Record<string, unknown>): Promise<ToolResult> {
@@ -702,7 +702,7 @@ export class OracleCloudMCPServer {
     }
     const url = this.objectStorageUrl(
       args.namespace as string,
-      `/b/${args.bucket_name}/o/${encodeURIComponent(args.object_name as string)}`,
+      `/b/${encodeURIComponent(args.bucket_name as string)}/o/${encodeURIComponent(args.object_name as string)}`,
     );
     const response = await fetch(url, { method: 'HEAD', headers: this.headers });
     if (!response.ok) {
@@ -725,7 +725,7 @@ export class OracleCloudMCPServer {
 
   private async getCompartment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.compartment_id) return { content: [{ type: 'text', text: 'compartment_id is required' }], isError: true };
-    return this.apiGet(this.identityUrl(`/compartments/${args.compartment_id}`));
+    return this.apiGet(this.identityUrl(`/compartments/${encodeURIComponent(args.compartment_id as string)}`));
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -740,7 +740,7 @@ export class OracleCloudMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(this.identityUrl(`/users/${args.user_id}`));
+    return this.apiGet(this.identityUrl(`/users/${encodeURIComponent(args.user_id as string)}`));
   }
 
   private async listAlarms(args: Record<string, unknown>): Promise<ToolResult> {

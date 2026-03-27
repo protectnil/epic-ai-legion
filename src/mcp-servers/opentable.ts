@@ -543,7 +543,7 @@ export class OpenTableMCPServer {
 
   private async getRestaurant(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_id) return { content: [{ type: 'text', text: 'restaurant_id is required' }], isError: true };
-    return this.apiGet(`/restaurants/${args.restaurant_id}`);
+    return this.apiGet(`/restaurants/${encodeURIComponent(args.restaurant_id as string)}`);
   }
 
   private async searchRestaurants(args: Record<string, unknown>): Promise<ToolResult> {
@@ -569,7 +569,7 @@ export class OpenTableMCPServer {
       time: args.time as string,
       party_size: String(args.party_size),
     };
-    return this.apiGet(`/restaurants/${args.restaurant_id}/availability`, params);
+    return this.apiGet(`/restaurants/${encodeURIComponent(args.restaurant_id as string)}/availability`, params);
   }
 
   private async createReservation(args: Record<string, unknown>): Promise<ToolResult> {
@@ -589,12 +589,12 @@ export class OpenTableMCPServer {
       },
     };
     if (args.special_requests) body.special_requests = args.special_requests;
-    return this.apiPost(`/restaurants/${args.restaurant_id}/reservations`, body);
+    return this.apiPost(`/restaurants/${encodeURIComponent(args.restaurant_id as string)}/reservations`, body);
   }
 
   private async getReservation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.reservation_id) return { content: [{ type: 'text', text: 'reservation_id is required' }], isError: true };
-    return this.apiGet(`/reservations/${args.reservation_id}`);
+    return this.apiGet(`/reservations/${encodeURIComponent(args.reservation_id as string)}`);
   }
 
   private async updateReservation(args: Record<string, unknown>): Promise<ToolResult> {
@@ -604,14 +604,14 @@ export class OpenTableMCPServer {
     if (args.time) body.time = args.time;
     if (args.party_size) body.party_size = args.party_size;
     if (args.special_requests) body.special_requests = args.special_requests;
-    return this.apiPut(`/reservations/${args.reservation_id}`, body);
+    return this.apiPut(`/reservations/${encodeURIComponent(args.reservation_id as string)}`, body);
   }
 
   private async cancelReservation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.reservation_id) return { content: [{ type: 'text', text: 'reservation_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.reason) body.reason = args.reason;
-    return this.apiDelete(`/reservations/${args.reservation_id}`, body);
+    return this.apiDelete(`/reservations/${encodeURIComponent(args.reservation_id as string)}`, body);
   }
 
   private async listReservations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -623,12 +623,12 @@ export class OpenTableMCPServer {
     if (args.date_from) params.date_from = args.date_from as string;
     if (args.date_to) params.date_to = args.date_to as string;
     if (args.status) params.status = args.status as string;
-    return this.apiGet(`/restaurants/${args.restaurant_id}/reservations`, params);
+    return this.apiGet(`/restaurants/${encodeURIComponent(args.restaurant_id as string)}/reservations`, params);
   }
 
   private async getGuest(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.guest_id) return { content: [{ type: 'text', text: 'guest_id is required' }], isError: true };
-    return this.apiGet(`/guests/${args.guest_id}`);
+    return this.apiGet(`/guests/${encodeURIComponent(args.guest_id as string)}`);
   }
 
   private async searchGuests(args: Record<string, unknown>): Promise<ToolResult> {
@@ -662,18 +662,18 @@ export class OpenTableMCPServer {
     if (args.email) body.email = args.email;
     if (args.phone) body.phone = args.phone;
     if (args.notes) body.notes = args.notes;
-    return this.apiPut(`/guests/${args.guest_id}`, body);
+    return this.apiPut(`/guests/${encodeURIComponent(args.guest_id as string)}`, body);
   }
 
   private async listShifts(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_id || !args.date) {
       return { content: [{ type: 'text', text: 'restaurant_id and date are required' }], isError: true };
     }
-    return this.apiGet(`/restaurants/${args.restaurant_id}/shifts`, { date: args.date as string });
+    return this.apiGet(`/restaurants/${encodeURIComponent(args.restaurant_id as string)}/shifts`, { date: args.date as string });
   }
 
   private async getFloorPlan(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_id) return { content: [{ type: 'text', text: 'restaurant_id is required' }], isError: true };
-    return this.apiGet(`/restaurants/${args.restaurant_id}/floor_plan`);
+    return this.apiGet(`/restaurants/${encodeURIComponent(args.restaurant_id as string)}/floor_plan`);
   }
 }

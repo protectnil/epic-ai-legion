@@ -576,7 +576,7 @@ export class EquifaxMCPServer {
     const params: Record<string, string> = {};
     if (args.alert_type && args.alert_type !== 'all') params.alertType = args.alert_type as string;
     if (args.since_date) params.sinceDate = args.since_date as string;
-    return this.equifaxGet(`/v1/creditMonitoring/${args.consumer_id as string}/alerts`, params);
+    return this.equifaxGet(`/v1/creditMonitoring/${encodeURIComponent(args.consumer_id as string)}/alerts`, params);
   }
 
   private async verifyIdentity(args: Record<string, unknown>): Promise<ToolResult> {

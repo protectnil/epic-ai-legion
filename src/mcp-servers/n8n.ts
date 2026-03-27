@@ -539,7 +539,7 @@ export class N8NMCPServer {
 
   private async getWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workflow_id) return { content: [{ type: 'text', text: 'workflow_id is required' }], isError: true };
-    return this.n8nGet(`/workflows/${args.workflow_id}`);
+    return this.n8nGet(`/workflows/${encodeURIComponent(args.workflow_id as string)}`);
   }
 
   private async createWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
@@ -568,22 +568,22 @@ export class N8NMCPServer {
     if (args.connections) {
       try { body.connections = JSON.parse(args.connections as string); } catch { return { content: [{ type: 'text', text: 'connections must be a valid JSON string' }], isError: true }; }
     }
-    return this.n8nPatch(`/workflows/${args.workflow_id}`, body);
+    return this.n8nPatch(`/workflows/${encodeURIComponent(args.workflow_id as string)}`, body);
   }
 
   private async deleteWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workflow_id) return { content: [{ type: 'text', text: 'workflow_id is required' }], isError: true };
-    return this.n8nDelete(`/workflows/${args.workflow_id}`);
+    return this.n8nDelete(`/workflows/${encodeURIComponent(args.workflow_id as string)}`);
   }
 
   private async activateWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workflow_id) return { content: [{ type: 'text', text: 'workflow_id is required' }], isError: true };
-    return this.n8nPost(`/workflows/${args.workflow_id}/activate`, {});
+    return this.n8nPost(`/workflows/${encodeURIComponent(args.workflow_id as string)}/activate`, {});
   }
 
   private async deactivateWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workflow_id) return { content: [{ type: 'text', text: 'workflow_id is required' }], isError: true };
-    return this.n8nPost(`/workflows/${args.workflow_id}/deactivate`, {});
+    return this.n8nPost(`/workflows/${encodeURIComponent(args.workflow_id as string)}/deactivate`, {});
   }
 
   private async listExecutions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -600,12 +600,12 @@ export class N8NMCPServer {
     if (!args.execution_id) return { content: [{ type: 'text', text: 'execution_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (typeof args.include_data === 'boolean') params.includeData = String(args.include_data);
-    return this.n8nGet(`/executions/${args.execution_id}`, params);
+    return this.n8nGet(`/executions/${encodeURIComponent(args.execution_id as string)}`, params);
   }
 
   private async deleteExecution(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.execution_id) return { content: [{ type: 'text', text: 'execution_id is required' }], isError: true };
-    return this.n8nDelete(`/executions/${args.execution_id}`);
+    return this.n8nDelete(`/executions/${encodeURIComponent(args.execution_id as string)}`);
   }
 
   private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
@@ -622,12 +622,12 @@ export class N8NMCPServer {
 
   private async updateTag(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tag_id || !args.name) return { content: [{ type: 'text', text: 'tag_id and name are required' }], isError: true };
-    return this.n8nPatch(`/tags/${args.tag_id}`, { name: args.name });
+    return this.n8nPatch(`/tags/${encodeURIComponent(args.tag_id as string)}`, { name: args.name });
   }
 
   private async deleteTag(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tag_id) return { content: [{ type: 'text', text: 'tag_id is required' }], isError: true };
-    return this.n8nDelete(`/tags/${args.tag_id}`);
+    return this.n8nDelete(`/tags/${encodeURIComponent(args.tag_id as string)}`);
   }
 
   private async listVariables(args: Record<string, unknown>): Promise<ToolResult> {
@@ -644,7 +644,7 @@ export class N8NMCPServer {
 
   private async deleteVariable(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.variable_id) return { content: [{ type: 'text', text: 'variable_id is required' }], isError: true };
-    return this.n8nDelete(`/variables/${args.variable_id}`);
+    return this.n8nDelete(`/variables/${encodeURIComponent(args.variable_id as string)}`);
   }
 
   private async listCredentials(args: Record<string, unknown>): Promise<ToolResult> {
@@ -656,7 +656,7 @@ export class N8NMCPServer {
 
   private async deleteCredential(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.credential_id) return { content: [{ type: 'text', text: 'credential_id is required' }], isError: true };
-    return this.n8nDelete(`/credentials/${args.credential_id}`);
+    return this.n8nDelete(`/credentials/${encodeURIComponent(args.credential_id as string)}`);
   }
 
   private async getAudit(args: Record<string, unknown>): Promise<ToolResult> {

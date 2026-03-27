@@ -521,7 +521,7 @@ export class BoxMCPServer {
     if (!args.file_id) return { content: [{ type: 'text', text: 'file_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.fields) params.fields = args.fields as string;
-    return this.apiGet(`/files/${args.file_id}`, params);
+    return this.apiGet(`/files/${encodeURIComponent(args.file_id as string)}`, params);
   }
 
   private async uploadFile(args: Record<string, unknown>): Promise<ToolResult> {
@@ -541,12 +541,12 @@ export class BoxMCPServer {
     }
     const body: Record<string, unknown> = { parent: { id: args.parent_id } };
     if (args.name) body.name = args.name;
-    return this.apiPost(`/files/${args.file_id}/copy`, body);
+    return this.apiPost(`/files/${encodeURIComponent(args.file_id as string)}/copy`, body);
   }
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.file_id) return { content: [{ type: 'text', text: 'file_id is required' }], isError: true };
-    return this.apiDelete(`/files/${args.file_id}`);
+    return this.apiDelete(`/files/${encodeURIComponent(args.file_id as string)}`);
   }
 
   private async getFileVersions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -555,14 +555,14 @@ export class BoxMCPServer {
       limit: String((args.limit as number) ?? 20),
       offset: String((args.offset as number) ?? 0),
     };
-    return this.apiGet(`/files/${args.file_id}/versions`, params);
+    return this.apiGet(`/files/${encodeURIComponent(args.file_id as string)}/versions`, params);
   }
 
   private async getFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.folder_id) return { content: [{ type: 'text', text: 'folder_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.fields) params.fields = args.fields as string;
-    return this.apiGet(`/folders/${args.folder_id}`, params);
+    return this.apiGet(`/folders/${encodeURIComponent(args.folder_id as string)}`, params);
   }
 
   private async listFolderItems(args: Record<string, unknown>): Promise<ToolResult> {
@@ -574,7 +574,7 @@ export class BoxMCPServer {
       direction: (args.direction as string) ?? 'ASC',
     };
     if (args.fields) params.fields = args.fields as string;
-    return this.apiGet(`/folders/${args.folder_id}/items`, params);
+    return this.apiGet(`/folders/${encodeURIComponent(args.folder_id as string)}/items`, params);
   }
 
   private async createFolder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -590,14 +590,14 @@ export class BoxMCPServer {
     }
     const body: Record<string, unknown> = { parent: { id: args.parent_id } };
     if (args.name) body.name = args.name;
-    return this.apiPost(`/folders/${args.folder_id}/copy`, body);
+    return this.apiPost(`/folders/${encodeURIComponent(args.folder_id as string)}/copy`, body);
   }
 
   private async deleteFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.folder_id) return { content: [{ type: 'text', text: 'folder_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.recursive) params.recursive = String(args.recursive);
-    return this.apiDelete(`/folders/${args.folder_id}`, params);
+    return this.apiDelete(`/folders/${encodeURIComponent(args.folder_id as string)}`, params);
   }
 
   private async searchContent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -617,7 +617,7 @@ export class BoxMCPServer {
 
   private async getSharedLink(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.file_id) return { content: [{ type: 'text', text: 'file_id is required' }], isError: true };
-    return this.apiGet(`/files/${args.file_id}`, { fields: 'shared_link' });
+    return this.apiGet(`/files/${encodeURIComponent(args.file_id as string)}`, { fields: 'shared_link' });
   }
 
   private async createSharedLink(args: Record<string, unknown>): Promise<ToolResult> {
@@ -631,7 +631,7 @@ export class BoxMCPServer {
       sharedLink.permissions = { can_download: args.can_download };
     }
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}/files/${args.file_id}?fields=shared_link`, {
+    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}?fields=shared_link`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ shared_link: sharedLink }),
@@ -645,7 +645,7 @@ export class BoxMCPServer {
 
   private async listFileComments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.file_id) return { content: [{ type: 'text', text: 'file_id is required' }], isError: true };
-    return this.apiGet(`/files/${args.file_id}/comments`);
+    return this.apiGet(`/files/${encodeURIComponent(args.file_id as string)}/comments`);
   }
 
   private async createComment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -662,7 +662,7 @@ export class BoxMCPServer {
 
   private async listFileTasks(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.file_id) return { content: [{ type: 'text', text: 'file_id is required' }], isError: true };
-    return this.apiGet(`/files/${args.file_id}/tasks`);
+    return this.apiGet(`/files/${encodeURIComponent(args.file_id as string)}/tasks`);
   }
 
   private async createTask(args: Record<string, unknown>): Promise<ToolResult> {
@@ -682,7 +682,7 @@ export class BoxMCPServer {
       return { content: [{ type: 'text', text: 'item_id and item_type are required' }], isError: true };
     }
     const type = args.item_type as string;
-    return this.apiGet(`/${type}s/${args.item_id}/collaborations`);
+    return this.apiGet(`/${type}s/${encodeURIComponent(args.item_id as string)}/collaborations`);
   }
 
   private async addCollaboration(args: Record<string, unknown>): Promise<ToolResult> {
@@ -702,7 +702,7 @@ export class BoxMCPServer {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.fields) params.fields = args.fields as string;
-    return this.apiGet(`/users/${args.user_id}`, params);
+    return this.apiGet(`/users/${encodeURIComponent(args.user_id as string)}`, params);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -732,6 +732,6 @@ export class BoxMCPServer {
     if (args.name) body.name = args.name;
     if (args.parent_id) body.parent = { id: args.parent_id };
     const type = args.item_type as string;
-    return this.apiPost(`/${type}s/${args.item_id}`, body);
+    return this.apiPost(`/${type}s/${encodeURIComponent(args.item_id as string)}`, body);
   }
 }

@@ -572,7 +572,7 @@ export class MetaGraphAPIMCPServer {
       limit: String((args.limit as number) || 10),
     };
     if (args.after) params.after = args.after as string;
-    return this.graphGet(`${args.page_id}/feed`, params);
+    return this.graphGet(`${encodeURIComponent(args.page_id as string)}/feed`, params);
   }
 
   private async createPagePost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -580,7 +580,7 @@ export class MetaGraphAPIMCPServer {
     const body: Record<string, unknown> = { message: args.message };
     if (args.link) body.link = args.link;
     if (typeof args.published === 'boolean') body.published = args.published;
-    return this.graphPost(`${args.page_id}/feed`, body);
+    return this.graphPost(`${encodeURIComponent(args.page_id as string)}/feed`, body);
   }
 
   private async getPagePhotos(args: Record<string, unknown>): Promise<ToolResult> {
@@ -591,7 +591,7 @@ export class MetaGraphAPIMCPServer {
       limit: String((args.limit as number) || 10),
     };
     if (args.after) params.after = args.after as string;
-    return this.graphGet(`${args.page_id}/photos`, params);
+    return this.graphGet(`${encodeURIComponent(args.page_id as string)}/photos`, params);
   }
 
   private async getPageVideos(args: Record<string, unknown>): Promise<ToolResult> {
@@ -601,7 +601,7 @@ export class MetaGraphAPIMCPServer {
       limit: String((args.limit as number) || 10),
     };
     if (args.after) params.after = args.after as string;
-    return this.graphGet(`${args.page_id}/videos`, params);
+    return this.graphGet(`${encodeURIComponent(args.page_id as string)}/videos`, params);
   }
 
   private async getPost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -620,12 +620,12 @@ export class MetaGraphAPIMCPServer {
     };
     if (args.after) params.after = args.after as string;
     if (args.summary) params.summary = 'true';
-    return this.graphGet(`${args.post_id}/comments`, params);
+    return this.graphGet(`${encodeURIComponent(args.post_id as string)}/comments`, params);
   }
 
   private async createComment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.object_id || !args.message) return { content: [{ type: 'text', text: 'object_id and message are required' }], isError: true };
-    return this.graphPost(`${args.object_id}/comments`, { message: args.message });
+    return this.graphPost(`${encodeURIComponent(args.object_id as string)}/comments`, { message: args.message });
   }
 
   private async getPostReactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -635,7 +635,7 @@ export class MetaGraphAPIMCPServer {
       summary: 'total_count',
     };
     if (args.type) params.type = args.type as string;
-    return this.graphGet(`${args.post_id}/reactions`, params);
+    return this.graphGet(`${encodeURIComponent(args.post_id as string)}/reactions`, params);
   }
 
   private async getIgUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -661,7 +661,7 @@ export class MetaGraphAPIMCPServer {
       limit: String((args.limit as number) || 12),
     };
     if (args.after) params.after = args.after as string;
-    return this.graphGet(`${args.ig_user_id}/media`, params);
+    return this.graphGet(`${encodeURIComponent(args.ig_user_id as string)}/media`, params);
   }
 
   private async getIgMentions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -670,7 +670,7 @@ export class MetaGraphAPIMCPServer {
       fields: (args.fields as string) || 'id,caption,media_type,permalink,timestamp',
       limit: String((args.limit as number) || 10),
     };
-    return this.graphGet(`${args.ig_user_id}/tags`, params);
+    return this.graphGet(`${encodeURIComponent(args.ig_user_id as string)}/tags`, params);
   }
 
   private async searchPages(args: Record<string, unknown>): Promise<ToolResult> {

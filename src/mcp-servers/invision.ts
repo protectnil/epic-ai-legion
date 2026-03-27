@@ -411,7 +411,7 @@ export class InVisionMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.apiGet(`/d/api/v1/projects/${args.project_id as string}`);
+    return this.apiGet(`/d/api/v1/projects/${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async listScreens(args: Record<string, unknown>): Promise<ToolResult> {
@@ -421,19 +421,19 @@ export class InVisionMCPServer {
       offset: String((args.offset as number) ?? 0),
     };
     if (typeof args.archived === 'boolean') params.archived = String(args.archived);
-    return this.apiGet(`/d/api/v1/projects/${args.project_id as string}/screens`, params);
+    return this.apiGet(`/d/api/v1/projects/${encodeURIComponent(args.project_id as string)}/screens`, params);
   }
 
   private async getScreen(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.screen_id) return { content: [{ type: 'text', text: 'screen_id is required' }], isError: true };
-    return this.apiGet(`/d/api/v1/screens/${args.screen_id as string}`);
+    return this.apiGet(`/d/api/v1/screens/${encodeURIComponent(args.screen_id as string)}`);
   }
 
   private async listComments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.screen_id) return { content: [{ type: 'text', text: 'screen_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (typeof args.resolved === 'boolean') params.resolved = String(args.resolved);
-    return this.apiGet(`/d/api/v1/screens/${args.screen_id as string}/comments`, params);
+    return this.apiGet(`/d/api/v1/screens/${encodeURIComponent(args.screen_id as string)}/comments`, params);
   }
 
   private async addComment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -441,23 +441,23 @@ export class InVisionMCPServer {
     const body: Record<string, unknown> = { comment: args.comment };
     if (typeof args.x === 'number') body.x = args.x;
     if (typeof args.y === 'number') body.y = args.y;
-    return this.apiPost(`/d/api/v1/screens/${args.screen_id as string}/comments`, body);
+    return this.apiPost(`/d/api/v1/screens/${encodeURIComponent(args.screen_id as string)}/comments`, body);
   }
 
   private async resolveComment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.comment_id) return { content: [{ type: 'text', text: 'comment_id is required' }], isError: true };
     const resolved = typeof args.resolved === 'boolean' ? args.resolved : true;
-    return this.apiPut(`/d/api/v1/comments/${args.comment_id as string}`, { resolved });
+    return this.apiPut(`/d/api/v1/comments/${encodeURIComponent(args.comment_id as string)}`, { resolved });
   }
 
   private async listPrototypes(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.apiGet(`/d/api/v1/projects/${args.project_id as string}/prototypes`);
+    return this.apiGet(`/d/api/v1/projects/${encodeURIComponent(args.project_id as string)}/prototypes`);
   }
 
   private async getPrototype(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.prototype_id) return { content: [{ type: 'text', text: 'prototype_id is required' }], isError: true };
-    return this.apiGet(`/d/api/v1/prototypes/${args.prototype_id as string}`);
+    return this.apiGet(`/d/api/v1/prototypes/${encodeURIComponent(args.prototype_id as string)}`);
   }
 
   private async listTeamMembers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -470,7 +470,7 @@ export class InVisionMCPServer {
 
   private async getTeamMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/d/api/v1/users/${args.user_id as string}`);
+    return this.apiGet(`/d/api/v1/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listAssets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -479,13 +479,13 @@ export class InVisionMCPServer {
     };
     if (args.type) params.type = args.type as string;
     const basePath = args.project_id
-      ? `/d/api/v1/projects/${args.project_id as string}/assets`
+      ? `/d/api/v1/projects/${encodeURIComponent(args.project_id as string)}/assets`
       : '/d/api/v1/assets';
     return this.apiGet(basePath, params);
   }
 
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.apiGet(`/d/api/v1/assets/${args.asset_id as string}`);
+    return this.apiGet(`/d/api/v1/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 }

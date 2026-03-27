@@ -356,7 +356,7 @@ export class HootsuiteMCPServer {
     if (!args.social_profile_id) {
       return { content: [{ type: 'text', text: 'social_profile_id is required' }], isError: true };
     }
-    return this.hootGet(`/socialProfiles/${args.social_profile_id}`);
+    return this.hootGet(`/socialProfiles/${encodeURIComponent(args.social_profile_id as string)}`);
   }
 
   private async scheduleMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -377,14 +377,14 @@ export class HootsuiteMCPServer {
     if (!args.message_id) {
       return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
     }
-    return this.hootGet(`/messages/${args.message_id}`);
+    return this.hootGet(`/messages/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async deleteMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) {
       return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
     }
-    return this.hootDelete(`/messages/${args.message_id}`);
+    return this.hootDelete(`/messages/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async listMedia(args: Record<string, unknown>): Promise<ToolResult> {
@@ -396,7 +396,7 @@ export class HootsuiteMCPServer {
     if (!args.media_id) {
       return { content: [{ type: 'text', text: 'media_id is required' }], isError: true };
     }
-    return this.hootGet(`/media/${args.media_id}`);
+    return this.hootGet(`/media/${encodeURIComponent(args.media_id as string)}`);
   }
 
   private async listOrganizations(): Promise<ToolResult> {
@@ -407,34 +407,34 @@ export class HootsuiteMCPServer {
     if (!args.organization_id) {
       return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
     }
-    return this.hootGet(`/organizations/${args.organization_id}/teams`);
+    return this.hootGet(`/organizations/${encodeURIComponent(args.organization_id as string)}/teams`);
   }
 
   private async getTeam(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.team_id) {
       return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
     }
-    return this.hootGet(`/teams/${args.team_id}`);
+    return this.hootGet(`/teams/${encodeURIComponent(args.team_id as string)}`);
   }
 
   private async listTeamMembers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.team_id) {
       return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
     }
-    return this.hootGet(`/teams/${args.team_id}/members`);
+    return this.hootGet(`/teams/${encodeURIComponent(args.team_id as string)}/members`);
   }
 
   private async listMembers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) {
       return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
     }
-    return this.hootGet(`/organizations/${args.organization_id}/members`);
+    return this.hootGet(`/organizations/${encodeURIComponent(args.organization_id as string)}/members`);
   }
 
   private async getMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.member_id) {
       return { content: [{ type: 'text', text: 'member_id is required' }], isError: true };
     }
-    return this.hootGet(`/members/${args.member_id}`);
+    return this.hootGet(`/members/${encodeURIComponent(args.member_id as string)}`);
   }
 }

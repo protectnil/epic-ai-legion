@@ -376,12 +376,12 @@ export class LoomMCPServer {
 
   private async getRecording(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.recording_id) return { content: [{ type: 'text', text: 'recording_id is required' }], isError: true };
-    return this.apiGet(`recordings/${args.recording_id}`);
+    return this.apiGet(`recordings/${encodeURIComponent(args.recording_id as string)}`);
   }
 
   private async deleteRecording(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.recording_id) return { content: [{ type: 'text', text: 'recording_id is required' }], isError: true };
-    return this.apiDelete(`recordings/${args.recording_id}`);
+    return this.apiDelete(`recordings/${encodeURIComponent(args.recording_id as string)}`);
   }
 
   private async updateRecording(args: Record<string, unknown>): Promise<ToolResult> {
@@ -390,24 +390,24 @@ export class LoomMCPServer {
     if (args.title) body['title'] = args.title;
     if (args.description) body['description'] = args.description;
     if (args.privacy) body['privacy'] = args.privacy;
-    return this.apiPatch(`recordings/${args.recording_id}`, body);
+    return this.apiPatch(`recordings/${encodeURIComponent(args.recording_id as string)}`, body);
   }
 
   private async getRecordingTranscript(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.recording_id) return { content: [{ type: 'text', text: 'recording_id is required' }], isError: true };
-    return this.apiGet(`recordings/${args.recording_id}/transcripts`);
+    return this.apiGet(`recordings/${encodeURIComponent(args.recording_id as string)}/transcripts`);
   }
 
   private async listComments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.recording_id) return { content: [{ type: 'text', text: 'recording_id is required' }], isError: true };
-    return this.apiGet(`recordings/${args.recording_id}/comments`);
+    return this.apiGet(`recordings/${encodeURIComponent(args.recording_id as string)}/comments`);
   }
 
   private async createComment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.recording_id || !args.text) return { content: [{ type: 'text', text: 'recording_id and text are required' }], isError: true };
     const body: Record<string, unknown> = { body: args.text };
     if (typeof args.timestamp === 'number') body['timestamp'] = args.timestamp;
-    return this.apiPost(`recordings/${args.recording_id}/comments`, body);
+    return this.apiPost(`recordings/${encodeURIComponent(args.recording_id as string)}/comments`, body);
   }
 
   private async listFolders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -420,7 +420,7 @@ export class LoomMCPServer {
 
   private async getFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.folder_id) return { content: [{ type: 'text', text: 'folder_id is required' }], isError: true };
-    return this.apiGet(`folders/${args.folder_id}`);
+    return this.apiGet(`folders/${encodeURIComponent(args.folder_id as string)}`);
   }
 
   private async createFolder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -435,7 +435,7 @@ export class LoomMCPServer {
     const body: Record<string, unknown> = {};
     if (args.password) body['password'] = args.password;
     if (typeof args.expires_in_days === 'number') body['expires_in_days'] = args.expires_in_days;
-    return this.apiPost(`recordings/${args.recording_id}/share`, body);
+    return this.apiPost(`recordings/${encodeURIComponent(args.recording_id as string)}/share`, body);
   }
 
   private async listWebhooks(args: Record<string, unknown>): Promise<ToolResult> {

@@ -485,7 +485,7 @@ export class MakeMCPServer {
 
   private async getScenario(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.scenario_id) return { content: [{ type: 'text', text: 'scenario_id is required' }], isError: true };
-    return this.apiGet(`/scenarios/${args.scenario_id}`);
+    return this.apiGet(`/scenarios/${encodeURIComponent(args.scenario_id as string)}`);
   }
 
   private async createScenario(args: Record<string, unknown>): Promise<ToolResult> {
@@ -513,12 +513,12 @@ export class MakeMCPServer {
     if (args.scheduling) {
       try { body.scheduling = JSON.parse(args.scheduling as string); } catch { body.scheduling = args.scheduling; }
     }
-    return this.apiPatch(`/scenarios/${args.scenario_id}`, body);
+    return this.apiPatch(`/scenarios/${encodeURIComponent(args.scenario_id as string)}`, body);
   }
 
   private async deleteScenario(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.scenario_id) return { content: [{ type: 'text', text: 'scenario_id is required' }], isError: true };
-    return this.apiDelete(`/scenarios/${args.scenario_id}`);
+    return this.apiDelete(`/scenarios/${encodeURIComponent(args.scenario_id as string)}`);
   }
 
   private async runScenario(args: Record<string, unknown>): Promise<ToolResult> {
@@ -528,7 +528,7 @@ export class MakeMCPServer {
       try { body.data = JSON.parse(args.data as string); } catch { body.data = args.data; }
     }
     if (typeof args.responsive === 'boolean') body.responsive = args.responsive;
-    return this.apiPost(`/scenarios/${args.scenario_id}/run`, body);
+    return this.apiPost(`/scenarios/${encodeURIComponent(args.scenario_id as string)}/run`, body);
   }
 
   private async listExecutions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -537,12 +537,12 @@ export class MakeMCPServer {
     if (args.status) params.set('status', args.status as string);
     params.set('pg[limit]', String((args.limit as number) ?? 10));
     params.set('pg[offset]', String((args.offset as number) ?? 0));
-    return this.apiGet(`/scenarios/${args.scenario_id}/logs?${params.toString()}`);
+    return this.apiGet(`/scenarios/${encodeURIComponent(args.scenario_id as string)}/logs?${params.toString()}`);
   }
 
   private async getExecution(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.execution_id) return { content: [{ type: 'text', text: 'execution_id is required' }], isError: true };
-    return this.apiGet(`/logs/${args.execution_id}`);
+    return this.apiGet(`/logs/${encodeURIComponent(args.execution_id as string)}`);
   }
 
   private async listConnections(args: Record<string, unknown>): Promise<ToolResult> {
@@ -557,12 +557,12 @@ export class MakeMCPServer {
 
   private async getConnection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connection_id) return { content: [{ type: 'text', text: 'connection_id is required' }], isError: true };
-    return this.apiGet(`/connections/${args.connection_id}`);
+    return this.apiGet(`/connections/${encodeURIComponent(args.connection_id as string)}`);
   }
 
   private async verifyConnection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connection_id) return { content: [{ type: 'text', text: 'connection_id is required' }], isError: true };
-    return this.apiPost(`/connections/${args.connection_id}/test`, {});
+    return this.apiPost(`/connections/${encodeURIComponent(args.connection_id as string)}/test`, {});
   }
 
   private async listHooks(args: Record<string, unknown>): Promise<ToolResult> {

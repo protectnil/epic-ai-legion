@@ -545,7 +545,7 @@ export class LangSmithMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.httpGet(`/api/v1/sessions/${args.project_id}`);
+    return this.httpGet(`/api/v1/sessions/${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async createProject(args: Record<string, unknown>): Promise<ToolResult> {
@@ -557,7 +557,7 @@ export class LangSmithMCPServer {
 
   private async deleteProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.httpDelete(`/api/v1/sessions/${args.project_id}`);
+    return this.httpDelete(`/api/v1/sessions/${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async listRuns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -576,7 +576,7 @@ export class LangSmithMCPServer {
 
   private async getRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.run_id) return { content: [{ type: 'text', text: 'run_id is required' }], isError: true };
-    return this.httpGet(`/api/v1/runs/${args.run_id}`);
+    return this.httpGet(`/api/v1/runs/${encodeURIComponent(args.run_id as string)}`);
   }
 
   private async createRun(args: Record<string, unknown>): Promise<ToolResult> {
@@ -600,7 +600,7 @@ export class LangSmithMCPServer {
     };
     if (args.outputs) body.outputs = args.outputs;
     if (args.error) body.error = args.error;
-    return this.httpPatch(`/api/v1/runs/${args.run_id}`, body);
+    return this.httpPatch(`/api/v1/runs/${encodeURIComponent(args.run_id as string)}`, body);
   }
 
   private async createFeedback(args: Record<string, unknown>): Promise<ToolResult> {
@@ -639,7 +639,7 @@ export class LangSmithMCPServer {
 
   private async getDataset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.dataset_id) return { content: [{ type: 'text', text: 'dataset_id is required' }], isError: true };
-    return this.httpGet(`/api/v1/datasets/${args.dataset_id}`);
+    return this.httpGet(`/api/v1/datasets/${encodeURIComponent(args.dataset_id as string)}`);
   }
 
   private async createDataset(args: Record<string, unknown>): Promise<ToolResult> {

@@ -537,7 +537,7 @@ export class TeamCityMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.apiGet(`/projects/id:${args.project_id}`);
+    return this.apiGet(`/projects/id:${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async createProject(args: Record<string, unknown>): Promise<ToolResult> {
@@ -552,41 +552,41 @@ export class TeamCityMCPServer {
 
   private async listBuildConfigs(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.project_id) {
-      return this.apiGet(`/projects/id:${args.project_id}/buildTypes`);
+      return this.apiGet(`/projects/id:${encodeURIComponent(args.project_id as string)}/buildTypes`);
     }
     return this.apiGet('/buildTypes');
   }
 
   private async getBuildConfig(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_config_id) return { content: [{ type: 'text', text: 'build_config_id is required' }], isError: true };
-    return this.apiGet(`/buildTypes/id:${args.build_config_id}`);
+    return this.apiGet(`/buildTypes/id:${encodeURIComponent(args.build_config_id as string)}`);
   }
 
   private async pauseBuildConfig(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_config_id) return { content: [{ type: 'text', text: 'build_config_id is required' }], isError: true };
-    return this.apiPut(`/buildTypes/id:${args.build_config_id}/paused`, 'true', 'text/plain');
+    return this.apiPut(`/buildTypes/id:${encodeURIComponent(args.build_config_id as string)}/paused`, 'true', 'text/plain');
   }
 
   private async resumeBuildConfig(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_config_id) return { content: [{ type: 'text', text: 'build_config_id is required' }], isError: true };
-    return this.apiPut(`/buildTypes/id:${args.build_config_id}/paused`, 'false', 'text/plain');
+    return this.apiPut(`/buildTypes/id:${encodeURIComponent(args.build_config_id as string)}/paused`, 'false', 'text/plain');
   }
 
   private async listBuilds(args: Record<string, unknown>): Promise<ToolResult> {
     const locatorParts: string[] = [];
-    if (args.build_config_id) locatorParts.push(`buildType:${args.build_config_id}`);
-    if (args.status) locatorParts.push(`status:${args.status}`);
-    if (args.branch) locatorParts.push(`branch:${args.branch}`);
-    if (typeof args.running === 'boolean') locatorParts.push(`running:${args.running}`);
+    if (args.build_config_id) locatorParts.push(`buildType:${encodeURIComponent(args.build_config_id as string)}`);
+    if (args.status) locatorParts.push(`status:${encodeURIComponent(args.status as string)}`);
+    if (args.branch) locatorParts.push(`branch:${encodeURIComponent(args.branch as string)}`);
+    if (typeof args.running === 'boolean') locatorParts.push(`running:${encodeURIComponent(String(args.running))}`);
     locatorParts.push(`count:${(args.count as number) || 50}`);
-    if (args.start) locatorParts.push(`start:${args.start}`);
+    if (args.start) locatorParts.push(`start:${encodeURIComponent(args.start as string)}`);
     const params: Record<string, string> = { locator: locatorParts.join(',') };
     return this.apiGet('/builds', params);
   }
 
   private async getBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.apiGet(`/builds/id:${args.build_id}`);
+    return this.apiGet(`/builds/id:${encodeURIComponent(args.build_id as string)}`);
   }
 
   private async triggerBuild(args: Record<string, unknown>): Promise<ToolResult> {
@@ -608,40 +608,40 @@ export class TeamCityMCPServer {
     const body: Record<string, unknown> = {};
     if (args.comment) body.comment = args.comment;
     if (typeof args.readdToQueue === 'boolean') body.readdIntoQueue = args.readdToQueue;
-    return this.apiPost(`/builds/id:${args.build_id}`, body);
+    return this.apiPost(`/builds/id:${encodeURIComponent(args.build_id as string)}`, body);
   }
 
   private async pinBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
     const comment = (args.comment as string) || '';
-    return this.apiPut(`/builds/id:${args.build_id}/pin`, comment, 'text/plain');
+    return this.apiPut(`/builds/id:${encodeURIComponent(args.build_id as string)}/pin`, comment, 'text/plain');
   }
 
   private async listBuildQueue(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {};
     const locatorParts: string[] = [];
-    if (args.project_id) locatorParts.push(`project:${args.project_id}`);
-    if (args.agent_id) locatorParts.push(`agent:id:${args.agent_id}`);
+    if (args.project_id) locatorParts.push(`project:${encodeURIComponent(args.project_id as string)}`);
+    if (args.agent_id) locatorParts.push(`agent:id:${encodeURIComponent(args.agent_id as string)}`);
     if (locatorParts.length > 0) params.locator = locatorParts.join(',');
     return this.apiGet('/buildQueue', params);
   }
 
   private async getBuildLog(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.apiGet(`/builds/id:${args.build_id}/log`);
+    return this.apiGet(`/builds/id:${encodeURIComponent(args.build_id as string)}/log`);
   }
 
   private async listArtifacts(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
     const path = (args.path as string) || '';
-    return this.apiGet(`/builds/id:${args.build_id}/artifacts/children/${path}`);
+    return this.apiGet(`/builds/id:${encodeURIComponent(args.build_id as string)}/artifacts/children/${path}`);
   }
 
   private async listAgents(args: Record<string, unknown>): Promise<ToolResult> {
     const locatorParts: string[] = [];
-    if (typeof args.authorized === 'boolean') locatorParts.push(`authorized:${args.authorized}`);
-    if (typeof args.enabled === 'boolean') locatorParts.push(`enabled:${args.enabled}`);
-    if (typeof args.connected === 'boolean') locatorParts.push(`connected:${args.connected}`);
+    if (typeof args.authorized === 'boolean') locatorParts.push(`authorized:${encodeURIComponent(String(args.authorized))}`);
+    if (typeof args.enabled === 'boolean') locatorParts.push(`enabled:${encodeURIComponent(String(args.enabled))}`);
+    if (typeof args.connected === 'boolean') locatorParts.push(`connected:${encodeURIComponent(String(args.connected))}`);
     const params: Record<string, string> = {};
     if (locatorParts.length > 0) params.locator = locatorParts.join(',');
     return this.apiGet('/agents', params);
@@ -649,29 +649,29 @@ export class TeamCityMCPServer {
 
   private async getAgent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.agent_id) return { content: [{ type: 'text', text: 'agent_id is required' }], isError: true };
-    return this.apiGet(`/agents/id:${args.agent_id}`);
+    return this.apiGet(`/agents/id:${encodeURIComponent(args.agent_id as string)}`);
   }
 
   private async enableAgent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.agent_id) return { content: [{ type: 'text', text: 'agent_id is required' }], isError: true };
-    return this.apiPut(`/agents/id:${args.agent_id}/enabled`, 'true', 'text/plain');
+    return this.apiPut(`/agents/id:${encodeURIComponent(args.agent_id as string)}/enabled`, 'true', 'text/plain');
   }
 
   private async disableAgent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.agent_id) return { content: [{ type: 'text', text: 'agent_id is required' }], isError: true };
-    return this.apiPut(`/agents/id:${args.agent_id}/enabled`, 'false', 'text/plain');
+    return this.apiPut(`/agents/id:${encodeURIComponent(args.agent_id as string)}/enabled`, 'false', 'text/plain');
   }
 
   private async listChanges(args: Record<string, unknown>): Promise<ToolResult> {
     const locatorParts: string[] = [];
-    if (args.build_config_id) locatorParts.push(`buildType:${args.build_config_id}`);
-    if (args.build_id) locatorParts.push(`build:id:${args.build_id}`);
+    if (args.build_config_id) locatorParts.push(`buildType:${encodeURIComponent(args.build_config_id as string)}`);
+    if (args.build_id) locatorParts.push(`build:id:${encodeURIComponent(args.build_id as string)}`);
     locatorParts.push(`count:${(args.count as number) || 50}`);
     return this.apiGet('/changes', { locator: locatorParts.join(',') });
   }
 
   private async getChange(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.change_id) return { content: [{ type: 'text', text: 'change_id is required' }], isError: true };
-    return this.apiGet(`/changes/id:${args.change_id}`);
+    return this.apiGet(`/changes/id:${encodeURIComponent(args.change_id as string)}`);
   }
 }

@@ -556,7 +556,7 @@ export class TelnyxMCPServer {
 
   private async getPhoneNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.phone_number_id) return { content: [{ type: 'text', text: 'phone_number_id is required' }], isError: true };
-    return this.apiGet(`/phone_numbers/${args.phone_number_id}`);
+    return this.apiGet(`/phone_numbers/${encodeURIComponent(args.phone_number_id as string)}`);
   }
 
   private async purchasePhoneNumber(args: Record<string, unknown>): Promise<ToolResult> {
@@ -569,7 +569,7 @@ export class TelnyxMCPServer {
 
   private async releasePhoneNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.phone_number_id) return { content: [{ type: 'text', text: 'phone_number_id is required' }], isError: true };
-    return this.apiDelete(`/phone_numbers/${args.phone_number_id}`);
+    return this.apiDelete(`/phone_numbers/${encodeURIComponent(args.phone_number_id as string)}`);
   }
 
   private async sendMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -593,7 +593,7 @@ export class TelnyxMCPServer {
 
   private async getMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
-    return this.apiGet(`/messages/${args.message_id}`);
+    return this.apiGet(`/messages/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async createCall(args: Record<string, unknown>): Promise<ToolResult> {
@@ -615,12 +615,12 @@ export class TelnyxMCPServer {
       'page[number]': String((args.page_number as number) || 1),
       'page[size]': String((args.page_size as number) || 20),
     };
-    return this.apiGet(`/calls?filter[connection_id]=${args.connection_id}`, params);
+    return this.apiGet(`/calls?filter[connection_id]=${encodeURIComponent(args.connection_id as string)}`, params);
   }
 
   private async getCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_control_id) return { content: [{ type: 'text', text: 'call_control_id is required' }], isError: true };
-    return this.apiGet(`/calls/${args.call_control_id}`);
+    return this.apiGet(`/calls/${encodeURIComponent(args.call_control_id as string)}`);
   }
 
   private async listMessagingProfiles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -634,7 +634,7 @@ export class TelnyxMCPServer {
 
   private async getMessagingProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.messaging_profile_id) return { content: [{ type: 'text', text: 'messaging_profile_id is required' }], isError: true };
-    return this.apiGet(`/messaging_profiles/${args.messaging_profile_id}`);
+    return this.apiGet(`/messaging_profiles/${encodeURIComponent(args.messaging_profile_id as string)}`);
   }
 
   private async createMessagingProfile(args: Record<string, unknown>): Promise<ToolResult> {
@@ -657,7 +657,7 @@ export class TelnyxMCPServer {
     const params: Record<string, string> = {
       'page[number]': String((args.page_number as number) || 1),
     };
-    return this.apiGet(`/number_orders/${args.number_order_id}/phone_numbers`, params);
+    return this.apiGet(`/number_orders/${encodeURIComponent(args.number_order_id as string)}/phone_numbers`, params);
   }
 
   private async listConnections(args: Record<string, unknown>): Promise<ToolResult> {
@@ -671,6 +671,6 @@ export class TelnyxMCPServer {
 
   private async getConnection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connection_id) return { content: [{ type: 'text', text: 'connection_id is required' }], isError: true };
-    return this.apiGet(`/connections/${args.connection_id}`);
+    return this.apiGet(`/connections/${encodeURIComponent(args.connection_id as string)}`);
   }
 }

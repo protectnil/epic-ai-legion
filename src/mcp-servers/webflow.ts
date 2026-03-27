@@ -389,14 +389,14 @@ export class WebflowMCPServer {
 
   private async getSite(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    return this.get(`/sites/${args.site_id}`);
+    return this.get(`/sites/${encodeURIComponent(args.site_id as string)}`);
   }
 
   private async publishSite(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.domains) body.domains = args.domains;
-    return this.post(`/sites/${args.site_id}/publish`, body);
+    return this.post(`/sites/${encodeURIComponent(args.site_id as string)}/publish`, body);
   }
 
   private async listPages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -405,22 +405,22 @@ export class WebflowMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.offset) params.set('offset', String(args.offset));
     const qs = params.toString();
-    return this.get(`/sites/${args.site_id}/pages${qs ? '?' + qs : ''}`);
+    return this.get(`/sites/${encodeURIComponent(args.site_id as string)}/pages${qs ? '?' + qs : ''}`);
   }
 
   private async getPage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.page_id) return { content: [{ type: 'text', text: 'page_id is required' }], isError: true };
-    return this.get(`/pages/${args.page_id}`);
+    return this.get(`/pages/${encodeURIComponent(args.page_id as string)}`);
   }
 
   private async listCollections(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    return this.get(`/sites/${args.site_id}/collections`);
+    return this.get(`/sites/${encodeURIComponent(args.site_id as string)}/collections`);
   }
 
   private async getCollection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.collection_id) return { content: [{ type: 'text', text: 'collection_id is required' }], isError: true };
-    return this.get(`/collections/${args.collection_id}`);
+    return this.get(`/collections/${encodeURIComponent(args.collection_id as string)}`);
   }
 
   private async createCollection(args: Record<string, unknown>): Promise<ToolResult> {
@@ -432,7 +432,7 @@ export class WebflowMCPServer {
       singularName: args.singular_name,
     };
     if (args.slug) body.slug = args.slug;
-    return this.post(`/sites/${args.site_id}/collections`, body);
+    return this.post(`/sites/${encodeURIComponent(args.site_id as string)}/collections`, body);
   }
 
   private async listCollectionItems(args: Record<string, unknown>): Promise<ToolResult> {
@@ -441,14 +441,14 @@ export class WebflowMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.offset) params.set('offset', String(args.offset));
     const qs = params.toString();
-    return this.get(`/collections/${args.collection_id}/items${qs ? '?' + qs : ''}`);
+    return this.get(`/collections/${encodeURIComponent(args.collection_id as string)}/items${qs ? '?' + qs : ''}`);
   }
 
   private async getCollectionItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.collection_id || !args.item_id) {
       return { content: [{ type: 'text', text: 'collection_id and item_id are required' }], isError: true };
     }
-    return this.get(`/collections/${args.collection_id}/items/${args.item_id}`);
+    return this.get(`/collections/${encodeURIComponent(args.collection_id as string)}/items/${encodeURIComponent(args.item_id as string)}`);
   }
 
   private async createCollectionItem(args: Record<string, unknown>): Promise<ToolResult> {
@@ -457,7 +457,7 @@ export class WebflowMCPServer {
     }
     const body: Record<string, unknown> = { fieldData: args.field_data };
     if (typeof args.is_draft === 'boolean') body.isDraft = args.is_draft;
-    return this.post(`/collections/${args.collection_id}/items`, body);
+    return this.post(`/collections/${encodeURIComponent(args.collection_id as string)}/items`, body);
   }
 
   private async updateCollectionItem(args: Record<string, unknown>): Promise<ToolResult> {
@@ -466,36 +466,36 @@ export class WebflowMCPServer {
     }
     const body: Record<string, unknown> = { fieldData: args.field_data };
     if (typeof args.is_draft === 'boolean') body.isDraft = args.is_draft;
-    return this.patch(`/collections/${args.collection_id}/items/${args.item_id}`, body);
+    return this.patch(`/collections/${encodeURIComponent(args.collection_id as string)}/items/${encodeURIComponent(args.item_id as string)}`, body);
   }
 
   private async deleteCollectionItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.collection_id || !args.item_id) {
       return { content: [{ type: 'text', text: 'collection_id and item_id are required' }], isError: true };
     }
-    return this.del(`/collections/${args.collection_id}/items/${args.item_id}`);
+    return this.del(`/collections/${encodeURIComponent(args.collection_id as string)}/items/${encodeURIComponent(args.item_id as string)}`);
   }
 
   private async publishCollectionItems(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.collection_id || !args.item_ids) {
       return { content: [{ type: 'text', text: 'collection_id and item_ids are required' }], isError: true };
     }
-    return this.post(`/collections/${args.collection_id}/items/publish`, { itemIds: args.item_ids });
+    return this.post(`/collections/${encodeURIComponent(args.collection_id as string)}/items/publish`, { itemIds: args.item_ids });
   }
 
   private async listAssets(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    return this.get(`/sites/${args.site_id}/assets`);
+    return this.get(`/sites/${encodeURIComponent(args.site_id as string)}/assets`);
   }
 
   private async listAssetFolders(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    return this.get(`/sites/${args.site_id}/asset_folders`);
+    return this.get(`/sites/${encodeURIComponent(args.site_id as string)}/asset_folders`);
   }
 
   private async listForms(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    return this.get(`/sites/${args.site_id}/forms`);
+    return this.get(`/sites/${encodeURIComponent(args.site_id as string)}/forms`);
   }
 
   private async listFormSubmissions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -504,7 +504,7 @@ export class WebflowMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.offset) params.set('offset', String(args.offset));
     const qs = params.toString();
-    return this.get(`/forms/${args.form_id}/submissions${qs ? '?' + qs : ''}`);
+    return this.get(`/forms/${encodeURIComponent(args.form_id as string)}/submissions${qs ? '?' + qs : ''}`);
   }
 
   private async listProducts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -513,7 +513,7 @@ export class WebflowMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.offset) params.set('offset', String(args.offset));
     const qs = params.toString();
-    return this.get(`/sites/${args.site_id}/products${qs ? '?' + qs : ''}`);
+    return this.get(`/sites/${encodeURIComponent(args.site_id as string)}/products${qs ? '?' + qs : ''}`);
   }
 
   private async listOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -523,6 +523,6 @@ export class WebflowMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.offset) params.set('offset', String(args.offset));
     const qs = params.toString();
-    return this.get(`/sites/${args.site_id}/orders${qs ? '?' + qs : ''}`);
+    return this.get(`/sites/${encodeURIComponent(args.site_id as string)}/orders${qs ? '?' + qs : ''}`);
   }
 }

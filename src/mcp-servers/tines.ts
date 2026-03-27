@@ -493,7 +493,7 @@ export class TinesMCPServer {
 
   private async getStory(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.story_id) return { content: [{ type: 'text', text: 'story_id is required' }], isError: true };
-    return this.tinesGet(`/stories/${args.story_id}`);
+    return this.tinesGet(`/stories/${encodeURIComponent(args.story_id as string)}`);
   }
 
   private async createStory(args: Record<string, unknown>): Promise<ToolResult> {
@@ -509,12 +509,12 @@ export class TinesMCPServer {
     if (args.name) body.name = args.name;
     if (args.description) body.description = args.description;
     if (typeof args.disabled === 'boolean') body.disabled = args.disabled;
-    return this.tinesPut(`/stories/${args.story_id}`, body);
+    return this.tinesPut(`/stories/${encodeURIComponent(args.story_id as string)}`, body);
   }
 
   private async deleteStory(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.story_id) return { content: [{ type: 'text', text: 'story_id is required' }], isError: true };
-    return this.tinesDelete(`/stories/${args.story_id}`);
+    return this.tinesDelete(`/stories/${encodeURIComponent(args.story_id as string)}`);
   }
 
   private async listActions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -528,7 +528,7 @@ export class TinesMCPServer {
 
   private async getAction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.action_id) return { content: [{ type: 'text', text: 'action_id is required' }], isError: true };
-    return this.tinesGet(`/actions/${args.action_id}`);
+    return this.tinesGet(`/actions/${encodeURIComponent(args.action_id as string)}`);
   }
 
   private async listActionEvents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -537,7 +537,7 @@ export class TinesMCPServer {
       page: String((args.page as number) ?? 1),
       per_page: String((args.per_page as number) ?? 20),
     };
-    return this.tinesGet(`/actions/${args.action_id}/events`, params);
+    return this.tinesGet(`/actions/${encodeURIComponent(args.action_id as string)}/events`, params);
   }
 
   private async listActionLogs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -546,7 +546,7 @@ export class TinesMCPServer {
       page: String((args.page as number) ?? 1),
       per_page: String((args.per_page as number) ?? 20),
     };
-    return this.tinesGet(`/actions/${args.action_id}/logs`, params);
+    return this.tinesGet(`/actions/${encodeURIComponent(args.action_id as string)}/logs`, params);
   }
 
   private async listCredentials(args: Record<string, unknown>): Promise<ToolResult> {
@@ -561,7 +561,7 @@ export class TinesMCPServer {
 
   private async getCredential(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.credential_id) return { content: [{ type: 'text', text: 'credential_id is required' }], isError: true };
-    return this.tinesGet(`/user_credentials/${args.credential_id}`);
+    return this.tinesGet(`/user_credentials/${encodeURIComponent(args.credential_id as string)}`);
   }
 
   private async listAuditLogs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -583,7 +583,7 @@ export class TinesMCPServer {
 
   private async getTeam(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.team_id) return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
-    return this.tinesGet(`/teams/${args.team_id}`);
+    return this.tinesGet(`/teams/${encodeURIComponent(args.team_id as string)}`);
   }
 
   private async listResources(args: Record<string, unknown>): Promise<ToolResult> {
@@ -595,6 +595,6 @@ export class TinesMCPServer {
 
   private async getResource(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.resource_id) return { content: [{ type: 'text', text: 'resource_id is required' }], isError: true };
-    return this.tinesGet(`/resources/${args.resource_id}`);
+    return this.tinesGet(`/resources/${encodeURIComponent(args.resource_id as string)}`);
   }
 }

@@ -605,34 +605,34 @@ export class BizzaboMCPServer {
 
   private async getEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.bzGet(`/events/${args.event_id}`);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}`);
   }
 
   private async listRegistrations(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
     const params = this.buildPaginationParams(args);
     if (args.status) params['status'] = args.status as string;
-    return this.bzGet(`/events/${args.event_id}/registrations`, params);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/registrations`, params);
   }
 
   private async getRegistration(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.registration_id) {
       return { content: [{ type: 'text', text: 'event_id and registration_id are required' }], isError: true };
     }
-    return this.bzGet(`/events/${args.event_id}/registrations/${args.registration_id}`);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/registrations/${encodeURIComponent(args.registration_id as string)}`);
   }
 
   private async listContacts(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
     const params = this.buildPaginationParams(args);
-    return this.bzGet(`/events/${args.event_id}/contacts`, params);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/contacts`, params);
   }
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.contact_id) {
       return { content: [{ type: 'text', text: 'event_id and contact_id are required' }], isError: true };
     }
-    return this.bzGet(`/events/${args.event_id}/contacts/${args.contact_id}`);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async createContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -647,7 +647,7 @@ export class BizzaboMCPServer {
     if (args.company) body['company'] = args.company;
     if (args.title) body['jobTitle'] = args.title;
     if (args.phone) body['phone'] = args.phone;
-    return this.bzPost(`/events/${args.event_id}/contacts`, body);
+    return this.bzPost(`/events/${encodeURIComponent(args.event_id as string)}/contacts`, body);
   }
 
   private async updateContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -661,50 +661,50 @@ export class BizzaboMCPServer {
     if (args.company) body['company'] = args.company;
     if (args.title) body['jobTitle'] = args.title;
     if (args.phone) body['phone'] = args.phone;
-    return this.bzPut(`/events/${args.event_id}/contacts/${args.contact_id}`, body);
+    return this.bzPut(`/events/${encodeURIComponent(args.event_id as string)}/contacts/${encodeURIComponent(args.contact_id as string)}`, body);
   }
 
   private async listSessions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
     const params = this.buildPaginationParams(args);
-    return this.bzGet(`/events/${args.event_id}/sessions`, params);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/sessions`, params);
   }
 
   private async getSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.session_id) {
       return { content: [{ type: 'text', text: 'event_id and session_id are required' }], isError: true };
     }
-    return this.bzGet(`/events/${args.event_id}/sessions/${args.session_id}`);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/sessions/${encodeURIComponent(args.session_id as string)}`);
   }
 
   private async listSpeakers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
     const params = this.buildPaginationParams(args);
-    return this.bzGet(`/events/${args.event_id}/speakers`, params);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/speakers`, params);
   }
 
   private async getSpeaker(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.speaker_id) {
       return { content: [{ type: 'text', text: 'event_id and speaker_id are required' }], isError: true };
     }
-    return this.bzGet(`/events/${args.event_id}/speakers/${args.speaker_id}`);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/speakers/${encodeURIComponent(args.speaker_id as string)}`);
   }
 
   private async listAgendaItems(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
     const params = this.buildPaginationParams(args, 50);
-    return this.bzGet(`/events/${args.event_id}/agenda`, params);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/agenda`, params);
   }
 
   private async listSponsors(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
     const params = this.buildPaginationParams(args);
-    return this.bzGet(`/events/${args.event_id}/partners`, params);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/partners`, params);
   }
 
   private async listTickets(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
     const params = this.buildPaginationParams(args);
-    return this.bzGet(`/events/${args.event_id}/tickets`, params);
+    return this.bzGet(`/events/${encodeURIComponent(args.event_id as string)}/tickets`, params);
   }
 }

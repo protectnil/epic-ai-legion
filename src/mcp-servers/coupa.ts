@@ -682,7 +682,7 @@ export class CoupaMCPServer {
 
   private async getPurchaseOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.po_id) return { content: [{ type: 'text', text: 'po_id is required' }], isError: true };
-    return this.coupaGet(`/purchase_orders/${args.po_id as number}`);
+    return this.coupaGet(`/purchase_orders/${encodeURIComponent(args.po_id as number)}`);
   }
 
   private async createPurchaseOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -700,7 +700,7 @@ export class CoupaMCPServer {
     const body: Record<string, unknown> = {};
     if (args.status) body.status = args.status;
     if (args.notes) body.note_to_supplier = args.notes;
-    return this.coupaPut(`/purchase_orders/${args.po_id as number}`, body);
+    return this.coupaPut(`/purchase_orders/${encodeURIComponent(args.po_id as number)}`, body);
   }
 
   private async listInvoices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -718,19 +718,19 @@ export class CoupaMCPServer {
 
   private async getInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.invoice_id) return { content: [{ type: 'text', text: 'invoice_id is required' }], isError: true };
-    return this.coupaGet(`/invoices/${args.invoice_id as number}`);
+    return this.coupaGet(`/invoices/${encodeURIComponent(args.invoice_id as number)}`);
   }
 
   private async approveInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.invoice_id) return { content: [{ type: 'text', text: 'invoice_id is required' }], isError: true };
     const body: Record<string, unknown> = { status: 'approved' };
     if (args.comment) body.approval_comment = args.comment;
-    return this.coupaPut(`/invoices/${args.invoice_id as number}`, body);
+    return this.coupaPut(`/invoices/${encodeURIComponent(args.invoice_id as number)}`, body);
   }
 
   private async rejectInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.invoice_id || !args.reason) return { content: [{ type: 'text', text: 'invoice_id and reason are required' }], isError: true };
-    return this.coupaPut(`/invoices/${args.invoice_id as number}`, { status: 'rejected', rejection_reason: args.reason });
+    return this.coupaPut(`/invoices/${encodeURIComponent(args.invoice_id as number)}`, { status: 'rejected', rejection_reason: args.reason });
   }
 
   private async listRequisitions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -746,7 +746,7 @@ export class CoupaMCPServer {
 
   private async getRequisition(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.requisition_id) return { content: [{ type: 'text', text: 'requisition_id is required' }], isError: true };
-    return this.coupaGet(`/requisitions/${args.requisition_id as number}`);
+    return this.coupaGet(`/requisitions/${encodeURIComponent(args.requisition_id as number)}`);
   }
 
   private async createRequisition(args: Record<string, unknown>): Promise<ToolResult> {
@@ -769,7 +769,7 @@ export class CoupaMCPServer {
 
   private async getSupplier(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.supplier_id) return { content: [{ type: 'text', text: 'supplier_id is required' }], isError: true };
-    return this.coupaGet(`/suppliers/${args.supplier_id as number}`);
+    return this.coupaGet(`/suppliers/${encodeURIComponent(args.supplier_id as number)}`);
   }
 
   private async searchSuppliers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -795,14 +795,14 @@ export class CoupaMCPServer {
 
   private async getExpenseReport(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.report_id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-    return this.coupaGet(`/expense_reports/${args.report_id as number}`);
+    return this.coupaGet(`/expense_reports/${encodeURIComponent(args.report_id as number)}`);
   }
 
   private async approveExpenseReport(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.report_id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
     const body: Record<string, unknown> = { status: 'approved' };
     if (args.comment) body.approval_comment = args.comment;
-    return this.coupaPut(`/expense_reports/${args.report_id as number}`, body);
+    return this.coupaPut(`/expense_reports/${encodeURIComponent(args.report_id as number)}`, body);
   }
 
   private async listContracts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -818,7 +818,7 @@ export class CoupaMCPServer {
 
   private async getContract(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contract_id) return { content: [{ type: 'text', text: 'contract_id is required' }], isError: true };
-    return this.coupaGet(`/contracts/${args.contract_id as number}`);
+    return this.coupaGet(`/contracts/${encodeURIComponent(args.contract_id as number)}`);
   }
 
   private async listBudgets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -834,6 +834,6 @@ export class CoupaMCPServer {
 
   private async getBudget(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.budget_id) return { content: [{ type: 'text', text: 'budget_id is required' }], isError: true };
-    return this.coupaGet(`/budgets/${args.budget_id as number}`);
+    return this.coupaGet(`/budgets/${encodeURIComponent(args.budget_id as number)}`);
   }
 }

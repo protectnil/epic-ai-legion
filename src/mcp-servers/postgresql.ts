@@ -512,7 +512,7 @@ export class PostgreSQLMCPServer {
     const analyze = args.analyze !== false;
     const params = (args.params as unknown[]) ?? [];
     const keyword = analyze ? 'EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)' : 'EXPLAIN (FORMAT JSON)';
-    const sql = `${keyword} ${args.query}`;
+    const sql = `${keyword} ${encodeURIComponent(args.query as string)}`;
     return this.runQuery(sql, params);
   }
 

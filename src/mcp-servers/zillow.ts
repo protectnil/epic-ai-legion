@@ -302,17 +302,17 @@ export class ZillowMCPServer {
   private buildLocationFilter(args: Record<string, unknown>): string {
     // Bridge API uses OData-style $filter for geo queries
     const parts: string[] = [];
-    if (args.near) parts.push(`geo.distance(Coordinates,geography'POINT(${args.near})') le 10`);
-    if (args.min_price) parts.push(`ListPrice ge ${args.min_price}`);
-    if (args.max_price) parts.push(`ListPrice le ${args.max_price}`);
-    if (args.min_beds) parts.push(`BedroomsTotal ge ${args.min_beds}`);
-    if (args.max_beds) parts.push(`BedroomsTotal le ${args.max_beds}`);
-    if (args.min_baths) parts.push(`BathroomsTotalInteger ge ${args.min_baths}`);
-    if (args.min_sqft) parts.push(`LivingArea ge ${args.min_sqft}`);
-    if (args.max_sqft) parts.push(`LivingArea le ${args.max_sqft}`);
-    if (args.property_type) parts.push(`PropertyType eq '${args.property_type}'`);
-    if (args.status) parts.push(`StandardStatus eq '${args.status}'`);
-    if (args.days_on_market) parts.push(`DaysOnMarket le ${args.days_on_market}`);
+    if (args.near) parts.push(`geo.distance(Coordinates,geography'POINT(${encodeURIComponent(args.near as string)})') le 10`);
+    if (args.min_price) parts.push(`ListPrice ge ${encodeURIComponent(args.min_price as string)}`);
+    if (args.max_price) parts.push(`ListPrice le ${encodeURIComponent(args.max_price as string)}`);
+    if (args.min_beds) parts.push(`BedroomsTotal ge ${encodeURIComponent(args.min_beds as string)}`);
+    if (args.max_beds) parts.push(`BedroomsTotal le ${encodeURIComponent(args.max_beds as string)}`);
+    if (args.min_baths) parts.push(`BathroomsTotalInteger ge ${encodeURIComponent(args.min_baths as string)}`);
+    if (args.min_sqft) parts.push(`LivingArea ge ${encodeURIComponent(args.min_sqft as string)}`);
+    if (args.max_sqft) parts.push(`LivingArea le ${encodeURIComponent(args.max_sqft as string)}`);
+    if (args.property_type) parts.push(`PropertyType eq '${encodeURIComponent(args.property_type as string)}'`);
+    if (args.status) parts.push(`StandardStatus eq '${encodeURIComponent(args.status as string)}'`);
+    if (args.days_on_market) parts.push(`DaysOnMarket le ${encodeURIComponent(args.days_on_market as string)}`);
     return parts.join(' and ');
   }
 
@@ -330,7 +330,7 @@ export class ZillowMCPServer {
     if (!args.property_id) return { content: [{ type: 'text', text: 'property_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.dataset) params.dataset = args.dataset as string;
-    return this.get(`/OData/Property('${args.property_id}')`, params);
+    return this.get(`/OData/Property('${encodeURIComponent(args.property_id as string)}')`, params);
   }
 
   private async getZestimate(args: Record<string, unknown>): Promise<ToolResult> {
@@ -366,7 +366,7 @@ export class ZillowMCPServer {
     if (!args.listing_key) return { content: [{ type: 'text', text: 'listing_key is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.dataset) params.dataset = args.dataset as string;
-    return this.get(`/OData/Property('${args.listing_key}')`, params);
+    return this.get(`/OData/Property('${encodeURIComponent(args.listing_key as string)}')`, params);
   }
 
   private async getPublicRecords(args: Record<string, unknown>): Promise<ToolResult> {
@@ -388,9 +388,9 @@ export class ZillowMCPServer {
       '$skip': String((args.offset as number) ?? 0),
     };
     const filters: string[] = [];
-    if (args.near) filters.push(`geo.distance(Coordinates,geography'POINT(${args.near})') le 5`);
-    if (args.owner_name) filters.push(`OwnerName1 eq '${args.owner_name}'`);
-    if (args.apn) filters.push(`APN eq '${args.apn}'`);
+    if (args.near) filters.push(`geo.distance(Coordinates,geography'POINT(${encodeURIComponent(args.near as string)})') le 5`);
+    if (args.owner_name) filters.push(`OwnerName1 eq '${encodeURIComponent(args.owner_name as string)}'`);
+    if (args.apn) filters.push(`APN eq '${encodeURIComponent(args.apn as string)}'`);
     if (filters.length > 0) params['$filter'] = filters.join(' and ');
     return this.get('/OData/AssessorParcel', params);
   }
@@ -398,12 +398,12 @@ export class ZillowMCPServer {
   private async getMarketStats(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {};
     const filters: string[] = [];
-    if (args.zip) filters.push(`PostalCode eq '${args.zip}'`);
+    if (args.zip) filters.push(`PostalCode eq '${encodeURIComponent(args.zip as string)}'`);
     if (args.city && args.state) {
-      filters.push(`City eq '${args.city}'`);
-      filters.push(`StateOrProvince eq '${args.state}'`);
+      filters.push(`City eq '${encodeURIComponent(args.city as string)}'`);
+      filters.push(`StateOrProvince eq '${encodeURIComponent(args.state as string)}'`);
     }
-    if (args.property_type) filters.push(`PropertyType eq '${args.property_type}'`);
+    if (args.property_type) filters.push(`PropertyType eq '${encodeURIComponent(args.property_type as string)}'`);
     if (filters.length > 0) params['$filter'] = filters.join(' and ');
     params['$select'] = 'MedianListPrice,MedianDaysOnMarket,ActiveListingCount,MedianPriceSqFt';
     return this.get('/OData/Property', params);
@@ -420,12 +420,12 @@ export class ZillowMCPServer {
       '$skip': String((args.offset as number) ?? 0),
     };
     const filters: string[] = [];
-    if (args.near) filters.push(`geo.distance(Coordinates,geography'POINT(${args.near})') le 10`);
-    if (args.min_price) filters.push(`ListPrice ge ${args.min_price}`);
-    if (args.max_price) filters.push(`ListPrice le ${args.max_price}`);
-    if (args.min_beds) filters.push(`BedroomsTotal ge ${args.min_beds}`);
-    if (args.max_beds) filters.push(`BedroomsTotal le ${args.max_beds}`);
-    if (args.property_type) filters.push(`PropertySubType eq '${args.property_type}'`);
+    if (args.near) filters.push(`geo.distance(Coordinates,geography'POINT(${encodeURIComponent(args.near as string)})') le 10`);
+    if (args.min_price) filters.push(`ListPrice ge ${encodeURIComponent(args.min_price as string)}`);
+    if (args.max_price) filters.push(`ListPrice le ${encodeURIComponent(args.max_price as string)}`);
+    if (args.min_beds) filters.push(`BedroomsTotal ge ${encodeURIComponent(args.min_beds as string)}`);
+    if (args.max_beds) filters.push(`BedroomsTotal le ${encodeURIComponent(args.max_beds as string)}`);
+    if (args.property_type) filters.push(`PropertySubType eq '${encodeURIComponent(args.property_type as string)}'`);
     filters.push("PropertyType eq 'ResidentialLease'");
     if (filters.length > 0) params['$filter'] = filters.join(' and ');
     return this.get('/OData/Property', params);
@@ -433,7 +433,7 @@ export class ZillowMCPServer {
 
   private async getRentalListing(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.listing_id) return { content: [{ type: 'text', text: 'listing_id is required' }], isError: true };
-    return this.get(`/OData/Property('${args.listing_id}')`, {});
+    return this.get(`/OData/Property('${encodeURIComponent(args.listing_id as string)}')`, {});
   }
 
   private async calculateMortgage(args: Record<string, unknown>): Promise<ToolResult> {

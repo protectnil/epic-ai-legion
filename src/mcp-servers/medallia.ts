@@ -401,7 +401,7 @@ export class MedalliaMCPServer {
 
   private async getReport(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.report_id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-    return this.mGet(`/reporting/v1/reports/${args.report_id}`);
+    return this.mGet(`/reporting/v1/reports/${encodeURIComponent(args.report_id as string)}`);
   }
 
   private async listReports(args: Record<string, unknown>): Promise<ToolResult> {
@@ -430,7 +430,7 @@ export class MedalliaMCPServer {
 
   private async getResponse(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.response_id) return { content: [{ type: 'text', text: 'response_id is required' }], isError: true };
-    return this.mGet(`/feedback/v1/responses/${args.response_id}`);
+    return this.mGet(`/feedback/v1/responses/${encodeURIComponent(args.response_id as string)}`);
   }
 
   private async searchResponses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -446,7 +446,7 @@ export class MedalliaMCPServer {
 
   private async getFieldDefinitions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.unit_id) return { content: [{ type: 'text', text: 'unit_id is required' }], isError: true };
-    return this.mGet(`/feedback/v1/units/${args.unit_id}/fields`);
+    return this.mGet(`/feedback/v1/units/${encodeURIComponent(args.unit_id as string)}/fields`);
   }
 
   private async listPrograms(args: Record<string, unknown>): Promise<ToolResult> {

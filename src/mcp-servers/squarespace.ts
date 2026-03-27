@@ -460,14 +460,14 @@ export class SquarespaceMCPServer {
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.apiGet(`/commerce/orders/${args.order_id}`);
+    return this.apiGet(`/commerce/orders/${encodeURIComponent(args.order_id as string)}`);
   }
 
   private async fulfillOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id || !args.shipments) return { content: [{ type: 'text', text: 'order_id and shipments are required' }], isError: true };
     const body: Record<string, unknown> = { shipments: args.shipments };
     if (typeof args.sendNotification === 'boolean') body.sendNotification = args.sendNotification;
-    return this.apiPost(`/commerce/orders/${args.order_id}/fulfillments`, body);
+    return this.apiPost(`/commerce/orders/${encodeURIComponent(args.order_id as string)}/fulfillments`, body);
   }
 
   private async listProducts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -480,7 +480,7 @@ export class SquarespaceMCPServer {
 
   private async getProduct(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
-    return this.apiGet(`/commerce/products/${args.product_id}`);
+    return this.apiGet(`/commerce/products/${encodeURIComponent(args.product_id as string)}`);
   }
 
   private async createProduct(args: Record<string, unknown>): Promise<ToolResult> {
@@ -499,12 +499,12 @@ export class SquarespaceMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.description) body.description = args.description;
-    return this.apiPut(`/commerce/products/${args.product_id}`, body);
+    return this.apiPut(`/commerce/products/${encodeURIComponent(args.product_id as string)}`, body);
   }
 
   private async deleteProduct(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
-    return this.apiDelete(`/commerce/products/${args.product_id}`);
+    return this.apiDelete(`/commerce/products/${encodeURIComponent(args.product_id as string)}`);
   }
 
   private async listInventory(args: Record<string, unknown>): Promise<ToolResult> {
@@ -529,7 +529,7 @@ export class SquarespaceMCPServer {
 
   private async getProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_id) return { content: [{ type: 'text', text: 'profile_id is required' }], isError: true };
-    return this.apiGet(`/profiles/${args.profile_id}`);
+    return this.apiGet(`/profiles/${encodeURIComponent(args.profile_id as string)}`);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -553,6 +553,6 @@ export class SquarespaceMCPServer {
 
   private async deleteWebhookSubscription(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.webhook_id) return { content: [{ type: 'text', text: 'webhook_id is required' }], isError: true };
-    return this.apiDelete(`/webhook_subscriptions/${args.webhook_id}`);
+    return this.apiDelete(`/webhook_subscriptions/${encodeURIComponent(args.webhook_id as string)}`);
   }
 }

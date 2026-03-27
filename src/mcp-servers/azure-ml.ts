@@ -422,7 +422,7 @@ export class AzureMLMCPServer {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to cancel job: ${response.status} ${errText}` }], isError: true };
     }
-    return { content: [{ type: 'text', text: `Job ${args.job_name} cancel accepted (HTTP ${response.status}).` }], isError: false };
+    return { content: [{ type: 'text', text: `Job ${encodeURIComponent(args.job_name as string)} cancel accepted (HTTP ${response.status}).` }], isError: false };
   }
 
   // ── Models ────────────────────────────────────────────────────────────────

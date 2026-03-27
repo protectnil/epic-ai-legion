@@ -609,7 +609,7 @@ export class WebexMCPServer {
 
   private async getRoom(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.room_id) return { content: [{ type: 'text', text: 'room_id is required' }], isError: true };
-    return this.webexGet(`/rooms/${args.room_id}`);
+    return this.webexGet(`/rooms/${encodeURIComponent(args.room_id as string)}`);
   }
 
   private async createRoom(args: Record<string, unknown>): Promise<ToolResult> {
@@ -621,12 +621,12 @@ export class WebexMCPServer {
 
   private async updateRoom(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.room_id || !args.title) return { content: [{ type: 'text', text: 'room_id and title are required' }], isError: true };
-    return this.webexPut(`/rooms/${args.room_id}`, { title: args.title });
+    return this.webexPut(`/rooms/${encodeURIComponent(args.room_id as string)}`, { title: args.title });
   }
 
   private async deleteRoom(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.room_id) return { content: [{ type: 'text', text: 'room_id is required' }], isError: true };
-    return this.webexDelete(`/rooms/${args.room_id}`);
+    return this.webexDelete(`/rooms/${encodeURIComponent(args.room_id as string)}`);
   }
 
   private async listMessages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -643,7 +643,7 @@ export class WebexMCPServer {
 
   private async getMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
-    return this.webexGet(`/messages/${args.message_id}`);
+    return this.webexGet(`/messages/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async sendMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -660,7 +660,7 @@ export class WebexMCPServer {
 
   private async deleteMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
-    return this.webexDelete(`/messages/${args.message_id}`);
+    return this.webexDelete(`/messages/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async listMemberships(args: Record<string, unknown>): Promise<ToolResult> {
@@ -682,7 +682,7 @@ export class WebexMCPServer {
 
   private async deleteMembership(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.membership_id) return { content: [{ type: 'text', text: 'membership_id is required' }], isError: true };
-    return this.webexDelete(`/memberships/${args.membership_id}`);
+    return this.webexDelete(`/memberships/${encodeURIComponent(args.membership_id as string)}`);
   }
 
   private async listMeetings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -698,7 +698,7 @@ export class WebexMCPServer {
 
   private async getMeeting(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.meeting_id) return { content: [{ type: 'text', text: 'meeting_id is required' }], isError: true };
-    return this.webexGet(`/meetings/${args.meeting_id}`);
+    return this.webexGet(`/meetings/${encodeURIComponent(args.meeting_id as string)}`);
   }
 
   private async createMeeting(args: Record<string, unknown>): Promise<ToolResult> {
@@ -712,7 +712,7 @@ export class WebexMCPServer {
 
   private async deleteMeeting(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.meeting_id) return { content: [{ type: 'text', text: 'meeting_id is required' }], isError: true };
-    return this.webexDelete(`/meetings/${args.meeting_id}`);
+    return this.webexDelete(`/meetings/${encodeURIComponent(args.meeting_id as string)}`);
   }
 
   private async getMe(): Promise<ToolResult> {
@@ -728,7 +728,7 @@ export class WebexMCPServer {
 
   private async getPerson(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.person_id) return { content: [{ type: 'text', text: 'person_id is required' }], isError: true };
-    return this.webexGet(`/people/${args.person_id}`);
+    return this.webexGet(`/people/${encodeURIComponent(args.person_id as string)}`);
   }
 
   private async listWebhooks(args: Record<string, unknown>): Promise<ToolResult> {
@@ -753,6 +753,6 @@ export class WebexMCPServer {
 
   private async deleteWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.webhook_id) return { content: [{ type: 'text', text: 'webhook_id is required' }], isError: true };
-    return this.webexDelete(`/webhooks/${args.webhook_id}`);
+    return this.webexDelete(`/webhooks/${encodeURIComponent(args.webhook_id as string)}`);
   }
 }

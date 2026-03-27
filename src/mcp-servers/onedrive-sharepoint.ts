@@ -621,39 +621,39 @@ export class OneDriveSharePointMCPServer {
   }
 
   private async listDrives(args: Record<string, unknown>): Promise<ToolResult> {
-    if (args.user_id) return this.graphGet(`/users/${args.user_id}/drives`);
+    if (args.user_id) return this.graphGet(`/users/${encodeURIComponent(args.user_id as string)}/drives`);
     return this.graphGet('/drives');
   }
 
   private async getDrive(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id) return { content: [{ type: 'text', text: 'drive_id is required' }], isError: true };
-    return this.graphGet(`/drives/${args.drive_id}`);
+    return this.graphGet(`/drives/${encodeURIComponent(args.drive_id as string)}`);
   }
 
   private async listDriveItems(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id) return { content: [{ type: 'text', text: 'drive_id is required' }], isError: true };
-    const itemRef = args.item_id ? `/items/${args.item_id}` : '/root';
+    const itemRef = args.item_id ? `/items/${encodeURIComponent(args.item_id as string)}` : '/root';
     const params: Record<string, string> = { $top: String((args.top as number) ?? 50) };
-    return this.graphGet(`/drives/${args.drive_id}${itemRef}/children`, params);
+    return this.graphGet(`/drives/${encodeURIComponent(args.drive_id as string)}${itemRef}/children`, params);
   }
 
   private async getDriveItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id) return { content: [{ type: 'text', text: 'drive_id is required' }], isError: true };
     if (!args.item_id && !args.item_path) return { content: [{ type: 'text', text: 'item_id or item_path is required' }], isError: true };
-    const ref = args.item_id ? `/items/${args.item_id}` : `/root:${args.item_path}`;
-    return this.graphGet(`/drives/${args.drive_id}${ref}`);
+    const ref = args.item_id ? `/items/${encodeURIComponent(args.item_id as string)}` : `/root:${encodeURIComponent(args.item_path as string)}`;
+    return this.graphGet(`/drives/${encodeURIComponent(args.drive_id as string)}${ref}`);
   }
 
   private async searchDrive(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id || !args.query) return { content: [{ type: 'text', text: 'drive_id and query are required' }], isError: true };
     const params: Record<string, string> = { $top: String((args.top as number) ?? 25) };
-    return this.graphGet(`/drives/${args.drive_id}/root/search(q='${encodeURIComponent(args.query as string)}')`, params);
+    return this.graphGet(`/drives/${encodeURIComponent(args.drive_id as string)}/root/search(q='${encodeURIComponent(args.query as string)}')`, params);
   }
 
   private async createFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id || !args.folder_name) return { content: [{ type: 'text', text: 'drive_id and folder_name are required' }], isError: true };
-    const parentRef = args.parent_item_id ? `/items/${args.parent_item_id}` : '/root';
-    return this.graphPost(`/drives/${args.drive_id}${parentRef}/children`, {
+    const parentRef = args.parent_item_id ? `/items/${encodeURIComponent(args.parent_item_id as string)}` : '/root';
+    return this.graphPost(`/drives/${encodeURIComponent(args.drive_id as string)}${parentRef}/children`, {
       name: args.folder_name,
       folder: {},
       '@microsoft.graph.conflictBehavior': 'rename',
@@ -663,8 +663,8 @@ export class OneDriveSharePointMCPServer {
   private async uploadFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id || !args.file_name || args.content === undefined) return { content: [{ type: 'text', text: 'drive_id, file_name, and content are required' }], isError: true };
     const token = await this.getOrRefreshToken();
-    const parentRef = args.parent_item_id ? `/items/${args.parent_item_id}` : '/root';
-    const path = `/drives/${args.drive_id}${parentRef}:/${args.file_name}:/content`;
+    const parentRef = args.parent_item_id ? `/items/${encodeURIComponent(args.parent_item_id as string)}` : '/root';
+    const path = `/drives/${encodeURIComponent(args.drive_id as string)}${parentRef}:/${encodeURIComponent(args.file_name as string)}:/content`;
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'text/plain' },
@@ -679,7 +679,7 @@ export class OneDriveSharePointMCPServer {
 
   private async deleteDriveItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id || !args.item_id) return { content: [{ type: 'text', text: 'drive_id and item_id are required' }], isError: true };
-    return this.graphDelete(`/drives/${args.drive_id}/items/${args.item_id}`);
+    return this.graphDelete(`/drives/${encodeURIComponent(args.drive_id as string)}/items/${encodeURIComponent(args.item_id as string)}`);
   }
 
   private async moveDriveItem(args: Record<string, unknown>): Promise<ToolResult> {
@@ -688,7 +688,7 @@ export class OneDriveSharePointMCPServer {
       parentReference: { id: args.new_parent_id },
     };
     if (args.new_name) body.name = args.new_name;
-    return this.graphPatch(`/drives/${args.drive_id}/items/${args.item_id}`, body);
+    return this.graphPatch(`/drives/${encodeURIComponent(args.drive_id as string)}/items/${encodeURIComponent(args.item_id as string)}`, body);
   }
 
   private async copyDriveItem(args: Record<string, unknown>): Promise<ToolResult> {
@@ -702,17 +702,17 @@ export class OneDriveSharePointMCPServer {
       },
     };
     if (args.new_name) body.name = args.new_name;
-    return this.graphPost(`/drives/${args.drive_id}/items/${args.item_id}/copy`, body);
+    return this.graphPost(`/drives/${encodeURIComponent(args.drive_id as string)}/items/${encodeURIComponent(args.item_id as string)}/copy`, body);
   }
 
   private async getItemPermissions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id || !args.item_id) return { content: [{ type: 'text', text: 'drive_id and item_id are required' }], isError: true };
-    return this.graphGet(`/drives/${args.drive_id}/items/${args.item_id}/permissions`);
+    return this.graphGet(`/drives/${encodeURIComponent(args.drive_id as string)}/items/${encodeURIComponent(args.item_id as string)}/permissions`);
   }
 
   private async createSharingLink(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.drive_id || !args.item_id) return { content: [{ type: 'text', text: 'drive_id and item_id are required' }], isError: true };
-    return this.graphPost(`/drives/${args.drive_id}/items/${args.item_id}/createLink`, {
+    return this.graphPost(`/drives/${encodeURIComponent(args.drive_id as string)}/items/${encodeURIComponent(args.item_id as string)}/createLink`, {
       type: (args.link_type as string) || 'view',
       scope: (args.scope as string) || 'organization',
     });
@@ -728,7 +728,7 @@ export class OneDriveSharePointMCPServer {
       recipients,
     };
     if (args.message) body.message = args.message;
-    return this.graphPost(`/drives/${args.drive_id}/items/${args.item_id}/invite`, body);
+    return this.graphPost(`/drives/${encodeURIComponent(args.drive_id as string)}/items/${encodeURIComponent(args.item_id as string)}/invite`, body);
   }
 
   private async listSites(args: Record<string, unknown>): Promise<ToolResult> {
@@ -739,7 +739,7 @@ export class OneDriveSharePointMCPServer {
 
   private async getSite(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    return this.graphGet(`/sites/${args.site_id}`);
+    return this.graphGet(`/sites/${encodeURIComponent(args.site_id as string)}`);
   }
 
   private async searchSites(args: Record<string, unknown>): Promise<ToolResult> {
@@ -749,12 +749,12 @@ export class OneDriveSharePointMCPServer {
 
   private async listSiteLists(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    return this.graphGet(`/sites/${args.site_id}/lists`);
+    return this.graphGet(`/sites/${encodeURIComponent(args.site_id as string)}/lists`);
   }
 
   private async getSiteList(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id || !args.list_id) return { content: [{ type: 'text', text: 'site_id and list_id are required' }], isError: true };
-    return this.graphGet(`/sites/${args.site_id}/lists/${args.list_id}`, { expand: 'columns' });
+    return this.graphGet(`/sites/${encodeURIComponent(args.site_id as string)}/lists/${encodeURIComponent(args.list_id as string)}`, { expand: 'columns' });
   }
 
   private async listSiteListItems(args: Record<string, unknown>): Promise<ToolResult> {
@@ -764,6 +764,6 @@ export class OneDriveSharePointMCPServer {
       $top: String((args.top as number) ?? 50),
     };
     if (args.filter) params['$filter'] = args.filter as string;
-    return this.graphGet(`/sites/${args.site_id}/lists/${args.list_id}/items`, params);
+    return this.graphGet(`/sites/${encodeURIComponent(args.site_id as string)}/lists/${encodeURIComponent(args.list_id as string)}/items`, params);
   }
 }

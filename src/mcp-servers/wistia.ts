@@ -387,7 +387,7 @@ export class WistiaMCPServer {
 
   private async getMedia(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
-    return this.get(`/medias/${args.hashed_id}.json`);
+    return this.get(`/medias/${encodeURIComponent(args.hashed_id as string)}.json`);
   }
 
   private async updateMedia(args: Record<string, unknown>): Promise<ToolResult> {
@@ -396,12 +396,12 @@ export class WistiaMCPServer {
     if (args.name) params['media[name]'] = args.name as string;
     if (args.description) params['media[description]'] = args.description as string;
     if (args.thumbnail_media_id) params['media[thumbnail_media_id]'] = args.thumbnail_media_id as string;
-    return this.put(`/medias/${args.hashed_id}.json`, params);
+    return this.put(`/medias/${encodeURIComponent(args.hashed_id as string)}.json`, params);
   }
 
   private async deleteMedia(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
-    return this.del(`/medias/${args.hashed_id}.json`);
+    return this.del(`/medias/${encodeURIComponent(args.hashed_id as string)}.json`);
   }
 
   private async copyMedia(args: Record<string, unknown>): Promise<ToolResult> {
@@ -409,7 +409,7 @@ export class WistiaMCPServer {
     const params: Record<string, string> = {};
     if (args.project_id) params.project_id = args.project_id as string;
     if (args.owner) params.owner = args.owner as string;
-    return this.post(`/medias/${args.hashed_id}/copy.json`, params);
+    return this.post(`/medias/${encodeURIComponent(args.hashed_id as string)}/copy.json`, params);
   }
 
   private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {
@@ -424,7 +424,7 @@ export class WistiaMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
-    return this.get(`/projects/${args.hashed_id}.json`);
+    return this.get(`/projects/${encodeURIComponent(args.hashed_id as string)}.json`);
   }
 
   private async createProject(args: Record<string, unknown>): Promise<ToolResult> {
@@ -443,24 +443,24 @@ export class WistiaMCPServer {
     if (typeof args.anonymize_visitors === 'boolean') {
       params['project[anonymize_visitors]'] = String(args.anonymize_visitors);
     }
-    return this.put(`/projects/${args.hashed_id}.json`, params);
+    return this.put(`/projects/${encodeURIComponent(args.hashed_id as string)}.json`, params);
   }
 
   private async deleteProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
-    return this.del(`/projects/${args.hashed_id}.json`);
+    return this.del(`/projects/${encodeURIComponent(args.hashed_id as string)}.json`);
   }
 
   private async copyProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.owner) params.owner = args.owner as string;
-    return this.post(`/projects/${args.hashed_id}/copy.json`, params);
+    return this.post(`/projects/${encodeURIComponent(args.hashed_id as string)}/copy.json`, params);
   }
 
   private async listProjectMedias(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
-    return this.get(`/projects/${args.hashed_id}.json`);
+    return this.get(`/projects/${encodeURIComponent(args.hashed_id as string)}.json`);
   }
 
   private async getAccount(): Promise<ToolResult> {
@@ -469,31 +469,31 @@ export class WistiaMCPServer {
 
   private async listCaptions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
-    return this.get(`/medias/${args.hashed_id}/captions.json`);
+    return this.get(`/medias/${encodeURIComponent(args.hashed_id as string)}/captions.json`);
   }
 
   private async getCaptions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id || !args.language_code) {
       return { content: [{ type: 'text', text: 'hashed_id and language_code are required' }], isError: true };
     }
-    return this.get(`/medias/${args.hashed_id}/captions/${args.language_code}.json`);
+    return this.get(`/medias/${encodeURIComponent(args.hashed_id as string)}/captions/${encodeURIComponent(args.language_code as string)}.json`);
   }
 
   private async deleteCaptions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id || !args.language_code) {
       return { content: [{ type: 'text', text: 'hashed_id and language_code are required' }], isError: true };
     }
-    return this.del(`/medias/${args.hashed_id}/captions/${args.language_code}.json`);
+    return this.del(`/medias/${encodeURIComponent(args.hashed_id as string)}/captions/${encodeURIComponent(args.language_code as string)}.json`);
   }
 
   private async getMediaStats(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
-    return this.get(`/stats/medias/${args.hashed_id}.json`);
+    return this.get(`/stats/medias/${encodeURIComponent(args.hashed_id as string)}.json`);
   }
 
   private async getProjectStats(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.hashed_id) return { content: [{ type: 'text', text: 'hashed_id is required' }], isError: true };
-    return this.get(`/stats/projects/${args.hashed_id}.json`);
+    return this.get(`/stats/projects/${encodeURIComponent(args.hashed_id as string)}.json`);
   }
 
   private async getAccountStats(): Promise<ToolResult> {

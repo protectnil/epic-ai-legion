@@ -462,7 +462,7 @@ export class SophosMCPServer {
     if (args.pageToken) url += `&pageToken=${encodeURIComponent(args.pageToken as string)}`;
     if (args.healthStatus) url += `&healthStatus=${encodeURIComponent(args.healthStatus as string)}`;
     if (args.type) url += `&type=${encodeURIComponent(args.type as string)}`;
-    if (typeof args.tamperProtectionEnabled === 'boolean') url += `&tamperProtectionEnabled=${args.tamperProtectionEnabled}`;
+    if (typeof args.tamperProtectionEnabled === 'boolean') url += `&tamperProtectionEnabled=${encodeURIComponent(String(args.tamperProtectionEnabled))}`;
     if (args.lockdownStatus) url += `&lockdownStatus=${encodeURIComponent(args.lockdownStatus as string)}`;
 
     const response = await fetch(url, { method: 'GET', headers });

@@ -574,7 +574,7 @@ export class CohereMCPServer {
   private async listModels(args: Record<string, unknown>): Promise<ToolResult> {
     const params: string[] = [];
     if (args.endpoint) params.push(`endpoint=${encodeURIComponent(args.endpoint as string)}`);
-    if (args.page_size) params.push(`page_size=${args.page_size}`);
+    if (args.page_size) params.push(`page_size=${encodeURIComponent(args.page_size as string)}`);
     if (args.page_token) params.push(`page_token=${encodeURIComponent(args.page_token as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     return this.fetchJson(`${this.baseUrl}/v1/models${qs}`, { method: 'GET', headers: this.headers });
@@ -644,7 +644,7 @@ export class CohereMCPServer {
     if (args.dataset_type) params.push(`datasetType=${encodeURIComponent(args.dataset_type as string)}`);
     if (args.before) params.push(`before=${encodeURIComponent(args.before as string)}`);
     if (args.after) params.push(`after=${encodeURIComponent(args.after as string)}`);
-    if (args.limit) params.push(`limit=${args.limit}`);
+    if (args.limit) params.push(`limit=${encodeURIComponent(args.limit as string)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     return this.fetchJson(`${this.baseUrl}/v1/datasets${qs}`, { method: 'GET', headers: this.headers });
   }

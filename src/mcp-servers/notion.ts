@@ -490,7 +490,7 @@ export class NotionMCPServer {
   }
 
   private async getPage(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/pages/${args.page_id}`);
+    return this.get(`/pages/${encodeURIComponent(args.page_id as string)}`);
   }
 
   private async createPage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -518,39 +518,39 @@ export class NotionMCPServer {
     const body: Record<string, unknown> = {};
     if (args.properties) body.properties = args.properties;
     if (args.archived !== undefined) body.archived = args.archived;
-    return this.patch(`/pages/${args.page_id}`, body);
+    return this.patch(`/pages/${encodeURIComponent(args.page_id as string)}`, body);
   }
 
   private async getBlockChildren(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     params.set('page_size', String((args.page_size as number) ?? 100));
     if (args.start_cursor) params.set('start_cursor', String(args.start_cursor));
-    return this.get(`/blocks/${args.block_id}/children?${params.toString()}`);
+    return this.get(`/blocks/${encodeURIComponent(args.block_id as string)}/children?${params.toString()}`);
   }
 
   private async appendBlockChildren(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { children: args.children };
     if (args.after) body.after = args.after;
-    return this.patch(`/blocks/${args.block_id}/children`, body);
+    return this.patch(`/blocks/${encodeURIComponent(args.block_id as string)}/children`, body);
   }
 
   private async getBlock(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/blocks/${args.block_id}`);
+    return this.get(`/blocks/${encodeURIComponent(args.block_id as string)}`);
   }
 
   private async updateBlock(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {};
     if (args.block_content) Object.assign(body, args.block_content);
     if (args.archived !== undefined) body.archived = args.archived;
-    return this.patch(`/blocks/${args.block_id}`, body);
+    return this.patch(`/blocks/${encodeURIComponent(args.block_id as string)}`, body);
   }
 
   private async deleteBlock(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.del(`/blocks/${args.block_id}`);
+    return this.del(`/blocks/${encodeURIComponent(args.block_id as string)}`);
   }
 
   private async getDatabase(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/databases/${args.database_id}`);
+    return this.get(`/databases/${encodeURIComponent(args.database_id as string)}`);
   }
 
   private async queryDatabase(args: Record<string, unknown>): Promise<ToolResult> {
@@ -560,7 +560,7 @@ export class NotionMCPServer {
     if (args.filter) body.filter = args.filter;
     if (args.sorts) body.sorts = args.sorts;
     if (args.start_cursor) body.start_cursor = args.start_cursor;
-    return this.post(`/databases/${args.database_id}/query`, body);
+    return this.post(`/databases/${encodeURIComponent(args.database_id as string)}/query`, body);
   }
 
   private async createDatabase(args: Record<string, unknown>): Promise<ToolResult> {
@@ -580,7 +580,7 @@ export class NotionMCPServer {
   }
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/users/${args.user_id}`);
+    return this.get(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async createComment(args: Record<string, unknown>): Promise<ToolResult> {

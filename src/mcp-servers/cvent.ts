@@ -584,7 +584,7 @@ export class CventMCPServer {
 
   private async getEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.apiGet(`/events/${args.event_id}`);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}`);
   }
 
   private async createEvent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -611,7 +611,7 @@ export class CventMCPServer {
     if (args.end_date) body.endDate = args.end_date;
     if (args.capacity !== undefined) body.capacity = args.capacity;
     if (args.status) body.status = args.status;
-    return this.apiPatch(`/events/${args.event_id}`, body);
+    return this.apiPatch(`/events/${encodeURIComponent(args.event_id as string)}`, body);
   }
 
   private async listContacts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -626,7 +626,7 @@ export class CventMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.apiGet(`/contacts/${args.contact_id}`);
+    return this.apiGet(`/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async createContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -651,21 +651,21 @@ export class CventMCPServer {
     if (args.contact_id) params.contactId = args.contact_id as string;
     if (args.token) params.token = args.token as string;
     if (args.limit) params.limit = String(args.limit);
-    return this.apiGet(`/events/${args.event_id}/registrations`, params);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}/registrations`, params);
   }
 
   private async getRegistration(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.registration_id) {
       return { content: [{ type: 'text', text: 'event_id and registration_id are required' }], isError: true };
     }
-    return this.apiGet(`/events/${args.event_id}/registrations/${args.registration_id}`);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}/registrations/${encodeURIComponent(args.registration_id as string)}`);
   }
 
   private async createRegistration(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.contact_id || !args.admission_item_id) {
       return { content: [{ type: 'text', text: 'event_id, contact_id, and admission_item_id are required' }], isError: true };
     }
-    return this.apiPost(`/events/${args.event_id}/registrations`, {
+    return this.apiPost(`/events/${encodeURIComponent(args.event_id as string)}/registrations`, {
       contactId: args.contact_id,
       admissionItemId: args.admission_item_id,
     });
@@ -677,14 +677,14 @@ export class CventMCPServer {
     if (args.category) params.category = args.category as string;
     if (args.token) params.token = args.token as string;
     if (args.limit) params.limit = String(args.limit);
-    return this.apiGet(`/events/${args.event_id}/sessions`, params);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}/sessions`, params);
   }
 
   private async getSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.session_id) {
       return { content: [{ type: 'text', text: 'event_id and session_id are required' }], isError: true };
     }
-    return this.apiGet(`/events/${args.event_id}/sessions/${args.session_id}`);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}/sessions/${encodeURIComponent(args.session_id as string)}`);
   }
 
   private async createSession(args: Record<string, unknown>): Promise<ToolResult> {
@@ -699,7 +699,7 @@ export class CventMCPServer {
     if (args.capacity !== undefined) body.capacity = args.capacity;
     if (args.description) body.description = args.description;
     if (args.category) body.category = args.category;
-    return this.apiPost(`/events/${args.event_id}/sessions`, body);
+    return this.apiPost(`/events/${encodeURIComponent(args.event_id as string)}/sessions`, body);
   }
 
   private async listAdmissionItems(args: Record<string, unknown>): Promise<ToolResult> {
@@ -707,13 +707,13 @@ export class CventMCPServer {
     const params: Record<string, string> = {};
     if (args.token) params.token = args.token as string;
     if (args.limit) params.limit = String(args.limit);
-    return this.apiGet(`/events/${args.event_id}/admission-items`, params);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}/admission-items`, params);
   }
 
   private async getAdmissionItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.admission_item_id) {
       return { content: [{ type: 'text', text: 'event_id and admission_item_id are required' }], isError: true };
     }
-    return this.apiGet(`/events/${args.event_id}/admission-items/${args.admission_item_id}`);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}/admission-items/${encodeURIComponent(args.admission_item_id as string)}`);
   }
 }

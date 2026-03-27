@@ -510,7 +510,7 @@ export class CensusGovMCPServer {
     });
     if (geoParams.in) params.set('in', geoParams.in);
 
-    return this.censusApiGet(`${this.baseUrl}/${args.year}/${datasetPath}?${params.toString()}`);
+    return this.censusApiGet(`${this.baseUrl}/${encodeURIComponent(args.year as string)}/${datasetPath}?${params.toString()}`);
   }
 
   private async getDecennialData(args: Record<string, unknown>): Promise<ToolResult> {
@@ -539,12 +539,12 @@ export class CensusGovMCPServer {
     if (args.naics_code) params.set('NAICS2017', args.naics_code as string);
 
     const datasetPath = (args.geo_type as string).toLowerCase() === 'zipcode' ? 'zbp' : 'cbp';
-    return this.censusApiGet(`${this.baseUrl}/${args.year}/${datasetPath}?${params.toString()}`);
+    return this.censusApiGet(`${this.baseUrl}/${encodeURIComponent(args.year as string)}/${datasetPath}?${params.toString()}`);
   }
 
   private async listVariables(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.year || !args.dataset) return { content: [{ type: 'text', text: 'year and dataset are required' }], isError: true };
-    return this.censusApiGet(`${this.baseUrl}/${args.year}/${args.dataset}/variables.json`);
+    return this.censusApiGet(`${this.baseUrl}/${encodeURIComponent(args.year as string)}/${encodeURIComponent(args.dataset as string)}/variables.json`);
   }
 
   private async searchVariables(args: Record<string, unknown>): Promise<ToolResult> {
@@ -553,7 +553,7 @@ export class CensusGovMCPServer {
     }
 
     const keyParam = this.apiKey ? `?key=${encodeURIComponent(this.apiKey)}` : '';
-    const response = await fetch(`${this.baseUrl}/${args.year}/${args.dataset}/variables.json${keyParam}`, {
+    const response = await fetch(`${this.baseUrl}/${encodeURIComponent(args.year as string)}/${encodeURIComponent(args.dataset as string)}/variables.json${keyParam}`, {
       headers: { Accept: 'application/json' },
     });
 
@@ -576,7 +576,7 @@ export class CensusGovMCPServer {
 
   private async listGeographies(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.year || !args.dataset) return { content: [{ type: 'text', text: 'year and dataset are required' }], isError: true };
-    return this.censusApiGet(`${this.baseUrl}/${args.year}/${args.dataset}/geography.json`);
+    return this.censusApiGet(`${this.baseUrl}/${encodeURIComponent(args.year as string)}/${encodeURIComponent(args.dataset as string)}/geography.json`);
   }
 
   private async getStateData(args: Record<string, unknown>): Promise<ToolResult> {
@@ -625,6 +625,6 @@ export class CensusGovMCPServer {
 
   private async getDatasetInfo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.year || !args.dataset) return { content: [{ type: 'text', text: 'year and dataset are required' }], isError: true };
-    return this.censusApiGet(`${this.baseUrl}/${args.year}/${args.dataset}.json`);
+    return this.censusApiGet(`${this.baseUrl}/${encodeURIComponent(args.year as string)}/${encodeURIComponent(args.dataset as string)}.json`);
   }
 }

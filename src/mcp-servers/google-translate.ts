@@ -325,7 +325,7 @@ export class GoogleTranslateMCPServer {
 
     if (args.glossary_id) {
       body.glossaryConfig = {
-        glossary: `${parent}/glossaries/${args.glossary_id}`,
+        glossary: `${parent}/glossaries/${encodeURIComponent(args.glossary_id as string)}`,
       };
     }
 
@@ -440,7 +440,7 @@ export class GoogleTranslateMCPServer {
     const parent = this.parentPath(location);
 
     const body = {
-      name: `${parent}/glossaries/${args.glossary_id}`,
+      name: `${parent}/glossaries/${encodeURIComponent(args.glossary_id as string)}`,
       languagePair: {
         sourceLanguageCode: args.language_pair_source,
         targetLanguageCode: args.language_pair_target,
@@ -472,7 +472,7 @@ export class GoogleTranslateMCPServer {
 
     const location = (args.location as string) || 'us-central1';
     const parent = this.parentPath(location);
-    const url = `${this.baseUrl}/${parent}/glossaries/${args.glossary_id}`;
+    const url = `${this.baseUrl}/${parent}/glossaries/${encodeURIComponent(args.glossary_id as string)}`;
 
     const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
 
@@ -513,7 +513,7 @@ export class GoogleTranslateMCPServer {
 
     const location = (args.location as string) || 'us-central1';
     const parent = this.parentPath(location);
-    const url = `${this.baseUrl}/${parent}/glossaries/${args.glossary_id}`;
+    const url = `${this.baseUrl}/${parent}/glossaries/${encodeURIComponent(args.glossary_id as string)}`;
 
     const response = await fetch(url, { method: 'DELETE', headers: this.authHeaders });
 

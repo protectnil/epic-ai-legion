@@ -380,7 +380,7 @@ export class GoogleVertexAIMCPServer {
   private buildListParams(args: Record<string, unknown>): string {
     const params: string[] = [];
     if (args.filter) params.push(`filter=${encodeURIComponent(args.filter as string)}`);
-    if (args.page_size) params.push(`pageSize=${args.page_size}`);
+    if (args.page_size) params.push(`pageSize=${encodeURIComponent(args.page_size as string)}`);
     if (args.page_token) params.push(`pageToken=${encodeURIComponent(args.page_token as string)}`);
     if (args.order_by) params.push(`orderBy=${encodeURIComponent(args.order_by as string)}`);
     return params.length > 0 ? `?${params.join('&')}` : '';
@@ -388,7 +388,7 @@ export class GoogleVertexAIMCPServer {
 
   private async generateContent(args: Record<string, unknown>): Promise<ToolResult> {
     const publisher = (args.publisher as string) || 'google';
-    const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/publishers/${publisher}/models/${args.model as string}:generateContent`;
+    const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/publishers/${publisher}/models/${encodeURIComponent(args.model as string)}:generateContent`;
 
     const body: Record<string, unknown> = { contents: args.contents };
     if (args.system_instruction) body.systemInstruction = args.system_instruction;
@@ -405,7 +405,7 @@ export class GoogleVertexAIMCPServer {
 
   private async countTokens(args: Record<string, unknown>): Promise<ToolResult> {
     const publisher = (args.publisher as string) || 'google';
-    const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/publishers/${publisher}/models/${args.model as string}:countTokens`;
+    const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/publishers/${publisher}/models/${encodeURIComponent(args.model as string)}:countTokens`;
 
     const response = await fetch(url, {
       method: 'POST',

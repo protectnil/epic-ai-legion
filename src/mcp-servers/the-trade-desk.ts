@@ -556,7 +556,7 @@ export class TheTradeDeskMCPServer {
 
   private async getAdvertiser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.advertiser_id) return { content: [{ type: 'text', text: 'advertiser_id is required' }], isError: true };
-    return this.ttdGet(`/advertiser/${args.advertiser_id}`);
+    return this.ttdGet(`/advertiser/${encodeURIComponent(args.advertiser_id as string)}`);
   }
 
   private async listAdvertisers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -570,7 +570,7 @@ export class TheTradeDeskMCPServer {
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.ttdGet(`/campaign/${args.campaign_id}`);
+    return this.ttdGet(`/campaign/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -607,7 +607,7 @@ export class TheTradeDeskMCPServer {
 
   private async getAdgroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.adgroup_id) return { content: [{ type: 'text', text: 'adgroup_id is required' }], isError: true };
-    return this.ttdGet(`/adgroup/${args.adgroup_id}`);
+    return this.ttdGet(`/adgroup/${encodeURIComponent(args.adgroup_id as string)}`);
   }
 
   private async listAdgroups(args: Record<string, unknown>): Promise<ToolResult> {
@@ -640,7 +640,7 @@ export class TheTradeDeskMCPServer {
 
   private async getCreative(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.creative_id) return { content: [{ type: 'text', text: 'creative_id is required' }], isError: true };
-    return this.ttdGet(`/creative/${args.creative_id}`);
+    return this.ttdGet(`/creative/${encodeURIComponent(args.creative_id as string)}`);
   }
 
   private async listCreatives(args: Record<string, unknown>): Promise<ToolResult> {
@@ -664,7 +664,7 @@ export class TheTradeDeskMCPServer {
 
   private async getSiteList(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_list_id) return { content: [{ type: 'text', text: 'site_list_id is required' }], isError: true };
-    return this.ttdGet(`/sitelist/${args.site_list_id}`);
+    return this.ttdGet(`/sitelist/${encodeURIComponent(args.site_list_id as string)}`);
   }
 
   private async listAudiences(args: Record<string, unknown>): Promise<ToolResult> {

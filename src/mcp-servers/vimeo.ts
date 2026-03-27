@@ -523,7 +523,7 @@ export class VimeoMCPServer {
     if (!args.video_id) return { content: [{ type: 'text', text: 'video_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.fields) params.fields = args.fields as string;
-    return this.vimeoGet(`/videos/${args.video_id}`, params);
+    return this.vimeoGet(`/videos/${encodeURIComponent(args.video_id as string)}`, params);
   }
 
   private async searchVideos(args: Record<string, unknown>): Promise<ToolResult> {
@@ -541,7 +541,7 @@ export class VimeoMCPServer {
 
   private async deleteVideo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.video_id) return { content: [{ type: 'text', text: 'video_id is required' }], isError: true };
-    return this.vimeoDelete(`/videos/${args.video_id}`);
+    return this.vimeoDelete(`/videos/${encodeURIComponent(args.video_id as string)}`);
   }
 
   private async updateVideo(args: Record<string, unknown>): Promise<ToolResult> {
@@ -557,7 +557,7 @@ export class VimeoMCPServer {
       if (args.privacy_embed) privacy.embed = args.privacy_embed;
       body.privacy = privacy;
     }
-    return this.vimeoPatch(`/videos/${args.video_id}`, body);
+    return this.vimeoPatch(`/videos/${encodeURIComponent(args.video_id as string)}`, body);
   }
 
   private async getVideoAnalytics(args: Record<string, unknown>): Promise<ToolResult> {
@@ -567,7 +567,7 @@ export class VimeoMCPServer {
     };
     if (args.from) params.from = args.from as string;
     if (args.to) params.to = args.to as string;
-    return this.vimeoGet(`/videos/${args.video_id}/analytics`, params);
+    return this.vimeoGet(`/videos/${encodeURIComponent(args.video_id as string)}/analytics`, params);
   }
 
   private async listShowcases(args: Record<string, unknown>): Promise<ToolResult> {
@@ -582,7 +582,7 @@ export class VimeoMCPServer {
   private async getShowcase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.showcase_id) return { content: [{ type: 'text', text: 'showcase_id is required' }], isError: true };
     const user = (args.user_id as string) || 'me';
-    return this.vimeoGet(`/users/${user}/albums/${args.showcase_id}`);
+    return this.vimeoGet(`/users/${user}/albums/${encodeURIComponent(args.showcase_id as string)}`);
   }
 
   private async createShowcase(args: Record<string, unknown>): Promise<ToolResult> {
@@ -601,7 +601,7 @@ export class VimeoMCPServer {
     if (args.name) body.name = args.name;
     if (args.description) body.description = args.description;
     if (args.privacy) body.privacy = args.privacy;
-    return this.vimeoPatch(`/me/albums/${args.showcase_id}`, body);
+    return this.vimeoPatch(`/me/albums/${encodeURIComponent(args.showcase_id as string)}`, body);
   }
 
   private async listShowcaseVideos(args: Record<string, unknown>): Promise<ToolResult> {
@@ -610,12 +610,12 @@ export class VimeoMCPServer {
       per_page: String((args.per_page as number) || 25),
       page: String((args.page as number) || 1),
     };
-    return this.vimeoGet(`/me/albums/${args.showcase_id}/videos`, params);
+    return this.vimeoGet(`/me/albums/${encodeURIComponent(args.showcase_id as string)}/videos`, params);
   }
 
   private async addVideoToShowcase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.showcase_id || !args.video_id) return { content: [{ type: 'text', text: 'showcase_id and video_id are required' }], isError: true };
-    return this.vimeoPut(`/me/albums/${args.showcase_id}/videos/${args.video_id}`);
+    return this.vimeoPut(`/me/albums/${encodeURIComponent(args.showcase_id as string)}/videos/${encodeURIComponent(args.video_id as string)}`);
   }
 
   private async listFolders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -637,6 +637,6 @@ export class VimeoMCPServer {
       page: String((args.page as number) || 1),
       direction: (args.direction as string) || 'asc',
     };
-    return this.vimeoGet(`/videos/${args.video_id}/comments`, params);
+    return this.vimeoGet(`/videos/${encodeURIComponent(args.video_id as string)}/comments`, params);
   }
 }

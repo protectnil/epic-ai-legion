@@ -372,7 +372,7 @@ export class TheGraphMCPServer {
 
   private async querySubgraphStudio(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.studio_id || !args.version || !args.query) return { content: [{ type: 'text', text: 'studio_id, version, and query are required' }], isError: true };
-    const url = `${this.subgraphStudioUrl}/${args.studio_id}/${args.version}`;
+    const url = `${this.subgraphStudioUrl}/${encodeURIComponent(args.studio_id as string)}/${encodeURIComponent(args.version as string)}`;
     return this.graphqlPost(url, args.query as string, args.variables as Record<string, unknown> | undefined);
   }
 
@@ -398,7 +398,7 @@ export class TheGraphMCPServer {
     if (!args.subgraph_id) return { content: [{ type: 'text', text: 'subgraph_id is required' }], isError: true };
     // Query The Graph Network subgraph for metadata about this deployment
     const query = `{
-      subgraphDeployment(id: "${args.subgraph_id}") {
+      subgraphDeployment(id: "${encodeURIComponent(args.subgraph_id as string)}") {
         id
         ipfsHash
         createdAt
@@ -421,7 +421,7 @@ export class TheGraphMCPServer {
     const orderBy = (args.order_by as string) || 'signalAmount';
     let networkFilter = '';
     if (args.network) {
-      networkFilter = `, where: { network: "${args.network}" }`;
+      networkFilter = `, where: { network: "${encodeURIComponent(args.network as string)}" }`;
     }
     const query = `{
       subgraphs(first: ${first}, skip: ${skip}, orderBy: ${orderBy}, orderDirection: desc${networkFilter}) {
@@ -441,7 +441,7 @@ export class TheGraphMCPServer {
     if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
     const first = (args.first as number) || 20;
     const gqlQuery = `{
-      subgraphSearch(text: "${args.query}") {
+      subgraphSearch(text: "${encodeURIComponent(args.query as string)}") {
         id
         displayName
         description
@@ -457,7 +457,7 @@ export class TheGraphMCPServer {
   private async getIndexerStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.subgraph_id) return { content: [{ type: 'text', text: 'subgraph_id is required' }], isError: true };
     const query = `{
-      subgraphDeployment(id: "${args.subgraph_id}") {
+      subgraphDeployment(id: "${encodeURIComponent(args.subgraph_id as string)}") {
         id
         latestEthereumBlockNumber
         stakedTokens
@@ -484,7 +484,7 @@ export class TheGraphMCPServer {
     // entity_type is singular (e.g. Token), GraphQL query uses lowercase first letter
     const typeName = (args.entity_type as string).charAt(0).toLowerCase() + (args.entity_type as string).slice(1);
     const query = `{
-      ${typeName}(id: "${args.entity_id}") {
+      ${typeName}(id: "${encodeURIComponent(args.entity_id as string)}") {
         ${fields}
       }
     }`;
@@ -497,8 +497,8 @@ export class TheGraphMCPServer {
     }
     const first = (args.first as number) || 20;
     const skip = (args.skip as number) || 0;
-    const orderBy = args.order_by ? `, orderBy: ${args.order_by}` : '';
-    const orderDirection = args.order_direction ? `, orderDirection: ${args.order_direction}` : ', orderDirection: desc';
+    const orderBy = args.order_by ? `, orderBy: ${encodeURIComponent(args.order_by as string)}` : '';
+    const orderDirection = args.order_direction ? `, orderDirection: ${encodeURIComponent(args.order_direction as string)}` : ', orderDirection: desc';
     const fields = (args.fields as string) || 'id';
 
     let whereClause = '';
@@ -510,7 +510,7 @@ export class TheGraphMCPServer {
     }
 
     const query = `{
-      ${args.entity_type}(first: ${first}, skip: ${skip}${orderBy}${orderDirection}${whereClause}) {
+      ${encodeURIComponent(args.entity_type as string)}(first: ${first}, skip: ${skip}${orderBy}${orderDirection}${whereClause}) {
         ${fields}
       }
     }`;
@@ -524,7 +524,7 @@ export class TheGraphMCPServer {
     const first = (args.first as number) || 20;
     const fields = (args.fields as string) || 'id timestamp';
     const query = `{
-      ${args.event_type}(first: ${first}, orderBy: timestamp, orderDirection: desc) {
+      ${encodeURIComponent(args.event_type as string)}(first: ${first}, orderBy: timestamp, orderDirection: desc) {
         ${fields}
       }
     }`;

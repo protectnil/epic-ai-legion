@@ -576,7 +576,7 @@ export class ShortcutMCPServer {
     const query = args.query as string;
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
     let url = `/search/stories?query=${encodeURIComponent(query)}`;
-    if (args.pageSize) url += `&page_size=${args.pageSize}`;
+    if (args.pageSize) url += `&page_size=${encodeURIComponent(args.pageSize as string)}`;
     if (args.next) url += `&next=${encodeURIComponent(args.next as string)}`;
     return this.shortcutGet(url);
   }
@@ -707,7 +707,7 @@ export class ShortcutMCPServer {
     const query = args.query as string;
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
     let url = `/search/epics?query=${encodeURIComponent(query)}`;
-    if (args.pageSize) url += `&page_size=${args.pageSize}`;
+    if (args.pageSize) url += `&page_size=${encodeURIComponent(args.pageSize as string)}`;
     if (args.next) url += `&next=${encodeURIComponent(args.next as string)}`;
     return this.shortcutGet(url);
   }

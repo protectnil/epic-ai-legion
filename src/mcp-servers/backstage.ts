@@ -454,7 +454,7 @@ export class BackstageMCPServer {
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
-    return { content: [{ type: 'text', text: `Location ${args.locationId} deleted successfully.` }], isError: false };
+    return { content: [{ type: 'text', text: `Location ${encodeURIComponent(args.locationId as string)} deleted successfully.` }], isError: false };
   }
 
   // ── Entity Management ─────────────────────────────────────────────────────
@@ -465,7 +465,7 @@ export class BackstageMCPServer {
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
-    return { content: [{ type: 'text', text: `Entity ${args.uid} deleted successfully.` }], isError: false };
+    return { content: [{ type: 'text', text: `Entity ${encodeURIComponent(args.uid as string)} deleted successfully.` }], isError: false };
   }
 
   private async refreshEntity(args: Record<string, unknown>): Promise<ToolResult> {
@@ -477,7 +477,7 @@ export class BackstageMCPServer {
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
-    return { content: [{ type: 'text', text: `Refresh triggered for ${args.entityRef}.` }], isError: false };
+    return { content: [{ type: 'text', text: `Refresh triggered for ${encodeURIComponent(args.entityRef as string)}.` }], isError: false };
   }
 
   // ── Ancestry ──────────────────────────────────────────────────────────────

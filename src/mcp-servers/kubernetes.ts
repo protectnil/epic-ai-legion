@@ -661,7 +661,7 @@ export class KubernetesMCPServer {
     const params = new URLSearchParams();
     if (args.field_selector) params.set('fieldSelector', String(args.field_selector));
     const url = args.namespace
-      ? `${this.baseUrl}/api/v1/namespaces/${args.namespace}/events?${params}`
+      ? `${this.baseUrl}/api/v1/namespaces/${encodeURIComponent(args.namespace as string)}/events?${params}`
       : `${this.baseUrl}/api/v1/events?${params}`;
     return this.fetchResource(url);
   }

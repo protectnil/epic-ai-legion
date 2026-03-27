@@ -374,7 +374,7 @@ export class UpstashMCPServer {
 
   private async getRedisDatabase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.database_id) return { content: [{ type: 'text', text: 'database_id is required' }], isError: true };
-    return this.apiGet(`/redis/database/${args.database_id}`);
+    return this.apiGet(`/redis/database/${encodeURIComponent(args.database_id as string)}`);
   }
 
   private async createRedisDatabase(args: Record<string, unknown>): Promise<ToolResult> {
@@ -388,17 +388,17 @@ export class UpstashMCPServer {
 
   private async deleteRedisDatabase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.database_id) return { content: [{ type: 'text', text: 'database_id is required' }], isError: true };
-    return this.apiDelete(`/redis/database/${args.database_id}`);
+    return this.apiDelete(`/redis/database/${encodeURIComponent(args.database_id as string)}`);
   }
 
   private async resetRedisPassword(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.database_id) return { content: [{ type: 'text', text: 'database_id is required' }], isError: true };
-    return this.apiPost(`/redis/database/${args.database_id}/reset-password`, {});
+    return this.apiPost(`/redis/database/${encodeURIComponent(args.database_id as string)}/reset-password`, {});
   }
 
   private async getRedisStats(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.database_id) return { content: [{ type: 'text', text: 'database_id is required' }], isError: true };
-    return this.apiGet(`/redis/stats/${args.database_id}`);
+    return this.apiGet(`/redis/stats/${encodeURIComponent(args.database_id as string)}`);
   }
 
   private async listKafkaClusters(): Promise<ToolResult> {
@@ -407,7 +407,7 @@ export class UpstashMCPServer {
 
   private async getKafkaCluster(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id) return { content: [{ type: 'text', text: 'cluster_id is required' }], isError: true };
-    return this.apiGet(`/kafka/cluster/${args.cluster_id}`);
+    return this.apiGet(`/kafka/cluster/${encodeURIComponent(args.cluster_id as string)}`);
   }
 
   private async createKafkaCluster(args: Record<string, unknown>): Promise<ToolResult> {
@@ -420,7 +420,7 @@ export class UpstashMCPServer {
 
   private async listKafkaTopics(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id) return { content: [{ type: 'text', text: 'cluster_id is required' }], isError: true };
-    return this.apiGet(`/kafka/topic?clusterid=${args.cluster_id}`);
+    return this.apiGet(`/kafka/topic?clusterid=${encodeURIComponent(args.cluster_id as string)}`);
   }
 
   private async createKafkaTopic(args: Record<string, unknown>): Promise<ToolResult> {
@@ -437,7 +437,7 @@ export class UpstashMCPServer {
 
   private async deleteKafkaTopic(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cluster_id || !args.topic_id) return { content: [{ type: 'text', text: 'cluster_id and topic_id are required' }], isError: true };
-    return this.apiDelete(`/kafka/topic/${args.topic_id}`);
+    return this.apiDelete(`/kafka/topic/${encodeURIComponent(args.topic_id as string)}`);
   }
 
   private async listQStashEndpoints(): Promise<ToolResult> {
@@ -445,7 +445,7 @@ export class UpstashMCPServer {
   }
 
   private async getQStashDLQ(args: Record<string, unknown>): Promise<ToolResult> {
-    const qs = args.cursor ? `?cursor=${args.cursor}` : '';
+    const qs = args.cursor ? `?cursor=${encodeURIComponent(args.cursor as string)}` : '';
     return this.apiGet(`/qstash/v2/dlq${qs}`);
   }
 

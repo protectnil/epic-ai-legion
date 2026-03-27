@@ -635,7 +635,7 @@ export class BrightcoveMCPServer {
 
   private async getVideo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.video_id) return { content: [{ type: 'text', text: 'video_id is required' }], isError: true };
-    return this.cmsGet(`/videos/${args.video_id}`);
+    return this.cmsGet(`/videos/${encodeURIComponent(args.video_id as string)}`);
   }
 
   private async createVideo(args: Record<string, unknown>): Promise<ToolResult> {
@@ -661,12 +661,12 @@ export class BrightcoveMCPServer {
     if (args.state) body.state = args.state;
     if (args.reference_id) body.reference_id = args.reference_id;
     if (args.tags) body.tags = (args.tags as string).split(',').map(t => t.trim());
-    return this.cmsPatch(`/videos/${args.video_id}`, body);
+    return this.cmsPatch(`/videos/${encodeURIComponent(args.video_id as string)}`, body);
   }
 
   private async deleteVideo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.video_id) return { content: [{ type: 'text', text: 'video_id is required' }], isError: true };
-    return this.cmsDelete(`/videos/${args.video_id}`);
+    return this.cmsDelete(`/videos/${encodeURIComponent(args.video_id as string)}`);
   }
 
   private async searchVideos(args: Record<string, unknown>): Promise<ToolResult> {
@@ -682,12 +682,12 @@ export class BrightcoveMCPServer {
 
   private async getVideoSources(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.video_id) return { content: [{ type: 'text', text: 'video_id is required' }], isError: true };
-    return this.cmsGet(`/videos/${args.video_id}/sources`);
+    return this.cmsGet(`/videos/${encodeURIComponent(args.video_id as string)}/sources`);
   }
 
   private async getVideoImages(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.video_id) return { content: [{ type: 'text', text: 'video_id is required' }], isError: true };
-    return this.cmsGet(`/videos/${args.video_id}/images`);
+    return this.cmsGet(`/videos/${encodeURIComponent(args.video_id as string)}/images`);
   }
 
   private async listPlaylists(args: Record<string, unknown>): Promise<ToolResult> {
@@ -701,7 +701,7 @@ export class BrightcoveMCPServer {
 
   private async getPlaylist(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.playlist_id) return { content: [{ type: 'text', text: 'playlist_id is required' }], isError: true };
-    return this.cmsGet(`/playlists/${args.playlist_id}`);
+    return this.cmsGet(`/playlists/${encodeURIComponent(args.playlist_id as string)}`);
   }
 
   private async createPlaylist(args: Record<string, unknown>): Promise<ToolResult> {
@@ -726,12 +726,12 @@ export class BrightcoveMCPServer {
     if (args.description) body.description = args.description;
     if (args.video_ids) body.video_ids = (args.video_ids as string).split(',').map(id => id.trim());
     if (args.search) body.search = args.search;
-    return this.cmsPatch(`/playlists/${args.playlist_id}`, body);
+    return this.cmsPatch(`/playlists/${encodeURIComponent(args.playlist_id as string)}`, body);
   }
 
   private async deletePlaylist(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.playlist_id) return { content: [{ type: 'text', text: 'playlist_id is required' }], isError: true };
-    return this.cmsDelete(`/playlists/${args.playlist_id}`);
+    return this.cmsDelete(`/playlists/${encodeURIComponent(args.playlist_id as string)}`);
   }
 
   private async getVideosInPlaylist(args: Record<string, unknown>): Promise<ToolResult> {
@@ -740,7 +740,7 @@ export class BrightcoveMCPServer {
       limit: String((args.limit as number) ?? 20),
       offset: String((args.offset as number) ?? 0),
     };
-    return this.cmsGet(`/playlists/${args.playlist_id}/videos`, params);
+    return this.cmsGet(`/playlists/${encodeURIComponent(args.playlist_id as string)}/videos`, params);
   }
 
   private async ingestVideo(args: Record<string, unknown>): Promise<ToolResult> {
@@ -753,7 +753,7 @@ export class BrightcoveMCPServer {
       priority: (args.priority as string) ?? 'normal',
     };
     if (args.profile) body.profile = args.profile;
-    return this.ingestPost(`/videos/${args.video_id}/ingest-requests`, body);
+    return this.ingestPost(`/videos/${encodeURIComponent(args.video_id as string)}/ingest-requests`, body);
   }
 
   private async listPlayers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -766,7 +766,7 @@ export class BrightcoveMCPServer {
 
   private async getPlayer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.player_id) return { content: [{ type: 'text', text: 'player_id is required' }], isError: true };
-    return this.playersGet(`/players/${args.player_id}`);
+    return this.playersGet(`/players/${encodeURIComponent(args.player_id as string)}`);
   }
 
   private async createPlayer(args: Record<string, unknown>): Promise<ToolResult> {
@@ -784,7 +784,7 @@ export class BrightcoveMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.description) body.description = args.description;
-    return this.playersPatch(`/players/${args.player_id}`, body);
+    return this.playersPatch(`/players/${encodeURIComponent(args.player_id as string)}`, body);
   }
 
   private async listFolders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -797,7 +797,7 @@ export class BrightcoveMCPServer {
 
   private async getFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.folder_id) return { content: [{ type: 'text', text: 'folder_id is required' }], isError: true };
-    return this.cmsGet(`/folders/${args.folder_id}`);
+    return this.cmsGet(`/folders/${encodeURIComponent(args.folder_id as string)}`);
   }
 
   private async createFolder(args: Record<string, unknown>): Promise<ToolResult> {

@@ -548,7 +548,7 @@ export class CornerstoneMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.csodGet(`/users/${args.user_id as string}`);
+    return this.csodGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async searchUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -574,7 +574,7 @@ export class CornerstoneMCPServer {
 
   private async getLearningObject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.lo_id) return { content: [{ type: 'text', text: 'lo_id is required' }], isError: true };
-    return this.csodGet(`/learning/lo/${args.lo_id as string}`);
+    return this.csodGet(`/learning/lo/${encodeURIComponent(args.lo_id as string)}`);
   }
 
   private async getUserTranscript(args: Record<string, unknown>): Promise<ToolResult> {
@@ -585,7 +585,7 @@ export class CornerstoneMCPServer {
     };
     if (args.status) params.status = args.status as string;
     if (args.lo_type) params.loType = args.lo_type as string;
-    return this.csodGet(`/users/${args.user_id as string}/transcript`, params);
+    return this.csodGet(`/users/${encodeURIComponent(args.user_id as string)}/transcript`, params);
   }
 
   private async assignTraining(args: Record<string, unknown>): Promise<ToolResult> {
@@ -620,12 +620,12 @@ export class CornerstoneMCPServer {
     };
     if (args.start_date_from) params.startDateFrom = args.start_date_from as string;
     if (args.start_date_to) params.startDateTo = args.start_date_to as string;
-    return this.csodGet(`/learning/lo/${args.event_lo_id as string}/sessions`, params);
+    return this.csodGet(`/learning/lo/${encodeURIComponent(args.event_lo_id as string)}/sessions`, params);
   }
 
   private async getSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    return this.csodGet(`/learning/sessions/${args.session_id as string}`);
+    return this.csodGet(`/learning/sessions/${encodeURIComponent(args.session_id as string)}`);
   }
 
   private async createSession(args: Record<string, unknown>): Promise<ToolResult> {
@@ -656,7 +656,7 @@ export class CornerstoneMCPServer {
 
   private async getCurriculum(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.curriculum_id) return { content: [{ type: 'text', text: 'curriculum_id is required' }], isError: true };
-    return this.csodGet(`/learning/lo/${args.curriculum_id as string}`);
+    return this.csodGet(`/learning/lo/${encodeURIComponent(args.curriculum_id as string)}`);
   }
 
   private async searchTranscript(args: Record<string, unknown>): Promise<ToolResult> {
@@ -682,6 +682,6 @@ export class CornerstoneMCPServer {
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.group_id) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.csodGet(`/groups/${args.group_id as string}`);
+    return this.csodGet(`/groups/${encodeURIComponent(args.group_id as string)}`);
   }
 }

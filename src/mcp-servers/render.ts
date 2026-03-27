@@ -589,7 +589,7 @@ export class RenderMCPServer {
   }
 
   private async getService(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpGet(`/services/${args.service_id}`);
+    return this.httpGet(`/services/${encodeURIComponent(args.service_id as string)}`);
   }
 
   private async createService(args: Record<string, unknown>): Promise<ToolResult> {
@@ -622,77 +622,77 @@ export class RenderMCPServer {
   }
 
   private async deleteService(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpDelete(`/services/${args.service_id}`);
+    return this.httpDelete(`/services/${encodeURIComponent(args.service_id as string)}`);
   }
 
   private async triggerDeploy(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {};
     if (args.clear_cache) body.clearCache = args.clear_cache;
     if (args.commit_id) body.commitId = args.commit_id;
-    return this.httpPost(`/services/${args.service_id}/deploys`, body);
+    return this.httpPost(`/services/${encodeURIComponent(args.service_id as string)}/deploys`, body);
   }
 
   private async listDeploys(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({ limit: String((args.limit as number) ?? 20) });
     if (args.cursor) params.set('cursor', args.cursor as string);
-    return this.httpGet(`/services/${args.service_id}/deploys`, params);
+    return this.httpGet(`/services/${encodeURIComponent(args.service_id as string)}/deploys`, params);
   }
 
   private async getDeploy(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpGet(`/services/${args.service_id}/deploys/${args.deploy_id}`);
+    return this.httpGet(`/services/${encodeURIComponent(args.service_id as string)}/deploys/${encodeURIComponent(args.deploy_id as string)}`);
   }
 
   private async cancelDeploy(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpPost(`/services/${args.service_id}/deploys/${args.deploy_id}/cancel`, {});
+    return this.httpPost(`/services/${encodeURIComponent(args.service_id as string)}/deploys/${encodeURIComponent(args.deploy_id as string)}/cancel`, {});
   }
 
   private async rollbackDeploy(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpPost(`/services/${args.service_id}/rollback`, { deployId: args.deploy_id });
+    return this.httpPost(`/services/${encodeURIComponent(args.service_id as string)}/rollback`, { deployId: args.deploy_id });
   }
 
   private async listEnvVars(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpGet(`/services/${args.service_id}/env-vars`);
+    return this.httpGet(`/services/${encodeURIComponent(args.service_id as string)}/env-vars`);
   }
 
   private async updateEnvVars(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpPut(`/services/${args.service_id}/env-vars`, args.env_vars);
+    return this.httpPut(`/services/${encodeURIComponent(args.service_id as string)}/env-vars`, args.env_vars);
   }
 
   private async listCustomDomains(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpGet(`/services/${args.service_id}/custom-domains`);
+    return this.httpGet(`/services/${encodeURIComponent(args.service_id as string)}/custom-domains`);
   }
 
   private async addCustomDomain(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpPost(`/services/${args.service_id}/custom-domains`, { name: args.name });
+    return this.httpPost(`/services/${encodeURIComponent(args.service_id as string)}/custom-domains`, { name: args.name });
   }
 
   private async removeCustomDomain(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpDelete(`/services/${args.service_id}/custom-domains/${encodeURIComponent(args.domain_name as string)}`);
+    return this.httpDelete(`/services/${encodeURIComponent(args.service_id as string)}/custom-domains/${encodeURIComponent(args.domain_name as string)}`);
   }
 
   private async serviceAction(args: Record<string, unknown>, action: 'suspend' | 'resume'): Promise<ToolResult> {
-    return this.httpPost(`/services/${args.service_id}/${action}`, {});
+    return this.httpPost(`/services/${encodeURIComponent(args.service_id as string)}/${action}`, {});
   }
 
   private async scaleService(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpPost(`/services/${args.service_id}/scale`, { numInstances: args.numInstances });
+    return this.httpPost(`/services/${encodeURIComponent(args.service_id as string)}/scale`, { numInstances: args.numInstances });
   }
 
   private async listJobs(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({ limit: String((args.limit as number) ?? 20) });
     if (args.status) params.set('status', args.status as string);
     if (args.cursor) params.set('cursor', args.cursor as string);
-    return this.httpGet(`/services/${args.service_id}/jobs`, params);
+    return this.httpGet(`/services/${encodeURIComponent(args.service_id as string)}/jobs`, params);
   }
 
   private async createJob(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { startCommand: args.startCommand };
     if (args.planId) body.planId = args.planId;
-    return this.httpPost(`/services/${args.service_id}/jobs`, body);
+    return this.httpPost(`/services/${encodeURIComponent(args.service_id as string)}/jobs`, body);
   }
 
   private async getJob(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpGet(`/services/${args.service_id}/jobs/${args.job_id}`);
+    return this.httpGet(`/services/${encodeURIComponent(args.service_id as string)}/jobs/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async listPostgres(args: Record<string, unknown>): Promise<ToolResult> {
@@ -703,7 +703,7 @@ export class RenderMCPServer {
   }
 
   private async getPostgres(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpGet(`/postgres/${args.postgres_id}`);
+    return this.httpGet(`/postgres/${encodeURIComponent(args.postgres_id as string)}`);
   }
 
   private async listRedis(args: Record<string, unknown>): Promise<ToolResult> {
@@ -714,7 +714,7 @@ export class RenderMCPServer {
   }
 
   private async getRedisInstance(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.httpGet(`/redis/${args.redis_id}`);
+    return this.httpGet(`/redis/${encodeURIComponent(args.redis_id as string)}`);
   }
 
   private async retrieveLogs(args: Record<string, unknown>): Promise<ToolResult> {

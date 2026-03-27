@@ -555,7 +555,7 @@ export class AutomoxMCPServer {
 
   private async getDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.device_id === undefined) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiGet(`/servers/${args.device_id as number}`);
+    return this.apiGet(`/servers/${encodeURIComponent(args.device_id as number)}`);
   }
 
   private async updateDevice(args: Record<string, unknown>): Promise<ToolResult> {
@@ -571,7 +571,7 @@ export class AutomoxMCPServer {
 
   private async deleteDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.device_id === undefined) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiDelete(`/servers/${args.device_id as number}`);
+    return this.apiDelete(`/servers/${encodeURIComponent(args.device_id as number)}`);
   }
 
   private async runDeviceCommand(args: Record<string, unknown>): Promise<ToolResult> {
@@ -582,7 +582,7 @@ export class AutomoxMCPServer {
     if (!validCommands.includes(args.command as string)) {
       return { content: [{ type: 'text', text: `command must be one of: ${validCommands.join(', ')}` }], isError: true };
     }
-    return this.apiPost(`/servers/${args.device_id as number}/queues`, { command_type_name: args.command });
+    return this.apiPost(`/servers/${encodeURIComponent(args.device_id as number)}/queues`, { command_type_name: args.command });
   }
 
   private async listDevicePackages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -591,12 +591,12 @@ export class AutomoxMCPServer {
       limit: String((args.limit as number) ?? 500),
       page: String((args.page as number) ?? 0),
     };
-    return this.apiGet(`/servers/${args.device_id as number}/packages`, params);
+    return this.apiGet(`/servers/${encodeURIComponent(args.device_id as number)}/packages`, params);
   }
 
   private async listDeviceQueues(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.device_id === undefined) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiGet(`/servers/${args.device_id as number}/queues`);
+    return this.apiGet(`/servers/${encodeURIComponent(args.device_id as number)}/queues`);
   }
 
   private async listPolicies(args: Record<string, unknown>): Promise<ToolResult> {
@@ -609,7 +609,7 @@ export class AutomoxMCPServer {
 
   private async getPolicy(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.policy_id === undefined) return { content: [{ type: 'text', text: 'policy_id is required' }], isError: true };
-    return this.apiGet(`/policies/${args.policy_id as number}`);
+    return this.apiGet(`/policies/${encodeURIComponent(args.policy_id as number)}`);
   }
 
   private async createPolicy(args: Record<string, unknown>): Promise<ToolResult> {
@@ -645,13 +645,13 @@ export class AutomoxMCPServer {
 
   private async deletePolicy(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.policy_id === undefined) return { content: [{ type: 'text', text: 'policy_id is required' }], isError: true };
-    return this.apiDelete(`/policies/${args.policy_id as number}`);
+    return this.apiDelete(`/policies/${encodeURIComponent(args.policy_id as number)}`);
   }
 
   private async executePolicy(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.policy_id === undefined) return { content: [{ type: 'text', text: 'policy_id is required' }], isError: true };
     const action = (args.action as string) ?? 'remediateAll';
-    return this.apiPost(`/policies/${args.policy_id as number}/action`, { action });
+    return this.apiPost(`/policies/${encodeURIComponent(args.policy_id as number)}/action`, { action });
   }
 
   private async listPackages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -664,12 +664,12 @@ export class AutomoxMCPServer {
 
   private async approvePackage(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.package_id === undefined) return { content: [{ type: 'text', text: 'package_id is required' }], isError: true };
-    return this.apiPut(`/packages/${args.package_id as number}`, { requires_approval: false, ignored: false });
+    return this.apiPut(`/packages/${encodeURIComponent(args.package_id as number)}`, { requires_approval: false, ignored: false });
   }
 
   private async rejectPackage(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.package_id === undefined) return { content: [{ type: 'text', text: 'package_id is required' }], isError: true };
-    return this.apiPut(`/packages/${args.package_id as number}`, { ignored: true });
+    return this.apiPut(`/packages/${encodeURIComponent(args.package_id as number)}`, { ignored: true });
   }
 
   private async listGroups(): Promise<ToolResult> {
@@ -678,6 +678,6 @@ export class AutomoxMCPServer {
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.group_id === undefined) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.apiGet(`/servergroups/${args.group_id as number}`);
+    return this.apiGet(`/servergroups/${encodeURIComponent(args.group_id as number)}`);
   }
 }

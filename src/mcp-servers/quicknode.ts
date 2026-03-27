@@ -321,7 +321,7 @@ export class QuickNodeMCPServer {
 
   private async getEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId) return { content: [{ type: 'text', text: 'endpointId is required' }], isError: true };
-    return this.get(`/v0/endpoints/${args.endpointId}`);
+    return this.get(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}`);
   }
 
   private async createEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
@@ -333,17 +333,17 @@ export class QuickNodeMCPServer {
     if (!args.endpointId) return { content: [{ type: 'text', text: 'endpointId is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
-    return this.patch(`/v0/endpoints/${args.endpointId}`, body);
+    return this.patch(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}`, body);
   }
 
   private async deactivateEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId) return { content: [{ type: 'text', text: 'endpointId is required' }], isError: true };
-    return this.patch(`/v0/endpoints/${args.endpointId}/status`, { status: 'inactive' });
+    return this.patch(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/status`, { status: 'inactive' });
   }
 
   private async activateEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId) return { content: [{ type: 'text', text: 'endpointId is required' }], isError: true };
-    return this.patch(`/v0/endpoints/${args.endpointId}/status`, { status: 'active' });
+    return this.patch(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/status`, { status: 'active' });
   }
 
   private async getEndpointStats(args: Record<string, unknown>): Promise<ToolResult> {
@@ -351,7 +351,7 @@ export class QuickNodeMCPServer {
     const params: Record<string, string> = {};
     if (args.start_time) params.start_time = args.start_time as string;
     if (args.end_time) params.end_time = args.end_time as string;
-    return this.get(`/v0/endpoints/${args.endpointId}/metrics`, params);
+    return this.get(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/metrics`, params);
   }
 
   private async getEndpointLogs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -359,7 +359,7 @@ export class QuickNodeMCPServer {
     const params: Record<string, string> = {};
     if (args.limit) params.limit = String(args.limit);
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.get(`/v0/endpoints/${args.endpointId}/logs`, params);
+    return this.get(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/logs`, params);
   }
 
   private async listChains(args: Record<string, unknown>): Promise<ToolResult> {
@@ -371,26 +371,26 @@ export class QuickNodeMCPServer {
 
   private async listNetworks(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.chain) return { content: [{ type: 'text', text: 'chain is required' }], isError: true };
-    return this.get(`/v0/chains/${args.chain}/networks`);
+    return this.get(`/v0/chains/${encodeURIComponent(args.chain as string)}/networks`);
   }
 
   private async getEndpointRateLimits(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId) return { content: [{ type: 'text', text: 'endpointId is required' }], isError: true };
-    return this.get(`/v0/endpoints/${args.endpointId}/rate-limits`);
+    return this.get(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/rate-limits`);
   }
 
   private async updateEndpointRateLimits(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId || !args.rps) return { content: [{ type: 'text', text: 'endpointId and rps are required' }], isError: true };
-    return this.put(`/v0/endpoints/${args.endpointId}/rate-limits`, { rate_limits: { rps: args.rps } });
+    return this.put(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/rate-limits`, { rate_limits: { rps: args.rps } });
   }
 
   private async listEndpointTags(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId) return { content: [{ type: 'text', text: 'endpointId is required' }], isError: true };
-    return this.get(`/v0/endpoints/${args.endpointId}/tags`);
+    return this.get(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/tags`);
   }
 
   private async addEndpointTag(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId || !args.name || !args.value) return { content: [{ type: 'text', text: 'endpointId, name, and value are required' }], isError: true };
-    return this.post(`/v0/endpoints/${args.endpointId}/tags`, { name: args.name, value: args.value });
+    return this.post(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/tags`, { name: args.name, value: args.value });
   }
 }

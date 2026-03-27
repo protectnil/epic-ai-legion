@@ -549,7 +549,7 @@ export class CourierMCPServer {
 
   private async getMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
-    return this.courierGet(`/messages/${args.message_id as string}`);
+    return this.courierGet(`/messages/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async listMessages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -563,7 +563,7 @@ export class CourierMCPServer {
 
   private async cancelMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_id) return { content: [{ type: 'text', text: 'message_id is required' }], isError: true };
-    return this.courierPost(`/messages/${args.message_id as string}/cancel`, {});
+    return this.courierPost(`/messages/${encodeURIComponent(args.message_id as string)}/cancel`, {});
   }
 
   private async getProfile(args: Record<string, unknown>): Promise<ToolResult> {
@@ -629,7 +629,7 @@ export class CourierMCPServer {
 
   private async getTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.template_id) return { content: [{ type: 'text', text: 'template_id is required' }], isError: true };
-    return this.courierGet(`/notifications/${args.template_id as string}`);
+    return this.courierGet(`/notifications/${encodeURIComponent(args.template_id as string)}`);
   }
 
   private async listBrands(args: Record<string, unknown>): Promise<ToolResult> {
@@ -640,6 +640,6 @@ export class CourierMCPServer {
 
   private async getBrand(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.brand_id) return { content: [{ type: 'text', text: 'brand_id is required' }], isError: true };
-    return this.courierGet(`/brands/${args.brand_id as string}`);
+    return this.courierGet(`/brands/${encodeURIComponent(args.brand_id as string)}`);
   }
 }

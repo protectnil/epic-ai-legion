@@ -541,7 +541,7 @@ export class AppleBusinessConnectMCPServer {
 
   private async getLocation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.location_id) return { content: [{ type: 'text', text: 'location_id is required' }], isError: true };
-    return this.abcGet(`/locations/${args.location_id as string}`);
+    return this.abcGet(`/locations/${encodeURIComponent(args.location_id as string)}`);
   }
 
   private async createLocation(args: Record<string, unknown>): Promise<ToolResult> {
@@ -596,12 +596,12 @@ export class AppleBusinessConnectMCPServer {
       updates.address = address;
     }
 
-    return this.abcPatch(`/locations/${args.location_id as string}`, updates);
+    return this.abcPatch(`/locations/${encodeURIComponent(args.location_id as string)}`, updates);
   }
 
   private async deleteLocation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.location_id) return { content: [{ type: 'text', text: 'location_id is required' }], isError: true };
-    return this.abcPatch(`/locations/${args.location_id as string}`, { status: 'CLOSED' });
+    return this.abcPatch(`/locations/${encodeURIComponent(args.location_id as string)}`, { status: 'CLOSED' });
   }
 
   private async updateLocationHours(args: Record<string, unknown>): Promise<ToolResult> {
@@ -614,7 +614,7 @@ export class AppleBusinessConnectMCPServer {
     } catch {
       return { content: [{ type: 'text', text: 'hours must be a valid JSON array' }], isError: true };
     }
-    return this.abcPut(`/locations/${args.location_id as string}/hours`, { regularHours: parsedHours });
+    return this.abcPut(`/locations/${encodeURIComponent(args.location_id as string)}/hours`, { regularHours: parsedHours });
   }
 
   private async updateLocationSpecialHours(args: Record<string, unknown>): Promise<ToolResult> {
@@ -627,19 +627,19 @@ export class AppleBusinessConnectMCPServer {
     } catch {
       return { content: [{ type: 'text', text: 'special_hours must be a valid JSON array' }], isError: true };
     }
-    return this.abcPut(`/locations/${args.location_id as string}/special-hours`, { specialHours: parsedHours });
+    return this.abcPut(`/locations/${encodeURIComponent(args.location_id as string)}/special-hours`, { specialHours: parsedHours });
   }
 
   private async listLocationPhotos(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.location_id) return { content: [{ type: 'text', text: 'location_id is required' }], isError: true };
-    return this.abcGet(`/locations/${args.location_id as string}/photos`);
+    return this.abcGet(`/locations/${encodeURIComponent(args.location_id as string)}/photos`);
   }
 
   private async uploadLocationPhoto(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.location_id || !args.photo_url) {
       return { content: [{ type: 'text', text: 'location_id and photo_url are required' }], isError: true };
     }
-    return this.abcPost(`/locations/${args.location_id as string}/photos`, {
+    return this.abcPost(`/locations/${encodeURIComponent(args.location_id as string)}/photos`, {
       url: args.photo_url,
       category: (args.category as string) ?? 'EXTERIOR',
     });
@@ -649,17 +649,17 @@ export class AppleBusinessConnectMCPServer {
     if (!args.location_id || !args.photo_id) {
       return { content: [{ type: 'text', text: 'location_id and photo_id are required' }], isError: true };
     }
-    return this.abcDelete(`/locations/${args.location_id as string}/photos/${args.photo_id as string}`);
+    return this.abcDelete(`/locations/${encodeURIComponent(args.location_id as string)}/photos/${encodeURIComponent(args.photo_id as string)}`);
   }
 
   private async getLocationStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.location_id) return { content: [{ type: 'text', text: 'location_id is required' }], isError: true };
-    return this.abcGet(`/locations/${args.location_id as string}/status`);
+    return this.abcGet(`/locations/${encodeURIComponent(args.location_id as string)}/status`);
   }
 
   private async listLocationDuplicates(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.location_id) return { content: [{ type: 'text', text: 'location_id is required' }], isError: true };
-    return this.abcGet(`/locations/${args.location_id as string}/duplicates`);
+    return this.abcGet(`/locations/${encodeURIComponent(args.location_id as string)}/duplicates`);
   }
 
   private async listBrands(args: Record<string, unknown>): Promise<ToolResult> {
@@ -672,6 +672,6 @@ export class AppleBusinessConnectMCPServer {
 
   private async getBrand(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.brand_id) return { content: [{ type: 'text', text: 'brand_id is required' }], isError: true };
-    return this.abcGet(`/brands/${args.brand_id as string}`);
+    return this.abcGet(`/brands/${encodeURIComponent(args.brand_id as string)}`);
   }
 }

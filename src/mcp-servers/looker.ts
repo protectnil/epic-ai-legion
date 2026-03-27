@@ -426,7 +426,7 @@ export class LookerMCPServer {
 
   private async getLook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.look_id) return { content: [{ type: 'text', text: 'look_id is required' }], isError: true };
-    let path = `/api/4.0/looks/${args.look_id as number}`;
+    let path = `/api/4.0/looks/${encodeURIComponent(args.look_id as number)}`;
     if (args.fields) path += `?fields=${encodeURIComponent(args.fields as string)}`;
     return this.ok(await this.get(path));
   }
@@ -449,15 +449,15 @@ export class LookerMCPServer {
     if (args.description !== undefined) body.description = args.description;
     if (args.deleted !== undefined) body.deleted = args.deleted;
     if (args.is_public !== undefined) body.is_public = args.is_public;
-    return this.ok(await this.patch(`/api/4.0/looks/${args.look_id as number}`, body));
+    return this.ok(await this.patch(`/api/4.0/looks/${encodeURIComponent(args.look_id as number)}`, body));
   }
 
   private async runLook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.look_id) return { content: [{ type: 'text', text: 'look_id is required' }], isError: true };
     const fmt = (args.result_format as string) ?? 'json';
-    let path = `/api/4.0/looks/${args.look_id as number}/run/${encodeURIComponent(fmt)}`;
+    let path = `/api/4.0/looks/${encodeURIComponent(args.look_id as number)}/run/${encodeURIComponent(fmt)}`;
     const params: string[] = [];
-    if (args.limit) params.push(`limit=${args.limit as number}`);
+    if (args.limit) params.push(`limit=${encodeURIComponent(args.limit as number)}`);
     if (args.apply_formatting) params.push(`apply_formatting=${String(args.apply_formatting)}`);
     if (params.length) path += `?${params.join('&')}`;
     return this.ok(await this.get(path));
@@ -521,8 +521,8 @@ export class LookerMCPServer {
   private async runQueryById(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.query_id) return { content: [{ type: 'text', text: 'query_id is required' }], isError: true };
     const fmt = (args.result_format as string) ?? 'json';
-    let path = `/api/4.0/queries/${args.query_id as number}/run/${encodeURIComponent(fmt)}`;
-    if (args.limit) path += `?limit=${args.limit as number}`;
+    let path = `/api/4.0/queries/${encodeURIComponent(args.query_id as number)}/run/${encodeURIComponent(fmt)}`;
+    if (args.limit) path += `?limit=${encodeURIComponent(args.limit as number)}`;
     return this.ok(await this.get(path));
   }
 

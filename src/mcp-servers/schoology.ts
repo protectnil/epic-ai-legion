@@ -575,17 +575,17 @@ export class SchoologyMCPServer {
 
   private async getCourse(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
-    return this.apiGet(`/courses/${args.course_id}`);
+    return this.apiGet(`/courses/${encodeURIComponent(args.course_id as string)}`);
   }
 
   private async listCourseSections(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
-    return this.apiGet(`/courses/${args.course_id}/sections` + this.buildQs({ start: args.start as number, limit: (args.limit as number) || 20 }));
+    return this.apiGet(`/courses/${encodeURIComponent(args.course_id as string)}/sections` + this.buildQs({ start: args.start as number, limit: (args.limit as number) || 20 }));
   }
 
   private async getCourseSection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id || !args.section_id) return { content: [{ type: 'text', text: 'course_id and section_id are required' }], isError: true };
-    return this.apiGet(`/courses/${args.course_id}/sections/${args.section_id}`);
+    return this.apiGet(`/courses/${encodeURIComponent(args.course_id as string)}/sections/${encodeURIComponent(args.section_id as string)}`);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -599,22 +599,22 @@ export class SchoologyMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/users/${args.user_id}`);
+    return this.apiGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listUserEnrollments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/users/${args.user_id}/sections` + this.buildQs({ start: args.start as number, limit: (args.limit as number) || 20 }));
+    return this.apiGet(`/users/${encodeURIComponent(args.user_id as string)}/sections` + this.buildQs({ start: args.start as number, limit: (args.limit as number) || 20 }));
   }
 
   private async listAssignments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.section_id) return { content: [{ type: 'text', text: 'section_id is required' }], isError: true };
-    return this.apiGet(`/sections/${args.section_id}/assignments` + this.buildQs({ start: args.start as number, limit: (args.limit as number) || 20 }));
+    return this.apiGet(`/sections/${encodeURIComponent(args.section_id as string)}/assignments` + this.buildQs({ start: args.start as number, limit: (args.limit as number) || 20 }));
   }
 
   private async getAssignment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.section_id || !args.assignment_id) return { content: [{ type: 'text', text: 'section_id and assignment_id are required' }], isError: true };
-    return this.apiGet(`/sections/${args.section_id}/assignments/${args.assignment_id}`);
+    return this.apiGet(`/sections/${encodeURIComponent(args.section_id as string)}/assignments/${encodeURIComponent(args.assignment_id as string)}`);
   }
 
   private async createAssignment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -627,14 +627,14 @@ export class SchoologyMCPServer {
     if (args.description) body.description = args.description;
     if (args.due) body.due = args.due;
     if (args.grading_scale_id) body.grading_scale_id = args.grading_scale_id;
-    return this.apiPost(`/sections/${args.section_id}/assignments`, body);
+    return this.apiPost(`/sections/${encodeURIComponent(args.section_id as string)}/assignments`, body);
   }
 
   private async listGrades(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.section_id) return { content: [{ type: 'text', text: 'section_id is required' }], isError: true };
     const path = args.assignment_id
-      ? `/sections/${args.section_id}/grades?assignment_id=${args.assignment_id}`
-      : `/sections/${args.section_id}/grades`;
+      ? `/sections/${encodeURIComponent(args.section_id as string)}/grades?assignment_id=${encodeURIComponent(args.assignment_id as string)}`
+      : `/sections/${encodeURIComponent(args.section_id as string)}/grades`;
     return this.apiGet(path);
   }
 
@@ -642,7 +642,7 @@ export class SchoologyMCPServer {
     if (!args.section_id || !args.assignment_id || !args.user_id) {
       return { content: [{ type: 'text', text: 'section_id, assignment_id, and user_id are required' }], isError: true };
     }
-    return this.apiGet(`/sections/${args.section_id}/grades?assignment_id=${args.assignment_id}&user_id=${args.user_id}`);
+    return this.apiGet(`/sections/${encodeURIComponent(args.section_id as string)}/grades?assignment_id=${encodeURIComponent(args.assignment_id as string)}&user_id=${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listGroups(args: Record<string, unknown>): Promise<ToolResult> {
@@ -655,7 +655,7 @@ export class SchoologyMCPServer {
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.group_id) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.apiGet(`/groups/${args.group_id}`);
+    return this.apiGet(`/groups/${encodeURIComponent(args.group_id as string)}`);
   }
 
   private async listSchools(args: Record<string, unknown>): Promise<ToolResult> {
@@ -664,7 +664,7 @@ export class SchoologyMCPServer {
 
   private async getSchool(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.school_id) return { content: [{ type: 'text', text: 'school_id is required' }], isError: true };
-    return this.apiGet(`/schools/${args.school_id}`);
+    return this.apiGet(`/schools/${encodeURIComponent(args.school_id as string)}`);
   }
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -678,6 +678,6 @@ export class SchoologyMCPServer {
 
   private async getEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.apiGet(`/events/${args.event_id}`);
+    return this.apiGet(`/events/${encodeURIComponent(args.event_id as string)}`);
   }
 }

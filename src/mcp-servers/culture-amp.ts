@@ -316,12 +316,12 @@ export class CultureAmpMCPServer {
 
   private async getEmployee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.employee_id) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    return this.apiGet(`/employees/${args.employee_id}`);
+    return this.apiGet(`/employees/${encodeURIComponent(args.employee_id as string)}`);
   }
 
   private async listEmployeeDemographics(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.employee_id) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    return this.apiGet(`/employees/${args.employee_id}/demographics`);
+    return this.apiGet(`/employees/${encodeURIComponent(args.employee_id as string)}/demographics`);
   }
 
   private async listSurveys(args: Record<string, unknown>): Promise<ToolResult> {
@@ -334,7 +334,7 @@ export class CultureAmpMCPServer {
 
   private async getSurvey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
-    return this.apiGet(`/surveys/${args.survey_id}`);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}`);
   }
 
   private async listSurveyResponses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -343,7 +343,7 @@ export class CultureAmpMCPServer {
     if (args.cursor) params.cursor = args.cursor as string;
     if (args.limit) params.limit = String(args.limit);
     // Reporting API uses a different path structure
-    return this.apiGet(`/surveys/${args.survey_id}/responses`, params);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/responses`, params);
   }
 
   private async listPerformanceCycles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -356,7 +356,7 @@ export class CultureAmpMCPServer {
 
   private async getPerformanceCycle(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cycle_id) return { content: [{ type: 'text', text: 'cycle_id is required' }], isError: true };
-    return this.apiGet(`/performance_cycles/${args.cycle_id}`);
+    return this.apiGet(`/performance_cycles/${encodeURIComponent(args.cycle_id as string)}`);
   }
 
   private async listPerformanceReviews(args: Record<string, unknown>): Promise<ToolResult> {
@@ -366,6 +366,6 @@ export class CultureAmpMCPServer {
     if (args.status) params.status = args.status as string;
     if (args.cursor) params.cursor = args.cursor as string;
     if (args.limit) params.limit = String(args.limit);
-    return this.apiGet(`/performance_cycles/${args.cycle_id}/reviews`, params);
+    return this.apiGet(`/performance_cycles/${encodeURIComponent(args.cycle_id as string)}/reviews`, params);
   }
 }

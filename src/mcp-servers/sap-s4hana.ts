@@ -519,10 +519,10 @@ export class SAPS4HANAMCPServer {
 
   private async listPurchaseOrders(args: Record<string, unknown>): Promise<ToolResult> {
     const filters: string[] = [];
-    if (args.supplier) filters.push(`Supplier eq '${args.supplier}'`);
-    if (args.purchase_order_type) filters.push(`PurchaseOrderType eq '${args.purchase_order_type}'`);
-    if (args.creation_date_from) filters.push(`CreationDate ge datetime'${args.creation_date_from}T00:00:00'`);
-    if (args.creation_date_to) filters.push(`CreationDate le datetime'${args.creation_date_to}T23:59:59'`);
+    if (args.supplier) filters.push(`Supplier eq '${encodeURIComponent(args.supplier as string)}'`);
+    if (args.purchase_order_type) filters.push(`PurchaseOrderType eq '${encodeURIComponent(args.purchase_order_type as string)}'`);
+    if (args.creation_date_from) filters.push(`CreationDate ge datetime'${encodeURIComponent(args.creation_date_from as string)}T00:00:00'`);
+    if (args.creation_date_to) filters.push(`CreationDate le datetime'${encodeURIComponent(args.creation_date_to as string)}T23:59:59'`);
     const params: Record<string, string | number | undefined> = {
       $top: (args.top as number) || 50,
       $skip: (args.skip as number) || 0,
@@ -533,7 +533,7 @@ export class SAPS4HANAMCPServer {
 
   private async getPurchaseOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.purchase_order) return { content: [{ type: 'text', text: 'purchase_order is required' }], isError: true };
-    return this.odataGet('API_PURCHASEORDER_PROCESS_SRV', `A_PurchaseOrder('${args.purchase_order}')`, { $expand: 'to_PurchaseOrderItem' });
+    return this.odataGet('API_PURCHASEORDER_PROCESS_SRV', `A_PurchaseOrder('${encodeURIComponent(args.purchase_order as string)}')`, { $expand: 'to_PurchaseOrderItem' });
   }
 
   private async createPurchaseOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -552,10 +552,10 @@ export class SAPS4HANAMCPServer {
 
   private async listSalesOrders(args: Record<string, unknown>): Promise<ToolResult> {
     const filters: string[] = [];
-    if (args.sold_to_party) filters.push(`SoldToParty eq '${args.sold_to_party}'`);
-    if (args.sales_organization) filters.push(`SalesOrganization eq '${args.sales_organization}'`);
-    if (args.creation_date_from) filters.push(`CreationDate ge datetime'${args.creation_date_from}T00:00:00'`);
-    if (args.creation_date_to) filters.push(`CreationDate le datetime'${args.creation_date_to}T23:59:59'`);
+    if (args.sold_to_party) filters.push(`SoldToParty eq '${encodeURIComponent(args.sold_to_party as string)}'`);
+    if (args.sales_organization) filters.push(`SalesOrganization eq '${encodeURIComponent(args.sales_organization as string)}'`);
+    if (args.creation_date_from) filters.push(`CreationDate ge datetime'${encodeURIComponent(args.creation_date_from as string)}T00:00:00'`);
+    if (args.creation_date_to) filters.push(`CreationDate le datetime'${encodeURIComponent(args.creation_date_to as string)}T23:59:59'`);
     const params: Record<string, string | number | undefined> = {
       $top: (args.top as number) || 50,
       $skip: (args.skip as number) || 0,
@@ -566,15 +566,15 @@ export class SAPS4HANAMCPServer {
 
   private async getSalesOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sales_order) return { content: [{ type: 'text', text: 'sales_order is required' }], isError: true };
-    return this.odataGet('API_SALES_ORDER_SRV', `A_SalesOrder('${args.sales_order}')`, { $expand: 'to_Item' });
+    return this.odataGet('API_SALES_ORDER_SRV', `A_SalesOrder('${encodeURIComponent(args.sales_order as string)}')`, { $expand: 'to_Item' });
   }
 
   private async listSupplierInvoices(args: Record<string, unknown>): Promise<ToolResult> {
     const filters: string[] = [];
-    if (args.supplier) filters.push(`InvoicingParty eq '${args.supplier}'`);
-    if (args.company_code) filters.push(`CompanyCode eq '${args.company_code}'`);
-    if (args.posting_date_from) filters.push(`DocumentDate ge datetime'${args.posting_date_from}T00:00:00'`);
-    if (args.posting_date_to) filters.push(`DocumentDate le datetime'${args.posting_date_to}T23:59:59'`);
+    if (args.supplier) filters.push(`InvoicingParty eq '${encodeURIComponent(args.supplier as string)}'`);
+    if (args.company_code) filters.push(`CompanyCode eq '${encodeURIComponent(args.company_code as string)}'`);
+    if (args.posting_date_from) filters.push(`DocumentDate ge datetime'${encodeURIComponent(args.posting_date_from as string)}T00:00:00'`);
+    if (args.posting_date_to) filters.push(`DocumentDate le datetime'${encodeURIComponent(args.posting_date_to as string)}T23:59:59'`);
     const params: Record<string, string | number | undefined> = {
       $top: (args.top as number) || 50,
       $skip: (args.skip as number) || 0,
@@ -587,13 +587,13 @@ export class SAPS4HANAMCPServer {
     if (!args.supplier_invoice || !args.fiscal_year) {
       return { content: [{ type: 'text', text: 'supplier_invoice and fiscal_year are required' }], isError: true };
     }
-    return this.odataGet('API_SUPPLIERINVOICE_PROCESS_SRV', `A_SupplierInvoice(SupplierInvoice='${args.supplier_invoice}',FiscalYear='${args.fiscal_year}')`, {});
+    return this.odataGet('API_SUPPLIERINVOICE_PROCESS_SRV', `A_SupplierInvoice(SupplierInvoice='${encodeURIComponent(args.supplier_invoice as string)}',FiscalYear='${encodeURIComponent(args.fiscal_year as string)}')`, {});
   }
 
   private async listCustomers(args: Record<string, unknown>): Promise<ToolResult> {
     const filters: string[] = [];
-    if (args.customer_name) filters.push(`substringof('${args.customer_name}', CustomerName)`);
-    if (args.country) filters.push(`Country eq '${args.country}'`);
+    if (args.customer_name) filters.push(`substringof('${encodeURIComponent(args.customer_name as string)}', CustomerName)`);
+    if (args.country) filters.push(`Country eq '${encodeURIComponent(args.country as string)}'`);
     const params: Record<string, string | number | undefined> = {
       $top: (args.top as number) || 50,
       $skip: (args.skip as number) || 0,
@@ -604,13 +604,13 @@ export class SAPS4HANAMCPServer {
 
   private async getCustomer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer) return { content: [{ type: 'text', text: 'customer is required' }], isError: true };
-    return this.odataGet('API_BUSINESS_PARTNER', `A_Customer('${args.customer}')`, {});
+    return this.odataGet('API_BUSINESS_PARTNER', `A_Customer('${encodeURIComponent(args.customer as string)}')`, {});
   }
 
   private async listSuppliers(args: Record<string, unknown>): Promise<ToolResult> {
     const filters: string[] = [];
-    if (args.supplier_name) filters.push(`substringof('${args.supplier_name}', SupplierName)`);
-    if (args.country) filters.push(`Country eq '${args.country}'`);
+    if (args.supplier_name) filters.push(`substringof('${encodeURIComponent(args.supplier_name as string)}', SupplierName)`);
+    if (args.country) filters.push(`Country eq '${encodeURIComponent(args.country as string)}'`);
     const params: Record<string, string | number | undefined> = {
       $top: (args.top as number) || 50,
       $skip: (args.skip as number) || 0,
@@ -621,12 +621,12 @@ export class SAPS4HANAMCPServer {
 
   private async getSupplier(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.supplier) return { content: [{ type: 'text', text: 'supplier is required' }], isError: true };
-    return this.odataGet('API_BUSINESS_PARTNER', `A_Supplier('${args.supplier}')`, {});
+    return this.odataGet('API_BUSINESS_PARTNER', `A_Supplier('${encodeURIComponent(args.supplier as string)}')`, {});
   }
 
   private async listMaterials(args: Record<string, unknown>): Promise<ToolResult> {
     const filters: string[] = [];
-    if (args.material_type) filters.push(`MaterialType eq '${args.material_type}'`);
+    if (args.material_type) filters.push(`MaterialType eq '${encodeURIComponent(args.material_type as string)}'`);
     const params: Record<string, string | number | undefined> = {
       $top: (args.top as number) || 50,
       $skip: (args.skip as number) || 0,
@@ -638,13 +638,13 @@ export class SAPS4HANAMCPServer {
 
   private async getMaterial(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.material) return { content: [{ type: 'text', text: 'material is required' }], isError: true };
-    return this.odataGet('API_PRODUCT_SRV', `A_Product('${args.material}')`, { $expand: 'to_Description,to_Plant' });
+    return this.odataGet('API_PRODUCT_SRV', `A_Product('${encodeURIComponent(args.material as string)}')`, { $expand: 'to_Description,to_Plant' });
   }
 
   private async listCostCenters(args: Record<string, unknown>): Promise<ToolResult> {
     const filters: string[] = [];
-    if (args.controlling_area) filters.push(`ControllingArea eq '${args.controlling_area}'`);
-    if (args.cost_center_name) filters.push(`substringof('${args.cost_center_name}', CostCenterName)`);
+    if (args.controlling_area) filters.push(`ControllingArea eq '${encodeURIComponent(args.controlling_area as string)}'`);
+    if (args.cost_center_name) filters.push(`substringof('${encodeURIComponent(args.cost_center_name as string)}', CostCenterName)`);
     const params: Record<string, string | number | undefined> = {
       $top: (args.top as number) || 50,
       $skip: (args.skip as number) || 0,
@@ -657,6 +657,6 @@ export class SAPS4HANAMCPServer {
     if (!args.controlling_area || !args.profit_center) {
       return { content: [{ type: 'text', text: 'controlling_area and profit_center are required' }], isError: true };
     }
-    return this.odataGet('API_PROFITCENTER_SRV', `A_ProfitCenter(ControllingArea='${args.controlling_area}',ProfitCenter='${args.profit_center}')`, {});
+    return this.odataGet('API_PROFITCENTER_SRV', `A_ProfitCenter(ControllingArea='${encodeURIComponent(args.controlling_area as string)}',ProfitCenter='${encodeURIComponent(args.profit_center as string)}')`, {});
   }
 }

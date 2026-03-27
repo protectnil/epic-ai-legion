@@ -468,7 +468,7 @@ export class UPSMCPServer {
     if (!args.tracking_number) return { content: [{ type: 'text', text: 'tracking_number is required' }], isError: true };
     const token = await this.getOrRefreshToken();
     const locale = (args.locale as string) || 'en_US';
-    return this.upsGet(`/track/v1/details/${args.tracking_number}?locale=${locale}&returnSignature=false`, token);
+    return this.upsGet(`/track/v1/details/${encodeURIComponent(args.tracking_number as string)}?locale=${locale}&returnSignature=false`, token);
   }
 
   private async getRates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -559,7 +559,7 @@ export class UPSMCPServer {
   private async voidShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}/shipments/v1/void/cancel/${args.shipment_id}`, {
+    const response = await fetch(`${this.baseUrl}/shipments/v1/void/cancel/${encodeURIComponent(args.shipment_id as string)}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -608,7 +608,7 @@ export class UPSMCPServer {
     if (!args.postal_code) return { content: [{ type: 'text', text: 'postal_code is required' }], isError: true };
     const token = await this.getOrRefreshToken();
     const cc = (args.country_code as string) || 'US';
-    return this.upsGet(`/pickup/v1/pickups/pickupdatetimeoptions?PostalCode=${args.postal_code}&CountryCode=${cc}&ResidentialIndicator=N`, token);
+    return this.upsGet(`/pickup/v1/pickups/pickupdatetimeoptions?PostalCode=${encodeURIComponent(args.postal_code as string)}&CountryCode=${cc}&ResidentialIndicator=N`, token);
   }
 
   private async schedulePickup(args: Record<string, unknown>): Promise<ToolResult> {
@@ -641,7 +641,7 @@ export class UPSMCPServer {
     if (!args.confirmation_number) return { content: [{ type: 'text', text: 'confirmation_number is required' }], isError: true };
     const token = await this.getOrRefreshToken();
     const cancelDate = (args.cancel_date as string) || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return this.upsGet(`/pickup/v1/pickups/${args.confirmation_number}?CancelBy=CONFIRM&CancelDate=${cancelDate}`, token);
+    return this.upsGet(`/pickup/v1/pickups/${encodeURIComponent(args.confirmation_number as string)}?CancelBy=CONFIRM&CancelDate=${cancelDate}`, token);
   }
 
   private async getLocator(args: Record<string, unknown>): Promise<ToolResult> {

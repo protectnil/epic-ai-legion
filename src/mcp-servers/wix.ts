@@ -425,7 +425,7 @@ export class WixMCPServer {
 
   private async getMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.member_id) return { content: [{ type: 'text', text: 'member_id is required' }], isError: true };
-    return this.get(`/members/v1/members/${args.member_id}`);
+    return this.get(`/members/v1/members/${encodeURIComponent(args.member_id as string)}`);
   }
 
   private async updateMember(args: Record<string, unknown>): Promise<ToolResult> {
@@ -433,7 +433,7 @@ export class WixMCPServer {
     const member: Record<string, unknown> = {};
     if (args.nickname) member.nickname = args.nickname;
     if (args.profile_photo_url) member.profilePhoto = { url: args.profile_photo_url };
-    return this.patch(`/members/v1/members/${args.member_id}`, { member });
+    return this.patch(`/members/v1/members/${encodeURIComponent(args.member_id as string)}`, { member });
   }
 
   private async listContacts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -446,7 +446,7 @@ export class WixMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.get(`/contacts/v4/contacts/${args.contact_id}`);
+    return this.get(`/contacts/v4/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async createContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -467,12 +467,12 @@ export class WixMCPServer {
     }
     if (args.email) info.emails = [{ tag: 'MAIN', email: args.email }];
     if (args.phone) info.phones = [{ tag: 'MAIN', phone: args.phone }];
-    return this.patch(`/contacts/v4/contacts/${args.contact_id}`, { info });
+    return this.patch(`/contacts/v4/contacts/${encodeURIComponent(args.contact_id as string)}`, { info });
   }
 
   private async deleteContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.del(`/contacts/v4/contacts/${args.contact_id}`);
+    return this.del(`/contacts/v4/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async queryProducts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -487,7 +487,7 @@ export class WixMCPServer {
 
   private async getProduct(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
-    return this.get(`/stores/v1/products/${args.product_id}`);
+    return this.get(`/stores/v1/products/${encodeURIComponent(args.product_id as string)}`);
   }
 
   private async listOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -507,14 +507,14 @@ export class WixMCPServer {
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.get(`/orders/v3/orders/${args.order_id}`);
+    return this.get(`/orders/v3/orders/${encodeURIComponent(args.order_id as string)}`);
   }
 
   private async updateOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
     const order: Record<string, unknown> = {};
     if (args.buyer_note) order.buyerNote = args.buyer_note;
-    return this.patch(`/orders/v3/orders/${args.order_id}`, { order });
+    return this.patch(`/orders/v3/orders/${encodeURIComponent(args.order_id as string)}`, { order });
   }
 
   private async listBookings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -535,7 +535,7 @@ export class WixMCPServer {
 
   private async getBooking(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.booking_id) return { content: [{ type: 'text', text: 'booking_id is required' }], isError: true };
-    return this.get(`/bookings/v2/bookings/${args.booking_id}`);
+    return this.get(`/bookings/v2/bookings/${encodeURIComponent(args.booking_id as string)}`);
   }
 
   private async listBlogPosts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -549,7 +549,7 @@ export class WixMCPServer {
 
   private async getBlogPost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.get(`/blog/v3/posts/${args.post_id}`);
+    return this.get(`/blog/v3/posts/${encodeURIComponent(args.post_id as string)}`);
   }
 
   private async listSitePages(args: Record<string, unknown>): Promise<ToolResult> {

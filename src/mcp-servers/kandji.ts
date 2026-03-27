@@ -412,17 +412,17 @@ export class KandjiMCPServer {
 
   private async getDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.device_id) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/devices/${args.device_id as string}`);
+    return this.apiGet(`/api/v1/devices/${encodeURIComponent(args.device_id as string)}`);
   }
 
   private async getDeviceDetails(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.device_id) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/devices/${args.device_id as string}/details`);
+    return this.apiGet(`/api/v1/devices/${encodeURIComponent(args.device_id as string)}/details`);
   }
 
   private async getDeviceApps(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.device_id) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/devices/${args.device_id as string}/apps`);
+    return this.apiGet(`/api/v1/devices/${encodeURIComponent(args.device_id as string)}/apps`);
   }
 
   private async searchDevices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -445,7 +445,7 @@ export class KandjiMCPServer {
 
   private async getBlueprint(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.blueprint_id) return { content: [{ type: 'text', text: 'blueprint_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/blueprints/${args.blueprint_id as string}`);
+    return this.apiGet(`/api/v1/blueprints/${encodeURIComponent(args.blueprint_id as string)}`);
   }
 
   private async listLibraryItems(args: Record<string, unknown>): Promise<ToolResult> {
@@ -469,7 +469,7 @@ export class KandjiMCPServer {
       'os-update': 'os-updates',
     };
     const itemTypePath = typeMap[args.item_type as string] ?? (args.item_type as string);
-    return this.apiGet(`/api/v1/library/${itemTypePath}/${args.library_item_id as string}`);
+    return this.apiGet(`/api/v1/library/${itemTypePath}/${encodeURIComponent(args.library_item_id as string)}`);
   }
 
   private async listThreats(args: Record<string, unknown>): Promise<ToolResult> {
@@ -484,7 +484,7 @@ export class KandjiMCPServer {
 
   private async getThreatDetails(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.threat_id) return { content: [{ type: 'text', text: 'threat_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/threat-details/${args.threat_id as string}`);
+    return this.apiGet(`/api/v1/threat-details/${encodeURIComponent(args.threat_id as string)}`);
   }
 
   private async listVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
@@ -507,6 +507,6 @@ export class KandjiMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/users/${args.user_id as string}`);
+    return this.apiGet(`/api/v1/users/${encodeURIComponent(args.user_id as string)}`);
   }
 }

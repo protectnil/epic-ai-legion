@@ -598,8 +598,8 @@ export class TikTokAdsMCPServer {
 
   private async getAdvertiserInfo(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.advertiser_ids) return { content: [{ type: 'text', text: 'advertiser_ids is required' }], isError: true };
-    const params: Record<string, string> = { advertiser_ids: `[${args.advertiser_ids}]` };
-    if (args.fields) params.fields = `[${args.fields}]`;
+    const params: Record<string, string> = { advertiser_ids: `[${encodeURIComponent(args.advertiser_ids as string)}]` };
+    if (args.fields) params.fields = `[${encodeURIComponent(args.fields as string)}]`;
     return this.ttdGet('/advertiser/info/', params);
   }
 
@@ -611,7 +611,7 @@ export class TikTokAdsMCPServer {
       page_size: String((args.page_size as number) ?? 10),
     };
     if (args.primary_status) params.primary_status = args.primary_status as string;
-    if (args.campaign_ids) params.campaign_ids = `[${args.campaign_ids}]`;
+    if (args.campaign_ids) params.campaign_ids = `[${encodeURIComponent(args.campaign_ids as string)}]`;
     return this.ttdGet('/campaign/get/', params);
   }
 
@@ -619,7 +619,7 @@ export class TikTokAdsMCPServer {
     if (!args.advertiser_id || !args.campaign_id) return { content: [{ type: 'text', text: 'advertiser_id and campaign_id are required' }], isError: true };
     return this.ttdGet('/campaign/get/', {
       advertiser_id: args.advertiser_id as string,
-      campaign_ids: `["${args.campaign_id}"]`,
+      campaign_ids: `["${encodeURIComponent(args.campaign_id as string)}"]`,
     });
   }
 
@@ -655,7 +655,7 @@ export class TikTokAdsMCPServer {
       page: String((args.page as number) ?? 1),
       page_size: String((args.page_size as number) ?? 10),
     };
-    if (args.campaign_ids) params.campaign_ids = `[${args.campaign_ids}]`;
+    if (args.campaign_ids) params.campaign_ids = `[${encodeURIComponent(args.campaign_ids as string)}]`;
     if (args.primary_status) params.primary_status = args.primary_status as string;
     return this.ttdGet('/adgroup/get/', params);
   }
@@ -664,7 +664,7 @@ export class TikTokAdsMCPServer {
     if (!args.advertiser_id || !args.adgroup_id) return { content: [{ type: 'text', text: 'advertiser_id and adgroup_id are required' }], isError: true };
     return this.ttdGet('/adgroup/get/', {
       advertiser_id: args.advertiser_id as string,
-      adgroup_ids: `["${args.adgroup_id}"]`,
+      adgroup_ids: `["${encodeURIComponent(args.adgroup_id as string)}"]`,
     });
   }
 
@@ -703,7 +703,7 @@ export class TikTokAdsMCPServer {
       page: String((args.page as number) ?? 1),
       page_size: String((args.page_size as number) ?? 10),
     };
-    if (args.adgroup_ids) params.adgroup_ids = `[${args.adgroup_ids}]`;
+    if (args.adgroup_ids) params.adgroup_ids = `[${encodeURIComponent(args.adgroup_ids as string)}]`;
     if (args.primary_status) params.primary_status = args.primary_status as string;
     return this.ttdGet('/ad/get/', params);
   }
@@ -712,7 +712,7 @@ export class TikTokAdsMCPServer {
     if (!args.advertiser_id || !args.ad_id) return { content: [{ type: 'text', text: 'advertiser_id and ad_id are required' }], isError: true };
     return this.ttdGet('/ad/get/', {
       advertiser_id: args.advertiser_id as string,
-      ad_ids: `["${args.ad_id}"]`,
+      ad_ids: `["${encodeURIComponent(args.ad_id as string)}"]`,
     });
   }
 

@@ -338,8 +338,8 @@ export class LinkedInMCPServer {
 
   private async getProfile(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
-    if (args.fields) params.append('projection', `(${args.fields})`);
-    const path = args.person_id ? `/people/(id:${args.person_id})` : '/me';
+    if (args.fields) params.append('projection', `(${encodeURIComponent(args.fields as string)})`);
+    const path = args.person_id ? `/people/(id:${encodeURIComponent(args.person_id as string)})` : '/me';
     const qs = params.toString() ? `?${params}` : '';
     return this.fetch(`${path}${qs}`);
   }
@@ -366,7 +366,7 @@ export class LinkedInMCPServer {
   private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
     const params = new URLSearchParams();
-    if (args.fields) params.append('projection', `(${args.fields})`);
+    if (args.fields) params.append('projection', `(${encodeURIComponent(args.fields as string)})`);
     const qs = params.toString() ? `?${params}` : '';
     const orgId = String(args.organization_id).replace(/^urn:li:organization:/, '');
     return this.fetch(`/organizations/${orgId}${qs}`);
@@ -419,7 +419,7 @@ export class LinkedInMCPServer {
     if (!args.author_urn) return { content: [{ type: 'text', text: 'author_urn is required' }], isError: true };
     const params = new URLSearchParams({
       q: 'authors',
-      authors: `List(${args.author_urn})`,
+      authors: `List(${encodeURIComponent(args.author_urn as string)})`,
       start: String((args.start as number) ?? 0),
       count: String((args.count as number) ?? 10),
     });

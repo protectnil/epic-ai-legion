@@ -342,7 +342,7 @@ export class HereMCPServer {
     if (args.lang) params.lang = args.lang as string;
     if (args.limit) params.limit = String(args.limit);
     if (args.at) params.at = args.at as string;
-    if (args.countryCode) params.in = `countryCode:${args.countryCode}`;
+    if (args.countryCode) params.in = `countryCode:${encodeURIComponent(args.countryCode as string)}`;
     return this.hereGet(this.geocodeBaseUrl, '/geocode', params);
   }
 

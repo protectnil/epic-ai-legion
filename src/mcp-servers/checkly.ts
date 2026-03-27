@@ -540,7 +540,7 @@ export class ChecklyMCPServer {
     const limit = (args.limit as number) || 10;
     const page = (args.page as number) || 1;
     let path = `/check-results/${encodeURIComponent(id)}?limit=${limit}&page=${page}`;
-    if (typeof args.has_failures === 'boolean') path += `&hasFailures=${args.has_failures}`;
+    if (typeof args.has_failures === 'boolean') path += `&hasFailures=${encodeURIComponent(String(args.has_failures))}`;
     return this.checklyGet(path);
   }
 

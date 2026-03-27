@@ -595,14 +595,14 @@ export class EventbriteMCPServer {
     if (args.time_filter) params.time_filter = args.time_filter as string;
     if (args.order_by) params.order_by = args.order_by as string;
     if (args.page) params.page = String(args.page as number);
-    return this.ebGet(`organizations/${args.organization_id as string}/events/`, params);
+    return this.ebGet(`organizations/${encodeURIComponent(args.organization_id as string)}/events/`, params);
   }
 
   private async getEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.expand) params.expand = args.expand as string;
-    return this.ebGet(`events/${args.event_id as string}/`, params);
+    return this.ebGet(`events/${encodeURIComponent(args.event_id as string)}/`, params);
   }
 
   private async searchEvents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -633,7 +633,7 @@ export class EventbriteMCPServer {
     if (args.description) (body.event as Record<string, unknown>).description = { html: args.description as string };
     if (args.venue_id) (body.event as Record<string, unknown>).venue_id = args.venue_id;
     if (args.capacity) (body.event as Record<string, unknown>).capacity = args.capacity;
-    return this.ebPost(`organizations/${args.organization_id as string}/events/`, body);
+    return this.ebPost(`organizations/${encodeURIComponent(args.organization_id as string)}/events/`, body);
   }
 
   private async updateEvent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -644,7 +644,7 @@ export class EventbriteMCPServer {
     if (args.start_utc) eventBody.start = { utc: args.start_utc };
     if (args.end_utc) eventBody.end = { utc: args.end_utc };
     if (args.capacity) eventBody.capacity = args.capacity;
-    const response = await fetch(`${this.baseUrl}/events/${args.event_id as string}/`, {
+    const response = await fetch(`${this.baseUrl}/events/${encodeURIComponent(args.event_id as string)}/`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ event: eventBody }),
@@ -658,12 +658,12 @@ export class EventbriteMCPServer {
 
   private async publishEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.ebPost(`events/${args.event_id as string}/publish/`, {});
+    return this.ebPost(`events/${encodeURIComponent(args.event_id as string)}/publish/`, {});
   }
 
   private async cancelEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.ebPost(`events/${args.event_id as string}/cancel/`, {});
+    return this.ebPost(`events/${encodeURIComponent(args.event_id as string)}/cancel/`, {});
   }
 
   private async listEventAttendees(args: Record<string, unknown>): Promise<ToolResult> {
@@ -673,14 +673,14 @@ export class EventbriteMCPServer {
       page_size: String((args.page_size as number) || 50),
     };
     if (args.page) params.page = String(args.page as number);
-    return this.ebGet(`events/${args.event_id as string}/attendees/`, params);
+    return this.ebGet(`events/${encodeURIComponent(args.event_id as string)}/attendees/`, params);
   }
 
   private async getAttendee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.attendee_id) {
       return { content: [{ type: 'text', text: 'event_id and attendee_id are required' }], isError: true };
     }
-    return this.ebGet(`events/${args.event_id as string}/attendees/${args.attendee_id as string}/`);
+    return this.ebGet(`events/${encodeURIComponent(args.event_id as string)}/attendees/${encodeURIComponent(args.attendee_id as string)}/`);
   }
 
   private async listEventOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -690,14 +690,14 @@ export class EventbriteMCPServer {
       page_size: String((args.page_size as number) || 50),
     };
     if (args.page) params.page = String(args.page as number);
-    return this.ebGet(`events/${args.event_id as string}/orders/`, params);
+    return this.ebGet(`events/${encodeURIComponent(args.event_id as string)}/orders/`, params);
   }
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.expand) params.expand = args.expand as string;
-    return this.ebGet(`orders/${args.order_id as string}/`, params);
+    return this.ebGet(`orders/${encodeURIComponent(args.order_id as string)}/`, params);
   }
 
   private async listOrganizations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -710,19 +710,19 @@ export class EventbriteMCPServer {
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
-    return this.ebGet(`organizations/${args.organization_id as string}/`);
+    return this.ebGet(`organizations/${encodeURIComponent(args.organization_id as string)}/`);
   }
 
   private async listVenues(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.page) params.page = String(args.page as number);
-    return this.ebGet(`organizations/${args.organization_id as string}/venues/`, params);
+    return this.ebGet(`organizations/${encodeURIComponent(args.organization_id as string)}/venues/`, params);
   }
 
   private async getVenue(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.venue_id) return { content: [{ type: 'text', text: 'venue_id is required' }], isError: true };
-    return this.ebGet(`venues/${args.venue_id as string}/`);
+    return this.ebGet(`venues/${encodeURIComponent(args.venue_id as string)}/`);
   }
 
   private async createVenue(args: Record<string, unknown>): Promise<ToolResult> {
@@ -744,7 +744,7 @@ export class EventbriteMCPServer {
     if (args.region) addr.region = args.region;
     if (args.postal_code) addr.postal_code = args.postal_code;
     if (args.capacity) (body.venue as Record<string, unknown>).capacity = args.capacity;
-    return this.ebPost(`organizations/${args.organization_id as string}/venues/`, body);
+    return this.ebPost(`organizations/${encodeURIComponent(args.organization_id as string)}/venues/`, body);
   }
 
   private async listCategories(): Promise<ToolResult> {

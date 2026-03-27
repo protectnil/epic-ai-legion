@@ -614,7 +614,7 @@ export class PagerDutyMCPServer {
   }
 
   private async getIncident(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchJson(`${this.baseUrl}/incidents/${args.incident_id}`);
+    return this.fetchJson(`${this.baseUrl}/incidents/${encodeURIComponent(args.incident_id as string)}`);
   }
 
   private async createIncident(args: Record<string, unknown>): Promise<ToolResult> {
@@ -662,25 +662,25 @@ export class PagerDutyMCPServer {
   }
 
   private async addIncidentNote(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchJson(`${this.baseUrl}/incidents/${args.incident_id}/notes`, {
+    return this.fetchJson(`${this.baseUrl}/incidents/${encodeURIComponent(args.incident_id as string)}/notes`, {
       method: 'POST',
       body: JSON.stringify({ note: { content: args.content } }),
     });
   }
 
   private async listIncidentNotes(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchJson(`${this.baseUrl}/incidents/${args.incident_id}/notes`);
+    return this.fetchJson(`${this.baseUrl}/incidents/${encodeURIComponent(args.incident_id as string)}/notes`);
   }
 
   private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.limit) params.set('limit', String(args.limit));
     if (args.offset) params.set('offset', String(args.offset));
-    return this.fetchJson(`${this.baseUrl}/incidents/${args.incident_id}/alerts?${params}`);
+    return this.fetchJson(`${this.baseUrl}/incidents/${encodeURIComponent(args.incident_id as string)}/alerts?${params}`);
   }
 
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchJson(`${this.baseUrl}/incidents/${args.incident_id}/alerts/${args.alert_id}`);
+    return this.fetchJson(`${this.baseUrl}/incidents/${encodeURIComponent(args.incident_id as string)}/alerts/${encodeURIComponent(args.alert_id as string)}`);
   }
 
   private async listServices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -693,7 +693,7 @@ export class PagerDutyMCPServer {
   }
 
   private async getService(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchJson(`${this.baseUrl}/services/${args.service_id}?include[]=escalation_policies`);
+    return this.fetchJson(`${this.baseUrl}/services/${encodeURIComponent(args.service_id as string)}?include[]=escalation_policies`);
   }
 
   private async listEscalationPolicies(args: Record<string, unknown>): Promise<ToolResult> {
@@ -706,7 +706,7 @@ export class PagerDutyMCPServer {
   }
 
   private async getEscalationPolicy(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchJson(`${this.baseUrl}/escalation_policies/${args.escalation_policy_id}`);
+    return this.fetchJson(`${this.baseUrl}/escalation_policies/${encodeURIComponent(args.escalation_policy_id as string)}`);
   }
 
   private async listSchedules(args: Record<string, unknown>): Promise<ToolResult> {
@@ -721,7 +721,7 @@ export class PagerDutyMCPServer {
     const params = new URLSearchParams();
     if (args.since) params.set('since', args.since as string);
     if (args.until) params.set('until', args.until as string);
-    return this.fetchJson(`${this.baseUrl}/schedules/${args.schedule_id}?${params}`);
+    return this.fetchJson(`${this.baseUrl}/schedules/${encodeURIComponent(args.schedule_id as string)}?${params}`);
   }
 
   private async listOncalls(args: Record<string, unknown>): Promise<ToolResult> {
@@ -744,7 +744,7 @@ export class PagerDutyMCPServer {
   }
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchJson(`${this.baseUrl}/users/${args.user_id}?include[]=contact_methods&include[]=notification_rules`);
+    return this.fetchJson(`${this.baseUrl}/users/${encodeURIComponent(args.user_id as string)}?include[]=contact_methods&include[]=notification_rules`);
   }
 
   private async listTeams(args: Record<string, unknown>): Promise<ToolResult> {

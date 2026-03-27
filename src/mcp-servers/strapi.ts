@@ -487,8 +487,8 @@ export class StrapiMCPServer {
     if (args.populate) params.populate = args.populate as string;
     // filters is passed as a pre-encoded query string fragment — not URLSearchParams safe, so append raw
     const qs = new URLSearchParams(params).toString();
-    const filterStr = args.filters ? `&${args.filters}` : '';
-    const url = `${this.baseUrl}/${args.content_type}?${qs}${filterStr}`;
+    const filterStr = args.filters ? `&${encodeURIComponent(args.filters as string)}` : '';
+    const url = `${this.baseUrl}/${encodeURIComponent(args.content_type as string)}?${qs}${filterStr}`;
     const response = await fetch(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
@@ -501,24 +501,24 @@ export class StrapiMCPServer {
     if (!args.content_type || args.entry_id === undefined) return { content: [{ type: 'text', text: 'content_type and entry_id are required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.populate) params.populate = args.populate as string;
-    return this.apiGet(`/${args.content_type}/${args.entry_id}`, params);
+    return this.apiGet(`/${encodeURIComponent(args.content_type as string)}/${encodeURIComponent(args.entry_id as string)}`, params);
   }
 
   private async createEntry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.content_type || !args.data) return { content: [{ type: 'text', text: 'content_type and data are required' }], isError: true };
-    return this.apiPost(`/${args.content_type}`, { data: args.data });
+    return this.apiPost(`/${encodeURIComponent(args.content_type as string)}`, { data: args.data });
   }
 
   private async updateEntry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.content_type || args.entry_id === undefined || !args.data) {
       return { content: [{ type: 'text', text: 'content_type, entry_id, and data are required' }], isError: true };
     }
-    return this.apiPut(`/${args.content_type}/${args.entry_id}`, { data: args.data });
+    return this.apiPut(`/${encodeURIComponent(args.content_type as string)}/${encodeURIComponent(args.entry_id as string)}`, { data: args.data });
   }
 
   private async deleteEntry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.content_type || args.entry_id === undefined) return { content: [{ type: 'text', text: 'content_type and entry_id are required' }], isError: true };
-    return this.apiDelete(`/${args.content_type}/${args.entry_id}`);
+    return this.apiDelete(`/${encodeURIComponent(args.content_type as string)}/${encodeURIComponent(args.entry_id as string)}`);
   }
 
   private async listContentTypes(): Promise<ToolResult> {
@@ -532,7 +532,7 @@ export class StrapiMCPServer {
       'pagination[page]': String((args.page as number) || 1),
       'pagination[pageSize]': String((args.page_size as number) || 25),
     };
-    return this.apiGet(`/${args.content_type}`, params);
+    return this.apiGet(`/${encodeURIComponent(args.content_type as string)}`, params);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -542,7 +542,7 @@ export class StrapiMCPServer {
     };
     if (args.sort) params.sort = args.sort as string;
     const qs = new URLSearchParams(params).toString();
-    const filterStr = args.filters ? `&${args.filters}` : '';
+    const filterStr = args.filters ? `&${encodeURIComponent(args.filters as string)}` : '';
     const url = `${this.baseUrl}/users?${qs}${filterStr}`;
     const response = await fetch(url, { headers: this.headers });
     if (!response.ok) {
@@ -554,7 +554,7 @@ export class StrapiMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.user_id === undefined) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/users/${args.user_id}`);
+    return this.apiGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async createUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -575,12 +575,12 @@ export class StrapiMCPServer {
     if (args.username) body.username = args.username;
     if (args.email) body.email = args.email;
     if (args.role !== undefined) body.role = args.role;
-    return this.apiPut(`/users/${args.user_id}`, body);
+    return this.apiPut(`/users/${encodeURIComponent(args.user_id as string)}`, body);
   }
 
   private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.user_id === undefined) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiDelete(`/users/${args.user_id}`);
+    return this.apiDelete(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listRoles(): Promise<ToolResult> {
@@ -589,7 +589,7 @@ export class StrapiMCPServer {
 
   private async getRole(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.role_id === undefined) return { content: [{ type: 'text', text: 'role_id is required' }], isError: true };
-    return this.apiGet(`/users-permissions/roles/${args.role_id}`);
+    return this.apiGet(`/users-permissions/roles/${encodeURIComponent(args.role_id as string)}`);
   }
 
   private async listMedia(args: Record<string, unknown>): Promise<ToolResult> {

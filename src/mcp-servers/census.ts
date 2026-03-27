@@ -446,7 +446,7 @@ export class CensusMCPServer {
 
   private async getSync(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sync_id) return { content: [{ type: 'text', text: 'sync_id is required' }], isError: true };
-    return this.censusGet(`/syncs/${args.sync_id}`);
+    return this.censusGet(`/syncs/${encodeURIComponent(args.sync_id as string)}`);
   }
 
   private async createSync(args: Record<string, unknown>): Promise<ToolResult> {
@@ -471,19 +471,19 @@ export class CensusMCPServer {
     if (args.trigger !== undefined) body.trigger = args.trigger;
     if (args.schedule_frequency !== undefined) body.schedule_frequency = args.schedule_frequency;
     if (args.paused !== undefined) body.paused = args.paused;
-    return this.censusPatch(`/syncs/${args.sync_id}`, body);
+    return this.censusPatch(`/syncs/${encodeURIComponent(args.sync_id as string)}`, body);
   }
 
   private async deleteSync(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sync_id) return { content: [{ type: 'text', text: 'sync_id is required' }], isError: true };
-    return this.censusDelete(`/syncs/${args.sync_id}`);
+    return this.censusDelete(`/syncs/${encodeURIComponent(args.sync_id as string)}`);
   }
 
   private async triggerSync(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sync_id) return { content: [{ type: 'text', text: 'sync_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (typeof args.full_sync === 'boolean') body.full_sync = args.full_sync;
-    return this.censusPost(`/syncs/${args.sync_id}/trigger`, body);
+    return this.censusPost(`/syncs/${encodeURIComponent(args.sync_id as string)}/trigger`, body);
   }
 
   private async listSyncRuns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -492,12 +492,12 @@ export class CensusMCPServer {
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
     if (args.order) params.order = args.order as string;
-    return this.censusGet(`/syncs/${args.sync_id}/sync_runs`, params);
+    return this.censusGet(`/syncs/${encodeURIComponent(args.sync_id as string)}/sync_runs`, params);
   }
 
   private async getSyncRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sync_id || !args.sync_run_id) return { content: [{ type: 'text', text: 'sync_id and sync_run_id are required' }], isError: true };
-    return this.censusGet(`/syncs/${args.sync_id}/sync_runs/${args.sync_run_id}`);
+    return this.censusGet(`/syncs/${encodeURIComponent(args.sync_id as string)}/sync_runs/${encodeURIComponent(args.sync_run_id as string)}`);
   }
 
   private async listSources(args: Record<string, unknown>): Promise<ToolResult> {
@@ -509,7 +509,7 @@ export class CensusMCPServer {
 
   private async getSource(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connection_id) return { content: [{ type: 'text', text: 'connection_id is required' }], isError: true };
-    return this.censusGet(`/sources/${args.connection_id}`);
+    return this.censusGet(`/sources/${encodeURIComponent(args.connection_id as string)}`);
   }
 
   private async listDestinations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -521,7 +521,7 @@ export class CensusMCPServer {
 
   private async getDestination(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connection_id) return { content: [{ type: 'text', text: 'connection_id is required' }], isError: true };
-    return this.censusGet(`/destinations/${args.connection_id}`);
+    return this.censusGet(`/destinations/${encodeURIComponent(args.connection_id as string)}`);
   }
 
   private async listModels(args: Record<string, unknown>): Promise<ToolResult> {

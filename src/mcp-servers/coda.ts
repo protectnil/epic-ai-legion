@@ -580,7 +580,7 @@ export class CodaMCPServer {
 
   private async getDoc(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id) return { content: [{ type: 'text', text: 'doc_id is required' }], isError: true };
-    return this.codaGet(`/docs/${args.doc_id}`);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}`);
   }
 
   private async createDoc(args: Record<string, unknown>): Promise<ToolResult> {
@@ -594,21 +594,21 @@ export class CodaMCPServer {
 
   private async deleteDoc(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id) return { content: [{ type: 'text', text: 'doc_id is required' }], isError: true };
-    return this.codaDelete(`/docs/${args.doc_id}`);
+    return this.codaDelete(`/docs/${encodeURIComponent(args.doc_id as string)}`);
   }
 
   private async listPages(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id) return { content: [{ type: 'text', text: 'doc_id is required' }], isError: true };
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 25) };
     if (args.page_token) params.pageToken = args.page_token as string;
-    return this.codaGet(`/docs/${args.doc_id}/pages`, params);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/pages`, params);
   }
 
   private async getPage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id || !args.page_id_or_name) {
       return { content: [{ type: 'text', text: 'doc_id and page_id_or_name are required' }], isError: true };
     }
-    return this.codaGet(`/docs/${args.doc_id}/pages/${args.page_id_or_name}`);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/pages/${encodeURIComponent(args.page_id_or_name as string)}`);
   }
 
   private async createPage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -621,7 +621,7 @@ export class CodaMCPServer {
     if (args.page_content) {
       try { body.pageContent = JSON.parse(args.page_content as string); } catch { /* skip */ }
     }
-    return this.codaPost(`/docs/${args.doc_id}/pages`, body);
+    return this.codaPost(`/docs/${encodeURIComponent(args.doc_id as string)}/pages`, body);
   }
 
   private async updatePage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -631,7 +631,7 @@ export class CodaMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.subtitle) body.subtitle = args.subtitle;
-    return this.codaPut(`/docs/${args.doc_id}/pages/${args.page_id_or_name}`, body);
+    return this.codaPut(`/docs/${encodeURIComponent(args.doc_id as string)}/pages/${encodeURIComponent(args.page_id_or_name as string)}`, body);
   }
 
   private async listTables(args: Record<string, unknown>): Promise<ToolResult> {
@@ -639,14 +639,14 @@ export class CodaMCPServer {
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 25) };
     if (args.page_token) params.pageToken = args.page_token as string;
     if (args.table_types) params.tableTypes = args.table_types as string;
-    return this.codaGet(`/docs/${args.doc_id}/tables`, params);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/tables`, params);
   }
 
   private async getTable(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id || !args.table_id_or_name) {
       return { content: [{ type: 'text', text: 'doc_id and table_id_or_name are required' }], isError: true };
     }
-    return this.codaGet(`/docs/${args.doc_id}/tables/${args.table_id_or_name}`);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}`);
   }
 
   private async listColumns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -655,7 +655,7 @@ export class CodaMCPServer {
     }
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 25) };
     if (args.page_token) params.pageToken = args.page_token as string;
-    return this.codaGet(`/docs/${args.doc_id}/tables/${args.table_id_or_name}/columns`, params);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/columns`, params);
   }
 
   private async listRows(args: Record<string, unknown>): Promise<ToolResult> {
@@ -669,7 +669,7 @@ export class CodaMCPServer {
     if (args.page_token) params.pageToken = args.page_token as string;
     if (args.query) params.query = args.query as string;
     if (args.sort_by) params.sortBy = args.sort_by as string;
-    return this.codaGet(`/docs/${args.doc_id}/tables/${args.table_id_or_name}/rows`, params);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows`, params);
   }
 
   private async getRow(args: Record<string, unknown>): Promise<ToolResult> {
@@ -679,7 +679,7 @@ export class CodaMCPServer {
     const params: Record<string, string> = {
       valueFormat: (args.value_format as string) ?? 'simple',
     };
-    return this.codaGet(`/docs/${args.doc_id}/tables/${args.table_id_or_name}/rows/${args.row_id_or_name}`, params);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows/${encodeURIComponent(args.row_id_or_name as string)}`, params);
   }
 
   private async upsertRows(args: Record<string, unknown>): Promise<ToolResult> {
@@ -694,27 +694,27 @@ export class CodaMCPServer {
     if (args.key_columns) {
       try { body.keyColumns = JSON.parse(args.key_columns as string); } catch { /* skip */ }
     }
-    return this.codaPost(`/docs/${args.doc_id}/tables/${args.table_id_or_name}/rows`, body);
+    return this.codaPost(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows`, body);
   }
 
   private async deleteRow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id || !args.table_id_or_name || !args.row_id) {
       return { content: [{ type: 'text', text: 'doc_id, table_id_or_name, and row_id are required' }], isError: true };
     }
-    return this.codaDelete(`/docs/${args.doc_id}/tables/${args.table_id_or_name}/rows/${args.row_id}`);
+    return this.codaDelete(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows/${encodeURIComponent(args.row_id as string)}`);
   }
 
   private async listFormulas(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id) return { content: [{ type: 'text', text: 'doc_id is required' }], isError: true };
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 25) };
     if (args.page_token) params.pageToken = args.page_token as string;
-    return this.codaGet(`/docs/${args.doc_id}/formulas`, params);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/formulas`, params);
   }
 
   private async listControls(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.doc_id) return { content: [{ type: 'text', text: 'doc_id is required' }], isError: true };
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 25) };
     if (args.page_token) params.pageToken = args.page_token as string;
-    return this.codaGet(`/docs/${args.doc_id}/controls`, params);
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/controls`, params);
   }
 }

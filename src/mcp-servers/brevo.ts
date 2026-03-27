@@ -589,7 +589,7 @@ export class BrevoMCPServer {
 
   private async getContactList(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.list_id) return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
-    return this.apiGet(`/contacts/lists/${args.list_id}`);
+    return this.apiGet(`/contacts/lists/${encodeURIComponent(args.list_id as string)}`);
   }
 
   private async createContactList(args: Record<string, unknown>): Promise<ToolResult> {
@@ -604,7 +604,7 @@ export class BrevoMCPServer {
       return { content: [{ type: 'text', text: 'list_id and emails are required' }], isError: true };
     }
     const emails = (args.emails as string).split(',').map(e => e.trim());
-    return this.apiPost(`/contacts/lists/${args.list_id}/contacts/add`, { emails });
+    return this.apiPost(`/contacts/lists/${encodeURIComponent(args.list_id as string)}/contacts/add`, { emails });
   }
 
   private async listEmailCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -619,7 +619,7 @@ export class BrevoMCPServer {
 
   private async getEmailCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.apiGet(`/emailCampaigns/${args.campaign_id}`);
+    return this.apiGet(`/emailCampaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async createEmailCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -640,7 +640,7 @@ export class BrevoMCPServer {
 
   private async sendEmailCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.apiPost(`/emailCampaigns/${args.campaign_id}/sendNow`, {});
+    return this.apiPost(`/emailCampaigns/${encodeURIComponent(args.campaign_id as string)}/sendNow`, {});
   }
 
   private async listTransactionalTemplates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -654,7 +654,7 @@ export class BrevoMCPServer {
 
   private async getTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.template_id) return { content: [{ type: 'text', text: 'template_id is required' }], isError: true };
-    return this.apiGet(`/smtp/templates/${args.template_id}`);
+    return this.apiGet(`/smtp/templates/${encodeURIComponent(args.template_id as string)}`);
   }
 
   private async createTemplate(args: Record<string, unknown>): Promise<ToolResult> {

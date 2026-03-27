@@ -487,7 +487,7 @@ export class SauceLabsMCPServer {
 
   private async getJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.apiGet(`/rest/v1/${this.username}/jobs/${args.job_id}`);
+    return this.apiGet(`/rest/v1/${this.username}/jobs/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async updateJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -498,12 +498,12 @@ export class SauceLabsMCPServer {
     if (args.build) body.build = args.build;
     if (args.tags) body.tags = args.tags;
     if (args.custom_data) body.custom_data = args.custom_data;
-    return this.apiPut(`/rest/v1/${this.username}/jobs/${args.job_id}`, body);
+    return this.apiPut(`/rest/v1/${this.username}/jobs/${encodeURIComponent(args.job_id as string)}`, body);
   }
 
   private async deleteJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.apiDelete(`/rest/v1/${this.username}/jobs/${args.job_id}`);
+    return this.apiDelete(`/rest/v1/${this.username}/jobs/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async listBuilds(args: Record<string, unknown>): Promise<ToolResult> {
@@ -518,7 +518,7 @@ export class SauceLabsMCPServer {
 
   private async getBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.apiGet(`/rest/v1/${this.username}/builds/${args.build_id}`);
+    return this.apiGet(`/rest/v1/${this.username}/builds/${encodeURIComponent(args.build_id as string)}`);
   }
 
   private async listTunnels(args: Record<string, unknown>): Promise<ToolResult> {
@@ -528,12 +528,12 @@ export class SauceLabsMCPServer {
 
   private async getTunnel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tunnel_id) return { content: [{ type: 'text', text: 'tunnel_id is required' }], isError: true };
-    return this.apiGet(`/rest/v1/${this.username}/tunnels/${args.tunnel_id}`);
+    return this.apiGet(`/rest/v1/${this.username}/tunnels/${encodeURIComponent(args.tunnel_id as string)}`);
   }
 
   private async deleteTunnel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tunnel_id) return { content: [{ type: 'text', text: 'tunnel_id is required' }], isError: true };
-    return this.apiDelete(`/rest/v1/${this.username}/tunnels/${args.tunnel_id}`);
+    return this.apiDelete(`/rest/v1/${this.username}/tunnels/${encodeURIComponent(args.tunnel_id as string)}`);
   }
 
   private async listDevices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -542,7 +542,7 @@ export class SauceLabsMCPServer {
 
   private async getDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.device_id) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiGet(`/v1/rdc/devices/${args.device_id}`);
+    return this.apiGet(`/v1/rdc/devices/${encodeURIComponent(args.device_id as string)}`);
   }
 
   private async listStorageFiles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -563,7 +563,7 @@ export class SauceLabsMCPServer {
 
   private async deleteStorageFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.file_id) return { content: [{ type: 'text', text: 'file_id is required' }], isError: true };
-    return this.apiDelete(`/v1/storage/files/${args.file_id}`);
+    return this.apiDelete(`/v1/storage/files/${encodeURIComponent(args.file_id as string)}`);
   }
 
   private async getAccountUsage(args: Record<string, unknown>): Promise<ToolResult> {

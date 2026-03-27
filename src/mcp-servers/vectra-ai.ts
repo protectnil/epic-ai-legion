@@ -525,7 +525,7 @@ export class VectraAIMCPServer {
 
   private async getDetection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.detection_id) return { content: [{ type: 'text', text: 'detection_id is required' }], isError: true };
-    return this.apiGet(`/detections/${args.detection_id}`);
+    return this.apiGet(`/detections/${encodeURIComponent(args.detection_id as string)}`);
   }
 
   private async updateDetection(args: Record<string, unknown>): Promise<ToolResult> {
@@ -551,7 +551,7 @@ export class VectraAIMCPServer {
 
   private async getHost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.host_id) return { content: [{ type: 'text', text: 'host_id is required' }], isError: true };
-    return this.apiGet(`/hosts/${args.host_id}`);
+    return this.apiGet(`/hosts/${encodeURIComponent(args.host_id as string)}`);
   }
 
   private async searchHosts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -577,7 +577,7 @@ export class VectraAIMCPServer {
 
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    return this.apiGet(`/accounts/${args.account_id}`);
+    return this.apiGet(`/accounts/${encodeURIComponent(args.account_id as string)}`);
   }
 
   private async searchAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -600,7 +600,7 @@ export class VectraAIMCPServer {
 
   private async getAssignment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.assignment_id) return { content: [{ type: 'text', text: 'assignment_id is required' }], isError: true };
-    return this.apiGet(`/assignments/${args.assignment_id}`);
+    return this.apiGet(`/assignments/${encodeURIComponent(args.assignment_id as string)}`);
   }
 
   private async createAssignment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -621,8 +621,8 @@ export class VectraAIMCPServer {
       return { content: [{ type: 'text', text: 'entity_type, entity_id, and tags are required' }], isError: true };
     }
     const path = args.entity_type === 'account'
-      ? `/tagging/account/${args.entity_id}`
-      : `/tagging/host/${args.entity_id}`;
+      ? `/tagging/account/${encodeURIComponent(args.entity_id as string)}`
+      : `/tagging/host/${encodeURIComponent(args.entity_id as string)}`;
     return this.apiPatch(path, { tags: args.tags });
   }
 
@@ -631,7 +631,7 @@ export class VectraAIMCPServer {
       return { content: [{ type: 'text', text: 'entity_type, entity_id, and tags are required' }], isError: true };
     }
     const existingResult = await this.apiGet(
-      args.entity_type === 'account' ? `/tagging/account/${args.entity_id}` : `/tagging/host/${args.entity_id}`
+      args.entity_type === 'account' ? `/tagging/account/${encodeURIComponent(args.entity_id as string)}` : `/tagging/host/${encodeURIComponent(args.entity_id as string)}`
     );
     if (existingResult.isError) return existingResult;
     let currentTags: string[] = [];
@@ -642,8 +642,8 @@ export class VectraAIMCPServer {
     const tagsToRemove = args.tags as string[];
     const updatedTags = currentTags.filter(t => !tagsToRemove.includes(t));
     const path = args.entity_type === 'account'
-      ? `/tagging/account/${args.entity_id}`
-      : `/tagging/host/${args.entity_id}`;
+      ? `/tagging/account/${encodeURIComponent(args.entity_id as string)}`
+      : `/tagging/host/${encodeURIComponent(args.entity_id as string)}`;
     return this.apiPatch(path, { tags: updatedTags });
   }
 }

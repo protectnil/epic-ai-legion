@@ -365,7 +365,7 @@ export class PostmarkMCPServer {
 
   private async getTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.templateIdOrAlias) return { content: [{ type: 'text', text: 'templateIdOrAlias is required' }], isError: true };
-    return this.get(`/templates/${args.templateIdOrAlias}`);
+    return this.get(`/templates/${encodeURIComponent(args.templateIdOrAlias as string)}`);
   }
 
   private async createTemplate(args: Record<string, unknown>): Promise<ToolResult> {
@@ -381,7 +381,7 @@ export class PostmarkMCPServer {
 
   private async deleteTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.templateIdOrAlias) return { content: [{ type: 'text', text: 'templateIdOrAlias is required' }], isError: true };
-    return this.del(`/templates/${args.templateIdOrAlias}`);
+    return this.del(`/templates/${encodeURIComponent(args.templateIdOrAlias as string)}`);
   }
 
   private async listBounces(args: Record<string, unknown>): Promise<ToolResult> {
@@ -399,12 +399,12 @@ export class PostmarkMCPServer {
 
   private async getBounce(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.bounceId) return { content: [{ type: 'text', text: 'bounceId is required' }], isError: true };
-    return this.get(`/bounces/${args.bounceId}`);
+    return this.get(`/bounces/${encodeURIComponent(args.bounceId as string)}`);
   }
 
   private async activateBounce(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.bounceId) return { content: [{ type: 'text', text: 'bounceId is required' }], isError: true };
-    return this.put(`/bounces/${args.bounceId}/activate`, {});
+    return this.put(`/bounces/${encodeURIComponent(args.bounceId as string)}/activate`, {});
   }
 
   private async listSuppressions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -412,12 +412,12 @@ export class PostmarkMCPServer {
     const params: Record<string, string> = {};
     if (args.suppressionReason) params.suppressionReason = args.suppressionReason as string;
     if (args.emailAddress) params.emailAddress = args.emailAddress as string;
-    return this.get(`/message-streams/${args.messageStream}/suppressions/dump`, params);
+    return this.get(`/message-streams/${encodeURIComponent(args.messageStream as string)}/suppressions/dump`, params);
   }
 
   private async deleteSuppression(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.messageStream || !args.Suppressions) return { content: [{ type: 'text', text: 'messageStream and Suppressions are required' }], isError: true };
-    return this.post(`/message-streams/${args.messageStream}/suppressions/delete`, { Suppressions: args.Suppressions });
+    return this.post(`/message-streams/${encodeURIComponent(args.messageStream as string)}/suppressions/delete`, { Suppressions: args.Suppressions });
   }
 
   private async getDeliveryStats(): Promise<ToolResult> {

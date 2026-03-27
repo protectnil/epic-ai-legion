@@ -331,6 +331,12 @@ export interface MemoryStoreAdapter {
 export interface MemoryConfig {
   store: MemoryStoreAdapter;
   cacheTTLMs: number;
+  /**
+   * Optional AES-256-GCM encryption key (32-byte hex string, 64 hex chars).
+   * When present, memory entry content is encrypted before storage and
+   * decrypted transparently on retrieval. When absent, behavior is unchanged.
+   */
+  encryptionKey?: string;
 }
 
 export interface RetrievalConfig {
@@ -378,6 +384,14 @@ export interface ActionRecord {
   tool: string;
   server: string;
   tier: 'auto' | 'escalate' | 'approve';
+  /**
+   * Execution status.
+   * - 'pending'   — recorded before tool execution begins; guarantees an audit
+   *                 entry exists even if the process crashes mid-execution.
+   * - 'completed' — tool returned successfully.
+   * - 'failed'    — tool threw or returned isError=true.
+   */
+  status: 'pending' | 'completed' | 'failed';
   input: Record<string, unknown>;
   output: Record<string, unknown>;
   persona: string;
@@ -404,6 +418,13 @@ export interface AuditStoreAdapter {
   append(record: ActionRecord): Promise<void>;
   query(filter: AuditFilter): Promise<ActionRecord[]>;
   verify(): Promise<{ valid: boolean; chainLength: number; brokenAt?: number }>;
+  /**
+   * Update the status and output of a previously recorded pending entry.
+   * Implementations should mutate in-place (in-memory) or append a
+   * status-update record (append-only stores). Optional — when not implemented
+   * the update is silently skipped.
+   */
+  updateStatus?(id: string, status: 'completed' | 'failed', output: Record<string, unknown>, durationMs: number): Promise<void>;
 }
 
 export interface AuditConfig {

@@ -492,7 +492,7 @@ export class TogetherAIMCPServer {
 
   private async getFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.togetherGet(`/fine-tunes/${args.job_id}`);
+    return this.togetherGet(`/fine-tunes/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async createFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -509,7 +509,7 @@ export class TogetherAIMCPServer {
 
   private async cancelFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.togetherPost(`/fine-tunes/${args.job_id}/cancel`, {});
+    return this.togetherPost(`/fine-tunes/${encodeURIComponent(args.job_id as string)}/cancel`, {});
   }
 
   private async listFiles(): Promise<ToolResult> {
@@ -528,6 +528,6 @@ export class TogetherAIMCPServer {
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.file_id) return { content: [{ type: 'text', text: 'file_id is required' }], isError: true };
-    return this.togetherDelete(`/files/${args.file_id}`);
+    return this.togetherDelete(`/files/${encodeURIComponent(args.file_id as string)}`);
   }
 }

@@ -465,7 +465,7 @@ export class StytchMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/users/${args.user_id}`);
+    return this.apiGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async createUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -482,12 +482,12 @@ export class StytchMCPServer {
     if (args.name) body.name = args.name;
     if (args.trusted_metadata) body.trusted_metadata = args.trusted_metadata;
     if (args.untrusted_metadata) body.untrusted_metadata = args.untrusted_metadata;
-    return this.apiPut(`/users/${args.user_id}`, body);
+    return this.apiPut(`/users/${encodeURIComponent(args.user_id as string)}`, body);
   }
 
   private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiDelete(`/users/${args.user_id}`);
+    return this.apiDelete(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async searchUsers(args: Record<string, unknown>): Promise<ToolResult> {

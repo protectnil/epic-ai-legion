@@ -450,7 +450,7 @@ export class NewRelicMCPServer {
 
   private async searchEntities(args: Record<string, unknown>): Promise<ToolResult> {
     const query = (args.query as string).replace(/"/g, '\\"');
-    const cursorArg = args.cursor ? `, cursor: "${args.cursor}"` : '';
+    const cursorArg = args.cursor ? `, cursor: "${encodeURIComponent(args.cursor as string)}"` : '';
     const gql = `{
       actor {
         entitySearch(query: "${query}"${cursorArg}) {
@@ -521,7 +521,7 @@ export class NewRelicMCPServer {
   }
 
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/applications/${args.application_id}.json`, {
+    const response = await fetch(`${this.baseUrl}/applications/${encodeURIComponent(args.application_id as string)}.json`, {
       method: 'GET',
       headers: this.restHeaders,
     });
@@ -628,7 +628,7 @@ export class NewRelicMCPServer {
           enabled: true
           nrql: { query: "${nrql}" }
           terms: [{
-            threshold: ${args.threshold}
+            threshold: ${encodeURIComponent(args.threshold as string)}
             thresholdDuration: ${thresholdDuration}
             operator: ${operator}
             priority: ${priority}
@@ -672,7 +672,7 @@ export class NewRelicMCPServer {
   }
 
   private async listSyntheticMonitors(args: Record<string, unknown>): Promise<ToolResult> {
-    const cursorArg = args.cursor ? `, cursor: "${args.cursor}"` : '';
+    const cursorArg = args.cursor ? `, cursor: "${encodeURIComponent(args.cursor as string)}"` : '';
     const nameFilter = args.filter_name
       ? ` AND name LIKE '${String(args.filter_name).replace(/'/g, "\\'")}%'`
       : '';
@@ -723,7 +723,7 @@ export class NewRelicMCPServer {
     if (args.user) (body.deployment as Record<string, unknown>).user = args.user;
     if (args.timestamp) (body.deployment as Record<string, unknown>).timestamp = args.timestamp;
 
-    const response = await fetch(`${this.baseUrl}/applications/${args.application_id}/deployments.json`, {
+    const response = await fetch(`${this.baseUrl}/applications/${encodeURIComponent(args.application_id as string)}/deployments.json`, {
       method: 'POST',
       headers: this.restHeaders,
       body: JSON.stringify(body),

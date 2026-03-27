@@ -559,10 +559,10 @@ export class QualysMCPServer {
     let filterXml = '';
     const filters: string[] = [];
     if (args.name_filter) {
-      filters.push(`<Criteria field="name" operator="CONTAINS">${args.name_filter}</Criteria>`);
+      filters.push(`<Criteria field="name" operator="CONTAINS">${encodeURIComponent(args.name_filter as string)}</Criteria>`);
     }
     if (args.url_filter) {
-      filters.push(`<Criteria field="url" operator="CONTAINS">${args.url_filter}</Criteria>`);
+      filters.push(`<Criteria field="url" operator="CONTAINS">${encodeURIComponent(args.url_filter as string)}</Criteria>`);
     }
     if (filters.length > 0) {
       filterXml = `\n  <filters>${filters.join('')}</filters>`;
@@ -600,14 +600,14 @@ export class QualysMCPServer {
 
     let profileXml = '';
     if (args.profile_id) {
-      profileXml = `\n    <profile><id>${args.profile_id}</id></profile>`;
+      profileXml = `\n    <profile><id>${encodeURIComponent(args.profile_id as string)}</id></profile>`;
     }
 
     const serviceRequest = `<?xml version="1.0" encoding="UTF-8"?>
 <ServiceRequest>
   <data>
     <WasScan>
-      <name>${args.scan_name}</name>
+      <name>${encodeURIComponent(args.scan_name as string)}</name>
       <type>${scanType}</type>
       <target>
         <webApp><id>${webAppId}</id></webApp>
@@ -636,10 +636,10 @@ export class QualysMCPServer {
     const limit = (args.limit as number) ?? 50;
     const filters: string[] = [];
     if (args.status) {
-      filters.push(`<Criteria field="status" operator="EQUALS">${args.status}</Criteria>`);
+      filters.push(`<Criteria field="status" operator="EQUALS">${encodeURIComponent(args.status as string)}</Criteria>`);
     }
     if (args.web_app_id) {
-      filters.push(`<Criteria field="webApp.id" operator="EQUALS">${args.web_app_id}</Criteria>`);
+      filters.push(`<Criteria field="webApp.id" operator="EQUALS">${encodeURIComponent(args.web_app_id as string)}</Criteria>`);
     }
 
     let filterXml = '';

@@ -592,7 +592,7 @@ export class MXMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid) return { content: [{ type: 'text', text: 'user_guid is required' }], isError: true };
-    return this.mxGet(`/users/${args.user_guid}`);
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}`);
   }
 
   private async updateUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -600,22 +600,22 @@ export class MXMCPServer {
     const user: Record<string, unknown> = {};
     if (args.email) user.email = args.email;
     if (args.metadata) user.metadata = args.metadata;
-    return this.mxPut(`/users/${args.user_guid}`, { user });
+    return this.mxPut(`/users/${encodeURIComponent(args.user_guid as string)}`, { user });
   }
 
   private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid) return { content: [{ type: 'text', text: 'user_guid is required' }], isError: true };
-    return this.mxDelete(`/users/${args.user_guid}`);
+    return this.mxDelete(`/users/${encodeURIComponent(args.user_guid as string)}`);
   }
 
   private async listMembers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid) return { content: [{ type: 'text', text: 'user_guid is required' }], isError: true };
-    return this.mxGet(`/users/${args.user_guid}/members`, this.paginationParams(args));
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/members`, this.paginationParams(args));
   }
 
   private async getMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid || !args.member_guid) return { content: [{ type: 'text', text: 'user_guid and member_guid are required' }], isError: true };
-    return this.mxGet(`/users/${args.user_guid}/members/${args.member_guid}`);
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/members/${encodeURIComponent(args.member_guid as string)}`);
   }
 
   private async createMember(args: Record<string, unknown>): Promise<ToolResult> {
@@ -628,24 +628,24 @@ export class MXMCPServer {
     } catch {
       return { content: [{ type: 'text', text: 'credentials must be a valid JSON array string' }], isError: true };
     }
-    return this.mxPost(`/users/${args.user_guid}/members`, {
+    return this.mxPost(`/users/${encodeURIComponent(args.user_guid as string)}/members`, {
       member: { institution_code: args.institution_code, credentials },
     });
   }
 
   private async deleteMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid || !args.member_guid) return { content: [{ type: 'text', text: 'user_guid and member_guid are required' }], isError: true };
-    return this.mxDelete(`/users/${args.user_guid}/members/${args.member_guid}`);
+    return this.mxDelete(`/users/${encodeURIComponent(args.user_guid as string)}/members/${encodeURIComponent(args.member_guid as string)}`);
   }
 
   private async aggregateMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid || !args.member_guid) return { content: [{ type: 'text', text: 'user_guid and member_guid are required' }], isError: true };
-    return this.mxPost(`/users/${args.user_guid}/members/${args.member_guid}/aggregate`, {});
+    return this.mxPost(`/users/${encodeURIComponent(args.user_guid as string)}/members/${encodeURIComponent(args.member_guid as string)}/aggregate`, {});
   }
 
   private async listMemberAccounts(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid || !args.member_guid) return { content: [{ type: 'text', text: 'user_guid and member_guid are required' }], isError: true };
-    return this.mxGet(`/users/${args.user_guid}/members/${args.member_guid}/accounts`, this.paginationParams(args));
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/members/${encodeURIComponent(args.member_guid as string)}/accounts`, this.paginationParams(args));
   }
 
   private async listMemberTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -653,17 +653,17 @@ export class MXMCPServer {
     const params = this.paginationParams(args);
     if (args.from_date) params.from_date = args.from_date as string;
     if (args.to_date) params.to_date = args.to_date as string;
-    return this.mxGet(`/users/${args.user_guid}/members/${args.member_guid}/transactions`, params);
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/members/${encodeURIComponent(args.member_guid as string)}/transactions`, params);
   }
 
   private async listAccounts(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid) return { content: [{ type: 'text', text: 'user_guid is required' }], isError: true };
-    return this.mxGet(`/users/${args.user_guid}/accounts`, this.paginationParams(args));
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/accounts`, this.paginationParams(args));
   }
 
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid || !args.account_guid) return { content: [{ type: 'text', text: 'user_guid and account_guid are required' }], isError: true };
-    return this.mxGet(`/users/${args.user_guid}/accounts/${args.account_guid}`);
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/accounts/${encodeURIComponent(args.account_guid as string)}`);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -671,12 +671,12 @@ export class MXMCPServer {
     const params = this.paginationParams(args);
     if (args.from_date) params.from_date = args.from_date as string;
     if (args.to_date) params.to_date = args.to_date as string;
-    return this.mxGet(`/users/${args.user_guid}/transactions`, params);
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/transactions`, params);
   }
 
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid || !args.transaction_guid) return { content: [{ type: 'text', text: 'user_guid and transaction_guid are required' }], isError: true };
-    return this.mxGet(`/users/${args.user_guid}/transactions/${args.transaction_guid}`);
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/transactions/${encodeURIComponent(args.transaction_guid as string)}`);
   }
 
   private async searchInstitutions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -687,11 +687,11 @@ export class MXMCPServer {
 
   private async getInstitution(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.institution_code) return { content: [{ type: 'text', text: 'institution_code is required' }], isError: true };
-    return this.mxGet(`/institutions/${args.institution_code}`);
+    return this.mxGet(`/institutions/${encodeURIComponent(args.institution_code as string)}`);
   }
 
   private async listHoldings(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_guid) return { content: [{ type: 'text', text: 'user_guid is required' }], isError: true };
-    return this.mxGet(`/users/${args.user_guid}/holdings`, this.paginationParams(args));
+    return this.mxGet(`/users/${encodeURIComponent(args.user_guid as string)}/holdings`, this.paginationParams(args));
   }
 }

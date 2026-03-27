@@ -447,7 +447,7 @@ export class SproutSocialMCPServer {
 
   private async getProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_id) return { content: [{ type: 'text', text: 'profile_id is required' }], isError: true };
-    return this.apiGet(`/metadata/client/${args.profile_id}`);
+    return this.apiGet(`/metadata/client/${encodeURIComponent(args.profile_id as string)}`);
   }
 
   private async listProfileGroups(): Promise<ToolResult> {
@@ -468,7 +468,7 @@ export class SproutSocialMCPServer {
 
   private async getPost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.apiGet(`/message/${args.post_id}`);
+    return this.apiGet(`/message/${encodeURIComponent(args.post_id as string)}`);
   }
 
   private async createPost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -496,7 +496,7 @@ export class SproutSocialMCPServer {
 
   private async deletePost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.apiDelete(`/message/${args.post_id}`);
+    return this.apiDelete(`/message/${encodeURIComponent(args.post_id as string)}`);
   }
 
   private async getProfileAnalytics(args: Record<string, unknown>): Promise<ToolResult> {
@@ -541,7 +541,7 @@ export class SproutSocialMCPServer {
 
   private async tagPost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id || !args.tag_ids) return { content: [{ type: 'text', text: 'post_id and tag_ids are required' }], isError: true };
-    return this.apiPost(`/message/${args.post_id}/tags`, { tag_ids: args.tag_ids });
+    return this.apiPost(`/message/${encodeURIComponent(args.post_id as string)}/tags`, { tag_ids: args.tag_ids });
   }
 
   private async listPendingPosts(args: Record<string, unknown>): Promise<ToolResult> {

@@ -546,7 +546,7 @@ export class OpenGovMCPServer {
 
   private async getDataset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.dataset_id) return { content: [{ type: 'text', text: 'dataset_id is required' }], isError: true };
-    return this.get(`/datasets/v1/${args.dataset_id}`);
+    return this.get(`/datasets/v1/${encodeURIComponent(args.dataset_id as string)}`);
   }
 
   private async listContractOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -559,7 +559,7 @@ export class OpenGovMCPServer {
 
   private async getContractOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.get(`/contract-orders/v1/${args.order_id}`);
+    return this.get(`/contract-orders/v1/${encodeURIComponent(args.order_id as string)}`);
   }
 
   private async searchContractOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -581,7 +581,7 @@ export class OpenGovMCPServer {
 
   private async getRequisition(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.requisition_id) return { content: [{ type: 'text', text: 'requisition_id is required' }], isError: true };
-    return this.get(`/requisitions/v1/${args.requisition_id}`);
+    return this.get(`/requisitions/v1/${encodeURIComponent(args.requisition_id as string)}`);
   }
 
   private async searchRequisitions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -601,7 +601,7 @@ export class OpenGovMCPServer {
 
   private async getVendor(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.vendor_id) return { content: [{ type: 'text', text: 'vendor_id is required' }], isError: true };
-    return this.get(`/vendors/v1/${args.vendor_id}`);
+    return this.get(`/vendors/v1/${encodeURIComponent(args.vendor_id as string)}`);
   }
 
   private async searchVendors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -623,7 +623,7 @@ export class OpenGovMCPServer {
 
   private async getBid(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.bid_id) return { content: [{ type: 'text', text: 'bid_id is required' }], isError: true };
-    return this.get(`/bids/v1/${args.bid_id}`);
+    return this.get(`/bids/v1/${encodeURIComponent(args.bid_id as string)}`);
   }
 
   private async listSolicitations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -637,7 +637,7 @@ export class OpenGovMCPServer {
 
   private async getSolicitation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.solicitation_id) return { content: [{ type: 'text', text: 'solicitation_id is required' }], isError: true };
-    return this.get(`/solicitations/v1/${args.solicitation_id}`);
+    return this.get(`/solicitations/v1/${encodeURIComponent(args.solicitation_id as string)}`);
   }
 
   private async searchSolicitations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -650,12 +650,12 @@ export class OpenGovMCPServer {
 
   private async listLineItems(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id && !args.requisition_id) return { content: [{ type: 'text', text: 'order_id or requisition_id is required' }], isError: true };
-    if (args.order_id) return this.get(`/contract-orders/v1/${args.order_id}/line-items`);
-    return this.get(`/requisitions/v1/${args.requisition_id}/line-items`);
+    if (args.order_id) return this.get(`/contract-orders/v1/${encodeURIComponent(args.order_id as string)}/line-items`);
+    return this.get(`/requisitions/v1/${encodeURIComponent(args.requisition_id as string)}/line-items`);
   }
 
   private async getLineItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.line_item_id) return { content: [{ type: 'text', text: 'line_item_id is required' }], isError: true };
-    return this.get(`/line-items/v1/${args.line_item_id}`);
+    return this.get(`/line-items/v1/${encodeURIComponent(args.line_item_id as string)}`);
   }
 }

@@ -587,15 +587,15 @@ export class DiscordMCPServer {
     const params = new URLSearchParams();
     if (args.with_counts) params.set('with_counts', 'true');
     const qs = params.toString() ? `?${params}` : '';
-    return this.request(`/guilds/${args.guild_id}${qs}`);
+    return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}${qs}`);
   }
 
   private async listChannels(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/guilds/${args.guild_id}/channels`);
+    return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}/channels`);
   }
 
   private async getChannel(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/channels/${args.channel_id}`);
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}`);
   }
 
   private async createChannel(args: Record<string, unknown>): Promise<ToolResult> {
@@ -603,14 +603,14 @@ export class DiscordMCPServer {
     if (args.topic) body.topic = args.topic;
     if (args.parent_id) body.parent_id = args.parent_id;
     if (args.position !== undefined) body.position = args.position;
-    return this.request(`/guilds/${args.guild_id}/channels`, {
+    return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}/channels`, {
       method: 'POST',
       body: JSON.stringify(body),
     });
   }
 
   private async deleteChannel(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/channels/${args.channel_id}`, { method: 'DELETE' });
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}`, { method: 'DELETE' });
   }
 
   private async sendMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -619,14 +619,14 @@ export class DiscordMCPServer {
       tts: (args.tts as boolean) ?? false,
     };
     if (args.message_reference) body.message_reference = args.message_reference;
-    return this.request(`/channels/${args.channel_id}/messages`, {
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/messages`, {
       method: 'POST',
       body: JSON.stringify(body),
     });
   }
 
   private async getMessage(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/channels/${args.channel_id}/messages/${args.message_id}`);
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/messages/${encodeURIComponent(args.message_id as string)}`);
   }
 
   private async getMessages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -635,42 +635,42 @@ export class DiscordMCPServer {
     if (args.before) params.set('before', args.before as string);
     if (args.after) params.set('after', args.after as string);
     if (args.around) params.set('around', args.around as string);
-    return this.request(`/channels/${args.channel_id}/messages?${params}`);
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/messages?${params}`);
   }
 
   private async editMessage(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/channels/${args.channel_id}/messages/${args.message_id}`, {
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/messages/${encodeURIComponent(args.message_id as string)}`, {
       method: 'PATCH',
       body: JSON.stringify({ content: args.content }),
     });
   }
 
   private async deleteMessage(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/channels/${args.channel_id}/messages/${args.message_id}`, { method: 'DELETE' });
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/messages/${encodeURIComponent(args.message_id as string)}`, { method: 'DELETE' });
   }
 
   private async pinMessage(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/channels/${args.channel_id}/pins/${args.message_id}`, { method: 'PUT' });
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/pins/${encodeURIComponent(args.message_id as string)}`, { method: 'PUT' });
   }
 
   private async addReaction(args: Record<string, unknown>): Promise<ToolResult> {
     const emoji = encodeURIComponent(args.emoji as string);
-    return this.request(`/channels/${args.channel_id}/messages/${args.message_id}/reactions/${emoji}/@me`, { method: 'PUT' });
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/messages/${encodeURIComponent(args.message_id as string)}/reactions/${emoji}/@me`, { method: 'PUT' });
   }
 
   private async getGuildMembers(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     params.set('limit', String((args.limit as number) ?? 100));
     if (args.after) params.set('after', args.after as string);
-    return this.request(`/guilds/${args.guild_id}/members?${params}`);
+    return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}/members?${params}`);
   }
 
   private async getGuildMember(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/guilds/${args.guild_id}/members/${args.user_id}`);
+    return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}/members/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listGuildRoles(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/guilds/${args.guild_id}/roles`);
+    return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}/roles`);
   }
 
   private async createGuildRole(args: Record<string, unknown>): Promise<ToolResult> {
@@ -680,22 +680,22 @@ export class DiscordMCPServer {
     if (args.hoist !== undefined) body.hoist = args.hoist;
     if (args.mentionable !== undefined) body.mentionable = args.mentionable;
     if (args.permissions) body.permissions = args.permissions;
-    return this.request(`/guilds/${args.guild_id}/roles`, {
+    return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}/roles`, {
       method: 'POST',
       body: JSON.stringify(body),
     });
   }
 
   private async deleteGuildRole(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/guilds/${args.guild_id}/roles/${args.role_id}`, { method: 'DELETE' });
+    return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}/roles/${encodeURIComponent(args.role_id as string)}`, { method: 'DELETE' });
   }
 
   private async listWebhooks(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.channel_id) {
-      return this.request(`/channels/${args.channel_id}/webhooks`);
+      return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/webhooks`);
     }
     if (args.guild_id) {
-      return this.request(`/guilds/${args.guild_id}/webhooks`);
+      return this.request(`/guilds/${encodeURIComponent(args.guild_id as string)}/webhooks`);
     }
     return {
       content: [{ type: 'text', text: 'Either guild_id or channel_id is required' }],
@@ -712,7 +712,7 @@ export class DiscordMCPServer {
     if (args.avatar_url) body.avatar_url = args.avatar_url;
     // Webhooks use token auth in URL, not bot token header
     const response = await fetch(
-      `${this.baseUrl}/webhooks/${args.webhook_id}/${args.webhook_token}`,
+      `${this.baseUrl}/webhooks/${encodeURIComponent(args.webhook_id as string)}/${encodeURIComponent(args.webhook_token as string)}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

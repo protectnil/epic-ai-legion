@@ -515,7 +515,7 @@ export class VonageMCPServer {
 
   private async getCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_uuid) return { content: [{ type: 'text', text: 'call_uuid is required' }], isError: true };
-    const response = await fetch(`${this.apiBaseUrl}/v1/calls/${args.call_uuid}`, {
+    const response = await fetch(`${this.apiBaseUrl}/v1/calls/${encodeURIComponent(args.call_uuid as string)}`, {
       headers: { 'Accept': 'application/json', 'Authorization': `Basic ${btoa(`${this.apiKey}:${this.apiSecret}`)}` },
     });
     if (!response.ok) {
@@ -546,7 +546,7 @@ export class VonageMCPServer {
 
   private async endCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_uuid) return { content: [{ type: 'text', text: 'call_uuid is required' }], isError: true };
-    const response = await fetch(`${this.apiBaseUrl}/v1/calls/${args.call_uuid}`, {
+    const response = await fetch(`${this.apiBaseUrl}/v1/calls/${encodeURIComponent(args.call_uuid as string)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Basic ${btoa(`${this.apiKey}:${this.apiSecret}`)}` },
       body: JSON.stringify({ action: 'hangup' }),

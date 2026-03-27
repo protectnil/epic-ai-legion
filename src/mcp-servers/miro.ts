@@ -728,7 +728,7 @@ export class MiroMCPServer {
 
   private async getBoard(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id) return { content: [{ type: 'text', text: 'board_id is required' }], isError: true };
-    return this.miroGet(`boards/${args.board_id}`);
+    return this.miroGet(`boards/${encodeURIComponent(args.board_id as string)}`);
   }
 
   private async createBoard(args: Record<string, unknown>): Promise<ToolResult> {
@@ -748,19 +748,19 @@ export class MiroMCPServer {
     if (args.name) body.name = args.name;
     if (args.description) body.description = args.description;
     if (args.policy_access) body.policy = { collaborationToolsStartAccess: args.policy_access };
-    return this.miroPatch(`boards/${args.board_id}`, body);
+    return this.miroPatch(`boards/${encodeURIComponent(args.board_id as string)}`, body);
   }
 
   private async deleteBoard(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id) return { content: [{ type: 'text', text: 'board_id is required' }], isError: true };
-    return this.miroDelete(`boards/${args.board_id}`);
+    return this.miroDelete(`boards/${encodeURIComponent(args.board_id as string)}`);
   }
 
   private async getBoardMembers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id) return { content: [{ type: 'text', text: 'board_id is required' }], isError: true };
     const params: Record<string, string> = { limit: String((args.limit as number) || 10) };
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.miroGet(`boards/${args.board_id}/members`, params);
+    return this.miroGet(`boards/${encodeURIComponent(args.board_id as string)}/members`, params);
   }
 
   private async shareBoard(args: Record<string, unknown>): Promise<ToolResult> {
@@ -771,7 +771,7 @@ export class MiroMCPServer {
       role: (args.role as string) || 'viewer',
     };
     if (args.message) body.message = args.message;
-    return this.miroPost(`boards/${args.board_id}/members`, body);
+    return this.miroPost(`boards/${encodeURIComponent(args.board_id as string)}/members`, body);
   }
 
   private async getBoardItems(args: Record<string, unknown>): Promise<ToolResult> {
@@ -779,17 +779,17 @@ export class MiroMCPServer {
     const params: Record<string, string> = { limit: String((args.limit as number) || 10) };
     if (args.type) params.type = args.type as string;
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.miroGet(`boards/${args.board_id}/items`, params);
+    return this.miroGet(`boards/${encodeURIComponent(args.board_id as string)}/items`, params);
   }
 
   private async getItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id || !args.item_id) return { content: [{ type: 'text', text: 'board_id and item_id are required' }], isError: true };
-    return this.miroGet(`boards/${args.board_id}/items/${args.item_id}`);
+    return this.miroGet(`boards/${encodeURIComponent(args.board_id as string)}/items/${encodeURIComponent(args.item_id as string)}`);
   }
 
   private async deleteItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id || !args.item_id) return { content: [{ type: 'text', text: 'board_id and item_id are required' }], isError: true };
-    return this.miroDelete(`boards/${args.board_id}/items/${args.item_id}`);
+    return this.miroDelete(`boards/${encodeURIComponent(args.board_id as string)}/items/${encodeURIComponent(args.item_id as string)}`);
   }
 
   private async createStickyNote(args: Record<string, unknown>): Promise<ToolResult> {
@@ -810,12 +810,12 @@ export class MiroMCPServer {
         width: (args.width as number) || 200,
       },
     };
-    return this.miroPost(`boards/${args.board_id}/sticky_notes`, body);
+    return this.miroPost(`boards/${encodeURIComponent(args.board_id as string)}/sticky_notes`, body);
   }
 
   private async getStickyNote(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id || !args.item_id) return { content: [{ type: 'text', text: 'board_id and item_id are required' }], isError: true };
-    return this.miroGet(`boards/${args.board_id}/sticky_notes/${args.item_id}`);
+    return this.miroGet(`boards/${encodeURIComponent(args.board_id as string)}/sticky_notes/${encodeURIComponent(args.item_id as string)}`);
   }
 
   private async updateStickyNote(args: Record<string, unknown>): Promise<ToolResult> {
@@ -826,7 +826,7 @@ export class MiroMCPServer {
     if (args.x !== undefined || args.y !== undefined) {
       body.position = { x: (args.x as number) ?? 0, y: (args.y as number) ?? 0 };
     }
-    return this.miroPatch(`boards/${args.board_id}/sticky_notes/${args.item_id}`, body);
+    return this.miroPatch(`boards/${encodeURIComponent(args.board_id as string)}/sticky_notes/${encodeURIComponent(args.item_id as string)}`, body);
   }
 
   private async createShape(args: Record<string, unknown>): Promise<ToolResult> {
@@ -846,12 +846,12 @@ export class MiroMCPServer {
       },
     };
     if (args.fill_color) body.style = { fillColor: args.fill_color };
-    return this.miroPost(`boards/${args.board_id}/shapes`, body);
+    return this.miroPost(`boards/${encodeURIComponent(args.board_id as string)}/shapes`, body);
   }
 
   private async getShape(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id || !args.item_id) return { content: [{ type: 'text', text: 'board_id and item_id are required' }], isError: true };
-    return this.miroGet(`boards/${args.board_id}/shapes/${args.item_id}`);
+    return this.miroGet(`boards/${encodeURIComponent(args.board_id as string)}/shapes/${encodeURIComponent(args.item_id as string)}`);
   }
 
   private async updateShape(args: Record<string, unknown>): Promise<ToolResult> {
@@ -862,7 +862,7 @@ export class MiroMCPServer {
     if (args.x !== undefined || args.y !== undefined) {
       body.position = { x: (args.x as number) ?? 0, y: (args.y as number) ?? 0 };
     }
-    return this.miroPatch(`boards/${args.board_id}/shapes/${args.item_id}`, body);
+    return this.miroPatch(`boards/${encodeURIComponent(args.board_id as string)}/shapes/${encodeURIComponent(args.item_id as string)}`, body);
   }
 
   private async createConnector(args: Record<string, unknown>): Promise<ToolResult> {
@@ -875,14 +875,14 @@ export class MiroMCPServer {
     };
     if (args.caption) body.captions = [{ content: args.caption }];
     if (args.style_color) body.style = { color: args.style_color };
-    return this.miroPost(`boards/${args.board_id}/connectors`, body);
+    return this.miroPost(`boards/${encodeURIComponent(args.board_id as string)}/connectors`, body);
   }
 
   private async getConnectors(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id) return { content: [{ type: 'text', text: 'board_id is required' }], isError: true };
     const params: Record<string, string> = { limit: String((args.limit as number) || 10) };
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.miroGet(`boards/${args.board_id}/connectors`, params);
+    return this.miroGet(`boards/${encodeURIComponent(args.board_id as string)}/connectors`, params);
   }
 
   private async updateConnector(args: Record<string, unknown>): Promise<ToolResult> {
@@ -890,12 +890,12 @@ export class MiroMCPServer {
     const body: Record<string, unknown> = {};
     if (args.caption) body.captions = [{ content: args.caption }];
     if (args.style_color) body.style = { color: args.style_color };
-    return this.miroPatch(`boards/${args.board_id}/connectors/${args.connector_id}`, body);
+    return this.miroPatch(`boards/${encodeURIComponent(args.board_id as string)}/connectors/${encodeURIComponent(args.connector_id as string)}`, body);
   }
 
   private async deleteConnector(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.board_id || !args.connector_id) return { content: [{ type: 'text', text: 'board_id and connector_id are required' }], isError: true };
-    return this.miroDelete(`boards/${args.board_id}/connectors/${args.connector_id}`);
+    return this.miroDelete(`boards/${encodeURIComponent(args.board_id as string)}/connectors/${encodeURIComponent(args.connector_id as string)}`);
   }
 
   private async createTag(args: Record<string, unknown>): Promise<ToolResult> {
@@ -904,7 +904,7 @@ export class MiroMCPServer {
       title: args.title,
       fillColor: (args.fill_color as string) || 'red',
     };
-    return this.miroPost(`boards/${args.board_id}/tags`, body);
+    return this.miroPost(`boards/${encodeURIComponent(args.board_id as string)}/tags`, body);
   }
 
   private async getTags(args: Record<string, unknown>): Promise<ToolResult> {
@@ -913,6 +913,6 @@ export class MiroMCPServer {
       limit: String((args.limit as number) || 20),
       offset: String((args.offset as number) || 0),
     };
-    return this.miroGet(`boards/${args.board_id}/tags`, params);
+    return this.miroGet(`boards/${encodeURIComponent(args.board_id as string)}/tags`, params);
   }
 }

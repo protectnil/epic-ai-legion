@@ -35,6 +35,26 @@ export abstract class EpicAIAdapter {
   connect?(): Promise<void>;
   disconnect?(): Promise<void>;
   ping?(): Promise<number>;
+
+  /**
+   * OAuth token lifecycle note:
+   * Adapters that use OAuth2 cache a `bearerToken` field in memory. Tokens are
+   * intentionally short-lived — the token refresh flow overwrites the old value
+   * automatically before the next request. No manual eviction is required for
+   * normal operation.
+   *
+   * clearCredentials() is provided as an explicit cleanup hook for callers that
+   * want deterministic credential removal — e.g. on user logout, session end,
+   * or security incident response. Override this method in adapters that hold
+   * bearer tokens or other sensitive credentials to zero them from memory.
+   *
+   * Default implementation is a no-op; adapters that cache credentials should
+   * override it.
+   */
+  clearCredentials(): void {
+    // No-op by default. Adapters with cached OAuth tokens should override this
+    // method to clear the bearerToken field and any other credential state.
+  }
 }
 
 /**

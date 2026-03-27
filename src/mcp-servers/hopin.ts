@@ -654,7 +654,7 @@ export class HopinMCPServer {
 
   private async getEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.apiGet(`/v1/events/${args.event_id}`);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}`);
   }
 
   private async createEvent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -676,7 +676,7 @@ export class HopinMCPServer {
     if (args.end_at) body.end_at = args.end_at;
     if (args.description) body.description = args.description;
     if (args.capacity) body.capacity = args.capacity;
-    return this.apiPatch(`/v1/events/${args.event_id}`, body);
+    return this.apiPatch(`/v1/events/${encodeURIComponent(args.event_id as string)}`, body);
   }
 
   private async listRegistrations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -686,14 +686,14 @@ export class HopinMCPServer {
       page: String((args.page as number) ?? 1),
     };
     if (args.status) params.status = args.status as string;
-    return this.apiGet(`/v1/events/${args.event_id}/registrations`, params);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/registrations`, params);
   }
 
   private async getRegistration(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.registration_id) {
       return { content: [{ type: 'text', text: 'event_id and registration_id are required' }], isError: true };
     }
-    return this.apiGet(`/v1/events/${args.event_id}/registrations/${args.registration_id}`);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/registrations/${encodeURIComponent(args.registration_id as string)}`);
   }
 
   private async createRegistration(args: Record<string, unknown>): Promise<ToolResult> {
@@ -706,14 +706,14 @@ export class HopinMCPServer {
       last_name: args.last_name,
     };
     if (args.ticket_type_id) body.ticket_type_id = args.ticket_type_id;
-    return this.apiPost(`/v1/events/${args.event_id}/registrations`, body);
+    return this.apiPost(`/v1/events/${encodeURIComponent(args.event_id as string)}/registrations`, body);
   }
 
   private async cancelRegistration(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.registration_id) {
       return { content: [{ type: 'text', text: 'event_id and registration_id are required' }], isError: true };
     }
-    return this.apiDelete(`/v1/events/${args.event_id}/registrations/${args.registration_id}`);
+    return this.apiDelete(`/v1/events/${encodeURIComponent(args.event_id as string)}/registrations/${encodeURIComponent(args.registration_id as string)}`);
   }
 
   private async listSessions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -723,14 +723,14 @@ export class HopinMCPServer {
       page: String((args.page as number) ?? 1),
     };
     if (args.session_type) params.session_type = args.session_type as string;
-    return this.apiGet(`/v1/events/${args.event_id}/sessions`, params);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/sessions`, params);
   }
 
   private async getSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.session_id) {
       return { content: [{ type: 'text', text: 'event_id and session_id are required' }], isError: true };
     }
-    return this.apiGet(`/v1/events/${args.event_id}/sessions/${args.session_id}`);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/sessions/${encodeURIComponent(args.session_id as string)}`);
   }
 
   private async createSession(args: Record<string, unknown>): Promise<ToolResult> {
@@ -745,7 +745,7 @@ export class HopinMCPServer {
     };
     if (args.description) body.description = args.description;
     if (args.capacity) body.capacity = args.capacity;
-    return this.apiPost(`/v1/events/${args.event_id}/sessions`, body);
+    return this.apiPost(`/v1/events/${encodeURIComponent(args.event_id as string)}/sessions`, body);
   }
 
   private async updateSession(args: Record<string, unknown>): Promise<ToolResult> {
@@ -758,7 +758,7 @@ export class HopinMCPServer {
     if (args.end_at) body.end_at = args.end_at;
     if (args.description) body.description = args.description;
     if (args.capacity) body.capacity = args.capacity;
-    return this.apiPatch(`/v1/events/${args.event_id}/sessions/${args.session_id}`, body);
+    return this.apiPatch(`/v1/events/${encodeURIComponent(args.event_id as string)}/sessions/${encodeURIComponent(args.session_id as string)}`, body);
   }
 
   private async listSpeakers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -767,14 +767,14 @@ export class HopinMCPServer {
       limit: String((args.limit as number) ?? 50),
       page: String((args.page as number) ?? 1),
     };
-    return this.apiGet(`/v1/events/${args.event_id}/speakers`, params);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/speakers`, params);
   }
 
   private async getSpeaker(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.speaker_id) {
       return { content: [{ type: 'text', text: 'event_id and speaker_id are required' }], isError: true };
     }
-    return this.apiGet(`/v1/events/${args.event_id}/speakers/${args.speaker_id}`);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/speakers/${encodeURIComponent(args.speaker_id as string)}`);
   }
 
   private async createSpeaker(args: Record<string, unknown>): Promise<ToolResult> {
@@ -785,7 +785,7 @@ export class HopinMCPServer {
     if (args.bio) body.bio = args.bio;
     if (args.headline) body.headline = args.headline;
     if (args.session_id) body.session_id = args.session_id;
-    return this.apiPost(`/v1/events/${args.event_id}/speakers`, body);
+    return this.apiPost(`/v1/events/${encodeURIComponent(args.event_id as string)}/speakers`, body);
   }
 
   private async listAttendees(args: Record<string, unknown>): Promise<ToolResult> {
@@ -794,14 +794,14 @@ export class HopinMCPServer {
       limit: String((args.limit as number) ?? 50),
       page: String((args.page as number) ?? 1),
     };
-    return this.apiGet(`/v1/events/${args.event_id}/attendees`, params);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/attendees`, params);
   }
 
   private async getAttendee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id || !args.attendee_id) {
       return { content: [{ type: 'text', text: 'event_id and attendee_id are required' }], isError: true };
     }
-    return this.apiGet(`/v1/events/${args.event_id}/attendees/${args.attendee_id}`);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/attendees/${encodeURIComponent(args.attendee_id as string)}`);
   }
 
   private async listBooths(args: Record<string, unknown>): Promise<ToolResult> {
@@ -810,6 +810,6 @@ export class HopinMCPServer {
       limit: String((args.limit as number) ?? 50),
       page: String((args.page as number) ?? 1),
     };
-    return this.apiGet(`/v1/events/${args.event_id}/booths`, params);
+    return this.apiGet(`/v1/events/${encodeURIComponent(args.event_id as string)}/booths`, params);
   }
 }

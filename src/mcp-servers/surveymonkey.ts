@@ -578,7 +578,7 @@ export class SurveyMonkeyMCPServer {
 
   private async getSurvey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
-    return this.apiGet(`/surveys/${args.survey_id}/details`);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/details`);
   }
 
   private async createSurvey(args: Record<string, unknown>): Promise<ToolResult> {
@@ -595,22 +595,22 @@ export class SurveyMonkeyMCPServer {
     if (args.title) body.title = args.title;
     if (args.language) body.language = args.language;
     if (args.nickname) body.nickname = args.nickname;
-    return this.apiPatch(`/surveys/${args.survey_id}`, body);
+    return this.apiPatch(`/surveys/${encodeURIComponent(args.survey_id as string)}`, body);
   }
 
   private async deleteSurvey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
-    return this.apiDelete(`/surveys/${args.survey_id}`);
+    return this.apiDelete(`/surveys/${encodeURIComponent(args.survey_id as string)}`);
   }
 
   private async listSurveyPages(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
-    return this.apiGet(`/surveys/${args.survey_id}/pages`);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/pages`);
   }
 
   private async listSurveyQuestions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id || !args.page_id) return { content: [{ type: 'text', text: 'survey_id and page_id are required' }], isError: true };
-    return this.apiGet(`/surveys/${args.survey_id}/pages/${args.page_id}/questions`);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/pages/${encodeURIComponent(args.page_id as string)}/questions`);
   }
 
   private async listResponses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -622,17 +622,17 @@ export class SurveyMonkeyMCPServer {
     if (args.start_created_at) params.start_created_at = args.start_created_at as string;
     if (args.end_created_at) params.end_created_at = args.end_created_at as string;
     if (args.status) params.status = args.status as string;
-    return this.apiGet(`/surveys/${args.survey_id}/responses/bulk`, params);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/responses/bulk`, params);
   }
 
   private async getResponse(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id || !args.response_id) return { content: [{ type: 'text', text: 'survey_id and response_id are required' }], isError: true };
-    return this.apiGet(`/surveys/${args.survey_id}/responses/${args.response_id}`);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/responses/${encodeURIComponent(args.response_id as string)}`);
   }
 
   private async getSurveySummary(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
-    return this.apiGet(`/surveys/${args.survey_id}/rollups`);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/rollups`);
   }
 
   private async listCollectors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -641,12 +641,12 @@ export class SurveyMonkeyMCPServer {
       page: String((args.page as number) || 1),
       per_page: String((args.per_page as number) || 50),
     };
-    return this.apiGet(`/surveys/${args.survey_id}/collectors`, params);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/collectors`, params);
   }
 
   private async getCollector(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id || !args.collector_id) return { content: [{ type: 'text', text: 'survey_id and collector_id are required' }], isError: true };
-    return this.apiGet(`/surveys/${args.survey_id}/collectors/${args.collector_id}`);
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/collectors/${encodeURIComponent(args.collector_id as string)}`);
   }
 
   private async createCollector(args: Record<string, unknown>): Promise<ToolResult> {
@@ -655,7 +655,7 @@ export class SurveyMonkeyMCPServer {
       type: (args.type as string) || 'weblink',
     };
     if (args.name) body.name = args.name;
-    return this.apiPost(`/surveys/${args.survey_id}/collectors`, body);
+    return this.apiPost(`/surveys/${encodeURIComponent(args.survey_id as string)}/collectors`, body);
   }
 
   private async updateCollector(args: Record<string, unknown>): Promise<ToolResult> {
@@ -664,17 +664,17 @@ export class SurveyMonkeyMCPServer {
     if (args.name) body.name = args.name;
     if (args.status) body.status = args.status;
     if (args.close_date) body.close_date = args.close_date;
-    return this.apiPatch(`/surveys/${args.survey_id}/collectors/${args.collector_id}`, body);
+    return this.apiPatch(`/surveys/${encodeURIComponent(args.survey_id as string)}/collectors/${encodeURIComponent(args.collector_id as string)}`, body);
   }
 
   private async deleteCollector(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id || !args.collector_id) return { content: [{ type: 'text', text: 'survey_id and collector_id are required' }], isError: true };
-    return this.apiDelete(`/surveys/${args.survey_id}/collectors/${args.collector_id}`);
+    return this.apiDelete(`/surveys/${encodeURIComponent(args.survey_id as string)}/collectors/${encodeURIComponent(args.collector_id as string)}`);
   }
 
   private async listCollectorMessages(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.survey_id || !args.collector_id) return { content: [{ type: 'text', text: 'survey_id and collector_id are required' }], isError: true };
-    return this.apiGet(`/collectors/${args.collector_id}/messages`);
+    return this.apiGet(`/collectors/${encodeURIComponent(args.collector_id as string)}/messages`);
   }
 
   private async sendCollectorMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -683,7 +683,7 @@ export class SurveyMonkeyMCPServer {
     }
     const body: Record<string, unknown> = {};
     if (args.scheduled_date) body.scheduled_date = args.scheduled_date;
-    return this.apiPost(`/collectors/${args.collector_id}/messages/${args.message_id}/send`, body);
+    return this.apiPost(`/collectors/${encodeURIComponent(args.collector_id as string)}/messages/${encodeURIComponent(args.message_id as string)}/send`, body);
   }
 
   private async getCurrentUser(): Promise<ToolResult> {

@@ -369,7 +369,7 @@ export class AmplitudeMCPServer {
     if (!start || !end) return { content: [{ type: 'text', text: 'start and end are required' }], isError: true };
     let url = `${this.analyticsBaseUrl}/users?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
     if (args.m) url += `&m=${encodeURIComponent(args.m as string)}`;
-    if (args.i) url += `&i=${args.i as number}`;
+    if (args.i) url += `&i=${encodeURIComponent(args.i as number)}`;
     const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
@@ -385,10 +385,10 @@ export class AmplitudeMCPServer {
     if (!e || !start || !end) return { content: [{ type: 'text', text: 'e, start, and end are required' }], isError: true };
     let url = `${this.analyticsBaseUrl}/events/segmentation?e=${encodeURIComponent(JSON.stringify(e))}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
     if (args.m) url += `&m=${encodeURIComponent(args.m as string)}`;
-    if (args.i) url += `&i=${args.i as number}`;
+    if (args.i) url += `&i=${encodeURIComponent(args.i as number)}`;
     if (args.s) url += `&s=${encodeURIComponent(JSON.stringify(args.s))}`;
     if (args.g) url += `&g=${encodeURIComponent(JSON.stringify(args.g))}`;
-    if (args.limit) url += `&limit=${args.limit as number}`;
+    if (args.limit) url += `&limit=${encodeURIComponent(args.limit as number)}`;
     const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
@@ -405,7 +405,7 @@ export class AmplitudeMCPServer {
       return { content: [{ type: 'text', text: 'e (array of at least 2 events), start, and end are required' }], isError: true };
     }
     let url = `${this.analyticsBaseUrl}/funnels?e=${encodeURIComponent(JSON.stringify(e))}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
-    if (args.converted_within) url += `&converted_within=${args.converted_within as number}`;
+    if (args.converted_within) url += `&converted_within=${encodeURIComponent(args.converted_within as number)}`;
     if (args.s) url += `&s=${encodeURIComponent(JSON.stringify(args.s))}`;
     if (args.g) url += `&g=${encodeURIComponent(JSON.stringify(args.g))}`;
     const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
@@ -424,7 +424,7 @@ export class AmplitudeMCPServer {
     if (!se || !re || !start || !end) return { content: [{ type: 'text', text: 'se, re, start, and end are required' }], isError: true };
     let url = `${this.analyticsBaseUrl}/retention?se=${encodeURIComponent(JSON.stringify(se))}&re=${encodeURIComponent(JSON.stringify(re))}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
     if (args.retention_type) url += `&retention_type=${encodeURIComponent(args.retention_type as string)}`;
-    if (args.i) url += `&i=${args.i as number}`;
+    if (args.i) url += `&i=${encodeURIComponent(args.i as number)}`;
     const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
@@ -437,7 +437,7 @@ export class AmplitudeMCPServer {
     const user = args.user as string;
     if (!user) return { content: [{ type: 'text', text: 'user is required' }], isError: true };
     let url = `${this.analyticsBaseUrl}/useractivity?user=${encodeURIComponent(user)}`;
-    if (args.limit) url += `&limit=${args.limit as number}`;
+    if (args.limit) url += `&limit=${encodeURIComponent(args.limit as number)}`;
     const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
@@ -475,8 +475,8 @@ export class AmplitudeMCPServer {
     if (!cohortId) return { content: [{ type: 'text', text: 'cohort_id is required' }], isError: true };
     let url = `${this.analyticsBaseUrl}/cohorts/request/${encodeURIComponent(cohortId)}`;
     const params: string[] = [];
-    if (args.props !== undefined) params.push(`props=${args.props as number}`);
-    if (args.limit !== undefined) params.push(`limit=${args.limit as number}`);
+    if (args.props !== undefined) params.push(`props=${encodeURIComponent(args.props as number)}`);
+    if (args.limit !== undefined) params.push(`limit=${encodeURIComponent(args.limit as number)}`);
     if (params.length > 0) url += `?${params.join('&')}`;
     const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {

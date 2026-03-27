@@ -17,10 +17,53 @@ import { OllamaShim } from './OllamaShim.js';
 import type { GatewayConfig } from './types.js';
 import { DEFAULT_GATEWAY_CONFIG } from './types.js';
 
+// ---------------------------------------------------------------------------
+// Token-bucket rate limiter (per client IP, in-process)
+// ---------------------------------------------------------------------------
+
+interface TokenBucket {
+  tokens: number;
+  lastRefillAt: number;
+}
+
+class RateLimiter {
+  private readonly buckets = new Map<string, TokenBucket>();
+  private readonly limitPerMinute: number;
+
+  constructor(limitPerMinute: number) {
+    this.limitPerMinute = limitPerMinute;
+  }
+
+  /** Returns true if the request is allowed, false if rate-limited. */
+  allow(clientIp: string): boolean {
+    const now = Date.now();
+    const refillRate = this.limitPerMinute / 60_000; // tokens per ms
+    let bucket = this.buckets.get(clientIp);
+
+    if (!bucket) {
+      bucket = { tokens: this.limitPerMinute, lastRefillAt: now };
+      this.buckets.set(clientIp, bucket);
+    } else {
+      // Refill tokens proportional to elapsed time
+      const elapsed = now - bucket.lastRefillAt;
+      bucket.tokens = Math.min(this.limitPerMinute, bucket.tokens + elapsed * refillRate);
+      bucket.lastRefillAt = now;
+    }
+
+    if (bucket.tokens >= 1) {
+      bucket.tokens -= 1;
+      return true;
+    }
+    return false;
+  }
+}
+
 const log = createLogger('gateway');
 
 export class InferenceGateway {
   private readonly ollamaShim: OllamaShim;
+  private readonly rateLimiter: RateLimiter;
+  private readonly config: GatewayConfig;
   private inFlightCount = 0;
   private draining = false;
   private drainResolve: (() => void) | null = null;
@@ -31,8 +74,9 @@ export class InferenceGateway {
     private readonly router: Router,
     config?: Partial<GatewayConfig>,
   ) {
-    const merged = { ...DEFAULT_GATEWAY_CONFIG, ...config };
-    this.ollamaShim = new OllamaShim(merged.ollamaShim);
+    this.config = { ...DEFAULT_GATEWAY_CONFIG, ...config };
+    this.ollamaShim = new OllamaShim(this.config.ollamaShim);
+    this.rateLimiter = new RateLimiter(this.config.rateLimitPerMinute);
   }
 
   // ---------------------------------------------------------------------------
@@ -73,6 +117,42 @@ export class InferenceGateway {
   async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (this.draining) {
       sendJSON(res, 503, { error: 'Gateway is shutting down' });
+      return;
+    }
+
+    // CORS — validate Origin and set response headers
+    const requestOrigin = req.headers['origin'];
+    if (requestOrigin !== undefined) {
+      const allowed = this.config.corsOrigins.includes(requestOrigin);
+      if (allowed) {
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+        res.setHeader('Vary', 'Origin');
+      }
+      // Preflight
+      if (req.method === 'OPTIONS') {
+        if (allowed) {
+          res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+          res.setHeader('Access-Control-Max-Age', '600');
+          res.writeHead(204);
+        } else {
+          res.writeHead(403);
+        }
+        res.end();
+        return;
+      }
+      // Block cross-origin non-preflight requests to unconfigured origins
+      if (!allowed) {
+        sendJSON(res, 403, { error: 'CORS: origin not allowed' });
+        return;
+      }
+    }
+
+    // Rate limiting — token bucket per client IP
+    const clientIp = (req.socket.remoteAddress ?? 'unknown').replace(/^::ffff:/, '');
+    if (!this.rateLimiter.allow(clientIp)) {
+      res.setHeader('Retry-After', '60');
+      sendJSON(res, 429, { error: 'Too many requests' });
       return;
     }
 

@@ -644,7 +644,7 @@ export class AmazonAdsMCPServer {
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.adsGet(`/v2/sp/campaigns/${args.campaign_id as string}`);
+    return this.adsGet(`/v2/sp/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async createCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -687,7 +687,7 @@ export class AmazonAdsMCPServer {
 
   private async getAdGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ad_group_id) return { content: [{ type: 'text', text: 'ad_group_id is required' }], isError: true };
-    return this.adsGet(`/v2/sp/adGroups/${args.ad_group_id as string}`);
+    return this.adsGet(`/v2/sp/adGroups/${encodeURIComponent(args.ad_group_id as string)}`);
   }
 
   private async createAdGroup(args: Record<string, unknown>): Promise<ToolResult> {
@@ -807,7 +807,7 @@ export class AmazonAdsMCPServer {
 
   private async getReport(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.report_id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-    return this.adsGet(`/v2/reports/${args.report_id as string}`);
+    return this.adsGet(`/v2/reports/${encodeURIComponent(args.report_id as string)}`);
   }
 
   private async listBidRecommendations(args: Record<string, unknown>): Promise<ToolResult> {

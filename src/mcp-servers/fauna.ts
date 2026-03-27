@@ -414,19 +414,19 @@ export class FaunaMCPServer {
   private async listCollections(args: Record<string, unknown>): Promise<ToolResult> {
     // FQL v10 uses Collection.all() to enumerate collections
     const body: Record<string, unknown> = { query: 'Collection.all().pageSize(64).toArray()' };
-    if (args.after) body.query = `Collection.all().after("${args.after}").pageSize(${(args.page_size as number) || 64}).toArray()`;
+    if (args.after) body.query = `Collection.all().after("${encodeURIComponent(args.after as string)}").pageSize(${(args.page_size as number) || 64}).toArray()`;
     return this.faunaPost('/query/1', body);
   }
 
   private async getCollection(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
-    return this.faunaPost('/query/1', { query: `Collection.byName("${args.name}")` });
+    return this.faunaPost('/query/1', { query: `Collection.byName("${encodeURIComponent(args.name as string)}")` });
   }
 
   private async listIndexes(args: Record<string, unknown>): Promise<ToolResult> {
     let fql: string;
     if (args.collection) {
-      fql = `Collection.byName("${args.collection}").indexes()`;
+      fql = `Collection.byName("${encodeURIComponent(args.collection as string)}").indexes()`;
     } else {
       fql = 'Collection.all().flatMap(c => c.indexes().toArray()).toArray()';
     }
@@ -456,46 +456,46 @@ export class FaunaMCPServer {
 
   private async commitStagedSchema(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.version) return { content: [{ type: 'text', text: 'version is required' }], isError: true };
-    return this.faunaPost(`/schema/1/staged/commit?version=${args.version}`, {});
+    return this.faunaPost(`/schema/1/staged/commit?version=${encodeURIComponent(args.version as string)}`, {});
   }
 
   private async abandonStagedSchema(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.version) return { content: [{ type: 'text', text: 'version is required' }], isError: true };
-    return this.faunaPost(`/schema/1/staged/abandon?version=${args.version}`, {});
+    return this.faunaPost(`/schema/1/staged/abandon?version=${encodeURIComponent(args.version as string)}`, {});
   }
 
   private async listDatabases(args: Record<string, unknown>): Promise<ToolResult> {
     const pageSize = (args.page_size as number) || 64;
     let fql = `Database.all().pageSize(${pageSize}).toArray()`;
-    if (args.after) fql = `Database.all().after("${args.after}").pageSize(${pageSize}).toArray()`;
+    if (args.after) fql = `Database.all().after("${encodeURIComponent(args.after as string)}").pageSize(${pageSize}).toArray()`;
     return this.faunaPost('/query/1', { query: fql });
   }
 
   private async createDatabase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
     const prot = args.protected ? ', protected: true' : '';
-    return this.faunaPost('/query/1', { query: `Database.create({ name: "${args.name}"${prot} })` });
+    return this.faunaPost('/query/1', { query: `Database.create({ name: "${encodeURIComponent(args.name as string)}"${prot} })` });
   }
 
   private async deleteDatabase(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
-    return this.faunaPost('/query/1', { query: `Database.byName("${args.name}").delete()` });
+    return this.faunaPost('/query/1', { query: `Database.byName("${encodeURIComponent(args.name as string)}").delete()` });
   }
 
   private async listKeys(args: Record<string, unknown>): Promise<ToolResult> {
     let fql = 'Key.all().toArray()';
-    if (args.after) fql = `Key.all().after("${args.after}").toArray()`;
+    if (args.after) fql = `Key.all().after("${encodeURIComponent(args.after as string)}").toArray()`;
     return this.faunaPost('/query/1', { query: fql });
   }
 
   private async createKey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.role) return { content: [{ type: 'text', text: 'role is required' }], isError: true };
-    const db = args.database ? `, database: Database.byName("${args.database}")` : '';
-    return this.faunaPost('/query/1', { query: `Key.create({ role: "${args.role}"${db} })` });
+    const db = args.database ? `, database: Database.byName("${encodeURIComponent(args.database as string)}")` : '';
+    return this.faunaPost('/query/1', { query: `Key.create({ role: "${encodeURIComponent(args.role as string)}"${db} })` });
   }
 
   private async deleteKey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.key_id) return { content: [{ type: 'text', text: 'key_id is required' }], isError: true };
-    return this.faunaPost('/query/1', { query: `Key.byId("${args.key_id}").delete()` });
+    return this.faunaPost('/query/1', { query: `Key.byId("${encodeURIComponent(args.key_id as string)}").delete()` });
   }
 }

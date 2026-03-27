@@ -446,7 +446,7 @@ export class PendoMCPServer {
 
   private async getPage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.page_id) return { content: [{ type: 'text', text: 'page_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/page/${args.page_id}`);
+    return this.apiGet(`/api/v1/page/${encodeURIComponent(args.page_id as string)}`);
   }
 
   private async getPageAnalytics(args: Record<string, unknown>): Promise<ToolResult> {
@@ -456,7 +456,7 @@ export class PendoMCPServer {
     };
     if (args.first) params.first = args.first as string;
     if (args.last) params.last = args.last as string;
-    return this.apiGet(`/api/v1/page/${args.page_id}/numvisitors`, params);
+    return this.apiGet(`/api/v1/page/${encodeURIComponent(args.page_id as string)}/numvisitors`, params);
   }
 
   private async listFeatures(args: Record<string, unknown>): Promise<ToolResult> {
@@ -467,7 +467,7 @@ export class PendoMCPServer {
 
   private async getFeature(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.feature_id) return { content: [{ type: 'text', text: 'feature_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/feature/${args.feature_id}`);
+    return this.apiGet(`/api/v1/feature/${encodeURIComponent(args.feature_id as string)}`);
   }
 
   private async getFeatureAnalytics(args: Record<string, unknown>): Promise<ToolResult> {
@@ -477,7 +477,7 @@ export class PendoMCPServer {
     };
     if (args.first) params.first = args.first as string;
     if (args.last) params.last = args.last as string;
-    return this.apiGet(`/api/v1/feature/${args.feature_id}/numclicks`, params);
+    return this.apiGet(`/api/v1/feature/${encodeURIComponent(args.feature_id as string)}/numclicks`, params);
   }
 
   private async listGuides(args: Record<string, unknown>): Promise<ToolResult> {
@@ -489,7 +489,7 @@ export class PendoMCPServer {
 
   private async getGuide(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.guide_id) return { content: [{ type: 'text', text: 'guide_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/guide/${args.guide_id}`);
+    return this.apiGet(`/api/v1/guide/${encodeURIComponent(args.guide_id as string)}`);
   }
 
   private async runAggregation(args: Record<string, unknown>): Promise<ToolResult> {

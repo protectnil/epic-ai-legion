@@ -632,7 +632,7 @@ export class GhostMCPServer {
     if (!args.post_id) {
       return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
     }
-    return this.apiGet(`/posts/${args.post_id}/`);
+    return this.apiGet(`/posts/${encodeURIComponent(args.post_id as string)}/`);
   }
 
   private async createPost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -660,14 +660,14 @@ export class GhostMCPServer {
     if (args.html) post.html = args.html;
     if (args.status) post.status = args.status;
     if (typeof args.featured === 'boolean') post.featured = args.featured;
-    return this.apiPut(`/posts/${args.post_id}/`, { posts: [post] });
+    return this.apiPut(`/posts/${encodeURIComponent(args.post_id as string)}/`, { posts: [post] });
   }
 
   private async deletePost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) {
       return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
     }
-    return this.apiDelete(`/posts/${args.post_id}/`);
+    return this.apiDelete(`/posts/${encodeURIComponent(args.post_id as string)}/`);
   }
 
   private async listPages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -680,7 +680,7 @@ export class GhostMCPServer {
     if (!args.page_id) {
       return { content: [{ type: 'text', text: 'page_id is required' }], isError: true };
     }
-    return this.apiGet(`/pages/${args.page_id}/`);
+    return this.apiGet(`/pages/${encodeURIComponent(args.page_id as string)}/`);
   }
 
   private async createPage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -704,7 +704,7 @@ export class GhostMCPServer {
     if (args.title) page.title = args.title;
     if (args.html) page.html = args.html;
     if (args.status) page.status = args.status;
-    return this.apiPut(`/pages/${args.page_id}/`, { pages: [page] });
+    return this.apiPut(`/pages/${encodeURIComponent(args.page_id as string)}/`, { pages: [page] });
   }
 
   private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
@@ -715,7 +715,7 @@ export class GhostMCPServer {
     if (!args.tag_id) {
       return { content: [{ type: 'text', text: 'tag_id is required' }], isError: true };
     }
-    return this.apiGet(`/tags/${args.tag_id}/`);
+    return this.apiGet(`/tags/${encodeURIComponent(args.tag_id as string)}/`);
   }
 
   private async createTag(args: Record<string, unknown>): Promise<ToolResult> {
@@ -737,7 +737,7 @@ export class GhostMCPServer {
     if (!args.member_id) {
       return { content: [{ type: 'text', text: 'member_id is required' }], isError: true };
     }
-    return this.apiGet(`/members/${args.member_id}/`);
+    return this.apiGet(`/members/${encodeURIComponent(args.member_id as string)}/`);
   }
 
   private async updateMember(args: Record<string, unknown>): Promise<ToolResult> {
@@ -749,7 +749,7 @@ export class GhostMCPServer {
     if (args.note) member.note = args.note;
     if (typeof args.subscribed === 'boolean') member.subscribed = args.subscribed;
     if (args.labels) member.labels = args.labels;
-    return this.apiPut(`/members/${args.member_id}/`, { members: [member] });
+    return this.apiPut(`/members/${encodeURIComponent(args.member_id as string)}/`, { members: [member] });
   }
 
   private async listTiers(args: Record<string, unknown>): Promise<ToolResult> {

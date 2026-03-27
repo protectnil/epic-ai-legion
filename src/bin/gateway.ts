@@ -2,12 +2,14 @@
 /**
  * @epicai/core — Gateway CLI
  * `npx epic-ai-gateway` — starts the Inference Gateway.
- * This is the ONLY file that calls http.createServer.
+ * This is the ONLY file that calls http.createServer / https.createServer.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
 import http from 'node:http';
+import https from 'node:https';
+import fs from 'node:fs';
 import { InferenceGateway } from '../gateway/InferenceGateway.js';
 import { BackendRegistry } from '../gateway/BackendRegistry.js';
 import { ControlPlane } from '../gateway/ControlPlane.js';
@@ -33,6 +35,18 @@ function parseArgs(argv: string[]): Partial<GatewayConfig> {
       case '--no-ollama-shim':
         config.ollamaShim = { ...DEFAULT_GATEWAY_CONFIG.ollamaShim, enabled: false };
         break;
+      case '--tls-cert':
+        config.tlsCertPath = argv[++i];
+        break;
+      case '--tls-key':
+        config.tlsKeyPath = argv[++i];
+        break;
+      case '--rate-limit':
+        config.rateLimitPerMinute = parseInt(argv[++i], 10);
+        break;
+      case '--cors-origins':
+        config.corsOrigins = argv[++i].split(',').map(s => s.trim()).filter(Boolean);
+        break;
     }
   }
 
@@ -43,6 +57,13 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const config: GatewayConfig = { ...DEFAULT_GATEWAY_CONFIG, ...args };
 
+  const useTLS = Boolean(config.tlsCertPath && config.tlsKeyPath);
+  const isProduction = process.env['NODE_ENV'] === 'production';
+
+  if (isProduction && !useTLS) {
+    console.warn('  WARNING: Gateway is running without TLS in production mode. All traffic is unencrypted.');
+  }
+
   const controlPlane = new ControlPlane(config.redisUrl);
   const registry = new BackendRegistry(controlPlane, config);
   const router = new Router(registry, controlPlane, config);
@@ -50,7 +71,7 @@ async function main(): Promise<void> {
 
   await gateway.start();
 
-  const server = http.createServer((req, res) => {
+  const requestHandler = (req: http.IncomingMessage, res: http.ServerResponse) => {
     gateway.handleRequest(req, res).catch(err => {
       console.error('Unhandled gateway error:', err);
       if (!res.headersSent) {
@@ -58,14 +79,28 @@ async function main(): Promise<void> {
         res.end(JSON.stringify({ error: 'Internal gateway error' }));
       }
     });
-  });
+  };
+
+  const server = useTLS
+    ? https.createServer(
+        {
+          cert: fs.readFileSync(config.tlsCertPath as string),
+          key: fs.readFileSync(config.tlsKeyPath as string),
+        },
+        requestHandler,
+      )
+    : http.createServer(requestHandler);
 
   server.listen(config.port, () => {
     const backends = registry.backends();
+    const protocol = useTLS ? 'https' : 'http';
     console.log('');
     console.log('  Epic AI\u00AE Inference Gateway');
     console.log('  ============================');
-    console.log(`  Port:          ${config.port}`);
+    console.log(`  Listening:     ${protocol}://0.0.0.0:${config.port}`);
+    console.log(`  TLS:           ${useTLS ? `enabled (cert: ${config.tlsCertPath})` : 'disabled'}`);
+    console.log(`  Rate limit:    ${config.rateLimitPerMinute} req/min per IP`);
+    console.log(`  CORS origins:  ${config.corsOrigins.length > 0 ? config.corsOrigins.join(', ') : 'none (all cross-origin denied)'}`);
     console.log(`  Control plane: ${controlPlane.controlPlaneStatus}`);
     console.log(`  Auto-discover: ${config.autoDiscover}`);
     console.log(`  Ollama shim:   ${config.ollamaShim.enabled ? 'enabled (deprecated)' : 'disabled'}`);

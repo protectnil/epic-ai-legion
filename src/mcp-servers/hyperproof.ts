@@ -680,7 +680,7 @@ export class HyperproofMCPServer {
 
   private async getProgram(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.program_id) return { content: [{ type: 'text', text: 'program_id is required' }], isError: true };
-    return this.apiGet(`/programs/${args.program_id}`);
+    return this.apiGet(`/programs/${encodeURIComponent(args.program_id as string)}`);
   }
 
   private async createProgram(args: Record<string, unknown>): Promise<ToolResult> {
@@ -705,7 +705,7 @@ export class HyperproofMCPServer {
 
   private async getControl(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.control_id) return { content: [{ type: 'text', text: 'control_id is required' }], isError: true };
-    return this.apiGet(`/controls/${args.control_id}`);
+    return this.apiGet(`/controls/${encodeURIComponent(args.control_id as string)}`);
   }
 
   private async createControl(args: Record<string, unknown>): Promise<ToolResult> {
@@ -725,7 +725,7 @@ export class HyperproofMCPServer {
     if (args.description) body.description = args.description;
     if (args.ownerId) body.ownerId = args.ownerId;
     if (args.status) body.status = args.status;
-    return this.apiPatch(`/controls/${args.control_id}`, body);
+    return this.apiPatch(`/controls/${encodeURIComponent(args.control_id as string)}`, body);
   }
 
   private async listControlProof(args: Record<string, unknown>): Promise<ToolResult> {
@@ -734,14 +734,14 @@ export class HyperproofMCPServer {
       limit: String((args.limit as number) ?? 50),
       offset: String((args.offset as number) ?? 0),
     };
-    return this.apiGet(`/controls/${args.control_id}/proof`, params);
+    return this.apiGet(`/controls/${encodeURIComponent(args.control_id as string)}/proof`, params);
   }
 
   private async addProofToControl(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.control_id || !args.proof_id) {
       return { content: [{ type: 'text', text: 'control_id and proof_id are required' }], isError: true };
     }
-    return this.apiPost(`/controls/${args.control_id}/proof`, { proofId: args.proof_id });
+    return this.apiPost(`/controls/${encodeURIComponent(args.control_id as string)}/proof`, { proofId: args.proof_id });
   }
 
   private async listRisks(args: Record<string, unknown>): Promise<ToolResult> {
@@ -757,7 +757,7 @@ export class HyperproofMCPServer {
 
   private async getRisk(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.risk_id) return { content: [{ type: 'text', text: 'risk_id is required' }], isError: true };
-    return this.apiGet(`/risks/${args.risk_id}`);
+    return this.apiGet(`/risks/${encodeURIComponent(args.risk_id as string)}`);
   }
 
   private async createRisk(args: Record<string, unknown>): Promise<ToolResult> {
@@ -780,7 +780,7 @@ export class HyperproofMCPServer {
     if (args.likelihood) body.likelihood = args.likelihood;
     if (args.impact) body.impact = args.impact;
     if (args.mitigationPlan) body.mitigationPlan = args.mitigationPlan;
-    return this.apiPatch(`/risks/${args.risk_id}`, body);
+    return this.apiPatch(`/risks/${encodeURIComponent(args.risk_id as string)}`, body);
   }
 
   private async listTasks(args: Record<string, unknown>): Promise<ToolResult> {
@@ -797,7 +797,7 @@ export class HyperproofMCPServer {
 
   private async getTask(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.task_id) return { content: [{ type: 'text', text: 'task_id is required' }], isError: true };
-    return this.apiGet(`/tasks/${args.task_id}`);
+    return this.apiGet(`/tasks/${encodeURIComponent(args.task_id as string)}`);
   }
 
   private async createTask(args: Record<string, unknown>): Promise<ToolResult> {
@@ -819,7 +819,7 @@ export class HyperproofMCPServer {
     if (args.dueDate) body.dueDate = args.dueDate;
     if (args.assigneeId) body.assigneeId = args.assigneeId;
     if (args.description) body.description = args.description;
-    return this.apiPatch(`/tasks/${args.task_id}`, body);
+    return this.apiPatch(`/tasks/${encodeURIComponent(args.task_id as string)}`, body);
   }
 
   private async listLabels(args: Record<string, unknown>): Promise<ToolResult> {
@@ -832,7 +832,7 @@ export class HyperproofMCPServer {
 
   private async getLabel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.label_id) return { content: [{ type: 'text', text: 'label_id is required' }], isError: true };
-    return this.apiGet(`/labels/${args.label_id}`);
+    return this.apiGet(`/labels/${encodeURIComponent(args.label_id as string)}`);
   }
 
   private async createLabel(args: Record<string, unknown>): Promise<ToolResult> {

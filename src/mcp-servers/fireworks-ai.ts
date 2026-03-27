@@ -587,13 +587,13 @@ export class FireworksAIMCPServer {
 
   private async getDeployment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.deployment_id) return { content: [{ type: 'text', text: 'deployment_id is required' }], isError: true };
-    return this.fwAccountGet(`/v1/accounts/${this.accountId}/deployedModels/${args.deployment_id}`);
+    return this.fwAccountGet(`/v1/accounts/${this.accountId}/deployedModels/${encodeURIComponent(args.deployment_id as string)}`);
   }
 
   private async listFineTuningJobs(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = { pageSize: String((args.page_size as number) || 20) };
     if (args.page_token) params.pageToken = args.page_token as string;
-    if (args.status) params.filter = `status=${args.status}`;
+    if (args.status) params.filter = `status=${encodeURIComponent(args.status as string)}`;
     return this.fwAccountGet(`/v1/accounts/${this.accountId}/fineTuningJobs`, params);
   }
 
@@ -604,7 +604,7 @@ export class FireworksAIMCPServer {
     const body: Record<string, unknown> = {
       kind: 'default',
       baseModel: args.base_model,
-      dataset: `accounts/${this.accountId}/datasets/${args.dataset_id}`,
+      dataset: `accounts/${this.accountId}/datasets/${encodeURIComponent(args.dataset_id as string)}`,
       outputModel: args.output_model_id,
       epochs: args.epochs || 1,
     };
@@ -615,12 +615,12 @@ export class FireworksAIMCPServer {
 
   private async getFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.fwAccountGet(`/v1/accounts/${this.accountId}/fineTuningJobs/${args.job_id}`);
+    return this.fwAccountGet(`/v1/accounts/${this.accountId}/fineTuningJobs/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async cancelFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.fwAccountPost(`/v1/accounts/${this.accountId}/fineTuningJobs/${args.job_id}:cancel`, {});
+    return this.fwAccountPost(`/v1/accounts/${this.accountId}/fineTuningJobs/${encodeURIComponent(args.job_id as string)}:cancel`, {});
   }
 
   private async listDatasets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -642,7 +642,7 @@ export class FireworksAIMCPServer {
     // Step 2: Upload JSONL content via multipart
     const formData = new FormData();
     formData.append('file', new Blob([args.jsonl_content as string], { type: 'application/jsonl' }), 'train.jsonl');
-    const response = await fetch(`${this.accountBase}/v1/accounts/${this.accountId}/datasets/${args.dataset_id}:upload`, {
+    const response = await fetch(`${this.accountBase}/v1/accounts/${this.accountId}/datasets/${encodeURIComponent(args.dataset_id as string)}:upload`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${this.apiKey}` },
       body: formData,

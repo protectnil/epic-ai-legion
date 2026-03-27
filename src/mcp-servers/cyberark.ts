@@ -659,7 +659,7 @@ export class CyberArkMCPServer {
     if (args.search) url += `&search=${encodeURIComponent(args.search as string)}`;
     if (args.user_type) url += `&userType=${encodeURIComponent(args.user_type as string)}`;
     if (args.include_component_users !== undefined) {
-      url += `&componentUser=${args.include_component_users}`;
+      url += `&componentUser=${encodeURIComponent(args.include_component_users as string)}`;
     }
     return this.request('GET', url);
   }
@@ -673,7 +673,7 @@ export class CyberArkMCPServer {
   private async listPlatforms(args: Record<string, unknown>): Promise<ToolResult> {
     let url = '/Platforms?';
     if (args.search) url += `search=${encodeURIComponent(args.search as string)}&`;
-    if (args.active !== undefined) url += `Active=${args.active}&`;
+    if (args.active !== undefined) url += `Active=${encodeURIComponent(args.active as string)}&`;
     return this.request('GET', url.replace(/[?&]$/, ''));
   }
 
@@ -711,8 +711,8 @@ export class CyberArkMCPServer {
     if (args.account_id) url += `&AccountID=${encodeURIComponent(args.account_id as string)}`;
     if (args.user_name) url += `&UserName=${encodeURIComponent(args.user_name as string)}`;
     if (args.safe_name) url += `&SafeName=${encodeURIComponent(args.safe_name as string)}`;
-    if (args.from_time) url += `&FromTime=${args.from_time}`;
-    if (args.to_time) url += `&ToTime=${args.to_time}`;
+    if (args.from_time) url += `&FromTime=${encodeURIComponent(args.from_time as string)}`;
+    if (args.to_time) url += `&ToTime=${encodeURIComponent(args.to_time as string)}`;
     return this.request('GET', url);
   }
 

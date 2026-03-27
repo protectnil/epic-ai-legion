@@ -485,7 +485,7 @@ export class AnsibleMCPServer {
 
   private async listHosts(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.inventory_id) {
-      return this.apiGet(this.buildPagedUrl(`/api/v2/inventories/${args.inventory_id}/hosts/`, args));
+      return this.apiGet(this.buildPagedUrl(`/api/v2/inventories/${encodeURIComponent(args.inventory_id as string)}/hosts/`, args));
     }
     return this.apiGet(this.buildPagedUrl('/api/v2/hosts/', args));
   }

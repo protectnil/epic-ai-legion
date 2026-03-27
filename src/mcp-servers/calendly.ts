@@ -634,7 +634,7 @@ export class CalendlyMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_uuid) return { content: [{ type: 'text', text: 'user_uuid is required' }], isError: true };
-    return this.calGet(`/users/${args.user_uuid}`);
+    return this.calGet(`/users/${encodeURIComponent(args.user_uuid as string)}`);
   }
 
   private async listEventTypes(args: Record<string, unknown>): Promise<ToolResult> {
@@ -649,7 +649,7 @@ export class CalendlyMCPServer {
 
   private async getEventType(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_type_uuid) return { content: [{ type: 'text', text: 'event_type_uuid is required' }], isError: true };
-    return this.calGet(`/event_types/${args.event_type_uuid}`);
+    return this.calGet(`/event_types/${encodeURIComponent(args.event_type_uuid as string)}`);
   }
 
   private async getEventTypeAvailability(args: Record<string, unknown>): Promise<ToolResult> {
@@ -679,14 +679,14 @@ export class CalendlyMCPServer {
 
   private async getScheduledEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_uuid) return { content: [{ type: 'text', text: 'event_uuid is required' }], isError: true };
-    return this.calGet(`/scheduled_events/${args.event_uuid}`);
+    return this.calGet(`/scheduled_events/${encodeURIComponent(args.event_uuid as string)}`);
   }
 
   private async cancelEvent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_uuid) return { content: [{ type: 'text', text: 'event_uuid is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.reason) body.reason = args.reason;
-    return this.calPost(`/scheduled_events/${args.event_uuid}/cancellation`, body);
+    return this.calPost(`/scheduled_events/${encodeURIComponent(args.event_uuid as string)}/cancellation`, body);
   }
 
   private async listEventInvitees(args: Record<string, unknown>): Promise<ToolResult> {
@@ -695,14 +695,14 @@ export class CalendlyMCPServer {
     if (args.status) params.status = args.status as string;
     if (args.count) params.count = String(args.count);
     if (args.page_token) params.page_token = args.page_token as string;
-    return this.calGet(`/scheduled_events/${args.event_uuid}/invitees`, params);
+    return this.calGet(`/scheduled_events/${encodeURIComponent(args.event_uuid as string)}/invitees`, params);
   }
 
   private async getEventInvitee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_uuid || !args.invitee_uuid) {
       return { content: [{ type: 'text', text: 'event_uuid and invitee_uuid are required' }], isError: true };
     }
-    return this.calGet(`/scheduled_events/${args.event_uuid}/invitees/${args.invitee_uuid}`);
+    return this.calGet(`/scheduled_events/${encodeURIComponent(args.event_uuid as string)}/invitees/${encodeURIComponent(args.invitee_uuid as string)}`);
   }
 
   private async listOrganizationMemberships(args: Record<string, unknown>): Promise<ToolResult> {
@@ -716,12 +716,12 @@ export class CalendlyMCPServer {
 
   private async getOrganizationMembership(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.membership_uuid) return { content: [{ type: 'text', text: 'membership_uuid is required' }], isError: true };
-    return this.calGet(`/organization_memberships/${args.membership_uuid}`);
+    return this.calGet(`/organization_memberships/${encodeURIComponent(args.membership_uuid as string)}`);
   }
 
   private async removeOrganizationMembership(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.membership_uuid) return { content: [{ type: 'text', text: 'membership_uuid is required' }], isError: true };
-    return this.calDelete(`/organization_memberships/${args.membership_uuid}`);
+    return this.calDelete(`/organization_memberships/${encodeURIComponent(args.membership_uuid as string)}`);
   }
 
   private async listOrganizationInvitations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -730,21 +730,21 @@ export class CalendlyMCPServer {
     if (args.status) params.status = args.status as string;
     if (args.count) params.count = String(args.count);
     if (args.page_token) params.page_token = args.page_token as string;
-    return this.calGet(`/organizations/${args.org_uuid}/invitations`, params);
+    return this.calGet(`/organizations/${encodeURIComponent(args.org_uuid as string)}/invitations`, params);
   }
 
   private async sendOrganizationInvitation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_uuid || !args.email) return { content: [{ type: 'text', text: 'org_uuid and email are required' }], isError: true };
     const body: Record<string, unknown> = { email: args.email };
     if (args.role) body.role = args.role;
-    return this.calPost(`/organizations/${args.org_uuid}/invitations`, body);
+    return this.calPost(`/organizations/${encodeURIComponent(args.org_uuid as string)}/invitations`, body);
   }
 
   private async revokeOrganizationInvitation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_uuid || !args.invitation_uuid) {
       return { content: [{ type: 'text', text: 'org_uuid and invitation_uuid are required' }], isError: true };
     }
-    return this.calDelete(`/organizations/${args.org_uuid}/invitations/${args.invitation_uuid}`);
+    return this.calDelete(`/organizations/${encodeURIComponent(args.org_uuid as string)}/invitations/${encodeURIComponent(args.invitation_uuid as string)}`);
   }
 
   private async listWebhookSubscriptions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -779,7 +779,7 @@ export class CalendlyMCPServer {
 
   private async deleteWebhookSubscription(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.webhook_uuid) return { content: [{ type: 'text', text: 'webhook_uuid is required' }], isError: true };
-    return this.calDelete(`/webhook_subscriptions/${args.webhook_uuid}`);
+    return this.calDelete(`/webhook_subscriptions/${encodeURIComponent(args.webhook_uuid as string)}`);
   }
 
   private async listRoutingForms(args: Record<string, unknown>): Promise<ToolResult> {
@@ -792,12 +792,12 @@ export class CalendlyMCPServer {
 
   private async getRoutingForm(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_uuid) return { content: [{ type: 'text', text: 'form_uuid is required' }], isError: true };
-    return this.calGet(`/routing_forms/${args.form_uuid}`);
+    return this.calGet(`/routing_forms/${encodeURIComponent(args.form_uuid as string)}`);
   }
 
   private async listRoutingFormSubmissions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.form_uuid) return { content: [{ type: 'text', text: 'form_uuid is required' }], isError: true };
-    const params: Record<string, string> = { form: `${this.baseUrl}/routing_forms/${args.form_uuid}` };
+    const params: Record<string, string> = { form: `${this.baseUrl}/routing_forms/${encodeURIComponent(args.form_uuid as string)}` };
     if (args.count) params.count = String(args.count);
     if (args.page_token) params.page_token = args.page_token as string;
     return this.calGet('/routing_form_submissions', params);

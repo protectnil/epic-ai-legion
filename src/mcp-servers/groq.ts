@@ -373,7 +373,7 @@ export class GroqMCPServer {
 
   private async getModel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.model_id) return { content: [{ type: 'text', text: 'model_id is required' }], isError: true };
-    return this.groqGet(`/models/${args.model_id}`);
+    return this.groqGet(`/models/${encodeURIComponent(args.model_id as string)}`);
   }
 
   private async transcribeAudio(args: Record<string, unknown>): Promise<ToolResult> {
@@ -444,13 +444,13 @@ export class GroqMCPServer {
 
   private async getBatch(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.batch_id) return { content: [{ type: 'text', text: 'batch_id is required' }], isError: true };
-    return this.groqGet(`/batches/${args.batch_id}`);
+    return this.groqGet(`/batches/${encodeURIComponent(args.batch_id as string)}`);
   }
 
   private async cancelBatch(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.batch_id) return { content: [{ type: 'text', text: 'batch_id is required' }], isError: true };
 
-    const response = await fetch(`${this.baseUrl}/batches/${args.batch_id}/cancel`, {
+    const response = await fetch(`${this.baseUrl}/batches/${encodeURIComponent(args.batch_id as string)}/cancel`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify({}),

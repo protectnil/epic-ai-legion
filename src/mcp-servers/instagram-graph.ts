@@ -585,7 +585,7 @@ export class InstagramGraphMCPServer {
   private async getUserProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ig_user_id) return { content: [{ type: 'text', text: 'ig_user_id is required' }], isError: true };
     const fields = (args.fields as string) || 'id,username,name,biography,followers_count,media_count,website';
-    return this.igGet(`/${args.ig_user_id}`, { fields });
+    return this.igGet(`/${encodeURIComponent(args.ig_user_id as string)}`, { fields });
   }
 
   private async getUserMedia(args: Record<string, unknown>): Promise<ToolResult> {
@@ -595,19 +595,19 @@ export class InstagramGraphMCPServer {
       limit: String((args.limit as number) || 10),
     };
     if (args.after) params.after = args.after as string;
-    return this.igGet(`/${args.ig_user_id}/media`, params);
+    return this.igGet(`/${encodeURIComponent(args.ig_user_id as string)}/media`, params);
   }
 
   private async getMediaObject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.media_id) return { content: [{ type: 'text', text: 'media_id is required' }], isError: true };
     const fields = (args.fields as string) || 'id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count';
-    return this.igGet(`/${args.media_id}`, { fields });
+    return this.igGet(`/${encodeURIComponent(args.media_id as string)}`, { fields });
   }
 
   private async getMediaInsights(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.media_id) return { content: [{ type: 'text', text: 'media_id is required' }], isError: true };
     const metric = (args.metric as string) || 'impressions,reach,engagement,saved';
-    return this.igGet(`/${args.media_id}/insights`, { metric });
+    return this.igGet(`/${encodeURIComponent(args.media_id as string)}/insights`, { metric });
   }
 
   private async getAccountInsights(args: Record<string, unknown>): Promise<ToolResult> {
@@ -618,7 +618,7 @@ export class InstagramGraphMCPServer {
     };
     if (args.since) params.since = String(args.since);
     if (args.until) params.until = String(args.until);
-    return this.igGet(`/${args.ig_user_id}/insights`, params);
+    return this.igGet(`/${encodeURIComponent(args.ig_user_id as string)}/insights`, params);
   }
 
   private async listComments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -627,20 +627,20 @@ export class InstagramGraphMCPServer {
       fields: (args.fields as string) || 'id,text,username,timestamp,like_count',
       limit: String((args.limit as number) || 20),
     };
-    return this.igGet(`/${args.media_id}/comments`, params);
+    return this.igGet(`/${encodeURIComponent(args.media_id as string)}/comments`, params);
   }
 
   private async getComment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.comment_id) return { content: [{ type: 'text', text: 'comment_id is required' }], isError: true };
     const fields = (args.fields as string) || 'id,text,username,timestamp,like_count';
-    return this.igGet(`/${args.comment_id}`, { fields });
+    return this.igGet(`/${encodeURIComponent(args.comment_id as string)}`, { fields });
   }
 
   private async replyToComment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ig_user_id || !args.comment_id || !args.message) {
       return { content: [{ type: 'text', text: 'ig_user_id, comment_id, and message are required' }], isError: true };
     }
-    return this.igPost(`/${args.ig_user_id}/replies`, {
+    return this.igPost(`/${encodeURIComponent(args.ig_user_id as string)}/replies`, {
       comment_id: args.comment_id as string,
       message: args.message as string,
     });
@@ -650,25 +650,25 @@ export class InstagramGraphMCPServer {
     if (!args.comment_id || args.hide === undefined) {
       return { content: [{ type: 'text', text: 'comment_id and hide are required' }], isError: true };
     }
-    return this.igPost(`/${args.comment_id}`, { hide: String(args.hide) });
+    return this.igPost(`/${encodeURIComponent(args.comment_id as string)}`, { hide: String(args.hide) });
   }
 
   private async deleteComment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.comment_id) return { content: [{ type: 'text', text: 'comment_id is required' }], isError: true };
-    return this.igDelete(`/${args.comment_id}`);
+    return this.igDelete(`/${encodeURIComponent(args.comment_id as string)}`);
   }
 
   private async enableDisableComments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.media_id || args.comments_enabled === undefined) {
       return { content: [{ type: 'text', text: 'media_id and comments_enabled are required' }], isError: true };
     }
-    return this.igPost(`/${args.media_id}`, { comment_enabled: String(args.comments_enabled) });
+    return this.igPost(`/${encodeURIComponent(args.media_id as string)}`, { comment_enabled: String(args.comments_enabled) });
   }
 
   private async getMentions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ig_user_id) return { content: [{ type: 'text', text: 'ig_user_id is required' }], isError: true };
     const fields = (args.fields as string) || 'id,caption,media_type,timestamp';
-    return this.igGet(`/${args.ig_user_id}/tags`, { fields });
+    return this.igGet(`/${encodeURIComponent(args.ig_user_id as string)}/tags`, { fields });
   }
 
   private async getHashtagInfo(args: Record<string, unknown>): Promise<ToolResult> {
@@ -687,7 +687,7 @@ export class InstagramGraphMCPServer {
     }
     const edge = (args.edge as string) || 'top_media';
     const fields = (args.fields as string) || 'id,caption,media_type,media_url,permalink,timestamp';
-    return this.igGet(`/${args.hashtag_id}/${edge}`, {
+    return this.igGet(`/${encodeURIComponent(args.hashtag_id as string)}/${edge}`, {
       user_id: args.ig_user_id as string,
       fields,
     });
@@ -707,7 +707,7 @@ export class InstagramGraphMCPServer {
     try {
       const parsed = JSON.parse(hashtagResult.content[0].text) as { data?: Array<{ id: string }> };
       if (!parsed.data || parsed.data.length === 0) {
-        return { content: [{ type: 'text', text: `No hashtag found for: ${args.hashtag_name as string}` }], isError: true };
+        return { content: [{ type: 'text', text: `No hashtag found for: ${encodeURIComponent(args.hashtag_name as string)}` }], isError: true };
       }
       hashtagId = parsed.data[0].id;
     } catch {
@@ -728,7 +728,7 @@ export class InstagramGraphMCPServer {
     const params: Record<string, string> = { image_url: args.image_url as string };
     if (args.caption) params.caption = args.caption as string;
     if (args.location_id) params.location_id = args.location_id as string;
-    return this.igPost(`/${args.ig_user_id}/media`, params);
+    return this.igPost(`/${encodeURIComponent(args.ig_user_id as string)}/media`, params);
   }
 
   private async createVideoPost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -741,7 +741,7 @@ export class InstagramGraphMCPServer {
     };
     if (args.caption) params.caption = args.caption as string;
     if (args.cover_url) params.cover_url = args.cover_url as string;
-    return this.igPost(`/${args.ig_user_id}/media`, params);
+    return this.igPost(`/${encodeURIComponent(args.ig_user_id as string)}/media`, params);
   }
 
   private async createCarouselPost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -759,21 +759,21 @@ export class InstagramGraphMCPServer {
       children: childrenIds.join(','),
     };
     if (args.caption) params.caption = args.caption as string;
-    return this.igPost(`/${args.ig_user_id}/media`, params);
+    return this.igPost(`/${encodeURIComponent(args.ig_user_id as string)}/media`, params);
   }
 
   private async publishContainer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ig_user_id || !args.creation_id) {
       return { content: [{ type: 'text', text: 'ig_user_id and creation_id are required' }], isError: true };
     }
-    return this.igPost(`/${args.ig_user_id}/media_publish`, {
+    return this.igPost(`/${encodeURIComponent(args.ig_user_id as string)}/media_publish`, {
       creation_id: args.creation_id as string,
     });
   }
 
   private async getContentPublishingLimit(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ig_user_id) return { content: [{ type: 'text', text: 'ig_user_id is required' }], isError: true };
-    return this.igGet(`/${args.ig_user_id}/content_publishing_limit`, {
+    return this.igGet(`/${encodeURIComponent(args.ig_user_id as string)}/content_publishing_limit`, {
       fields: 'config,quota_usage',
     });
   }

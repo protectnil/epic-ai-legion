@@ -313,8 +313,8 @@ export class DataGovMCPServer {
     };
     const fqParts: string[] = [];
     if (args.query) params.q = args.query as string;
-    if (args.organization) fqParts.push(`organization:${args.organization}`);
-    if (args.format) fqParts.push(`res_format:${args.format}`);
+    if (args.organization) fqParts.push(`organization:${encodeURIComponent(args.organization as string)}`);
+    if (args.format) fqParts.push(`res_format:${encodeURIComponent(args.format as string)}`);
     if (args.tags) {
       const tagList = (args.tags as string).split(',').map(t => t.trim());
       tagList.forEach(tag => fqParts.push(`tags:${tag}`));
@@ -379,7 +379,7 @@ export class DataGovMCPServer {
       start: String((args.start as number) ?? 0),
       sort: 'metadata_modified desc',
     };
-    if (args.organization) params.fq = `organization:${args.organization}`;
+    if (args.organization) params.fq = `organization:${encodeURIComponent(args.organization as string)}`;
     return this.ckanAction('package_search', params);
   }
 }

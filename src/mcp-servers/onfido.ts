@@ -594,7 +594,7 @@ export class OnfidoMCPServer {
 
   private async getApplicant(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.applicant_id) return { content: [{ type: 'text', text: 'applicant_id is required' }], isError: true };
-    return this.get(`/applicants/${args.applicant_id}`);
+    return this.get(`/applicants/${encodeURIComponent(args.applicant_id as string)}`);
   }
 
   private async listApplicants(args: Record<string, unknown>): Promise<ToolResult> {
@@ -613,12 +613,12 @@ export class OnfidoMCPServer {
     if (args.last_name) body.last_name = args.last_name;
     if (args.email) body.email = args.email;
     if (args.dob) body.dob = args.dob;
-    return this.patch(`/applicants/${args.applicant_id}`, body);
+    return this.patch(`/applicants/${encodeURIComponent(args.applicant_id as string)}`, body);
   }
 
   private async deleteApplicant(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.applicant_id) return { content: [{ type: 'text', text: 'applicant_id is required' }], isError: true };
-    return this.del(`/applicants/${args.applicant_id}`);
+    return this.del(`/applicants/${encodeURIComponent(args.applicant_id as string)}`);
   }
 
   private async generateSdkToken(args: Record<string, unknown>): Promise<ToolResult> {
@@ -631,12 +631,12 @@ export class OnfidoMCPServer {
 
   private async listDocuments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.applicant_id) return { content: [{ type: 'text', text: 'applicant_id is required' }], isError: true };
-    return this.get(`/applicants/${args.applicant_id}/documents`);
+    return this.get(`/applicants/${encodeURIComponent(args.applicant_id as string)}/documents`);
   }
 
   private async getDocument(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.document_id) return { content: [{ type: 'text', text: 'document_id is required' }], isError: true };
-    return this.get(`/documents/${args.document_id}`);
+    return this.get(`/documents/${encodeURIComponent(args.document_id as string)}`);
   }
 
   private async createCheck(args: Record<string, unknown>): Promise<ToolResult> {
@@ -654,37 +654,37 @@ export class OnfidoMCPServer {
 
   private async getCheck(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.check_id) return { content: [{ type: 'text', text: 'check_id is required' }], isError: true };
-    return this.get(`/checks/${args.check_id}`);
+    return this.get(`/checks/${encodeURIComponent(args.check_id as string)}`);
   }
 
   private async listChecks(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.applicant_id) return { content: [{ type: 'text', text: 'applicant_id is required' }], isError: true };
-    return this.get(`/applicants/${args.applicant_id}/checks`);
+    return this.get(`/applicants/${encodeURIComponent(args.applicant_id as string)}/checks`);
   }
 
   private async resumeCheck(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.check_id) return { content: [{ type: 'text', text: 'check_id is required' }], isError: true };
-    return this.postAction(`/checks/${args.check_id}/resume`);
+    return this.postAction(`/checks/${encodeURIComponent(args.check_id as string)}/resume`);
   }
 
   private async listReports(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.check_id) return { content: [{ type: 'text', text: 'check_id is required' }], isError: true };
-    return this.get(`/checks/${args.check_id}/reports`);
+    return this.get(`/checks/${encodeURIComponent(args.check_id as string)}/reports`);
   }
 
   private async getReport(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.report_id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-    return this.get(`/reports/${args.report_id}`);
+    return this.get(`/reports/${encodeURIComponent(args.report_id as string)}`);
   }
 
   private async resumeReport(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.report_id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-    return this.postAction(`/reports/${args.report_id}/resume`);
+    return this.postAction(`/reports/${encodeURIComponent(args.report_id as string)}/resume`);
   }
 
   private async cancelReport(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.report_id) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-    return this.postAction(`/reports/${args.report_id}/cancel`);
+    return this.postAction(`/reports/${encodeURIComponent(args.report_id as string)}/cancel`);
   }
 
   private async createWorkflowRun(args: Record<string, unknown>): Promise<ToolResult> {
@@ -698,7 +698,7 @@ export class OnfidoMCPServer {
 
   private async getWorkflowRun(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workflow_run_id) return { content: [{ type: 'text', text: 'workflow_run_id is required' }], isError: true };
-    return this.get(`/workflow_runs/${args.workflow_run_id}`);
+    return this.get(`/workflow_runs/${encodeURIComponent(args.workflow_run_id as string)}`);
   }
 
   private async listWorkflowRuns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -727,6 +727,6 @@ export class OnfidoMCPServer {
 
   private async deleteWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.webhook_id) return { content: [{ type: 'text', text: 'webhook_id is required' }], isError: true };
-    return this.del(`/webhooks/${args.webhook_id}`);
+    return this.del(`/webhooks/${encodeURIComponent(args.webhook_id as string)}`);
   }
 }

@@ -429,7 +429,7 @@ export class USPSMCPServer {
   private async trackPackage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tracking_number) return { content: [{ type: 'text', text: 'tracking_number is required' }], isError: true };
     const token = await this.getOrRefreshToken();
-    return this.uspsGet(`/tracking/v3/tracking/${args.tracking_number}?expand=DETAIL`, token);
+    return this.uspsGet(`/tracking/v3/tracking/${encodeURIComponent(args.tracking_number as string)}?expand=DETAIL`, token);
   }
 
   private async validateAddress(args: Record<string, unknown>): Promise<ToolResult> {
@@ -518,7 +518,7 @@ export class USPSMCPServer {
   private async getCityState(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zip_code) return { content: [{ type: 'text', text: 'zip_code is required' }], isError: true };
     const token = await this.getOrRefreshToken();
-    return this.uspsGet(`/addresses/v3/city-state?ZIPCode=${args.zip_code}`, token);
+    return this.uspsGet(`/addresses/v3/city-state?ZIPCode=${encodeURIComponent(args.zip_code as string)}`, token);
   }
 
   private async createDomesticLabel(args: Record<string, unknown>): Promise<ToolResult> {

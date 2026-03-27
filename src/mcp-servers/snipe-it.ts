@@ -560,7 +560,7 @@ export class SnipeItMCPServer {
 
   private async getHardware(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.get(`/hardware/${args.asset_id}`);
+    return this.get(`/hardware/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async createHardware(args: Record<string, unknown>): Promise<ToolResult> {
@@ -588,12 +588,12 @@ export class SnipeItMCPServer {
     if (args.status_id !== undefined) body.status_id = args.status_id;
     if (args.notes) body.notes = args.notes;
     if (args.purchase_cost !== undefined) body.purchase_cost = args.purchase_cost;
-    return this.patch(`/hardware/${args.asset_id}`, body);
+    return this.patch(`/hardware/${encodeURIComponent(args.asset_id as string)}`, body);
   }
 
   private async deleteHardware(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    return this.del(`/hardware/${args.asset_id}`);
+    return this.del(`/hardware/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async checkoutHardware(args: Record<string, unknown>): Promise<ToolResult> {
@@ -606,7 +606,7 @@ export class SnipeItMCPServer {
     if (args.assigned_asset !== undefined) body.assigned_asset = args.assigned_asset;
     if (args.note) body.note = args.note;
     if (args.expected_checkin) body.expected_checkin = args.expected_checkin;
-    return this.post(`/hardware/${args.asset_id}/checkout`, body);
+    return this.post(`/hardware/${encodeURIComponent(args.asset_id as string)}/checkout`, body);
   }
 
   private async checkinHardware(args: Record<string, unknown>): Promise<ToolResult> {
@@ -614,7 +614,7 @@ export class SnipeItMCPServer {
     const body: Record<string, unknown> = {};
     if (args.note) body.note = args.note;
     if (args.status_id !== undefined) body.status_id = args.status_id;
-    return this.post(`/hardware/${args.asset_id}/checkin`, body);
+    return this.post(`/hardware/${encodeURIComponent(args.asset_id as string)}/checkin`, body);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -628,7 +628,7 @@ export class SnipeItMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.get(`/users/${args.user_id}`);
+    return this.get(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listCategories(args: Record<string, unknown>): Promise<ToolResult> {

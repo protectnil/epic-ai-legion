@@ -501,7 +501,7 @@ export class CiscoMerakiMCPServer {
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organizationId) return { content: [{ type: 'text', text: 'organizationId is required' }], isError: true };
-    return this.merakiGet(`/organizations/${args.organizationId}`);
+    return this.merakiGet(`/organizations/${encodeURIComponent(args.organizationId as string)}`);
   }
 
   private async listNetworks(args: Record<string, unknown>): Promise<ToolResult> {
@@ -512,22 +512,22 @@ export class CiscoMerakiMCPServer {
     if (args.tags) params.tags = args.tags as string;
     if (args.perPage) params.perPage = String(args.perPage);
     if (args.startingAfter) params.startingAfter = args.startingAfter as string;
-    return this.merakiGet(`/organizations/${args.organizationId}/networks`, params);
+    return this.merakiGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/networks`, params);
   }
 
   private async getNetwork(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId) return { content: [{ type: 'text', text: 'networkId is required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}`);
   }
 
   private async listDevices(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId) return { content: [{ type: 'text', text: 'networkId is required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}/devices`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/devices`);
   }
 
   private async getDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.serial) return { content: [{ type: 'text', text: 'serial is required' }], isError: true };
-    return this.merakiGet(`/devices/${args.serial}`);
+    return this.merakiGet(`/devices/${encodeURIComponent(args.serial as string)}`);
   }
 
   private async getDeviceStatus(args: Record<string, unknown>): Promise<ToolResult> {
@@ -537,7 +537,7 @@ export class CiscoMerakiMCPServer {
     if (args.startingAfter) params.startingAfter = args.startingAfter as string;
     if (args.networkIds) params['networkIds[]'] = args.networkIds as string;
     if (args.statuses) params['statuses[]'] = args.statuses as string;
-    return this.merakiGet(`/organizations/${args.organizationId}/devices/statuses`, params);
+    return this.merakiGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/devices/statuses`, params);
   }
 
   private async listClients(args: Record<string, unknown>): Promise<ToolResult> {
@@ -547,32 +547,32 @@ export class CiscoMerakiMCPServer {
     if (args.perPage) params.perPage = String(args.perPage);
     if (args.startingAfter) params.startingAfter = args.startingAfter as string;
     if (args.statuses) params['statuses[]'] = args.statuses as string;
-    return this.merakiGet(`/networks/${args.networkId}/clients`, params);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/clients`, params);
   }
 
   private async getNetworkClient(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId || !args.clientId) return { content: [{ type: 'text', text: 'networkId and clientId are required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}/clients/${args.clientId}`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/clients/${encodeURIComponent(args.clientId as string)}`);
   }
 
   private async listSsids(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId) return { content: [{ type: 'text', text: 'networkId is required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}/wireless/ssids`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/wireless/ssids`);
   }
 
   private async getSsid(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId || args.number === undefined) return { content: [{ type: 'text', text: 'networkId and number are required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}/wireless/ssids/${args.number}`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/wireless/ssids/${encodeURIComponent(args.number as string)}`);
   }
 
   private async listVlans(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId) return { content: [{ type: 'text', text: 'networkId is required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}/appliance/vlans`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/appliance/vlans`);
   }
 
   private async getVlan(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId || !args.vlanId) return { content: [{ type: 'text', text: 'networkId and vlanId are required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}/appliance/vlans/${args.vlanId}`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/appliance/vlans/${encodeURIComponent(args.vlanId as string)}`);
   }
 
   private async getOrganizationUplinksStatuses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -581,7 +581,7 @@ export class CiscoMerakiMCPServer {
     if (args.perPage) params.perPage = String(args.perPage);
     if (args.startingAfter) params.startingAfter = args.startingAfter as string;
     if (args.networkIds) params['networkIds[]'] = args.networkIds as string;
-    return this.merakiGet(`/organizations/${args.organizationId}/appliance/uplink/statuses`, params);
+    return this.merakiGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/appliance/uplink/statuses`, params);
   }
 
   private async getNetworkAlertsHistory(args: Record<string, unknown>): Promise<ToolResult> {
@@ -589,17 +589,17 @@ export class CiscoMerakiMCPServer {
     const params: Record<string, string> = {};
     if (args.perPage) params.perPage = String(args.perPage);
     if (args.startingAfter) params.startingAfter = args.startingAfter as string;
-    return this.merakiGet(`/networks/${args.networkId}/alerts/history`, params);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/alerts/history`, params);
   }
 
   private async listAppliancePorts(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId) return { content: [{ type: 'text', text: 'networkId is required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}/appliance/ports`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/appliance/ports`);
   }
 
   private async getNetworkFirmwareUpgrades(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.networkId) return { content: [{ type: 'text', text: 'networkId is required' }], isError: true };
-    return this.merakiGet(`/networks/${args.networkId}/firmwareUpgrades`);
+    return this.merakiGet(`/networks/${encodeURIComponent(args.networkId as string)}/firmwareUpgrades`);
   }
 
   private async getOrganizationApiRequestsOverview(args: Record<string, unknown>): Promise<ToolResult> {
@@ -608,6 +608,6 @@ export class CiscoMerakiMCPServer {
     if (args.t0) params.t0 = args.t0 as string;
     if (args.t1) params.t1 = args.t1 as string;
     if (args.timespan) params.timespan = String(args.timespan);
-    return this.merakiGet(`/organizations/${args.organizationId}/apiRequests/overview`, params);
+    return this.merakiGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/apiRequests/overview`, params);
   }
 }

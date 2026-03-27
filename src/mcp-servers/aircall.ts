@@ -738,7 +738,7 @@ export class AircallMCPServer {
 
   private async getCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_id) return { content: [{ type: 'text', text: 'call_id is required' }], isError: true };
-    return this.request('GET', `/calls/${args.call_id}`);
+    return this.request('GET', `/calls/${encodeURIComponent(args.call_id as string)}`);
   }
 
   private async searchCalls(args: Record<string, unknown>): Promise<ToolResult> {
@@ -757,14 +757,14 @@ export class AircallMCPServer {
     if (!args.call_id || !args.tag_ids) {
       return { content: [{ type: 'text', text: 'call_id and tag_ids are required' }], isError: true };
     }
-    return this.request('POST', `/calls/${args.call_id}/tags`, undefined, { tag_ids: args.tag_ids });
+    return this.request('POST', `/calls/${encodeURIComponent(args.call_id as string)}/tags`, undefined, { tag_ids: args.tag_ids });
   }
 
   private async transferCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_id || !args.user_id) {
       return { content: [{ type: 'text', text: 'call_id and user_id are required' }], isError: true };
     }
-    return this.request('POST', `/calls/${args.call_id}/transfers`, undefined, { user_id: args.user_id });
+    return this.request('POST', `/calls/${encodeURIComponent(args.call_id as string)}/transfers`, undefined, { user_id: args.user_id });
   }
 
   // ── Users ──────────────────────────────────────────────────────────────────
@@ -778,7 +778,7 @@ export class AircallMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.request('GET', `/users/${args.user_id}`);
+    return this.request('GET', `/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async createUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -802,7 +802,7 @@ export class AircallMCPServer {
 
   private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.request('DELETE', `/users/${args.user_id}`);
+    return this.request('DELETE', `/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   // ── Numbers ────────────────────────────────────────────────────────────────
@@ -816,7 +816,7 @@ export class AircallMCPServer {
 
   private async getNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.number_id) return { content: [{ type: 'text', text: 'number_id is required' }], isError: true };
-    return this.request('GET', `/numbers/${args.number_id}`);
+    return this.request('GET', `/numbers/${encodeURIComponent(args.number_id as string)}`);
   }
 
   private async updateNumber(args: Record<string, unknown>): Promise<ToolResult> {
@@ -836,7 +836,7 @@ export class AircallMCPServer {
 
   private async getTeam(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.team_id) return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
-    return this.request('GET', `/teams/${args.team_id}`);
+    return this.request('GET', `/teams/${encodeURIComponent(args.team_id as string)}`);
   }
 
   private async createTeam(args: Record<string, unknown>): Promise<ToolResult> {
@@ -846,21 +846,21 @@ export class AircallMCPServer {
 
   private async deleteTeam(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.team_id) return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
-    return this.request('DELETE', `/teams/${args.team_id}`);
+    return this.request('DELETE', `/teams/${encodeURIComponent(args.team_id as string)}`);
   }
 
   private async addUserToTeam(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.team_id || !args.user_id) {
       return { content: [{ type: 'text', text: 'team_id and user_id are required' }], isError: true };
     }
-    return this.request('POST', `/teams/${args.team_id}/users/${args.user_id}`);
+    return this.request('POST', `/teams/${encodeURIComponent(args.team_id as string)}/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async removeUserFromTeam(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.team_id || !args.user_id) {
       return { content: [{ type: 'text', text: 'team_id and user_id are required' }], isError: true };
     }
-    return this.request('DELETE', `/teams/${args.team_id}/users/${args.user_id}`);
+    return this.request('DELETE', `/teams/${encodeURIComponent(args.team_id as string)}/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   // ── Contacts ───────────────────────────────────────────────────────────────
@@ -874,7 +874,7 @@ export class AircallMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.request('GET', `/contacts/${args.contact_id}`);
+    return this.request('GET', `/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async createContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -893,7 +893,7 @@ export class AircallMCPServer {
 
   private async deleteContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.request('DELETE', `/contacts/${args.contact_id}`);
+    return this.request('DELETE', `/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   // ── Webhooks ───────────────────────────────────────────────────────────────
@@ -918,7 +918,7 @@ export class AircallMCPServer {
 
   private async deleteWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.webhook_id) return { content: [{ type: 'text', text: 'webhook_id is required' }], isError: true };
-    return this.request('DELETE', `/webhooks/${args.webhook_id}`);
+    return this.request('DELETE', `/webhooks/${encodeURIComponent(args.webhook_id as string)}`);
   }
 
   // ── Tags ───────────────────────────────────────────────────────────────────

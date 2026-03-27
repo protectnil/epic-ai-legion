@@ -723,6 +723,6 @@ export class AlchemyMCPServer {
 
   private async deleteWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.webhook_id) return { content: [{ type: 'text', text: 'webhook_id is required' }], isError: true };
-    return this.notifyRequest('DELETE', `/delete-webhook?webhook_id=${args.webhook_id}`);
+    return this.notifyRequest('DELETE', `/delete-webhook?webhook_id=${encodeURIComponent(args.webhook_id as string)}`);
   }
 }

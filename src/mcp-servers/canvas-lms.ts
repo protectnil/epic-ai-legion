@@ -693,31 +693,31 @@ export class CanvasLMSMCPServer {
   private async getCourse(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
     const params = this.buildParams(args, ['include']);
-    return this.canvasGet(`/courses/${args.course_id}`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}`, params);
   }
 
   private async listAssignments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
     const params = this.buildParams(args, ['order_by', 'per_page', 'page']);
     if (!params.per_page) params.per_page = '10';
-    return this.canvasGet(`/courses/${args.course_id}/assignments`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/assignments`, params);
   }
 
   private async getAssignment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id || !args.assignment_id) return { content: [{ type: 'text', text: 'course_id and assignment_id are required' }], isError: true };
-    return this.canvasGet(`/courses/${args.course_id}/assignments/${args.assignment_id}`);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/assignments/${encodeURIComponent(args.assignment_id as string)}`);
   }
 
   private async listSubmissions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id || !args.assignment_id) return { content: [{ type: 'text', text: 'course_id and assignment_id are required' }], isError: true };
     const params = this.buildParams(args, ['workflow_state', 'per_page', 'page']);
     if (!params.per_page) params.per_page = '10';
-    return this.canvasGet(`/courses/${args.course_id}/assignments/${args.assignment_id}/submissions`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/assignments/${encodeURIComponent(args.assignment_id as string)}/submissions`, params);
   }
 
   private async getSubmission(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id || !args.assignment_id || !args.user_id) return { content: [{ type: 'text', text: 'course_id, assignment_id, and user_id are required' }], isError: true };
-    return this.canvasGet(`/courses/${args.course_id}/assignments/${args.assignment_id}/submissions/${args.user_id}`);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/assignments/${encodeURIComponent(args.assignment_id as string)}/submissions/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async gradeSubmission(args: Record<string, unknown>): Promise<ToolResult> {
@@ -725,14 +725,14 @@ export class CanvasLMSMCPServer {
     const body: Record<string, unknown> = { submission: {} };
     if (args.posted_grade) (body.submission as Record<string, unknown>).posted_grade = args.posted_grade;
     if (args.text_comment) body.comment = { text_comment: args.text_comment };
-    return this.canvasPut(`/courses/${args.course_id}/assignments/${args.assignment_id}/submissions/${args.user_id}`, body);
+    return this.canvasPut(`/courses/${encodeURIComponent(args.course_id as string)}/assignments/${encodeURIComponent(args.assignment_id as string)}/submissions/${encodeURIComponent(args.user_id as string)}`, body);
   }
 
   private async listEnrollments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
     const params = this.buildParams(args, ['type', 'state', 'per_page', 'page']);
     if (!params.per_page) params.per_page = '10';
-    return this.canvasGet(`/courses/${args.course_id}/enrollments`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/enrollments`, params);
   }
 
   private async enrollUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -744,26 +744,26 @@ export class CanvasLMSMCPServer {
         enrollment_state: (args.enrollment_state as string) ?? 'invited',
       },
     };
-    return this.canvasPost(`/courses/${args.course_id}/enrollments`, body);
+    return this.canvasPost(`/courses/${encodeURIComponent(args.course_id as string)}/enrollments`, body);
   }
 
   private async listModules(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
     const params = this.buildParams(args, ['per_page', 'page', 'include']);
     if (!params.per_page) params.per_page = '10';
-    return this.canvasGet(`/courses/${args.course_id}/modules`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/modules`, params);
   }
 
   private async getModule(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id || !args.module_id) return { content: [{ type: 'text', text: 'course_id and module_id are required' }], isError: true };
-    return this.canvasGet(`/courses/${args.course_id}/modules/${args.module_id}`);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/modules/${encodeURIComponent(args.module_id as string)}`);
   }
 
   private async listModuleItems(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id || !args.module_id) return { content: [{ type: 'text', text: 'course_id and module_id are required' }], isError: true };
     const params = this.buildParams(args, ['per_page', 'page']);
     if (!params.per_page) params.per_page = '10';
-    return this.canvasGet(`/courses/${args.course_id}/modules/${args.module_id}/items`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/modules/${encodeURIComponent(args.module_id as string)}/items`, params);
   }
 
   private async listAnnouncements(args: Record<string, unknown>): Promise<ToolResult> {
@@ -790,24 +790,24 @@ export class CanvasLMSMCPServer {
       is_announcement: true,
     };
     if (args.delayed_post_at) body.delayed_post_at = args.delayed_post_at;
-    return this.canvasPost(`/courses/${args.course_id}/discussion_topics`, body);
+    return this.canvasPost(`/courses/${encodeURIComponent(args.course_id as string)}/discussion_topics`, body);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
     const params = this.buildParams(args, ['search_term', 'enrollment_type', 'per_page', 'page']);
     if (!params.per_page) params.per_page = '10';
-    return this.canvasGet(`/courses/${args.course_id}/users`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/users`, params);
   }
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.canvasGet(`/users/${args.user_id}`);
+    return this.canvasGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async getUserProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.canvasGet(`/users/${args.user_id}/profile`);
+    return this.canvasGet(`/users/${encodeURIComponent(args.user_id as string)}/profile`);
   }
 
   private async listGrades(args: Record<string, unknown>): Promise<ToolResult> {
@@ -817,20 +817,20 @@ export class CanvasLMSMCPServer {
     // Enrollments with grades included
     params['include[]'] = 'grades';
     params.type = 'StudentEnrollment';
-    return this.canvasGet(`/courses/${args.course_id}/enrollments`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/enrollments`, params);
   }
 
   private async listDiscussionTopics(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
     const params = this.buildParams(args, ['order_by', 'scope', 'per_page', 'page']);
     if (!params.per_page) params.per_page = '10';
-    return this.canvasGet(`/courses/${args.course_id}/discussion_topics`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/discussion_topics`, params);
   }
 
   private async listPages(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.course_id) return { content: [{ type: 'text', text: 'course_id is required' }], isError: true };
     const params = this.buildParams(args, ['sort', 'order', 'search_term', 'per_page', 'page']);
     if (!params.per_page) params.per_page = '10';
-    return this.canvasGet(`/courses/${args.course_id}/pages`, params);
+    return this.canvasGet(`/courses/${encodeURIComponent(args.course_id as string)}/pages`, params);
   }
 }

@@ -847,10 +847,10 @@ export class GoogleWorkspaceMCPServer {
   private async createGmailDraft(args: Record<string, unknown>): Promise<ToolResult> {
     // Build RFC 2822 email message
     const lines: string[] = [
-      `To: ${args.to}`,
-      `Subject: ${args.subject}`,
+      `To: ${encodeURIComponent(args.to as string)}`,
+      `Subject: ${encodeURIComponent(args.subject as string)}`,
     ];
-    if (args.cc) lines.push(`Cc: ${args.cc}`);
+    if (args.cc) lines.push(`Cc: ${encodeURIComponent(args.cc as string)}`);
     lines.push('Content-Type: text/plain; charset=utf-8', '', args.body as string);
 
     const rawMessage = lines.join('\r\n');

@@ -498,7 +498,7 @@ export class MapboxMCPServer {
     if (args.types) params.types = args.types as string;
     if (args.language) params.language = args.language as string;
     if (args.limit) params.limit = String(args.limit);
-    return this.apiGet(`/geocoding/v5/mapbox.places/${args.longitude},${args.latitude}.json`, params);
+    return this.apiGet(`/geocoding/v5/mapbox.places/${encodeURIComponent(args.longitude as string)},${encodeURIComponent(args.latitude as string)}.json`, params);
   }
 
   private async geocodeBatch(args: Record<string, unknown>): Promise<ToolResult> {
@@ -555,7 +555,7 @@ export class MapboxMCPServer {
     if (args.contours_meters) params.contours_meters = args.contours_meters as string;
     if (typeof args.polygons === 'boolean') params.polygons = String(args.polygons);
     if (args.denoise !== undefined) params.denoise = String(args.denoise);
-    return this.apiGet(`/isochrone/v1/mapbox/${profile}/${args.longitude},${args.latitude}`, params);
+    return this.apiGet(`/isochrone/v1/mapbox/${profile}/${encodeURIComponent(args.longitude as string)},${encodeURIComponent(args.latitude as string)}`, params);
   }
 
   private async searchPlaces(args: Record<string, unknown>): Promise<ToolResult> {
@@ -577,9 +577,9 @@ export class MapboxMCPServer {
     const width = (args.width as number) ?? 600;
     const height = (args.height as number) ?? 400;
     const retina = args.retina ? '@2x' : '';
-    const marker = args.marker ? `${args.marker}/` : '';
+    const marker = args.marker ? `${encodeURIComponent(args.marker as string)}/` : '';
     const url = new URL(
-      `${this.baseUrl}/styles/v1/mapbox/${styleId}/static/${marker}${args.longitude},${args.latitude},${args.zoom}/${width}x${height}${retina}`
+      `${this.baseUrl}/styles/v1/mapbox/${styleId}/static/${marker}${encodeURIComponent(args.longitude as string)},${encodeURIComponent(args.latitude as string)},${encodeURIComponent(args.zoom as string)}/${width}x${height}${retina}`
     );
     url.searchParams.set('access_token', this.token);
     // Return the URL rather than fetching binary image data
@@ -593,7 +593,7 @@ export class MapboxMCPServer {
     if (!args.username) return { content: [{ type: 'text', text: 'username is required' }], isError: true };
     const params: Record<string, string> = {};
     if (typeof args.draft === 'boolean') params.draft = String(args.draft);
-    return this.apiGet(`/styles/v1/${args.username}`, params);
+    return this.apiGet(`/styles/v1/${encodeURIComponent(args.username as string)}`, params);
   }
 
   private async getStyle(args: Record<string, unknown>): Promise<ToolResult> {
@@ -601,16 +601,16 @@ export class MapboxMCPServer {
       return { content: [{ type: 'text', text: 'username and style_id are required' }], isError: true };
     }
     const draft = args.draft ? '/draft' : '';
-    return this.apiGet(`/styles/v1/${args.username}/${args.style_id}${draft}`);
+    return this.apiGet(`/styles/v1/${encodeURIComponent(args.username as string)}/${encodeURIComponent(args.style_id as string)}${draft}`);
   }
 
   private async listDatasets(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.username) return { content: [{ type: 'text', text: 'username is required' }], isError: true };
-    return this.apiGet(`/datasets/v1/${args.username}`);
+    return this.apiGet(`/datasets/v1/${encodeURIComponent(args.username as string)}`);
   }
 
   private async listTokens(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.username) return { content: [{ type: 'text', text: 'username is required' }], isError: true };
-    return this.apiGet(`/tokens/v2/${args.username}`);
+    return this.apiGet(`/tokens/v2/${encodeURIComponent(args.username as string)}`);
   }
 }

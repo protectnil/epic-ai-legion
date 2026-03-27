@@ -571,7 +571,7 @@ export class OracleERPCloudMCPServer {
 
   private async getInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.invoice_id) return { content: [{ type: 'text', text: 'invoice_id is required' }], isError: true };
-    return this.apiGet(`/invoices/${args.invoice_id}`);
+    return this.apiGet(`/invoices/${encodeURIComponent(args.invoice_id as string)}`);
   }
 
   private async createInvoice(args: Record<string, unknown>): Promise<ToolResult> {
@@ -607,13 +607,13 @@ export class OracleERPCloudMCPServer {
 
   private async getSupplier(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.supplier_id) return { content: [{ type: 'text', text: 'supplier_id is required' }], isError: true };
-    return this.apiGet(`/suppliers/${args.supplier_id}`);
+    return this.apiGet(`/suppliers/${encodeURIComponent(args.supplier_id as string)}`);
   }
 
   private async searchSuppliers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
     const params: Record<string, string> = {
-      q: `SupplierName LIKE "*${args.query}*"`,
+      q: `SupplierName LIKE "*${encodeURIComponent(args.query as string)}*"`,
       limit: String((args.limit as number) ?? 25),
     };
     return this.apiGet('/suppliers', params);
@@ -636,7 +636,7 @@ export class OracleERPCloudMCPServer {
 
   private async getPurchaseOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.po_header_id) return { content: [{ type: 'text', text: 'po_header_id is required' }], isError: true };
-    return this.apiGet(`/purchaseOrders/${args.po_header_id}`);
+    return this.apiGet(`/purchaseOrders/${encodeURIComponent(args.po_header_id as string)}`);
   }
 
   private async listJournalEntries(args: Record<string, unknown>): Promise<ToolResult> {
@@ -655,7 +655,7 @@ export class OracleERPCloudMCPServer {
 
   private async getJournalEntry(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.header_id) return { content: [{ type: 'text', text: 'header_id is required' }], isError: true };
-    return this.apiGet(`/journalEntries/${args.header_id}`);
+    return this.apiGet(`/journalEntries/${encodeURIComponent(args.header_id as string)}`);
   }
 
   private async createJournalEntry(args: Record<string, unknown>): Promise<ToolResult> {
@@ -687,7 +687,7 @@ export class OracleERPCloudMCPServer {
 
   private async getLedger(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ledger_id) return { content: [{ type: 'text', text: 'ledger_id is required' }], isError: true };
-    return this.apiGet(`/ledgers/${args.ledger_id}`);
+    return this.apiGet(`/ledgers/${encodeURIComponent(args.ledger_id as string)}`);
   }
 
   private async listPayables(args: Record<string, unknown>): Promise<ToolResult> {
@@ -732,6 +732,6 @@ export class OracleERPCloudMCPServer {
 
   private async getEmployee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.employee_id) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    return this.apiGet(`/workers/${args.employee_id}`);
+    return this.apiGet(`/workers/${encodeURIComponent(args.employee_id as string)}`);
   }
 }

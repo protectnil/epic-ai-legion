@@ -592,7 +592,7 @@ export class MattermostMCPServer {
 
   private async getTeam(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.team_id) return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
-    return this.mmGet(`/teams/${args.team_id}`);
+    return this.mmGet(`/teams/${encodeURIComponent(args.team_id as string)}`);
   }
 
   private async getTeamMembers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -601,7 +601,7 @@ export class MattermostMCPServer {
       page: String((args.page as number) ?? 0),
       per_page: String((args.per_page as number) ?? 60),
     };
-    return this.mmGet(`/teams/${args.team_id}/members`, params);
+    return this.mmGet(`/teams/${encodeURIComponent(args.team_id as string)}/members`, params);
   }
 
   private async listChannels(args: Record<string, unknown>): Promise<ToolResult> {
@@ -610,12 +610,12 @@ export class MattermostMCPServer {
       page: String((args.page as number) ?? 0),
       per_page: String((args.per_page as number) ?? 60),
     };
-    return this.mmGet(`/teams/${args.team_id}/channels`, params);
+    return this.mmGet(`/teams/${encodeURIComponent(args.team_id as string)}/channels`, params);
   }
 
   private async getChannel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.channel_id) return { content: [{ type: 'text', text: 'channel_id is required' }], isError: true };
-    return this.mmGet(`/channels/${args.channel_id}`);
+    return this.mmGet(`/channels/${encodeURIComponent(args.channel_id as string)}`);
   }
 
   private async createChannel(args: Record<string, unknown>): Promise<ToolResult> {
@@ -639,12 +639,12 @@ export class MattermostMCPServer {
     if (args.display_name) body.display_name = args.display_name;
     if (args.purpose !== undefined) body.purpose = args.purpose;
     if (args.header !== undefined) body.header = args.header;
-    return this.mmPut(`/channels/${args.channel_id}`, body);
+    return this.mmPut(`/channels/${encodeURIComponent(args.channel_id as string)}`, body);
   }
 
   private async deleteChannel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.channel_id) return { content: [{ type: 'text', text: 'channel_id is required' }], isError: true };
-    return this.mmDelete(`/channels/${args.channel_id}`);
+    return this.mmDelete(`/channels/${encodeURIComponent(args.channel_id as string)}`);
   }
 
   private async getChannelMembers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -653,14 +653,14 @@ export class MattermostMCPServer {
       page: String((args.page as number) ?? 0),
       per_page: String((args.per_page as number) ?? 60),
     };
-    return this.mmGet(`/channels/${args.channel_id}/members`, params);
+    return this.mmGet(`/channels/${encodeURIComponent(args.channel_id as string)}/members`, params);
   }
 
   private async addChannelMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.channel_id || !args.user_id) {
       return { content: [{ type: 'text', text: 'channel_id and user_id are required' }], isError: true };
     }
-    return this.mmPost(`/channels/${args.channel_id}/members`, { user_id: args.user_id });
+    return this.mmPost(`/channels/${encodeURIComponent(args.channel_id as string)}/members`, { user_id: args.user_id });
   }
 
   private async listPosts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -672,12 +672,12 @@ export class MattermostMCPServer {
     if (args.since) params.since = String(args.since);
     if (args.before) params.before = args.before as string;
     if (args.after) params.after = args.after as string;
-    return this.mmGet(`/channels/${args.channel_id}/posts`, params);
+    return this.mmGet(`/channels/${encodeURIComponent(args.channel_id as string)}/posts`, params);
   }
 
   private async getPost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.mmGet(`/posts/${args.post_id}`);
+    return this.mmGet(`/posts/${encodeURIComponent(args.post_id as string)}`);
   }
 
   private async createPost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -693,17 +693,17 @@ export class MattermostMCPServer {
     if (!args.post_id || !args.message) {
       return { content: [{ type: 'text', text: 'post_id and message are required' }], isError: true };
     }
-    return this.mmPut(`/posts/${args.post_id}`, { id: args.post_id, message: args.message });
+    return this.mmPut(`/posts/${encodeURIComponent(args.post_id as string)}`, { id: args.post_id, message: args.message });
   }
 
   private async deletePost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.mmDelete(`/posts/${args.post_id}`);
+    return this.mmDelete(`/posts/${encodeURIComponent(args.post_id as string)}`);
   }
 
   private async getThread(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.mmGet(`/posts/${args.post_id}/thread`);
+    return this.mmGet(`/posts/${encodeURIComponent(args.post_id as string)}/thread`);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -718,7 +718,7 @@ export class MattermostMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.mmGet(`/users/${args.user_id}`);
+    return this.mmGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async getUserByEmail(args: Record<string, unknown>): Promise<ToolResult> {
@@ -745,6 +745,6 @@ export class MattermostMCPServer {
 
   private async getReactions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.mmGet(`/posts/${args.post_id}/reactions`);
+    return this.mmGet(`/posts/${encodeURIComponent(args.post_id as string)}/reactions`);
   }
 }

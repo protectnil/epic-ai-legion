@@ -553,7 +553,7 @@ export class HotjarMCPServer {
 
   private async getSite(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    return this.apiGet(`/sites/${args.site_id}`);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}`);
   }
 
   private async listHeatmaps(args: Record<string, unknown>): Promise<ToolResult> {
@@ -562,14 +562,14 @@ export class HotjarMCPServer {
     if (args.type) params.type = args.type as string;
     if (args.status) params.status = args.status as string;
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.apiGet(`/sites/${args.site_id}/heatmaps`, params);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/heatmaps`, params);
   }
 
   private async getHeatmap(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id || !args.heatmap_id) {
       return { content: [{ type: 'text', text: 'site_id and heatmap_id are required' }], isError: true };
     }
-    return this.apiGet(`/sites/${args.site_id}/heatmaps/${args.heatmap_id}`);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/heatmaps/${encodeURIComponent(args.heatmap_id as string)}`);
   }
 
   private async createHeatmap(args: Record<string, unknown>): Promise<ToolResult> {
@@ -582,7 +582,7 @@ export class HotjarMCPServer {
       type: args.type ?? 'click',
       device: args.device ?? 'desktop',
     };
-    return this.apiPost(`/sites/${args.site_id}/heatmaps`, body);
+    return this.apiPost(`/sites/${encodeURIComponent(args.site_id as string)}/heatmaps`, body);
   }
 
   private async listRecordings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -592,14 +592,14 @@ export class HotjarMCPServer {
     if (args.min_duration) params.min_duration = String(args.min_duration);
     if (typeof args.starred === 'boolean') params.starred = String(args.starred);
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.apiGet(`/sites/${args.site_id}/recordings`, params);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/recordings`, params);
   }
 
   private async getRecording(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id || !args.recording_id) {
       return { content: [{ type: 'text', text: 'site_id and recording_id are required' }], isError: true };
     }
-    return this.apiGet(`/sites/${args.site_id}/recordings/${args.recording_id}`);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/recordings/${encodeURIComponent(args.recording_id as string)}`);
   }
 
   private async listSurveys(args: Record<string, unknown>): Promise<ToolResult> {
@@ -607,14 +607,14 @@ export class HotjarMCPServer {
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 20) };
     if (args.status) params.status = args.status as string;
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.apiGet(`/sites/${args.site_id}/surveys`, params);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/surveys`, params);
   }
 
   private async getSurvey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id || !args.survey_id) {
       return { content: [{ type: 'text', text: 'site_id and survey_id are required' }], isError: true };
     }
-    return this.apiGet(`/sites/${args.site_id}/surveys/${args.survey_id}`);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/surveys/${encodeURIComponent(args.survey_id as string)}`);
   }
 
   private async createSurvey(args: Record<string, unknown>): Promise<ToolResult> {
@@ -626,7 +626,7 @@ export class HotjarMCPServer {
       type: args.type ?? 'widget',
       language: args.language ?? 'en',
     };
-    return this.apiPost(`/sites/${args.site_id}/surveys`, body);
+    return this.apiPost(`/sites/${encodeURIComponent(args.site_id as string)}/surveys`, body);
   }
 
   private async updateSurvey(args: Record<string, unknown>): Promise<ToolResult> {
@@ -636,7 +636,7 @@ export class HotjarMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.status) body.status = args.status;
-    return this.apiPatch(`/sites/${args.site_id}/surveys/${args.survey_id}`, body);
+    return this.apiPatch(`/sites/${encodeURIComponent(args.site_id as string)}/surveys/${encodeURIComponent(args.survey_id as string)}`, body);
   }
 
   private async listSurveyResponses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -646,34 +646,34 @@ export class HotjarMCPServer {
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 50) };
     if (args.cursor) params.cursor = args.cursor as string;
     if (args.created_after) params.created_after = args.created_after as string;
-    return this.apiGet(`/sites/${args.site_id}/surveys/${args.survey_id}/responses`, params);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/surveys/${encodeURIComponent(args.survey_id as string)}/responses`, params);
   }
 
   private async listFunnels(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 20) };
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.apiGet(`/sites/${args.site_id}/funnels`, params);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/funnels`, params);
   }
 
   private async getFunnel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id || !args.funnel_id) {
       return { content: [{ type: 'text', text: 'site_id and funnel_id are required' }], isError: true };
     }
-    return this.apiGet(`/sites/${args.site_id}/funnels/${args.funnel_id}`);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/funnels/${encodeURIComponent(args.funnel_id as string)}`);
   }
 
   private async createFunnel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id || !args.name || !args.steps) {
       return { content: [{ type: 'text', text: 'site_id, name, and steps are required' }], isError: true };
     }
-    return this.apiPost(`/sites/${args.site_id}/funnels`, { name: args.name, steps: args.steps });
+    return this.apiPost(`/sites/${encodeURIComponent(args.site_id as string)}/funnels`, { name: args.name, steps: args.steps });
   }
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.site_id) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 50) };
     if (args.cursor) params.cursor = args.cursor as string;
-    return this.apiGet(`/sites/${args.site_id}/events`, params);
+    return this.apiGet(`/sites/${encodeURIComponent(args.site_id as string)}/events`, params);
   }
 }

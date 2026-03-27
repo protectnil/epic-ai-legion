@@ -628,13 +628,13 @@ export class SabreMCPServer {
 
   private async getPnr(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_locator) return { content: [{ type: 'text', text: 'record_locator is required' }], isError: true };
-    return this.apiGet(`/v1/passenger/records/${args.record_locator}`);
+    return this.apiGet(`/v1/passenger/records/${encodeURIComponent(args.record_locator as string)}`);
   }
 
   private async cancelPnr(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_locator) return { content: [{ type: 'text', text: 'record_locator is required' }], isError: true };
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v1/passenger/records/${args.record_locator}`, {
+    const response = await fetch(`${this.baseUrl}/v1/passenger/records/${encodeURIComponent(args.record_locator as string)}`, {
       method: 'DELETE',
       headers,
     });

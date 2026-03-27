@@ -507,7 +507,7 @@ export class LeverMCPServer {
 
   private async getOpportunity(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.opportunity_id) return { content: [{ type: 'text', text: 'opportunity_id is required' }], isError: true };
-    return this.httpGet(`/opportunities/${args.opportunity_id}`);
+    return this.httpGet(`/opportunities/${encodeURIComponent(args.opportunity_id as string)}`);
   }
 
   private async searchOpportunities(args: Record<string, unknown>): Promise<ToolResult> {
@@ -531,7 +531,7 @@ export class LeverMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.httpGet(`/contacts/${args.contact_id}`);
+    return this.httpGet(`/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async listPostings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -549,7 +549,7 @@ export class LeverMCPServer {
 
   private async getPosting(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.posting_id) return { content: [{ type: 'text', text: 'posting_id is required' }], isError: true };
-    return this.httpGet(`/postings/${args.posting_id}`);
+    return this.httpGet(`/postings/${encodeURIComponent(args.posting_id as string)}`);
   }
 
   private async listStages(): Promise<ToolResult> {
@@ -567,7 +567,7 @@ export class LeverMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.httpGet(`/users/${args.user_id}`);
+    return this.httpGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
@@ -594,26 +594,26 @@ export class LeverMCPServer {
 
   private async listOffers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.opportunity_id) return { content: [{ type: 'text', text: 'opportunity_id is required' }], isError: true };
-    return this.httpGet(`/opportunities/${args.opportunity_id}/offers`);
+    return this.httpGet(`/opportunities/${encodeURIComponent(args.opportunity_id as string)}/offers`);
   }
 
   private async getOffer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.opportunity_id || !args.offer_id) {
       return { content: [{ type: 'text', text: 'opportunity_id and offer_id are required' }], isError: true };
     }
-    return this.httpGet(`/opportunities/${args.opportunity_id}/offers/${args.offer_id}`);
+    return this.httpGet(`/opportunities/${encodeURIComponent(args.opportunity_id as string)}/offers/${encodeURIComponent(args.offer_id as string)}`);
   }
 
   private async listInterviews(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.opportunity_id) return { content: [{ type: 'text', text: 'opportunity_id is required' }], isError: true };
-    return this.httpGet(`/opportunities/${args.opportunity_id}/panels`);
+    return this.httpGet(`/opportunities/${encodeURIComponent(args.opportunity_id as string)}/panels`);
   }
 
   private async getInterview(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.opportunity_id || !args.panel_id) {
       return { content: [{ type: 'text', text: 'opportunity_id and panel_id are required' }], isError: true };
     }
-    return this.httpGet(`/opportunities/${args.opportunity_id}/panels/${args.panel_id}`);
+    return this.httpGet(`/opportunities/${encodeURIComponent(args.opportunity_id as string)}/panels/${encodeURIComponent(args.panel_id as string)}`);
   }
 
   private async addOpportunityNote(args: Record<string, unknown>): Promise<ToolResult> {
@@ -624,6 +624,6 @@ export class LeverMCPServer {
       value: args.note,
       notifyFollowers: (args.notify_followers as boolean) ?? false,
     };
-    return this.httpPost(`/opportunities/${args.opportunity_id}/notes`, body);
+    return this.httpPost(`/opportunities/${encodeURIComponent(args.opportunity_id as string)}/notes`, body);
   }
 }

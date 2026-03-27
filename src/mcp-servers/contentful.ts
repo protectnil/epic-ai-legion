@@ -680,14 +680,14 @@ export class ContentfulMCPServer {
     if (args.source_environment_id) {
       headers['X-Contentful-Source-Environment'] = args.source_environment_id as string;
     }
-    return this.cmaPut(`/spaces/${spaceId}/environments/${args.environment_id}`, body, headers);
+    return this.cmaPut(`/spaces/${spaceId}/environments/${encodeURIComponent(args.environment_id as string)}`, body, headers);
   }
 
   private async deleteEnvironment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.environment_id) return { content: [{ type: 'text', text: 'environment_id is required' }], isError: true };
     const spaceId = this.resolveSpace(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
-    return this.cmaDelete(`/spaces/${spaceId}/environments/${args.environment_id}`);
+    return this.cmaDelete(`/spaces/${spaceId}/environments/${encodeURIComponent(args.environment_id as string)}`);
   }
 
   private async listContentTypes(args: Record<string, unknown>): Promise<ToolResult> {
@@ -706,7 +706,7 @@ export class ContentfulMCPServer {
     const spaceId = this.resolveSpace(args);
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
-    return this.cmaGet(`/spaces/${spaceId}/environments/${envId}/content_types/${args.content_type_id}`);
+    return this.cmaGet(`/spaces/${spaceId}/environments/${envId}/content_types/${encodeURIComponent(args.content_type_id as string)}`);
   }
 
   private async listEntries(args: Record<string, unknown>): Promise<ToolResult> {
@@ -729,7 +729,7 @@ export class ContentfulMCPServer {
     const spaceId = this.resolveSpace(args);
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
-    return this.cmaGet(`/spaces/${spaceId}/environments/${envId}/entries/${args.entry_id}`);
+    return this.cmaGet(`/spaces/${spaceId}/environments/${envId}/entries/${encodeURIComponent(args.entry_id as string)}`);
   }
 
   private async createEntry(args: Record<string, unknown>): Promise<ToolResult> {
@@ -762,7 +762,7 @@ export class ContentfulMCPServer {
       return { content: [{ type: 'text', text: 'fields must be valid JSON' }], isError: true };
     }
     return this.cmaPut(
-      `/spaces/${spaceId}/environments/${envId}/entries/${args.entry_id}`,
+      `/spaces/${spaceId}/environments/${envId}/entries/${encodeURIComponent(args.entry_id as string)}`,
       { fields: fieldsObj },
       { 'X-Contentful-Version': String(args.version) },
     );
@@ -773,7 +773,7 @@ export class ContentfulMCPServer {
     const spaceId = this.resolveSpace(args);
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
-    return this.cmaDelete(`/spaces/${spaceId}/environments/${envId}/entries/${args.entry_id}`);
+    return this.cmaDelete(`/spaces/${spaceId}/environments/${envId}/entries/${encodeURIComponent(args.entry_id as string)}`);
   }
 
   private async publishEntry(args: Record<string, unknown>): Promise<ToolResult> {
@@ -784,7 +784,7 @@ export class ContentfulMCPServer {
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
     return this.cmaPut(
-      `/spaces/${spaceId}/environments/${envId}/entries/${args.entry_id}/published`,
+      `/spaces/${spaceId}/environments/${envId}/entries/${encodeURIComponent(args.entry_id as string)}/published`,
       {},
       { 'X-Contentful-Version': String(args.version) },
     );
@@ -795,7 +795,7 @@ export class ContentfulMCPServer {
     const spaceId = this.resolveSpace(args);
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
-    return this.cmaDelete(`/spaces/${spaceId}/environments/${envId}/entries/${args.entry_id}/published`);
+    return this.cmaDelete(`/spaces/${spaceId}/environments/${envId}/entries/${encodeURIComponent(args.entry_id as string)}/published`);
   }
 
   private async listAssets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -816,7 +816,7 @@ export class ContentfulMCPServer {
     const spaceId = this.resolveSpace(args);
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
-    return this.cmaGet(`/spaces/${spaceId}/environments/${envId}/assets/${args.asset_id}`);
+    return this.cmaGet(`/spaces/${spaceId}/environments/${envId}/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async deleteAsset(args: Record<string, unknown>): Promise<ToolResult> {
@@ -824,7 +824,7 @@ export class ContentfulMCPServer {
     const spaceId = this.resolveSpace(args);
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
-    return this.cmaDelete(`/spaces/${spaceId}/environments/${envId}/assets/${args.asset_id}`);
+    return this.cmaDelete(`/spaces/${spaceId}/environments/${envId}/assets/${encodeURIComponent(args.asset_id as string)}`);
   }
 
   private async publishAsset(args: Record<string, unknown>): Promise<ToolResult> {
@@ -835,7 +835,7 @@ export class ContentfulMCPServer {
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
     return this.cmaPut(
-      `/spaces/${spaceId}/environments/${envId}/assets/${args.asset_id}/published`,
+      `/spaces/${spaceId}/environments/${envId}/assets/${encodeURIComponent(args.asset_id as string)}/published`,
       {},
       { 'X-Contentful-Version': String(args.version) },
     );
@@ -846,6 +846,6 @@ export class ContentfulMCPServer {
     const spaceId = this.resolveSpace(args);
     const envId = this.resolveEnv(args);
     if (!spaceId) return { content: [{ type: 'text', text: 'space_id is required (or set in config)' }], isError: true };
-    return this.cmaDelete(`/spaces/${spaceId}/environments/${envId}/assets/${args.asset_id}/published`);
+    return this.cmaDelete(`/spaces/${spaceId}/environments/${envId}/assets/${encodeURIComponent(args.asset_id as string)}/published`);
   }
 }

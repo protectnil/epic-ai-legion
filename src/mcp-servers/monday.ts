@@ -607,7 +607,7 @@ export class MondayMCPServer {
   private async listBoards(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) || 25;
     const page = (args.page as number) || 1;
-    const boardKindFilter = args.boardKind ? `, board_kind: ${args.boardKind as string}` : '';
+    const boardKindFilter = args.boardKind ? `, board_kind: ${encodeURIComponent(args.boardKind as string)}` : '';
     const query = `query {
       boards(limit: ${limit}, page: ${page}${boardKindFilter}) {
         id name description board_kind state updated_at
@@ -633,8 +633,8 @@ export class MondayMCPServer {
     const boardName = args.boardName as string;
     if (!boardName) return { content: [{ type: 'text', text: 'boardName is required' }], isError: true };
     const kind = (args.boardKind as string) || 'public';
-    const workspaceArg = args.workspaceId ? `, workspace_id: ${args.workspaceId as string}` : '';
-    const templateArg = args.templateId ? `, template_id: ${args.templateId as string}` : '';
+    const workspaceArg = args.workspaceId ? `, workspace_id: ${encodeURIComponent(args.workspaceId as string)}` : '';
+    const templateArg = args.templateId ? `, template_id: ${encodeURIComponent(args.templateId as string)}` : '';
     const query = `mutation {
       create_board(board_name: "${(boardName as string).replace(/"/g, '\\"')}", board_kind: ${kind}${workspaceArg}${templateArg}) {
         id name board_kind
@@ -654,7 +654,7 @@ export class MondayMCPServer {
     const boardId = args.boardId as string;
     if (!boardId) return { content: [{ type: 'text', text: 'boardId is required' }], isError: true };
     const limit = (args.limit as number) || 25;
-    const cursorArg = args.cursor ? `, cursor: "${args.cursor as string}"` : '';
+    const cursorArg = args.cursor ? `, cursor: "${encodeURIComponent(args.cursor as string)}"` : '';
     const query = `query {
       boards(ids: [${boardId}]) {
         items_page(limit: ${limit}${cursorArg}) {
@@ -674,7 +674,7 @@ export class MondayMCPServer {
     const boardId = args.boardId as string;
     const itemName = args.itemName as string;
     if (!boardId || !itemName) return { content: [{ type: 'text', text: 'boardId and itemName are required' }], isError: true };
-    const groupArg = args.groupId ? `, group_id: "${args.groupId as string}"` : '';
+    const groupArg = args.groupId ? `, group_id: "${encodeURIComponent(args.groupId as string)}"` : '';
     const colArg = args.columnValues ? `, column_values: ${JSON.stringify(args.columnValues as string)}` : '';
     const query = `mutation {
       create_item(board_id: ${boardId}, item_name: "${itemName.replace(/"/g, '\\"')}"${groupArg}${colArg}) {
@@ -834,7 +834,7 @@ export class MondayMCPServer {
   private async getUsers(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) || 25;
     const page = (args.page as number) || 1;
-    const kindArg = args.kind ? `, kind: ${args.kind as string}` : '';
+    const kindArg = args.kind ? `, kind: ${encodeURIComponent(args.kind as string)}` : '';
     const nameArg = args.name ? `, name: "${(args.name as string).replace(/"/g, '\\"')}"` : '';
     const query = `query {
       users(limit: ${limit}, page: ${page}${kindArg}${nameArg}) {

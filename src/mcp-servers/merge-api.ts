@@ -606,12 +606,12 @@ export class MergeApiMCPServer {
 
   private async getLinkedAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.linked_account_id) return { content: [{ type: 'text', text: 'linked_account_id is required' }], isError: true };
-    return this.mergeGet(`/integrations/linked-accounts/${args.linked_account_id}`);
+    return this.mergeGet(`/integrations/linked-accounts/${encodeURIComponent(args.linked_account_id as string)}`);
   }
 
   private async deleteLinkedAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.linked_account_id) return { content: [{ type: 'text', text: 'linked_account_id is required' }], isError: true };
-    return this.mergeDelete(`/integrations/linked-accounts/${args.linked_account_id}`);
+    return this.mergeDelete(`/integrations/linked-accounts/${encodeURIComponent(args.linked_account_id as string)}`);
   }
 
   private async listEmployees(args: Record<string, unknown>): Promise<ToolResult> {
@@ -623,7 +623,7 @@ export class MergeApiMCPServer {
 
   private async getEmployee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.employee_id) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    return this.mergeGet(`/hris/v1/employees/${args.employee_id}`);
+    return this.mergeGet(`/hris/v1/employees/${encodeURIComponent(args.employee_id as string)}`);
   }
 
   private async listCandidates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -635,7 +635,7 @@ export class MergeApiMCPServer {
 
   private async getCandidate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.candidate_id) return { content: [{ type: 'text', text: 'candidate_id is required' }], isError: true };
-    return this.mergeGet(`/ats/v1/candidates/${args.candidate_id}`);
+    return this.mergeGet(`/ats/v1/candidates/${encodeURIComponent(args.candidate_id as string)}`);
   }
 
   private async listJobs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -646,7 +646,7 @@ export class MergeApiMCPServer {
 
   private async getJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.mergeGet(`/ats/v1/jobs/${args.job_id}`);
+    return this.mergeGet(`/ats/v1/jobs/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async listApplications(args: Record<string, unknown>): Promise<ToolResult> {
@@ -658,7 +658,7 @@ export class MergeApiMCPServer {
 
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id) return { content: [{ type: 'text', text: 'application_id is required' }], isError: true };
-    return this.mergeGet(`/ats/v1/applications/${args.application_id}`);
+    return this.mergeGet(`/ats/v1/applications/${encodeURIComponent(args.application_id as string)}`);
   }
 
   private async listContacts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -669,7 +669,7 @@ export class MergeApiMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.mergeGet(`/crm/v1/contacts/${args.contact_id}`);
+    return this.mergeGet(`/crm/v1/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async listAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -680,7 +680,7 @@ export class MergeApiMCPServer {
 
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    return this.mergeGet(`/crm/v1/accounts/${args.account_id}`);
+    return this.mergeGet(`/crm/v1/accounts/${encodeURIComponent(args.account_id as string)}`);
   }
 
   private async listTickets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -693,7 +693,7 @@ export class MergeApiMCPServer {
 
   private async getTicket(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ticket_id) return { content: [{ type: 'text', text: 'ticket_id is required' }], isError: true };
-    return this.mergeGet(`/ticketing/v1/tickets/${args.ticket_id}`);
+    return this.mergeGet(`/ticketing/v1/tickets/${encodeURIComponent(args.ticket_id as string)}`);
   }
 
   private async createTicket(args: Record<string, unknown>): Promise<ToolResult> {
@@ -715,6 +715,6 @@ export class MergeApiMCPServer {
 
   private async forceResync(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.category) return { content: [{ type: 'text', text: 'category is required' }], isError: true };
-    return this.mergePost(`/${args.category}/v1/sync`, {});
+    return this.mergePost(`/${encodeURIComponent(args.category as string)}/v1/sync`, {});
   }
 }

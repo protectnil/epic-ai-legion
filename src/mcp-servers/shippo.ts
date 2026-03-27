@@ -382,7 +382,7 @@ export class ShippoMCPServer {
 
   private async getShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
-    return this.get(`/shipments/${args.shipment_id}`);
+    return this.get(`/shipments/${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async listShipments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -396,7 +396,7 @@ export class ShippoMCPServer {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.currency) params.currency = args.currency as string;
-    return this.get(`/shipments/${args.shipment_id}/rates`, params);
+    return this.get(`/shipments/${encodeURIComponent(args.shipment_id as string)}/rates`, params);
   }
 
   private async purchaseLabel(args: Record<string, unknown>): Promise<ToolResult> {
@@ -411,7 +411,7 @@ export class ShippoMCPServer {
 
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.transaction_id) return { content: [{ type: 'text', text: 'transaction_id is required' }], isError: true };
-    return this.get(`/transactions/${args.transaction_id}`);
+    return this.get(`/transactions/${encodeURIComponent(args.transaction_id as string)}`);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {

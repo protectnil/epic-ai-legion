@@ -699,7 +699,7 @@ export class FedExMCPServer {
     const body = {
       associatedAccountNumber: { value: this.accountNumber },
       originDetail: {
-        readyDateTimestamp: `${args.pickup_date}T${args.ready_time}:00`,
+        readyDateTimestamp: `${encodeURIComponent(args.pickup_date as string)}T${encodeURIComponent(args.ready_time as string)}:00`,
         customerCloseTime: args.company_close_time,
         pickupLocation: {
           address: {

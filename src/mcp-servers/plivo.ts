@@ -348,7 +348,7 @@ export class PlivoMCPServer {
 
   private async getMessage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.message_uuid) return { content: [{ type: 'text', text: 'message_uuid is required' }], isError: true };
-    return this.get(`/Message/${args.message_uuid}`);
+    return this.get(`/Message/${encodeURIComponent(args.message_uuid as string)}`);
   }
 
   private async listMessages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -375,7 +375,7 @@ export class PlivoMCPServer {
 
   private async getCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_uuid) return { content: [{ type: 'text', text: 'call_uuid is required' }], isError: true };
-    return this.get(`/Call/${args.call_uuid}`);
+    return this.get(`/Call/${encodeURIComponent(args.call_uuid as string)}`);
   }
 
   private async listCalls(args: Record<string, unknown>): Promise<ToolResult> {
@@ -392,7 +392,7 @@ export class PlivoMCPServer {
 
   private async hangupCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_uuid) return { content: [{ type: 'text', text: 'call_uuid is required' }], isError: true };
-    return this.del(`/Call/${args.call_uuid}`);
+    return this.del(`/Call/${encodeURIComponent(args.call_uuid as string)}`);
   }
 
   private async listPhoneNumbers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -407,7 +407,7 @@ export class PlivoMCPServer {
 
   private async getPhoneNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.number) return { content: [{ type: 'text', text: 'number is required' }], isError: true };
-    return this.get(`/Number/${args.number}`);
+    return this.get(`/Number/${encodeURIComponent(args.number as string)}`);
   }
 
   private async listEndpoints(args: Record<string, unknown>): Promise<ToolResult> {
@@ -420,7 +420,7 @@ export class PlivoMCPServer {
 
   private async getEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpoint_id) return { content: [{ type: 'text', text: 'endpoint_id is required' }], isError: true };
-    return this.get(`/Endpoint/${args.endpoint_id}`);
+    return this.get(`/Endpoint/${encodeURIComponent(args.endpoint_id as string)}`);
   }
 
   private async createEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
@@ -436,12 +436,12 @@ export class PlivoMCPServer {
     if (args.password) body.password = args.password;
     if (args.alias) body.alias = args.alias;
     if (args.app_id) body.app_id = args.app_id;
-    return this.patch(`/Endpoint/${args.endpoint_id}`, body);
+    return this.patch(`/Endpoint/${encodeURIComponent(args.endpoint_id as string)}`, body);
   }
 
   private async deleteEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpoint_id) return { content: [{ type: 'text', text: 'endpoint_id is required' }], isError: true };
-    return this.del(`/Endpoint/${args.endpoint_id}`);
+    return this.del(`/Endpoint/${encodeURIComponent(args.endpoint_id as string)}`);
   }
 
   private async getAccount(): Promise<ToolResult> {

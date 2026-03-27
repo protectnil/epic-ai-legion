@@ -512,29 +512,29 @@ export class CanadaPostMCPServer {
     const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
 <shipment xmlns="http://www.canadapost.ca/ws/shipment-v8">
   <delivery-spec>
-    <service-code>${args.service_code}</service-code>
+    <service-code>${encodeURIComponent(args.service_code as string)}</service-code>
     <sender>
-      <name>${args.sender_name}</name>
+      <name>${encodeURIComponent(args.sender_name as string)}</name>
       <address-details>
-        <address-line-1>${args.sender_address_line1}</address-line-1>
-        <city>${args.sender_city}</city>
-        <prov-state>${args.sender_province}</prov-state>
+        <address-line-1>${encodeURIComponent(args.sender_address_line1 as string)}</address-line-1>
+        <city>${encodeURIComponent(args.sender_city as string)}</city>
+        <prov-state>${encodeURIComponent(args.sender_province as string)}</prov-state>
         <postal-zip-code>${(args.sender_postal_code as string).replace(/\s/g, '')}</postal-zip-code>
         <country-code>CA</country-code>
       </address-details>
     </sender>
     <destination>
-      <name>${args.receiver_name}</name>
+      <name>${encodeURIComponent(args.receiver_name as string)}</name>
       <address-details>
-        <address-line-1>${args.receiver_address_line1}</address-line-1>
-        <city>${args.receiver_city}</city>
-        <prov-state>${args.receiver_province}</prov-state>
+        <address-line-1>${encodeURIComponent(args.receiver_address_line1 as string)}</address-line-1>
+        <city>${encodeURIComponent(args.receiver_city as string)}</city>
+        <prov-state>${encodeURIComponent(args.receiver_province as string)}</prov-state>
         <postal-zip-code>${(args.receiver_postal_code as string).replace(/\s/g, '')}</postal-zip-code>
         <country-code>${receiverCountry}</country-code>
       </address-details>
     </destination>
     <parcel-characteristics>
-      <weight>${args.weight_kg}</weight>
+      <weight>${encodeURIComponent(args.weight_kg as string)}</weight>
     </parcel-characteristics>
     <print-preferences>
       <output-format>8.5x11</output-format>
@@ -607,16 +607,16 @@ export class CanadaPostMCPServer {
       if (!args[field]) return { content: [{ type: 'text', text: `${field} is required` }], isError: true };
     }
 
-    const phoneXml = args.phone_number ? `<phone-number>${args.phone_number}</phone-number>` : '';
+    const phoneXml = args.phone_number ? `<phone-number>${encodeURIComponent(args.phone_number as string)}</phone-number>` : '';
     const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
 <pickup-request-details xmlns="http://www.canadapost.ca/ws/pickuprequest">
   <pickup-type>OnDemand</pickup-type>
   <pickup-location>
     <business-address-flag>true</business-address-flag>
     <alternate-address>
-      <address-line-1>${args.pickup_address}</address-line-1>
-      <city>${args.pickup_city}</city>
-      <prov-state>${args.pickup_province}</prov-state>
+      <address-line-1>${encodeURIComponent(args.pickup_address as string)}</address-line-1>
+      <city>${encodeURIComponent(args.pickup_city as string)}</city>
+      <prov-state>${encodeURIComponent(args.pickup_province as string)}</prov-state>
       <postal-zip-code>${(args.pickup_postal_code as string).replace(/\s/g, '')}</postal-zip-code>
       <country-code>CA</country-code>
     </alternate-address>
@@ -625,8 +625,8 @@ export class CanadaPostMCPServer {
     <contact-name>API Request</contact-name>
     ${phoneXml}
   </contact-info>
-  <pickup-volume>${args.parcel_count}</pickup-volume>
-  <pickup-date>${args.pickup_date}</pickup-date>
+  <pickup-volume>${encodeURIComponent(args.parcel_count as string)}</pickup-volume>
+  <pickup-date>${encodeURIComponent(args.pickup_date as string)}</pickup-date>
 </pickup-request-details>`;
 
     return this.cpPost(

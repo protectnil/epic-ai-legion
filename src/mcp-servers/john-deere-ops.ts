@@ -460,7 +460,7 @@ export class JohnDeereOpsMCPServer {
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_id) return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
-    return this.apiGet(`/platform/organizations/${args.org_id as string}`);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}`);
   }
 
   private async listFields(args: Record<string, unknown>): Promise<ToolResult> {
@@ -470,14 +470,14 @@ export class JohnDeereOpsMCPServer {
       start: String((args.start as number) ?? 0),
     };
     if (args.embed) params.embed = args.embed as string;
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/fields`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/fields`, params);
   }
 
   private async getField(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_id || !args.field_id) return { content: [{ type: 'text', text: 'org_id and field_id are required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.embed) params.embed = args.embed as string;
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/fields/${args.field_id as string}`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/fields/${encodeURIComponent(args.field_id as string)}`, params);
   }
 
   private async listEquipment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -487,19 +487,19 @@ export class JohnDeereOpsMCPServer {
       start: String((args.start as number) ?? 0),
     };
     if (args.embed) params.embed = args.embed as string;
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/machines`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/machines`, params);
   }
 
   private async getEquipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_id || !args.machine_id) return { content: [{ type: 'text', text: 'org_id and machine_id are required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.embed) params.embed = args.embed as string;
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/machines/${args.machine_id as string}`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/machines/${encodeURIComponent(args.machine_id as string)}`, params);
   }
 
   private async getEquipmentLocation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_id || !args.machine_id) return { content: [{ type: 'text', text: 'org_id and machine_id are required' }], isError: true };
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/machines/${args.machine_id as string}/locations/current`);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/machines/${encodeURIComponent(args.machine_id as string)}/locations/current`);
   }
 
   private async listMachineAlerts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -509,12 +509,12 @@ export class JohnDeereOpsMCPServer {
       start: String((args.start as number) ?? 0),
     };
     if (args.severity) params.severity = args.severity as string;
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/alerts`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/alerts`, params);
   }
 
   private async getMachineAlert(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_id || !args.alert_id) return { content: [{ type: 'text', text: 'org_id and alert_id are required' }], isError: true };
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/alerts/${args.alert_id as string}`);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/alerts/${encodeURIComponent(args.alert_id as string)}`);
   }
 
   private async listFieldOperations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -525,12 +525,12 @@ export class JohnDeereOpsMCPServer {
     if (args.operation_type) params.operationType = args.operation_type as string;
     if (args.start_date) params.startDate = args.start_date as string;
     if (args.end_date) params.endDate = args.end_date as string;
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/fieldOperations`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/fieldOperations`, params);
   }
 
   private async getFieldOperation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_id || !args.operation_id) return { content: [{ type: 'text', text: 'org_id and operation_id are required' }], isError: true };
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/fieldOperations/${args.operation_id as string}`);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/fieldOperations/${encodeURIComponent(args.operation_id as string)}`);
   }
 
   private async listFiles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -540,12 +540,12 @@ export class JohnDeereOpsMCPServer {
       start: String((args.start as number) ?? 0),
     };
     if (args.type) params.type = args.type as string;
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/files`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/files`, params);
   }
 
   private async getFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_id || !args.file_id) return { content: [{ type: 'text', text: 'org_id and file_id are required' }], isError: true };
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/files/${args.file_id as string}`);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/files/${encodeURIComponent(args.file_id as string)}`);
   }
 
   private async listWorkPlans(args: Record<string, unknown>): Promise<ToolResult> {
@@ -554,11 +554,11 @@ export class JohnDeereOpsMCPServer {
       limit: String((args.limit as number) ?? 50),
     };
     if (args.status) params.status = args.status as string;
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/workPlans`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/workPlans`, params);
   }
 
   private async getWorkPlan(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_id || !args.plan_id) return { content: [{ type: 'text', text: 'org_id and plan_id are required' }], isError: true };
-    return this.apiGet(`/platform/organizations/${args.org_id as string}/workPlans/${args.plan_id as string}`);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/workPlans/${encodeURIComponent(args.plan_id as string)}`);
   }
 }

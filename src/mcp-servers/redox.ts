@@ -352,7 +352,7 @@ export class RedoxMCPServer {
 
   private async getPatient(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connectionId || !args.patientId) return { content: [{ type: 'text', text: 'connectionId and patientId are required' }], isError: true };
-    return this.fhirGet(args.connectionId as string, `Patient/${args.patientId}`);
+    return this.fhirGet(args.connectionId as string, `Patient/${encodeURIComponent(args.patientId as string)}`);
   }
 
   private async searchPatients(args: Record<string, unknown>): Promise<ToolResult> {
@@ -395,7 +395,7 @@ export class RedoxMCPServer {
 
   private async getEncounter(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connectionId || !args.encounterId) return { content: [{ type: 'text', text: 'connectionId and encounterId are required' }], isError: true };
-    return this.fhirGet(args.connectionId as string, `Encounter/${args.encounterId}`);
+    return this.fhirGet(args.connectionId as string, `Encounter/${encodeURIComponent(args.encounterId as string)}`);
   }
 
   private async listObservations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -410,7 +410,7 @@ export class RedoxMCPServer {
 
   private async getObservation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connectionId || !args.observationId) return { content: [{ type: 'text', text: 'connectionId and observationId are required' }], isError: true };
-    return this.fhirGet(args.connectionId as string, `Observation/${args.observationId}`);
+    return this.fhirGet(args.connectionId as string, `Observation/${encodeURIComponent(args.observationId as string)}`);
   }
 
   private async listConditions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -423,7 +423,7 @@ export class RedoxMCPServer {
 
   private async getCondition(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connectionId || !args.conditionId) return { content: [{ type: 'text', text: 'connectionId and conditionId are required' }], isError: true };
-    return this.fhirGet(args.connectionId as string, `Condition/${args.conditionId}`);
+    return this.fhirGet(args.connectionId as string, `Condition/${encodeURIComponent(args.conditionId as string)}`);
   }
 
   private async listMedications(args: Record<string, unknown>): Promise<ToolResult> {
@@ -436,7 +436,7 @@ export class RedoxMCPServer {
 
   private async getMedicationRequest(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connectionId || !args.medicationRequestId) return { content: [{ type: 'text', text: 'connectionId and medicationRequestId are required' }], isError: true };
-    return this.fhirGet(args.connectionId as string, `MedicationRequest/${args.medicationRequestId}`);
+    return this.fhirGet(args.connectionId as string, `MedicationRequest/${encodeURIComponent(args.medicationRequestId as string)}`);
   }
 
   private async listAllergies(args: Record<string, unknown>): Promise<ToolResult> {
@@ -449,7 +449,7 @@ export class RedoxMCPServer {
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connectionId || !args.organizationId) return { content: [{ type: 'text', text: 'connectionId and organizationId are required' }], isError: true };
-    return this.fhirGet(args.connectionId as string, `Organization/${args.organizationId}`);
+    return this.fhirGet(args.connectionId as string, `Organization/${encodeURIComponent(args.organizationId as string)}`);
   }
 
   private async listPractitioners(args: Record<string, unknown>): Promise<ToolResult> {

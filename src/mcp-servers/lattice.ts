@@ -520,7 +520,7 @@ export class LatticeMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.httpGet(`/users/${args.user_id}`);
+    return this.httpGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listDepartments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -533,7 +533,7 @@ export class LatticeMCPServer {
 
   private async getDepartment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.department_id) return { content: [{ type: 'text', text: 'department_id is required' }], isError: true };
-    return this.httpGet(`/departments/${args.department_id}`);
+    return this.httpGet(`/departments/${encodeURIComponent(args.department_id as string)}`);
   }
 
   private async listGoals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -551,7 +551,7 @@ export class LatticeMCPServer {
 
   private async getGoal(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.goal_id) return { content: [{ type: 'text', text: 'goal_id is required' }], isError: true };
-    return this.httpGet(`/goals/${args.goal_id}`);
+    return this.httpGet(`/goals/${encodeURIComponent(args.goal_id as string)}`);
   }
 
   private async createGoal(args: Record<string, unknown>): Promise<ToolResult> {
@@ -573,7 +573,7 @@ export class LatticeMCPServer {
     if (args.status) body.status = args.status;
     if (args.progress !== undefined) body.progress = args.progress;
     if (args.due_date) body.due_date = args.due_date;
-    return this.httpPut(`/goals/${args.goal_id}`, body);
+    return this.httpPut(`/goals/${encodeURIComponent(args.goal_id as string)}`, body);
   }
 
   private async listReviewCycles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -587,7 +587,7 @@ export class LatticeMCPServer {
 
   private async getReviewCycle(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cycle_id) return { content: [{ type: 'text', text: 'cycle_id is required' }], isError: true };
-    return this.httpGet(`/review-cycles/${args.cycle_id}`);
+    return this.httpGet(`/review-cycles/${encodeURIComponent(args.cycle_id as string)}`);
   }
 
   private async listReviews(args: Record<string, unknown>): Promise<ToolResult> {
@@ -599,12 +599,12 @@ export class LatticeMCPServer {
     if (args.reviewee_id) params.reviewee_id = args.reviewee_id as string;
     if (args.reviewer_id) params.reviewer_id = args.reviewer_id as string;
     if (args.status) params.status = args.status as string;
-    return this.httpGet(`/review-cycles/${args.cycle_id}/reviews`, params);
+    return this.httpGet(`/review-cycles/${encodeURIComponent(args.cycle_id as string)}/reviews`, params);
   }
 
   private async getReview(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.review_id) return { content: [{ type: 'text', text: 'review_id is required' }], isError: true };
-    return this.httpGet(`/reviews/${args.review_id}`);
+    return this.httpGet(`/reviews/${encodeURIComponent(args.review_id as string)}`);
   }
 
   private async listFeedback(args: Record<string, unknown>): Promise<ToolResult> {

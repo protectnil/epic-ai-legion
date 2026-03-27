@@ -497,7 +497,7 @@ export class CoStarMCPServer {
 
   private async getProperty(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.property_id) return { content: [{ type: 'text', text: 'property_id is required' }], isError: true };
-    return this.costarGet(`/v1/properties/${args.property_id as string}`);
+    return this.costarGet(`/v1/properties/${encodeURIComponent(args.property_id as string)}`);
   }
 
   private async listPropertyLeases(args: Record<string, unknown>): Promise<ToolResult> {
@@ -507,12 +507,12 @@ export class CoStarMCPServer {
       offset: String((args.offset as number) ?? 0),
     };
     if (args.status) params.status = args.status as string;
-    return this.costarGet(`/v1/properties/${args.property_id as string}/leases`, params);
+    return this.costarGet(`/v1/properties/${encodeURIComponent(args.property_id as string)}/leases`, params);
   }
 
   private async getLease(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.lease_id) return { content: [{ type: 'text', text: 'lease_id is required' }], isError: true };
-    return this.costarGet(`/v1/leases/${args.lease_id as string}`);
+    return this.costarGet(`/v1/leases/${encodeURIComponent(args.lease_id as string)}`);
   }
 
   private async searchListings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -530,7 +530,7 @@ export class CoStarMCPServer {
 
   private async getListing(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.listing_id) return { content: [{ type: 'text', text: 'listing_id is required' }], isError: true };
-    return this.costarGet(`/v1/listings/${args.listing_id as string}`);
+    return this.costarGet(`/v1/listings/${encodeURIComponent(args.listing_id as string)}`);
   }
 
   private async getMarketStats(args: Record<string, unknown>): Promise<ToolResult> {
@@ -562,7 +562,7 @@ export class CoStarMCPServer {
 
   private async getTenant(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tenant_id) return { content: [{ type: 'text', text: 'tenant_id is required' }], isError: true };
-    return this.costarGet(`/v1/tenants/${args.tenant_id as string}`);
+    return this.costarGet(`/v1/tenants/${encodeURIComponent(args.tenant_id as string)}`);
   }
 
   private async listComparableSales(args: Record<string, unknown>): Promise<ToolResult> {
@@ -580,7 +580,7 @@ export class CoStarMCPServer {
 
   private async getSale(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sale_id) return { content: [{ type: 'text', text: 'sale_id is required' }], isError: true };
-    return this.costarGet(`/v1/sales/${args.sale_id as string}`);
+    return this.costarGet(`/v1/sales/${encodeURIComponent(args.sale_id as string)}`);
   }
 
   private async searchBuildings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -595,7 +595,7 @@ export class CoStarMCPServer {
 
   private async getBuilding(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.building_id) return { content: [{ type: 'text', text: 'building_id is required' }], isError: true };
-    return this.costarGet(`/v1/buildings/${args.building_id as string}`);
+    return this.costarGet(`/v1/buildings/${encodeURIComponent(args.building_id as string)}`);
   }
 
   private async listContacts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -607,6 +607,6 @@ export class CoStarMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.costarGet(`/v1/contacts/${args.contact_id as string}`);
+    return this.costarGet(`/v1/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 }

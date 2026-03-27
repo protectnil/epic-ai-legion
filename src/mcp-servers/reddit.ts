@@ -403,7 +403,7 @@ export class RedditMCPServer {
     if (args.limit) params.append('limit', String(args.limit));
     if (args.after) params.append('after', args.after as string);
     if (args.before) params.append('before', args.before as string);
-    const path = args.subreddit ? `/r/${args.subreddit}/search` : '/search';
+    const path = args.subreddit ? `/r/${encodeURIComponent(args.subreddit as string)}/search` : '/search';
     if (args.subreddit) params.append('restrict_sr', 'true');
     return this.get(path, params);
   }
@@ -415,17 +415,17 @@ export class RedditMCPServer {
     if (args.after) params.append('after', args.after as string);
     if (args.before) params.append('before', args.before as string);
     if (args.t) params.append('t', args.t as string);
-    return this.get(`/r/${args.subreddit}/${sort}`, params);
+    return this.get(`/r/${encodeURIComponent(args.subreddit as string)}/${sort}`, params);
   }
 
   private async getSubredditInfo(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/r/${args.subreddit}/about`);
+    return this.get(`/r/${encodeURIComponent(args.subreddit as string)}/about`);
   }
 
   private async getPost(args: Record<string, unknown>): Promise<ToolResult> {
     const postId = (args.post_id as string).replace(/^t3_/, '');
     const path = args.subreddit
-      ? `/r/${args.subreddit}/comments/${postId}`
+      ? `/r/${encodeURIComponent(args.subreddit as string)}/comments/${postId}`
       : `/comments/${postId}`;
     const params = new URLSearchParams({ limit: '1', depth: '0' });
     return this.get(path, params);
@@ -442,7 +442,7 @@ export class RedditMCPServer {
   }
 
   private async getUserProfile(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/user/${args.username}/about`);
+    return this.get(`/user/${encodeURIComponent(args.username as string)}/about`);
   }
 
   private async getUserContent(args: Record<string, unknown>, section: 'submitted' | 'comments'): Promise<ToolResult> {
@@ -451,7 +451,7 @@ export class RedditMCPServer {
     if (args.t) params.append('t', args.t as string);
     if (args.limit) params.append('limit', String(args.limit));
     if (args.after) params.append('after', args.after as string);
-    return this.get(`/user/${args.username}/${section}`, params);
+    return this.get(`/user/${encodeURIComponent(args.username as string)}/${section}`, params);
   }
 
   private async submitPost(args: Record<string, unknown>): Promise<ToolResult> {
@@ -512,7 +512,7 @@ export class RedditMCPServer {
   }
 
   private async getSubredditRules(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/r/${args.subreddit}/about/rules`);
+    return this.get(`/r/${encodeURIComponent(args.subreddit as string)}/about/rules`);
   }
 
   private async searchSubreddits(args: Record<string, unknown>): Promise<ToolResult> {

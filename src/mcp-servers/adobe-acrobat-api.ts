@@ -620,7 +620,7 @@ export class AdobeAcrobatAPIMCPServer {
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/assets/${args.asset_id}`, {
+    const response = await fetch(`${this.baseUrl}/assets/${encodeURIComponent(args.asset_id as string)}`, {
       method: 'GET',
       headers,
     });
@@ -804,8 +804,12 @@ export class AdobeAcrobatAPIMCPServer {
 
   private async getOperationStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.polling_url) return { content: [{ type: 'text', text: 'polling_url is required' }], isError: true };
+    const pollingUrl = args.polling_url as string;
+    if (!pollingUrl.startsWith(this.baseUrl)) {
+      return { content: [{ type: 'text', text: `Invalid polling_url: must start with ${this.baseUrl}` }], isError: true };
+    }
     const headers = await this.authHeaders();
-    const response = await fetch(args.polling_url as string, {
+    const response = await fetch(pollingUrl, {
       method: 'GET',
       headers,
     });

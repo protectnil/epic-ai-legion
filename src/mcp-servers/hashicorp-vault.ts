@@ -524,7 +524,7 @@ export class HashiCorpVaultMCPServer {
     const path = args.path as string;
     if (!mount || !path) return { content: [{ type: 'text', text: 'mount and path are required' }], isError: true };
     const cleanedPath = this.cleanPath(path);
-    const versionQs = typeof args.version === 'number' ? `?version=${args.version}` : '';
+    const versionQs = typeof args.version === 'number' ? `?version=${encodeURIComponent(String(args.version))}` : '';
     return this.vaultGet(`${mount}/data/${cleanedPath}${versionQs}`);
   }
 

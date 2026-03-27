@@ -502,7 +502,7 @@ export class ShipStationMCPServer {
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.get(`/orders/${args.order_id}`);
+    return this.get(`/orders/${encodeURIComponent(args.order_id as string)}`);
   }
 
   private async createOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -539,7 +539,7 @@ export class ShipStationMCPServer {
 
   private async deleteOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.del(`/orders/${args.order_id}`);
+    return this.del(`/orders/${encodeURIComponent(args.order_id as string)}`);
   }
 
   private async listShipments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -618,7 +618,7 @@ export class ShipStationMCPServer {
 
   private async getWarehouse(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.warehouse_id) return { content: [{ type: 'text', text: 'warehouse_id is required' }], isError: true };
-    return this.get(`/warehouses/${args.warehouse_id}`);
+    return this.get(`/warehouses/${encodeURIComponent(args.warehouse_id as string)}`);
   }
 
   private async listStores(args: Record<string, unknown>): Promise<ToolResult> {

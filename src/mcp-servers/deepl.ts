@@ -463,7 +463,7 @@ export class DeepLMCPServer {
     if (!args.glossary_id) {
       return { content: [{ type: 'text', text: 'glossary_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/glossaries/${args.glossary_id}`, {
+    const response = await fetch(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}`, {
       headers: this.authHeader,
     });
     if (!response.ok) {
@@ -477,24 +477,24 @@ export class DeepLMCPServer {
     if (!args.glossary_id) {
       return { content: [{ type: 'text', text: 'glossary_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/glossaries/${args.glossary_id}`, {
+    const response = await fetch(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}`, {
       method: 'DELETE',
       headers: this.authHeader,
     });
     if (response.status === 204) {
-      return { content: [{ type: 'text', text: `Glossary ${args.glossary_id} deleted successfully` }], isError: false };
+      return { content: [{ type: 'text', text: `Glossary ${encodeURIComponent(args.glossary_id as string)} deleted successfully` }], isError: false };
     }
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
-    return { content: [{ type: 'text', text: `Glossary ${args.glossary_id} deleted successfully` }], isError: false };
+    return { content: [{ type: 'text', text: `Glossary ${encodeURIComponent(args.glossary_id as string)} deleted successfully` }], isError: false };
   }
 
   private async getGlossaryEntries(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.glossary_id) {
       return { content: [{ type: 'text', text: 'glossary_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/glossaries/${args.glossary_id}/entries`, {
+    const response = await fetch(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}/entries`, {
       headers: { ...this.authHeader, 'Accept': 'text/tab-separated-values' },
     });
     if (!response.ok) {

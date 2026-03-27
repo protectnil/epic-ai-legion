@@ -703,7 +703,7 @@ export class LaceworkMCPServer {
       returns: (args.limit as number) ?? 50,
     };
     if (args.hostname) {
-      body.filters = [{ field: 'hostname', expression: 'ilike', value: `%${args.hostname}%` }];
+      body.filters = [{ field: 'hostname', expression: 'ilike', value: `%${encodeURIComponent(args.hostname as string)}%` }];
     }
 
     const response = await fetch(`${this.baseUrl}/Entities/Machines/search`, {
@@ -723,7 +723,7 @@ export class LaceworkMCPServer {
       returns: (args.limit as number) ?? 50,
     };
     const fieldFilters: Array<Record<string, unknown>> = [];
-    if (args.image_repo) fieldFilters.push({ field: 'imageRepo', expression: 'ilike', value: `%${args.image_repo}%` });
+    if (args.image_repo) fieldFilters.push({ field: 'imageRepo', expression: 'ilike', value: `%${encodeURIComponent(args.image_repo as string)}%` });
     if (args.namespace) fieldFilters.push({ field: 'props.NAMESPACE', expression: 'eq', value: args.namespace });
     if (fieldFilters.length > 0) body.filters = fieldFilters;
 

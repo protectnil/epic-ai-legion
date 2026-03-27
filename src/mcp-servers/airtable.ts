@@ -665,7 +665,7 @@ export class AirtableMCPServer {
 
   private async getBaseSchema(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.base_id) return { content: [{ type: 'text', text: 'base_id is required' }], isError: true };
-    return this.get(`/v0/meta/bases/${args.base_id}/tables`);
+    return this.get(`/v0/meta/bases/${encodeURIComponent(args.base_id as string)}/tables`);
   }
 
   // ── Records ────────────────────────────────────────────────────────────────
@@ -689,21 +689,21 @@ export class AirtableMCPServer {
         if (s.direction) params[`sort[${i}][direction]`] = s.direction;
       });
     }
-    return this.get(`/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}`, params);
+    return this.get(`/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}`, params);
   }
 
   private async getRecord(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.base_id || !args.table_id || !args.record_id) {
       return { content: [{ type: 'text', text: 'base_id, table_id, and record_id are required' }], isError: true };
     }
-    return this.get(`/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}/${args.record_id}`);
+    return this.get(`/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}/${encodeURIComponent(args.record_id as string)}`);
   }
 
   private async createRecords(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.base_id || !args.table_id || !args.records) {
       return { content: [{ type: 'text', text: 'base_id, table_id, and records are required' }], isError: true };
     }
-    return this.post(`/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}`, {
+    return this.post(`/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}`, {
       records: args.records,
     });
   }
@@ -712,7 +712,7 @@ export class AirtableMCPServer {
     if (!args.base_id || !args.table_id || !args.records) {
       return { content: [{ type: 'text', text: 'base_id, table_id, and records are required' }], isError: true };
     }
-    return this.patch(`/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}`, {
+    return this.patch(`/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}`, {
       records: args.records,
     });
   }
@@ -721,7 +721,7 @@ export class AirtableMCPServer {
     if (!args.base_id || !args.table_id || !args.records || !args.fields_to_merge_on) {
       return { content: [{ type: 'text', text: 'base_id, table_id, records, and fields_to_merge_on are required' }], isError: true };
     }
-    return this.patch(`/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}`, {
+    return this.patch(`/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}`, {
       records: args.records,
       performUpsert: { fieldsToMergeOn: args.fields_to_merge_on },
     });
@@ -734,7 +734,7 @@ export class AirtableMCPServer {
     const ids = args.record_ids as string[];
     const params: Record<string, string> = {};
     ids.forEach((id, i) => { params[`records[${i}]`] = id; });
-    return this.del(`/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}`, params);
+    return this.del(`/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}`, params);
   }
 
   private async searchRecords(args: Record<string, unknown>): Promise<ToolResult> {
@@ -748,14 +748,14 @@ export class AirtableMCPServer {
     if (Array.isArray(args.fields)) {
       (args.fields as string[]).forEach((f, i) => { params[`fields[${i}]`] = f; });
     }
-    return this.get(`/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}`, params);
+    return this.get(`/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}`, params);
   }
 
   // ── Tables ─────────────────────────────────────────────────────────────────
 
   private async listTables(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.base_id) return { content: [{ type: 'text', text: 'base_id is required' }], isError: true };
-    return this.get(`/v0/meta/bases/${args.base_id}/tables`);
+    return this.get(`/v0/meta/bases/${encodeURIComponent(args.base_id as string)}/tables`);
   }
 
   private async createTable(args: Record<string, unknown>): Promise<ToolResult> {
@@ -764,7 +764,7 @@ export class AirtableMCPServer {
     }
     const body: Record<string, unknown> = { name: args.name, fields: args.fields };
     if (args.description) body.description = args.description;
-    return this.post(`/v0/meta/bases/${args.base_id}/tables`, body);
+    return this.post(`/v0/meta/bases/${encodeURIComponent(args.base_id as string)}/tables`, body);
   }
 
   private async updateTable(args: Record<string, unknown>): Promise<ToolResult> {
@@ -774,7 +774,7 @@ export class AirtableMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name)        body.name        = args.name;
     if (args.description) body.description = args.description;
-    return this.patch(`/v0/meta/bases/${args.base_id}/tables/${args.table_id}`, body);
+    return this.patch(`/v0/meta/bases/${encodeURIComponent(args.base_id as string)}/tables/${encodeURIComponent(args.table_id as string)}`, body);
   }
 
   // ── Fields ─────────────────────────────────────────────────────────────────
@@ -786,7 +786,7 @@ export class AirtableMCPServer {
     const body: Record<string, unknown> = { name: args.name, type: args.type };
     if (args.description) body.description = args.description;
     if (args.options)     body.options     = args.options;
-    return this.post(`/v0/meta/bases/${args.base_id}/tables/${args.table_id}/fields`, body);
+    return this.post(`/v0/meta/bases/${encodeURIComponent(args.base_id as string)}/tables/${encodeURIComponent(args.table_id as string)}/fields`, body);
   }
 
   private async updateField(args: Record<string, unknown>): Promise<ToolResult> {
@@ -797,7 +797,7 @@ export class AirtableMCPServer {
     if (args.name)        body.name        = args.name;
     if (args.description) body.description = args.description;
     if (args.options)     body.options     = args.options;
-    return this.patch(`/v0/meta/bases/${args.base_id}/tables/${args.table_id}/fields/${args.field_id}`, body);
+    return this.patch(`/v0/meta/bases/${encodeURIComponent(args.base_id as string)}/tables/${encodeURIComponent(args.table_id as string)}/fields/${encodeURIComponent(args.field_id as string)}`, body);
   }
 
   // ── Views ──────────────────────────────────────────────────────────────────
@@ -806,21 +806,21 @@ export class AirtableMCPServer {
     if (!args.base_id || !args.table_id) {
       return { content: [{ type: 'text', text: 'base_id and table_id are required' }], isError: true };
     }
-    return this.get(`/v0/meta/bases/${args.base_id}/tables/${args.table_id}/views`);
+    return this.get(`/v0/meta/bases/${encodeURIComponent(args.base_id as string)}/tables/${encodeURIComponent(args.table_id as string)}/views`);
   }
 
   // ── Webhooks ───────────────────────────────────────────────────────────────
 
   private async listWebhooks(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.base_id) return { content: [{ type: 'text', text: 'base_id is required' }], isError: true };
-    return this.get(`/v0/bases/${args.base_id}/webhooks`);
+    return this.get(`/v0/bases/${encodeURIComponent(args.base_id as string)}/webhooks`);
   }
 
   private async createWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.base_id || !args.notification_url || !args.specification) {
       return { content: [{ type: 'text', text: 'base_id, notification_url, and specification are required' }], isError: true };
     }
-    return this.post(`/v0/bases/${args.base_id}/webhooks`, {
+    return this.post(`/v0/bases/${encodeURIComponent(args.base_id as string)}/webhooks`, {
       notificationUrl: args.notification_url,
       specification: args.specification,
     });
@@ -830,7 +830,7 @@ export class AirtableMCPServer {
     if (!args.base_id || !args.webhook_id) {
       return { content: [{ type: 'text', text: 'base_id and webhook_id are required' }], isError: true };
     }
-    return this.del(`/v0/bases/${args.base_id}/webhooks/${args.webhook_id}`);
+    return this.del(`/v0/bases/${encodeURIComponent(args.base_id as string)}/webhooks/${encodeURIComponent(args.webhook_id as string)}`);
   }
 
   // ── Comments ───────────────────────────────────────────────────────────────
@@ -842,7 +842,7 @@ export class AirtableMCPServer {
     const params: Record<string, string> = {};
     if (args.offset) params.offset = args.offset as string;
     return this.get(
-      `/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}/${args.record_id}/comments`,
+      `/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}/${encodeURIComponent(args.record_id as string)}/comments`,
       params,
     );
   }
@@ -852,7 +852,7 @@ export class AirtableMCPServer {
       return { content: [{ type: 'text', text: 'base_id, table_id, record_id, and text are required' }], isError: true };
     }
     return this.post(
-      `/v0/${args.base_id}/${encodeURIComponent(args.table_id as string)}/${args.record_id}/comments`,
+      `/v0/${encodeURIComponent(args.base_id as string)}/${encodeURIComponent(args.table_id as string)}/${encodeURIComponent(args.record_id as string)}/comments`,
       { text: args.text },
     );
   }

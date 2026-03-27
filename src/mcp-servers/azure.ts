@@ -380,7 +380,7 @@ export class AzureMCPServer {
     const sub = this.subId(args);
     let url = `${BASE}/subscriptions/${sub}/resourcegroups?api-version=${RM_API}`;
     if (args.filter) url += `&$filter=${encodeURIComponent(String(args.filter))}`;
-    if (args.top) url += `&$top=${args.top}`;
+    if (args.top) url += `&$top=${encodeURIComponent(args.top as string)}`;
     return this.fetchJSON(url);
   }
 
@@ -403,7 +403,7 @@ export class AzureMCPServer {
       try { data = await response.json(); } catch { data = await response.text(); }
       return { content: [{ type: 'text', text: truncate(JSON.stringify(data, null, 2)) }], isError: true };
     }
-    return { content: [{ type: 'text', text: `Resource group ${args.resourceGroupName} deletion accepted (HTTP ${response.status}).` }], isError: false };
+    return { content: [{ type: 'text', text: `Resource group ${encodeURIComponent(args.resourceGroupName as string)} deletion accepted (HTTP ${response.status}).` }], isError: false };
   }
 
   // ── Resources ─────────────────────────────────────────────────────────────
@@ -413,7 +413,7 @@ export class AzureMCPServer {
     const rg = String(args.resourceGroupName);
     let url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/resources?api-version=${RM_API}`;
     if (args.filter) url += `&$filter=${encodeURIComponent(String(args.filter))}`;
-    if (args.top) url += `&$top=${args.top}`;
+    if (args.top) url += `&$top=${encodeURIComponent(args.top as string)}`;
     return this.fetchJSON(url);
   }
 
@@ -510,7 +510,7 @@ export class AzureMCPServer {
     const rg = String(args.resourceGroupName);
     let url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Resources/deployments?api-version=${RM_API}`;
     if (args.filter) url += `&$filter=${encodeURIComponent(String(args.filter))}`;
-    if (args.top) url += `&$top=${args.top}`;
+    if (args.top) url += `&$top=${encodeURIComponent(args.top as string)}`;
     return this.fetchJSON(url);
   }
 

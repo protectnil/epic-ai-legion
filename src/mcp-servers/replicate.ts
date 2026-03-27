@@ -382,21 +382,21 @@ export class ReplicateMCPServer {
     if (!args.owner || !args.model_name) {
       return { content: [{ type: 'text', text: 'owner and model_name are required' }], isError: true };
     }
-    return this.apiGet(`/models/${args.owner}/${args.model_name}`);
+    return this.apiGet(`/models/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.model_name as string)}`);
   }
 
   private async listModelVersions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.model_name) {
       return { content: [{ type: 'text', text: 'owner and model_name are required' }], isError: true };
     }
-    return this.apiGet(`/models/${args.owner}/${args.model_name}/versions`);
+    return this.apiGet(`/models/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.model_name as string)}/versions`);
   }
 
   private async getModelVersion(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.model_name || !args.version_id) {
       return { content: [{ type: 'text', text: 'owner, model_name, and version_id are required' }], isError: true };
     }
-    return this.apiGet(`/models/${args.owner}/${args.model_name}/versions/${args.version_id}`);
+    return this.apiGet(`/models/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.model_name as string)}/versions/${encodeURIComponent(args.version_id as string)}`);
   }
 
   private async createPrediction(args: Record<string, unknown>): Promise<ToolResult> {
@@ -413,14 +413,14 @@ export class ReplicateMCPServer {
     if (!args.prediction_id) {
       return { content: [{ type: 'text', text: 'prediction_id is required' }], isError: true };
     }
-    return this.apiGet(`/predictions/${args.prediction_id}`);
+    return this.apiGet(`/predictions/${encodeURIComponent(args.prediction_id as string)}`);
   }
 
   private async cancelPrediction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.prediction_id) {
       return { content: [{ type: 'text', text: 'prediction_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/predictions/${args.prediction_id}/cancel`, {
+    const response = await fetch(`${this.baseUrl}/predictions/${encodeURIComponent(args.prediction_id as string)}/cancel`, {
       method: 'POST',
       headers: this.headers,
     });
@@ -445,7 +445,7 @@ export class ReplicateMCPServer {
     if (!args.collection_slug) {
       return { content: [{ type: 'text', text: 'collection_slug is required' }], isError: true };
     }
-    return this.apiGet(`/collections/${args.collection_slug}`);
+    return this.apiGet(`/collections/${encodeURIComponent(args.collection_slug as string)}`);
   }
 
   private async listHardware(): Promise<ToolResult> {
@@ -471,7 +471,7 @@ export class ReplicateMCPServer {
     if (!args.deployment_owner || !args.deployment_name) {
       return { content: [{ type: 'text', text: 'deployment_owner and deployment_name are required' }], isError: true };
     }
-    return this.apiGet(`/deployments/${args.deployment_owner}/${args.deployment_name}`);
+    return this.apiGet(`/deployments/${encodeURIComponent(args.deployment_owner as string)}/${encodeURIComponent(args.deployment_name as string)}`);
   }
 
   private async listDeployments(args: Record<string, unknown>): Promise<ToolResult> {

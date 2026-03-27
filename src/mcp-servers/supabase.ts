@@ -362,7 +362,7 @@ export class SupabaseMCPServer {
       }
     }
     return this.postgreFetch(
-      `${this.dataBaseUrl}/${args.table}?${params}`,
+      `${this.dataBaseUrl}/${encodeURIComponent(args.table as string)}?${params}`,
       { method: 'GET', headers: this.dataHeaders(useServiceRole) }
     );
   }
@@ -376,7 +376,7 @@ export class SupabaseMCPServer {
       headers['Prefer'] = 'return=representation,resolution=ignore-duplicates';
     }
     return this.postgreFetch(
-      `${this.dataBaseUrl}/${args.table}`,
+      `${this.dataBaseUrl}/${encodeURIComponent(args.table as string)}`,
       { method: 'POST', headers, body: JSON.stringify(args.rows) }
     );
   }
@@ -387,7 +387,7 @@ export class SupabaseMCPServer {
       ? this.buildFilterParams(args.filters as Record<string, unknown>)
       : new URLSearchParams();
     return this.postgreFetch(
-      `${this.dataBaseUrl}/${args.table}?${params}`,
+      `${this.dataBaseUrl}/${encodeURIComponent(args.table as string)}?${params}`,
       { method: 'PATCH', headers: this.dataHeaders(useServiceRole), body: JSON.stringify(args.updates) }
     );
   }
@@ -399,7 +399,7 @@ export class SupabaseMCPServer {
     }
     const params = this.buildFilterParams(args.filters as Record<string, unknown>);
     return this.postgreFetch(
-      `${this.dataBaseUrl}/${args.table}?${params}`,
+      `${this.dataBaseUrl}/${encodeURIComponent(args.table as string)}?${params}`,
       { method: 'DELETE', headers: this.dataHeaders(useServiceRole) }
     );
   }
@@ -409,15 +409,15 @@ export class SupabaseMCPServer {
     const headers = this.dataHeaders(useServiceRole);
     headers['Prefer'] = 'return=representation,resolution=merge-duplicates';
     const url = args.on_conflict
-      ? `${this.dataBaseUrl}/${args.table}?on_conflict=${encodeURIComponent(args.on_conflict as string)}`
-      : `${this.dataBaseUrl}/${args.table}`;
+      ? `${this.dataBaseUrl}/${encodeURIComponent(args.table as string)}?on_conflict=${encodeURIComponent(args.on_conflict as string)}`
+      : `${this.dataBaseUrl}/${encodeURIComponent(args.table as string)}`;
     return this.postgreFetch(url, { method: 'POST', headers, body: JSON.stringify(args.rows) });
   }
 
   private async rpc(args: Record<string, unknown>): Promise<ToolResult> {
     const useServiceRole = (args.use_service_role as boolean) ?? false;
     return this.postgreFetch(
-      `${this.dataBaseUrl}/rpc/${args.fn}`,
+      `${this.dataBaseUrl}/rpc/${encodeURIComponent(args.fn as string)}`,
       { method: 'POST', headers: this.dataHeaders(useServiceRole), body: JSON.stringify(args.params ?? {}) }
     );
   }

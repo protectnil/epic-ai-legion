@@ -546,14 +546,14 @@ export class LinkedInAdsMCPServer {
 
   private async getAdAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    return this.apiGet(`adAccounts/${args.account_id}`);
+    return this.apiGet(`adAccounts/${encodeURIComponent(args.account_id as string)}`);
   }
 
   private async listCampaignGroups(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
     const params: Record<string, string> = {
       q: 'search',
-      'search.account.values[0]': `urn:li:sponsoredAccount:${args.account_id}`,
+      'search.account.values[0]': `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`,
       start: String((args.start as number) ?? 0),
       count: String((args.count as number) ?? 10),
     };
@@ -563,13 +563,13 @@ export class LinkedInAdsMCPServer {
 
   private async getCampaignGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_group_id) return { content: [{ type: 'text', text: 'campaign_group_id is required' }], isError: true };
-    return this.apiGet(`adCampaignGroups/${args.campaign_group_id}`);
+    return this.apiGet(`adCampaignGroups/${encodeURIComponent(args.campaign_group_id as string)}`);
   }
 
   private async createCampaignGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id || !args.name) return { content: [{ type: 'text', text: 'account_id and name are required' }], isError: true };
     const body: Record<string, unknown> = {
-      account: `urn:li:sponsoredAccount:${args.account_id}`,
+      account: `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`,
       name: args.name,
       status: (args.status as string) ?? 'DRAFT',
     };
@@ -587,25 +587,25 @@ export class LinkedInAdsMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body['name'] = args.name;
     if (args.status) body['status'] = args.status;
-    return this.apiPatch(`adCampaignGroups/${args.campaign_group_id}`, body);
+    return this.apiPatch(`adCampaignGroups/${encodeURIComponent(args.campaign_group_id as string)}`, body);
   }
 
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
     const params: Record<string, string> = {
       q: 'search',
-      'search.account.values[0]': `urn:li:sponsoredAccount:${args.account_id}`,
+      'search.account.values[0]': `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`,
       start: String((args.start as number) ?? 0),
       count: String((args.count as number) ?? 10),
     };
     if (args.status) params['search.status.values[0]'] = args.status as string;
-    if (args.campaign_group_id) params['search.campaignGroup.values[0]'] = `urn:li:sponsoredCampaignGroup:${args.campaign_group_id}`;
+    if (args.campaign_group_id) params['search.campaignGroup.values[0]'] = `urn:li:sponsoredCampaignGroup:${encodeURIComponent(args.campaign_group_id as string)}`;
     return this.apiGet('adCampaigns', params);
   }
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.apiGet(`adCampaigns/${args.campaign_id}`);
+    return this.apiGet(`adCampaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async createCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -613,8 +613,8 @@ export class LinkedInAdsMCPServer {
       return { content: [{ type: 'text', text: 'account_id, campaign_group_id, and name are required' }], isError: true };
     }
     const body: Record<string, unknown> = {
-      account: `urn:li:sponsoredAccount:${args.account_id}`,
-      campaignGroup: `urn:li:sponsoredCampaignGroup:${args.campaign_group_id}`,
+      account: `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`,
+      campaignGroup: `urn:li:sponsoredCampaignGroup:${encodeURIComponent(args.campaign_group_id as string)}`,
       name: args.name,
       status: (args.status as string) ?? 'DRAFT',
       type: 'SPONSORED_UPDATES',
@@ -634,14 +634,14 @@ export class LinkedInAdsMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body['name'] = args.name;
     if (args.status) body['status'] = args.status;
-    return this.apiPatch(`adCampaigns/${args.campaign_id}`, body);
+    return this.apiPatch(`adCampaigns/${encodeURIComponent(args.campaign_id as string)}`, body);
   }
 
   private async listCreatives(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
     const params: Record<string, string> = {
       q: 'search',
-      'search.campaign.values[0]': `urn:li:sponsoredCampaign:${args.campaign_id}`,
+      'search.campaign.values[0]': `urn:li:sponsoredCampaign:${encodeURIComponent(args.campaign_id as string)}`,
       start: String((args.start as number) ?? 0),
       count: String((args.count as number) ?? 10),
     };
@@ -651,7 +651,7 @@ export class LinkedInAdsMCPServer {
 
   private async getCreative(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.creative_id) return { content: [{ type: 'text', text: 'creative_id is required' }], isError: true };
-    return this.apiGet(`adCreatives/${args.creative_id}`);
+    return this.apiGet(`adCreatives/${encodeURIComponent(args.creative_id as string)}`);
   }
 
   private async getAdAnalytics(args: Record<string, unknown>): Promise<ToolResult> {
@@ -669,8 +669,8 @@ export class LinkedInAdsMCPServer {
       'dateRange.end.day': String(args.dateRange_end_day ?? new Date().getDate()),
       timeGranularity: 'ALL',
     };
-    if (args.account_id) params['accounts[0]'] = `urn:li:sponsoredAccount:${args.account_id}`;
-    if (args.campaign_id) params['campaigns[0]'] = `urn:li:sponsoredCampaign:${args.campaign_id}`;
+    if (args.account_id) params['accounts[0]'] = `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`;
+    if (args.campaign_id) params['campaigns[0]'] = `urn:li:sponsoredCampaign:${encodeURIComponent(args.campaign_id as string)}`;
     return this.apiGet('adAnalytics', params);
   }
 
@@ -678,7 +678,7 @@ export class LinkedInAdsMCPServer {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
     const params: Record<string, string> = {
       q: 'account',
-      account: `urn:li:sponsoredAccount:${args.account_id}`,
+      account: `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`,
       start: String((args.start as number) ?? 0),
       count: String((args.count as number) ?? 10),
     };
@@ -687,14 +687,14 @@ export class LinkedInAdsMCPServer {
 
   private async getConversionRule(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.conversion_id) return { content: [{ type: 'text', text: 'conversion_id is required' }], isError: true };
-    return this.apiGet(`conversions/${args.conversion_id}`);
+    return this.apiGet(`conversions/${encodeURIComponent(args.conversion_id as string)}`);
   }
 
   private async listMatchedAudiences(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
     const params: Record<string, string> = {
       q: 'account',
-      account: `urn:li:sponsoredAccount:${args.account_id}`,
+      account: `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`,
       start: String((args.start as number) ?? 0),
       count: String((args.count as number) ?? 10),
     };

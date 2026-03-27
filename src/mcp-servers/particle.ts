@@ -481,14 +481,14 @@ export class ParticleMCPServer {
 
   private async getDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.device_id) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiGet(`/devices/${args.device_id}`);
+    return this.apiGet(`/devices/${encodeURIComponent(args.device_id as string)}`);
   }
 
   private async renameDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.device_id || !args.name) {
       return { content: [{ type: 'text', text: 'device_id and name are required' }], isError: true };
     }
-    return this.apiPut(`/devices/${args.device_id}`, { name: args.name });
+    return this.apiPut(`/devices/${encodeURIComponent(args.device_id as string)}`, { name: args.name });
   }
 
   private async callFunction(args: Record<string, unknown>): Promise<ToolResult> {
@@ -498,14 +498,14 @@ export class ParticleMCPServer {
     const body: Record<string, string> = {
       arg: (args.argument as string) ?? '',
     };
-    return this.apiPost(`/devices/${args.device_id}/${args.function_name}`, body);
+    return this.apiPost(`/devices/${encodeURIComponent(args.device_id as string)}/${encodeURIComponent(args.function_name as string)}`, body);
   }
 
   private async getVariable(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.device_id || !args.variable_name) {
       return { content: [{ type: 'text', text: 'device_id and variable_name are required' }], isError: true };
     }
-    return this.apiGet(`/devices/${args.device_id}/${args.variable_name}`);
+    return this.apiGet(`/devices/${encodeURIComponent(args.device_id as string)}/${encodeURIComponent(args.variable_name as string)}`);
   }
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -513,7 +513,7 @@ export class ParticleMCPServer {
     let path = '/events';
     if (args.event_prefix) path += `/${encodeURIComponent(args.event_prefix as string)}`;
     if (args.device_id) {
-      path = `/devices/${args.device_id}/events`;
+      path = `/devices/${encodeURIComponent(args.device_id as string)}/events`;
       if (args.event_prefix) path += `/${encodeURIComponent(args.event_prefix as string)}`;
     }
     return {
@@ -545,7 +545,7 @@ export class ParticleMCPServer {
 
   private async getProduct(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id_or_slug) return { content: [{ type: 'text', text: 'product_id_or_slug is required' }], isError: true };
-    return this.apiGet(`/products/${args.product_id_or_slug}`);
+    return this.apiGet(`/products/${encodeURIComponent(args.product_id_or_slug as string)}`);
   }
 
   private async listProductDevices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -556,26 +556,26 @@ export class ParticleMCPServer {
     };
     if (typeof args.online === 'boolean') params.online = String(args.online);
     if (args.groups) params.groups = args.groups as string;
-    return this.apiGet(`/products/${args.product_id_or_slug}/devices`, params);
+    return this.apiGet(`/products/${encodeURIComponent(args.product_id_or_slug as string)}/devices`, params);
   }
 
   private async getProductDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id_or_slug || !args.device_id) {
       return { content: [{ type: 'text', text: 'product_id_or_slug and device_id are required' }], isError: true };
     }
-    return this.apiGet(`/products/${args.product_id_or_slug}/devices/${args.device_id}`);
+    return this.apiGet(`/products/${encodeURIComponent(args.product_id_or_slug as string)}/devices/${encodeURIComponent(args.device_id as string)}`);
   }
 
   private async listWebhooks(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.product_id_or_slug) {
-      return this.apiGet(`/products/${args.product_id_or_slug}/webhooks`);
+      return this.apiGet(`/products/${encodeURIComponent(args.product_id_or_slug as string)}/webhooks`);
     }
     return this.apiGet('/webhooks');
   }
 
   private async getWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.webhook_id) return { content: [{ type: 'text', text: 'webhook_id is required' }], isError: true };
-    return this.apiGet(`/webhooks/${args.webhook_id}`);
+    return this.apiGet(`/webhooks/${encodeURIComponent(args.webhook_id as string)}`);
   }
 
   private async createWebhook(args: Record<string, unknown>): Promise<ToolResult> {
@@ -587,14 +587,14 @@ export class ParticleMCPServer {
     };
     if (args.device_id) body.deviceid = args.device_id;
     const path = args.product_id_or_slug
-      ? `/products/${args.product_id_or_slug}/webhooks`
+      ? `/products/${encodeURIComponent(args.product_id_or_slug as string)}/webhooks`
       : '/webhooks';
     return this.apiPostJson(path, body);
   }
 
   private async deleteWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.webhook_id) return { content: [{ type: 'text', text: 'webhook_id is required' }], isError: true };
-    return this.apiDelete(`/webhooks/${args.webhook_id}`);
+    return this.apiDelete(`/webhooks/${encodeURIComponent(args.webhook_id as string)}`);
   }
 
   private async getAccessTokenInfo(): Promise<ToolResult> {

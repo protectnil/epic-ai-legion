@@ -600,7 +600,7 @@ export class MailgunMCPServer {
 
   private async getDomain(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.domain) return { content: [{ type: 'text', text: 'domain is required' }], isError: true };
-    return this.apiGet(`/v3/domains/${args.domain}`);
+    return this.apiGet(`/v3/domains/${encodeURIComponent(args.domain as string)}`);
   }
 
   private async createDomain(args: Record<string, unknown>): Promise<ToolResult> {
@@ -615,12 +615,12 @@ export class MailgunMCPServer {
 
   private async deleteDomain(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.domain) return { content: [{ type: 'text', text: 'domain is required' }], isError: true };
-    return this.apiDelete(`/v3/domains/${args.domain}`);
+    return this.apiDelete(`/v3/domains/${encodeURIComponent(args.domain as string)}`);
   }
 
   private async verifyDomain(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.domain) return { content: [{ type: 'text', text: 'domain is required' }], isError: true };
-    return this.apiPost(`/v3/domains/${args.domain}/verify`, {});
+    return this.apiPost(`/v3/domains/${encodeURIComponent(args.domain as string)}/verify`, {});
   }
 
   private async getEvents(args: Record<string, unknown>): Promise<ToolResult> {

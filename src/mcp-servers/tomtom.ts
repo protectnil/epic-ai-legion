@@ -416,7 +416,7 @@ export class TomTomMCPServer {
     const params: Record<string, string> = {};
     if (args.language) params.language = args.language as string;
     if (typeof args.return_speed_limit === 'boolean') params.returnSpeedLimit = String(args.return_speed_limit);
-    return this.ttGet(`/search/2/reverseGeocode/${args.lat},${args.lon}.json`, params);
+    return this.ttGet(`/search/2/reverseGeocode/${encodeURIComponent(args.lat as string)},${encodeURIComponent(args.lon as string)}.json`, params);
   }
 
   private async searchPoi(args: Record<string, unknown>): Promise<ToolResult> {
@@ -434,8 +434,8 @@ export class TomTomMCPServer {
 
   private async calculateRoute(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.origin || !args.destination) return { content: [{ type: 'text', text: 'origin and destination are required' }], isError: true };
-    let routePoints = `${args.origin}:${args.destination}`;
-    if (args.waypoints) routePoints = `${args.origin}:${args.waypoints}:${args.destination}`;
+    let routePoints = `${encodeURIComponent(args.origin as string)}:${encodeURIComponent(args.destination as string)}`;
+    if (args.waypoints) routePoints = `${encodeURIComponent(args.origin as string)}:${encodeURIComponent(args.waypoints as string)}:${encodeURIComponent(args.destination as string)}`;
     const params: Record<string, string> = {
       travelMode: (args.travel_mode as string) ?? 'car',
       routeType: (args.route_type as string) ?? 'fastest',
@@ -466,7 +466,7 @@ export class TomTomMCPServer {
   private async getTrafficFlow(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.lat === undefined || args.lon === undefined) return { content: [{ type: 'text', text: 'lat and lon are required' }], isError: true };
     return this.ttGet(`/traffic/services/4/flowSegmentData/absolute/10/json`, {
-      point: `${args.lat},${args.lon}`,
+      point: `${encodeURIComponent(args.lat as string)},${encodeURIComponent(args.lon as string)}`,
     });
   }
 

@@ -765,7 +765,7 @@ export class MetaAdsMCPServer {
     const params: Record<string, string> = {
       fields: 'id,name,account_status,currency,timezone_name,spend_cap,amount_spent,balance,business',
     };
-    return this.graphGet(`/${args.ad_account_id}`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_account_id as string)}`, params);
   }
 
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -776,13 +776,13 @@ export class MetaAdsMCPServer {
       limit: String((args.limit as number) ?? 25),
     };
     if (args.after) params.after = args.after as string;
-    return this.graphGet(`/${args.ad_account_id}/campaigns`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_account_id as string)}/campaigns`, params);
   }
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
     const params = { fields: 'id,name,objective,status,effective_status,spend_cap,start_time,stop_time,created_time,updated_time' };
-    return this.graphGet(`/${args.campaign_id}`, params);
+    return this.graphGet(`/${encodeURIComponent(args.campaign_id as string)}`, params);
   }
 
   private async createCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -798,7 +798,7 @@ export class MetaAdsMCPServer {
         : [],
     };
     if (args.spend_cap) body.spend_cap = args.spend_cap;
-    return this.graphPost(`/${args.ad_account_id}/campaigns`, body);
+    return this.graphPost(`/${encodeURIComponent(args.ad_account_id as string)}/campaigns`, body);
   }
 
   private async updateCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -807,12 +807,12 @@ export class MetaAdsMCPServer {
     if (args.name) body.name = args.name;
     if (args.status) body.status = args.status;
     if (args.spend_cap !== undefined) body.spend_cap = args.spend_cap;
-    return this.graphPost(`/${args.campaign_id}`, body);
+    return this.graphPost(`/${encodeURIComponent(args.campaign_id as string)}`, body);
   }
 
   private async deleteCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.graphDelete(`/${args.campaign_id}`);
+    return this.graphDelete(`/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async listAdSets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -833,7 +833,7 @@ export class MetaAdsMCPServer {
   private async getAdSet(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ad_set_id) return { content: [{ type: 'text', text: 'ad_set_id is required' }], isError: true };
     const params = { fields: 'id,name,campaign_id,status,effective_status,daily_budget,lifetime_budget,optimization_goal,billing_event,targeting,start_time,end_time,bid_amount' };
-    return this.graphGet(`/${args.ad_set_id}`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_set_id as string)}`, params);
   }
 
   private async createAdSet(args: Record<string, unknown>): Promise<ToolResult> {
@@ -858,7 +858,7 @@ export class MetaAdsMCPServer {
         return { content: [{ type: 'text', text: 'targeting must be valid JSON' }], isError: true };
       }
     }
-    return this.graphPost(`/${args.ad_account_id}/adsets`, body);
+    return this.graphPost(`/${encodeURIComponent(args.ad_account_id as string)}/adsets`, body);
   }
 
   private async updateAdSet(args: Record<string, unknown>): Promise<ToolResult> {
@@ -867,7 +867,7 @@ export class MetaAdsMCPServer {
     if (args.name) body.name = args.name;
     if (args.status) body.status = args.status;
     if (args.daily_budget !== undefined) body.daily_budget = args.daily_budget;
-    return this.graphPost(`/${args.ad_set_id}`, body);
+    return this.graphPost(`/${encodeURIComponent(args.ad_set_id as string)}`, body);
   }
 
   private async listAds(args: Record<string, unknown>): Promise<ToolResult> {
@@ -888,7 +888,7 @@ export class MetaAdsMCPServer {
   private async getAd(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ad_id) return { content: [{ type: 'text', text: 'ad_id is required' }], isError: true };
     const params = { fields: 'id,name,adset_id,campaign_id,status,effective_status,creative{id,name,body,title},tracking_specs,created_time,updated_time' };
-    return this.graphGet(`/${args.ad_id}`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_id as string)}`, params);
   }
 
   private async createAd(args: Record<string, unknown>): Promise<ToolResult> {
@@ -901,7 +901,7 @@ export class MetaAdsMCPServer {
       creative: { creative_id: args.creative_id },
       status: (args.status as string) ?? 'PAUSED',
     };
-    return this.graphPost(`/${args.ad_account_id}/ads`, body);
+    return this.graphPost(`/${encodeURIComponent(args.ad_account_id as string)}/ads`, body);
   }
 
   private async updateAd(args: Record<string, unknown>): Promise<ToolResult> {
@@ -909,7 +909,7 @@ export class MetaAdsMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.status) body.status = args.status;
-    return this.graphPost(`/${args.ad_id}`, body);
+    return this.graphPost(`/${encodeURIComponent(args.ad_id as string)}`, body);
   }
 
   private async listAdCreatives(args: Record<string, unknown>): Promise<ToolResult> {
@@ -919,13 +919,13 @@ export class MetaAdsMCPServer {
       limit: String((args.limit as number) ?? 25),
     };
     if (args.after) params.after = args.after as string;
-    return this.graphGet(`/${args.ad_account_id}/adcreatives`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_account_id as string)}/adcreatives`, params);
   }
 
   private async getAdCreative(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.creative_id) return { content: [{ type: 'text', text: 'creative_id is required' }], isError: true };
     const params = { fields: 'id,name,title,body,image_url,video_id,call_to_action_type,object_story_spec,status,thumbnail_url' };
-    return this.graphGet(`/${args.creative_id}`, params);
+    return this.graphGet(`/${encodeURIComponent(args.creative_id as string)}`, params);
   }
 
   private async listCustomAudiences(args: Record<string, unknown>): Promise<ToolResult> {
@@ -935,34 +935,34 @@ export class MetaAdsMCPServer {
       limit: String((args.limit as number) ?? 25),
     };
     if (args.after) params.after = args.after as string;
-    return this.graphGet(`/${args.ad_account_id}/customaudiences`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_account_id as string)}/customaudiences`, params);
   }
 
   private async getCampaignInsights(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
     const defaultFields = 'impressions,clicks,spend,reach,cpm,cpc,ctr';
     const params = this.buildInsightsParams(args, defaultFields);
-    return this.graphGet(`/${args.campaign_id}/insights`, params);
+    return this.graphGet(`/${encodeURIComponent(args.campaign_id as string)}/insights`, params);
   }
 
   private async getAdSetInsights(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ad_set_id) return { content: [{ type: 'text', text: 'ad_set_id is required' }], isError: true };
     const defaultFields = 'impressions,clicks,spend,reach,cpm,cpc';
     const params = this.buildInsightsParams(args, defaultFields);
-    return this.graphGet(`/${args.ad_set_id}/insights`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_set_id as string)}/insights`, params);
   }
 
   private async getAdInsights(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ad_id) return { content: [{ type: 'text', text: 'ad_id is required' }], isError: true };
     const defaultFields = 'impressions,clicks,spend,reach,cpm,cpc,ctr';
     const params = this.buildInsightsParams(args, defaultFields);
-    return this.graphGet(`/${args.ad_id}/insights`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_id as string)}/insights`, params);
   }
 
   private async getAccountInsights(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ad_account_id) return { content: [{ type: 'text', text: 'ad_account_id is required' }], isError: true };
     const defaultFields = 'impressions,clicks,spend,reach,cpm,cpc,ctr,conversions';
     const params = this.buildInsightsParams(args, defaultFields);
-    return this.graphGet(`/${args.ad_account_id}/insights`, params);
+    return this.graphGet(`/${encodeURIComponent(args.ad_account_id as string)}/insights`, params);
   }
 }

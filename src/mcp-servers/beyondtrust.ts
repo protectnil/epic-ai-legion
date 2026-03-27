@@ -355,7 +355,7 @@ export class BeyondTrustMCPServer {
 
   private async getManagedSystem(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.system_id) return { content: [{ type: 'text', text: 'system_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/ManagedSystems/${args.system_id}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await fetch(`${this.baseUrl}/ManagedSystems/${encodeURIComponent(args.system_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to get managed system: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -375,7 +375,7 @@ export class BeyondTrustMCPServer {
 
   private async getManagedAccount(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/ManagedAccounts/${args.account_id}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await fetch(`${this.baseUrl}/ManagedAccounts/${encodeURIComponent(args.account_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to get managed account: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -404,7 +404,7 @@ export class BeyondTrustMCPServer {
 
   private async retrieveCredential(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/Credentials/${args.request_id}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await fetch(`${this.baseUrl}/Credentials/${encodeURIComponent(args.request_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to retrieve credential: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
@@ -414,7 +414,7 @@ export class BeyondTrustMCPServer {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.reason) body.Reason = args.reason;
-    const response = await fetch(`${this.baseUrl}/Requests/${args.request_id}/Checkin`, {
+    const response = await fetch(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}/Checkin`, {
       method: 'PUT',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(body),
@@ -440,7 +440,7 @@ export class BeyondTrustMCPServer {
 
   private async getRequest(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/Requests/${args.request_id}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await fetch(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to get request: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -450,7 +450,7 @@ export class BeyondTrustMCPServer {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
     const body: Record<string, unknown> = { Status: 'Approved' };
     if (args.reason) body.Reason = args.reason;
-    const response = await fetch(`${this.baseUrl}/Requests/${args.request_id}`, {
+    const response = await fetch(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, {
       method: 'PUT',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(body),
@@ -463,7 +463,7 @@ export class BeyondTrustMCPServer {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
     const body: Record<string, unknown> = { Status: 'Denied' };
     if (args.reason) body.Reason = args.reason;
-    const response = await fetch(`${this.baseUrl}/Requests/${args.request_id}`, {
+    const response = await fetch(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, {
       method: 'PUT',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(body),
@@ -521,7 +521,7 @@ export class BeyondTrustMCPServer {
 
   private async rotateCredential(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/ManagedAccounts/${args.account_id}/Credentials/Test`, {
+    const response = await fetch(`${this.baseUrl}/ManagedAccounts/${encodeURIComponent(args.account_id as string)}/Credentials/Test`, {
       method: 'POST',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(null),

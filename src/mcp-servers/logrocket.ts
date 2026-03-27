@@ -404,7 +404,7 @@ export class LogRocketMCPServer {
 
   private async getSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    return this.apiGet(`${this.appBase}/sessions/${args.session_id}`);
+    return this.apiGet(`${this.appBase}/sessions/${encodeURIComponent(args.session_id as string)}`);
   }
 
   private async listIssues(args: Record<string, unknown>): Promise<ToolResult> {
@@ -421,7 +421,7 @@ export class LogRocketMCPServer {
 
   private async getIssue(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.issue_id) return { content: [{ type: 'text', text: 'issue_id is required' }], isError: true };
-    return this.apiGet(`${this.appBase}/issues/${args.issue_id}`);
+    return this.apiGet(`${this.appBase}/issues/${encodeURIComponent(args.issue_id as string)}`);
   }
 
   private async searchUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -459,12 +459,12 @@ export class LogRocketMCPServer {
     const params: Record<string, string> = {};
     if (args.from) params['from'] = args.from as string;
     if (args.to) params['to'] = args.to as string;
-    return this.apiGet(`${this.appBase}/metrics/${args.metric_id}`, params);
+    return this.apiGet(`${this.appBase}/metrics/${encodeURIComponent(args.metric_id as string)}`, params);
   }
 
   private async getSessionHighlights(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    return this.apiGet(`${this.appBase}/sessions/${args.session_id}/highlights`);
+    return this.apiGet(`${this.appBase}/sessions/${encodeURIComponent(args.session_id as string)}/highlights`);
   }
 
   private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -476,7 +476,7 @@ export class LogRocketMCPServer {
 
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.alert_id) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    return this.apiGet(`${this.appBase}/alerts/${args.alert_id}`);
+    return this.apiGet(`${this.appBase}/alerts/${encodeURIComponent(args.alert_id as string)}`);
   }
 
   private async getAppInfo(): Promise<ToolResult> {

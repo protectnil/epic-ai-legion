@@ -436,7 +436,7 @@ export class TomorrowIOMCPServer {
 
   private async getWeatherAlert(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.alert_id) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    return this.tomorrowGet(`/alerts/v2/${args.alert_id}`);
+    return this.tomorrowGet(`/alerts/v2/${encodeURIComponent(args.alert_id as string)}`);
   }
 
   private async getAirQuality(args: Record<string, unknown>): Promise<ToolResult> {

@@ -668,7 +668,7 @@ export class FreshserviceMCPServer {
   }
 
   private async getTicket(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/tickets/${args.ticket_id}`);
+    return this.fsRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}`);
   }
 
   private async createTicket(args: Record<string, unknown>): Promise<ToolResult> {
@@ -703,11 +703,11 @@ export class FreshserviceMCPServer {
   }
 
   private async deleteTicket(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/tickets/${args.ticket_id}`, { method: 'DELETE' });
+    return this.fsRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}`, { method: 'DELETE' });
   }
 
   private async filterTickets(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams({ query: `"${args.query}"` });
+    const params = new URLSearchParams({ query: `"${encodeURIComponent(args.query as string)}"` });
     if (args.page) params.set('page', String(args.page));
     return this.fsRequest(`${this.baseUrl}/tickets/filter?${params.toString()}`);
   }
@@ -717,7 +717,7 @@ export class FreshserviceMCPServer {
     if (args.email) body.email = args.email;
     if (args.description) body.description = args.description;
     if (args.priority !== undefined) body.priority = args.priority;
-    return this.fsRequest(`${this.baseUrl}/tickets/${args.parent_ticket_id}/create_child_ticket`, { method: 'POST', body: JSON.stringify(body) });
+    return this.fsRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.parent_ticket_id as string)}/create_child_ticket`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   // ── Conversations ─────────────────────────────────────────────────────────
@@ -728,20 +728,20 @@ export class FreshserviceMCPServer {
       private: typeof args.private === 'boolean' ? args.private : true,
     };
     if (args.notify_emails) body.notify_emails = args.notify_emails;
-    return this.fsRequest(`${this.baseUrl}/tickets/${args.ticket_id}/notes`, { method: 'POST', body: JSON.stringify(body) });
+    return this.fsRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}/notes`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   private async listTicketConversations(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.page !== undefined) params.set('page', String(args.page));
     const qs = params.toString();
-    return this.fsRequest(`${this.baseUrl}/tickets/${args.ticket_id}/conversations${qs ? '?' + qs : ''}`);
+    return this.fsRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}/conversations${qs ? '?' + qs : ''}`);
   }
 
   // ── Ticket Tasks ──────────────────────────────────────────────────────────
 
   private async listTicketTasks(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/tickets/${args.ticket_id}/tasks`);
+    return this.fsRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}/tasks`);
   }
 
   private async createTicketTask(args: Record<string, unknown>): Promise<ToolResult> {
@@ -750,7 +750,7 @@ export class FreshserviceMCPServer {
     if (args.due_date) body.due_date = args.due_date;
     if (args.agent_id !== undefined) body.agent_id = args.agent_id;
     if (args.status !== undefined) body.status = args.status;
-    return this.fsRequest(`${this.baseUrl}/tickets/${args.ticket_id}/tasks`, { method: 'POST', body: JSON.stringify(body) });
+    return this.fsRequest(`${this.baseUrl}/tickets/${encodeURIComponent(args.ticket_id as string)}/tasks`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   // ── Problems ──────────────────────────────────────────────────────────────
@@ -760,7 +760,7 @@ export class FreshserviceMCPServer {
   }
 
   private async getProblem(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/problems/${args.problem_id}`);
+    return this.fsRequest(`${this.baseUrl}/problems/${encodeURIComponent(args.problem_id as string)}`);
   }
 
   private async createProblem(args: Record<string, unknown>): Promise<ToolResult> {
@@ -793,7 +793,7 @@ export class FreshserviceMCPServer {
   }
 
   private async getChange(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/changes/${args.change_id}`);
+    return this.fsRequest(`${this.baseUrl}/changes/${encodeURIComponent(args.change_id as string)}`);
   }
 
   private async createChange(args: Record<string, unknown>): Promise<ToolResult> {
@@ -829,7 +829,7 @@ export class FreshserviceMCPServer {
   }
 
   private async getRelease(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/releases/${args.release_id}`);
+    return this.fsRequest(`${this.baseUrl}/releases/${encodeURIComponent(args.release_id as string)}`);
   }
 
   private async createRelease(args: Record<string, unknown>): Promise<ToolResult> {
@@ -855,7 +855,7 @@ export class FreshserviceMCPServer {
   }
 
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/assets/${args.display_id}`);
+    return this.fsRequest(`${this.baseUrl}/assets/${encodeURIComponent(args.display_id as string)}`);
   }
 
   private async updateAsset(args: Record<string, unknown>): Promise<ToolResult> {
@@ -881,7 +881,7 @@ export class FreshserviceMCPServer {
   }
 
   private async getAgent(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/agents/${args.agent_id}`);
+    return this.fsRequest(`${this.baseUrl}/agents/${encodeURIComponent(args.agent_id as string)}`);
   }
 
   // ── Departments ───────────────────────────────────────────────────────────
@@ -891,7 +891,7 @@ export class FreshserviceMCPServer {
   }
 
   private async getDepartment(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/departments/${args.department_id}`);
+    return this.fsRequest(`${this.baseUrl}/departments/${encodeURIComponent(args.department_id as string)}`);
   }
 
   // ── Locations ─────────────────────────────────────────────────────────────
@@ -907,7 +907,7 @@ export class FreshserviceMCPServer {
   }
 
   private async getServiceCatalogItem(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/service_catalog/items/${args.item_id}`);
+    return this.fsRequest(`${this.baseUrl}/service_catalog/items/${encodeURIComponent(args.item_id as string)}`);
   }
 
   private async createServiceRequest(args: Record<string, unknown>): Promise<ToolResult> {
@@ -917,7 +917,7 @@ export class FreshserviceMCPServer {
     };
     if (args.email) body.email = args.email;
     if (args.child_items) body.child_items = args.child_items;
-    return this.fsRequest(`${this.baseUrl}/service_catalog/items/${args.display_id}/place_request`, { method: 'POST', body: JSON.stringify(body) });
+    return this.fsRequest(`${this.baseUrl}/service_catalog/items/${encodeURIComponent(args.display_id as string)}/place_request`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   // ── Requesters ────────────────────────────────────────────────────────────
@@ -933,6 +933,6 @@ export class FreshserviceMCPServer {
   }
 
   private async getRequester(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fsRequest(`${this.baseUrl}/requesters/${args.requester_id}`);
+    return this.fsRequest(`${this.baseUrl}/requesters/${encodeURIComponent(args.requester_id as string)}`);
   }
 }

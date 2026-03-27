@@ -438,7 +438,7 @@ export class ToastMCPServer {
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_guid || !args.order_guid) return { content: [{ type: 'text', text: 'restaurant_guid and order_guid are required' }], isError: true };
-    return this.toastGet(`/orders/v2/orders/${args.order_guid}`, args.restaurant_guid as string);
+    return this.toastGet(`/orders/v2/orders/${encodeURIComponent(args.order_guid as string)}`, args.restaurant_guid as string);
   }
 
   private async createOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -462,7 +462,7 @@ export class ToastMCPServer {
 
   private async getMenuItem(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_guid || !args.menu_item_guid) return { content: [{ type: 'text', text: 'restaurant_guid and menu_item_guid are required' }], isError: true };
-    return this.toastGet(`/menus/v2/menuItems/${args.menu_item_guid}`, args.restaurant_guid as string);
+    return this.toastGet(`/menus/v2/menuItems/${encodeURIComponent(args.menu_item_guid as string)}`, args.restaurant_guid as string);
   }
 
   private async listEmployees(args: Record<string, unknown>): Promise<ToolResult> {
@@ -474,7 +474,7 @@ export class ToastMCPServer {
 
   private async getEmployee(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_guid || !args.employee_guid) return { content: [{ type: 'text', text: 'restaurant_guid and employee_guid are required' }], isError: true };
-    return this.toastGet(`/labor/v1/employees/${args.employee_guid}`, args.restaurant_guid as string);
+    return this.toastGet(`/labor/v1/employees/${encodeURIComponent(args.employee_guid as string)}`, args.restaurant_guid as string);
   }
 
   private async listDiningOptions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -489,7 +489,7 @@ export class ToastMCPServer {
 
   private async getPayment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_guid || !args.payment_guid) return { content: [{ type: 'text', text: 'restaurant_guid and payment_guid are required' }], isError: true };
-    return this.toastGet(`/orders/v2/payments/${args.payment_guid}`, args.restaurant_guid as string);
+    return this.toastGet(`/orders/v2/payments/${encodeURIComponent(args.payment_guid as string)}`, args.restaurant_guid as string);
   }
 
   private async listPayments(args: Record<string, unknown>): Promise<ToolResult> {

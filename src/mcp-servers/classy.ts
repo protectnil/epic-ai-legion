@@ -495,12 +495,12 @@ export class ClassyMCPServer {
       per_page: String((args.perPage as number) ?? 20),
     };
     if (args.status) params.status = args.status as string;
-    return this.classyGet(`/organizations/${args.organizationId}/campaigns`, params);
+    return this.classyGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/campaigns`, params);
   }
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaignId) return { content: [{ type: 'text', text: 'campaignId is required' }], isError: true };
-    return this.classyGet(`/campaigns/${args.campaignId}`);
+    return this.classyGet(`/campaigns/${encodeURIComponent(args.campaignId as string)}`);
   }
 
   private async listOrganizationCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -509,7 +509,7 @@ export class ClassyMCPServer {
       page: String((args.page as number) ?? 1),
       per_page: String((args.perPage as number) ?? 20),
     };
-    return this.classyGet(`/organizations/${args.organizationId}/campaigns`, params);
+    return this.classyGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/campaigns`, params);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -521,12 +521,12 @@ export class ClassyMCPServer {
     if (args.createdAtGte) params['filter[created_at][gte]'] = args.createdAtGte as string;
     if (args.createdAtLte) params['filter[created_at][lte]'] = args.createdAtLte as string;
     if (args.status) params['filter[status]'] = args.status as string;
-    return this.classyGet(`/organizations/${args.organizationId}/transactions`, params);
+    return this.classyGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/transactions`, params);
   }
 
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.transactionId) return { content: [{ type: 'text', text: 'transactionId is required' }], isError: true };
-    return this.classyGet(`/transactions/${args.transactionId}`);
+    return this.classyGet(`/transactions/${encodeURIComponent(args.transactionId as string)}`);
   }
 
   private async listCampaignTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -537,7 +537,7 @@ export class ClassyMCPServer {
     };
     if (args.createdAtGte) params['filter[created_at][gte]'] = args.createdAtGte as string;
     if (args.createdAtLte) params['filter[created_at][lte]'] = args.createdAtLte as string;
-    return this.classyGet(`/campaigns/${args.campaignId}/transactions`, params);
+    return this.classyGet(`/campaigns/${encodeURIComponent(args.campaignId as string)}/transactions`, params);
   }
 
   private async listMembers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -547,12 +547,12 @@ export class ClassyMCPServer {
       per_page: String((args.perPage as number) ?? 20),
     };
     if (args.email) params['filter[email_address]'] = args.email as string;
-    return this.classyGet(`/organizations/${args.organizationId}/members`, params);
+    return this.classyGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/members`, params);
   }
 
   private async getMember(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.memberId) return { content: [{ type: 'text', text: 'memberId is required' }], isError: true };
-    return this.classyGet(`/members/${args.memberId}`);
+    return this.classyGet(`/members/${encodeURIComponent(args.memberId as string)}`);
   }
 
   private async listFundraisingPages(args: Record<string, unknown>): Promise<ToolResult> {
@@ -561,12 +561,12 @@ export class ClassyMCPServer {
       page: String((args.page as number) ?? 1),
       per_page: String((args.perPage as number) ?? 20),
     };
-    return this.classyGet(`/campaigns/${args.campaignId}/fundraising-pages`, params);
+    return this.classyGet(`/campaigns/${encodeURIComponent(args.campaignId as string)}/fundraising-pages`, params);
   }
 
   private async getFundraisingPage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.fundraisingPageId) return { content: [{ type: 'text', text: 'fundraisingPageId is required' }], isError: true };
-    return this.classyGet(`/fundraising-pages/${args.fundraisingPageId}`);
+    return this.classyGet(`/fundraising-pages/${encodeURIComponent(args.fundraisingPageId as string)}`);
   }
 
   private async listFundraisingTeams(args: Record<string, unknown>): Promise<ToolResult> {
@@ -575,17 +575,17 @@ export class ClassyMCPServer {
       page: String((args.page as number) ?? 1),
       per_page: String((args.perPage as number) ?? 20),
     };
-    return this.classyGet(`/campaigns/${args.campaignId}/fundraising-teams`, params);
+    return this.classyGet(`/campaigns/${encodeURIComponent(args.campaignId as string)}/fundraising-teams`, params);
   }
 
   private async getFundraisingTeam(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.fundraisingTeamId) return { content: [{ type: 'text', text: 'fundraisingTeamId is required' }], isError: true };
-    return this.classyGet(`/fundraising-teams/${args.fundraisingTeamId}`);
+    return this.classyGet(`/fundraising-teams/${encodeURIComponent(args.fundraisingTeamId as string)}`);
   }
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organizationId) return { content: [{ type: 'text', text: 'organizationId is required' }], isError: true };
-    return this.classyGet(`/organizations/${args.organizationId}`);
+    return this.classyGet(`/organizations/${encodeURIComponent(args.organizationId as string)}`);
   }
 
   private async listOrganizations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -603,11 +603,11 @@ export class ClassyMCPServer {
       per_page: String((args.perPage as number) ?? 20),
     };
     if (args.status) params['filter[status]'] = args.status as string;
-    return this.classyGet(`/organizations/${args.organizationId}/recurring-donation-plans`, params);
+    return this.classyGet(`/organizations/${encodeURIComponent(args.organizationId as string)}/recurring-donation-plans`, params);
   }
 
   private async getRecurringDonationPlan(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.planId) return { content: [{ type: 'text', text: 'planId is required' }], isError: true };
-    return this.classyGet(`/recurring-donation-plans/${args.planId}`);
+    return this.classyGet(`/recurring-donation-plans/${encodeURIComponent(args.planId as string)}`);
   }
 }

@@ -577,7 +577,7 @@ export class DHLMCPServer {
       return { content: [{ type: 'text', text: 'location_id and country_code are required' }], isError: true };
     }
     const response = await fetch(
-      `${this.baseUrl}/location-finder/v1/locations/${args.location_id}?countryCode=${args.country_code}`,
+      `${this.baseUrl}/location-finder/v1/locations/${encodeURIComponent(args.location_id as string)}?countryCode=${encodeURIComponent(args.country_code as string)}`,
       { headers: this.authHeader },
     );
     if (!response.ok) {
@@ -621,7 +621,7 @@ export class DHLMCPServer {
     const params = new URLSearchParams({
       originCountryCode: args.origin_country as string,
       destinationCountryCode: args.destination_country as string,
-      plannedShippingDateAndTime: `${args.planned_date}T12:00:00 GMT+00:00`,
+      plannedShippingDateAndTime: `${encodeURIComponent(args.planned_date as string)}T12:00:00 GMT+00:00`,
       isCustomsDeclarable: 'false',
       unitOfMeasurement: 'metric',
       weight: '1',
@@ -650,7 +650,7 @@ export class DHLMCPServer {
       }
     }
     const body = {
-      plannedShippingDateAndTime: `${args.planned_date}T12:00:00 GMT+00:00`,
+      plannedShippingDateAndTime: `${encodeURIComponent(args.planned_date as string)}T12:00:00 GMT+00:00`,
       pickup: { isRequested: false },
       productCode: args.service_code,
       accounts: [{ typeCode: 'shipper', number: args.account_number }],
@@ -701,12 +701,12 @@ export class DHLMCPServer {
     if (!args.shipment_tracking_number) {
       return { content: [{ type: 'text', text: 'shipment_tracking_number is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/shipments/${args.shipment_tracking_number}`, {
+    const response = await fetch(`${this.baseUrl}/shipments/${encodeURIComponent(args.shipment_tracking_number as string)}`, {
       method: 'DELETE',
       headers: this.authHeader,
     });
     if (response.status === 204 || response.ok) {
-      return { content: [{ type: 'text', text: `Shipment ${args.shipment_tracking_number} cancelled successfully` }], isError: false };
+      return { content: [{ type: 'text', text: `Shipment ${encodeURIComponent(args.shipment_tracking_number as string)} cancelled successfully` }], isError: false };
     }
     return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
   }
@@ -719,7 +719,7 @@ export class DHLMCPServer {
       }
     }
     const body = {
-      plannedPickupDateAndTime: `${args.pickup_date}T${args.ready_time}:00 GMT+00:00`,
+      plannedPickupDateAndTime: `${encodeURIComponent(args.pickup_date as string)}T${encodeURIComponent(args.ready_time as string)}:00 GMT+00:00`,
       closeTime: args.close_time,
       location: 'reception',
       accounts: [{ typeCode: 'shipper', number: args.account_number }],
@@ -764,11 +764,11 @@ export class DHLMCPServer {
       return { content: [{ type: 'text', text: 'dispatch_confirmation_number and origin_country are required' }], isError: true };
     }
     const response = await fetch(
-      `${this.baseUrl}/pickups/${args.dispatch_confirmation_number}?originCountryCode=${args.origin_country}`,
+      `${this.baseUrl}/pickups/${encodeURIComponent(args.dispatch_confirmation_number as string)}?originCountryCode=${encodeURIComponent(args.origin_country as string)}`,
       { method: 'DELETE', headers: this.authHeader },
     );
     if (response.status === 204 || response.ok) {
-      return { content: [{ type: 'text', text: `Pickup ${args.dispatch_confirmation_number} cancelled successfully` }], isError: false };
+      return { content: [{ type: 'text', text: `Pickup ${encodeURIComponent(args.dispatch_confirmation_number as string)} cancelled successfully` }], isError: false };
     }
     return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
   }

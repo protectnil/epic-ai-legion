@@ -510,7 +510,7 @@ export class AthenaHealthMCPServer {
 
   private async getPatient(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.patient_id) return { content: [{ type: 'text', text: 'patient_id is required' }], isError: true };
-    return this.apiGet(`/patients/${args.patient_id as string}`);
+    return this.apiGet(`/patients/${encodeURIComponent(args.patient_id as string)}`);
   }
 
   private async createPatient(args: Record<string, unknown>): Promise<ToolResult> {
@@ -541,7 +541,7 @@ export class AthenaHealthMCPServer {
 
   private async getAppointment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.appointment_id) return { content: [{ type: 'text', text: 'appointment_id is required' }], isError: true };
-    return this.apiGet(`/appointments/${args.appointment_id as string}`);
+    return this.apiGet(`/appointments/${encodeURIComponent(args.appointment_id as string)}`);
   }
 
   private async bookAppointment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -551,7 +551,7 @@ export class AthenaHealthMCPServer {
     const body: Record<string, unknown> = { patientid: args.patient_id };
     if (args.appointment_type_id) body.appointmenttypeid = args.appointment_type_id;
     if (args.reason_for_visit) body.reasonid = args.reason_for_visit;
-    return this.apiPost(`/appointments/${args.appointment_id as string}`, body);
+    return this.apiPost(`/appointments/${encodeURIComponent(args.appointment_id as string)}`, body);
   }
 
   private async cancelAppointment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -560,7 +560,7 @@ export class AthenaHealthMCPServer {
     }
     const body: Record<string, unknown> = { patientid: args.patient_id };
     if (args.cancellation_reason) body.cancellationreasonid = args.cancellation_reason;
-    return this.apiPost(`/appointments/${args.appointment_id as string}/cancel`, body);
+    return this.apiPost(`/appointments/${encodeURIComponent(args.appointment_id as string)}/cancel`, body);
   }
 
   private async getPatientChart(args: Record<string, unknown>): Promise<ToolResult> {
@@ -574,7 +574,7 @@ export class AthenaHealthMCPServer {
     if (!args.patient_id) return { content: [{ type: 'text', text: 'patient_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.show_inactive) params.showinactive = 'true';
-    return this.apiGet(`/patients/${args.patient_id as string}/problems`, params);
+    return this.apiGet(`/patients/${encodeURIComponent(args.patient_id as string)}/problems`, params);
   }
 
   private async listMedications(args: Record<string, unknown>): Promise<ToolResult> {
@@ -582,12 +582,12 @@ export class AthenaHealthMCPServer {
     const params: Record<string, string> = {};
     if (args.department_id) params.departmentid = args.department_id as string;
     if (args.show_inactive) params.showinactive = 'true';
-    return this.apiGet(`/patients/${args.patient_id as string}/medications`, params);
+    return this.apiGet(`/patients/${encodeURIComponent(args.patient_id as string)}/medications`, params);
   }
 
   private async listAllergies(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.patient_id) return { content: [{ type: 'text', text: 'patient_id is required' }], isError: true };
-    return this.apiGet(`/patients/${args.patient_id as string}/allergies`);
+    return this.apiGet(`/patients/${encodeURIComponent(args.patient_id as string)}/allergies`);
   }
 
   private async listVitals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -596,7 +596,7 @@ export class AthenaHealthMCPServer {
     if (args.department_id) params.departmentid = args.department_id as string;
     if (args.start_date) params.startdate = args.start_date as string;
     if (args.end_date) params.enddate = args.end_date as string;
-    return this.apiGet(`/patients/${args.patient_id as string}/vitals`, params);
+    return this.apiGet(`/patients/${encodeURIComponent(args.patient_id as string)}/vitals`, params);
   }
 
   private async listLabResults(args: Record<string, unknown>): Promise<ToolResult> {
@@ -606,7 +606,7 @@ export class AthenaHealthMCPServer {
     if (args.start_date) params.startdate = args.start_date as string;
     if (args.end_date) params.enddate = args.end_date as string;
     if (args.limit !== undefined) params.limit = String(args.limit);
-    return this.apiGet(`/patients/${args.patient_id as string}/documents/labresult`, params);
+    return this.apiGet(`/patients/${encodeURIComponent(args.patient_id as string)}/documents/labresult`, params);
   }
 
   private async listProviders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -619,7 +619,7 @@ export class AthenaHealthMCPServer {
 
   private async getProvider(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.provider_id) return { content: [{ type: 'text', text: 'provider_id is required' }], isError: true };
-    return this.apiGet(`/providers/${args.provider_id as string}`);
+    return this.apiGet(`/providers/${encodeURIComponent(args.provider_id as string)}`);
   }
 
   private async listDepartments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -631,6 +631,6 @@ export class AthenaHealthMCPServer {
 
   private async getDepartment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.department_id) return { content: [{ type: 'text', text: 'department_id is required' }], isError: true };
-    return this.apiGet(`/departments/${args.department_id as string}`);
+    return this.apiGet(`/departments/${encodeURIComponent(args.department_id as string)}`);
   }
 }

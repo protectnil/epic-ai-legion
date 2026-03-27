@@ -491,7 +491,7 @@ export class AppsmithMCPServer {
 
   private async getWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workspace_id) return { content: [{ type: 'text', text: 'workspace_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/workspaces/${args.workspace_id as string}`);
+    return this.apiGet(`/api/v1/workspaces/${encodeURIComponent(args.workspace_id as string)}`);
   }
 
   private async createWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
@@ -505,12 +505,12 @@ export class AppsmithMCPServer {
     if (args.name) body.name = args.name;
     if (args.website) body.website = args.website;
     if (args.email) body.email = args.email;
-    return this.apiPut(`/api/v1/workspaces/${args.workspace_id as string}`, body);
+    return this.apiPut(`/api/v1/workspaces/${encodeURIComponent(args.workspace_id as string)}`, body);
   }
 
   private async deleteWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workspace_id) return { content: [{ type: 'text', text: 'workspace_id is required' }], isError: true };
-    return this.apiDelete(`/api/v1/workspaces/${args.workspace_id as string}`);
+    return this.apiDelete(`/api/v1/workspaces/${encodeURIComponent(args.workspace_id as string)}`);
   }
 
   private async listApplications(args: Record<string, unknown>): Promise<ToolResult> {
@@ -523,7 +523,7 @@ export class AppsmithMCPServer {
 
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id) return { content: [{ type: 'text', text: 'application_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/applications/${args.application_id as string}`);
+    return this.apiGet(`/api/v1/applications/${encodeURIComponent(args.application_id as string)}`);
   }
 
   private async createApplication(args: Record<string, unknown>): Promise<ToolResult> {
@@ -533,7 +533,7 @@ export class AppsmithMCPServer {
 
   private async deleteApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id) return { content: [{ type: 'text', text: 'application_id is required' }], isError: true };
-    return this.apiDelete(`/api/v1/applications/${args.application_id as string}`);
+    return this.apiDelete(`/api/v1/applications/${encodeURIComponent(args.application_id as string)}`);
   }
 
   private async listDatasources(args: Record<string, unknown>): Promise<ToolResult> {
@@ -543,17 +543,17 @@ export class AppsmithMCPServer {
 
   private async getDatasource(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.datasource_id) return { content: [{ type: 'text', text: 'datasource_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/datasources/${args.datasource_id as string}`);
+    return this.apiGet(`/api/v1/datasources/${encodeURIComponent(args.datasource_id as string)}`);
   }
 
   private async deleteDatasource(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.datasource_id) return { content: [{ type: 'text', text: 'datasource_id is required' }], isError: true };
-    return this.apiDelete(`/api/v1/datasources/${args.datasource_id as string}`);
+    return this.apiDelete(`/api/v1/datasources/${encodeURIComponent(args.datasource_id as string)}`);
   }
 
   private async listWorkspaceUsers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workspace_id) return { content: [{ type: 'text', text: 'workspace_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/workspaces/${args.workspace_id as string}/members`);
+    return this.apiGet(`/api/v1/workspaces/${encodeURIComponent(args.workspace_id as string)}/members`);
   }
 
   private async addUserToWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
@@ -562,12 +562,12 @@ export class AppsmithMCPServer {
       usernames: [args.username],
       roleName: (args.role as string) ?? 'Developer',
     };
-    return this.apiPut(`/api/v1/workspaces/${args.workspace_id as string}/members`, body);
+    return this.apiPut(`/api/v1/workspaces/${encodeURIComponent(args.workspace_id as string)}/members`, body);
   }
 
   private async removeUserFromWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workspace_id || !args.username) return { content: [{ type: 'text', text: 'workspace_id and username are required' }], isError: true };
-    return this.apiDelete(`/api/v1/workspaces/${args.workspace_id as string}/members?username=${encodeURIComponent(args.username as string)}`);
+    return this.apiDelete(`/api/v1/workspaces/${encodeURIComponent(args.workspace_id as string)}/members?username=${encodeURIComponent(args.username as string)}`);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -579,7 +579,7 @@ export class AppsmithMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/users/${args.user_id as string}`);
+    return this.apiGet(`/api/v1/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async inviteUser(args: Record<string, unknown>): Promise<ToolResult> {

@@ -293,7 +293,7 @@ export class VericodeMCPServer {
           const size = (args.size as number) ?? 50;
           let path = `/appsec/v2/applications/${encodeURIComponent(guid)}/findings?page=${page}&size=${size}`;
           if (args.scan_type) path += `&scan_type=${encodeURIComponent(args.scan_type as string)}`;
-          if (typeof args.violates_policy === 'boolean') path += `&violates_policy=${args.violates_policy}`;
+          if (typeof args.violates_policy === 'boolean') path += `&violates_policy=${encodeURIComponent(String(args.violates_policy))}`;
           if (args.severity) path += `&severity=${encodeURIComponent(args.severity as string)}`;
           if (args.status) path += `&status=${encodeURIComponent(args.status as string)}`;
           return await this.request(path, 'GET');

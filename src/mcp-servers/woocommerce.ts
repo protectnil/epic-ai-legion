@@ -564,7 +564,7 @@ export class WooCommerceMCPServer {
 
   private async getProduct(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
-    return this.get(`/products/${args.product_id}`);
+    return this.get(`/products/${encodeURIComponent(args.product_id as string)}`);
   }
 
   private async createProduct(args: Record<string, unknown>): Promise<ToolResult> {
@@ -582,7 +582,7 @@ export class WooCommerceMCPServer {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.force) params.force = String(args.force);
-    return this.del(`/products/${args.product_id}`, params);
+    return this.del(`/products/${encodeURIComponent(args.product_id as string)}`, params);
   }
 
   private async listProductVariations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -591,14 +591,14 @@ export class WooCommerceMCPServer {
       per_page: String((args.per_page as number) ?? 20),
       page: String((args.page as number) ?? 1),
     };
-    return this.get(`/products/${args.product_id}/variations`, params);
+    return this.get(`/products/${encodeURIComponent(args.product_id as string)}/variations`, params);
   }
 
   private async getProductVariation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id || !args.variation_id) {
       return { content: [{ type: 'text', text: 'product_id and variation_id are required' }], isError: true };
     }
-    return this.get(`/products/${args.product_id}/variations/${args.variation_id}`);
+    return this.get(`/products/${encodeURIComponent(args.product_id as string)}/variations/${encodeURIComponent(args.variation_id as string)}`);
   }
 
   private async listOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -617,7 +617,7 @@ export class WooCommerceMCPServer {
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.get(`/orders/${args.order_id}`);
+    return this.get(`/orders/${encodeURIComponent(args.order_id as string)}`);
   }
 
   private async createOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -634,14 +634,14 @@ export class WooCommerceMCPServer {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.force) params.force = String(args.force);
-    return this.del(`/orders/${args.order_id}`, params);
+    return this.del(`/orders/${encodeURIComponent(args.order_id as string)}`, params);
   }
 
   private async listOrderNotes(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.type) params.type = args.type as string;
-    return this.get(`/orders/${args.order_id}/notes`, params);
+    return this.get(`/orders/${encodeURIComponent(args.order_id as string)}/notes`, params);
   }
 
   private async createOrderNote(args: Record<string, unknown>): Promise<ToolResult> {
@@ -650,12 +650,12 @@ export class WooCommerceMCPServer {
     }
     const body: Record<string, unknown> = { note: args.note };
     if (typeof args.customer_note === 'boolean') body.customer_note = args.customer_note;
-    return this.post(`/orders/${args.order_id}/notes`, body);
+    return this.post(`/orders/${encodeURIComponent(args.order_id as string)}/notes`, body);
   }
 
   private async listOrderRefunds(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.order_id) return { content: [{ type: 'text', text: 'order_id is required' }], isError: true };
-    return this.get(`/orders/${args.order_id}/refunds`);
+    return this.get(`/orders/${encodeURIComponent(args.order_id as string)}/refunds`);
   }
 
   private async createOrderRefund(args: Record<string, unknown>): Promise<ToolResult> {
@@ -664,7 +664,7 @@ export class WooCommerceMCPServer {
     if (args.amount) body.amount = args.amount;
     if (args.reason) body.reason = args.reason;
     if (typeof args.api_refund === 'boolean') body.api_refund = args.api_refund;
-    return this.post(`/orders/${args.order_id}/refunds`, body);
+    return this.post(`/orders/${encodeURIComponent(args.order_id as string)}/refunds`, body);
   }
 
   private async listCustomers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -679,7 +679,7 @@ export class WooCommerceMCPServer {
 
   private async getCustomer(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
-    return this.get(`/customers/${args.customer_id}`);
+    return this.get(`/customers/${encodeURIComponent(args.customer_id as string)}`);
   }
 
   private async createCustomer(args: Record<string, unknown>): Promise<ToolResult> {
@@ -697,7 +697,7 @@ export class WooCommerceMCPServer {
     if (!args.customer_id) return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     const params: Record<string, string> = { force: 'true' };
     if (args.reassign) params.reassign = String(args.reassign);
-    return this.del(`/customers/${args.customer_id}`, params);
+    return this.del(`/customers/${encodeURIComponent(args.customer_id as string)}`, params);
   }
 
   private async listCoupons(args: Record<string, unknown>): Promise<ToolResult> {
@@ -711,7 +711,7 @@ export class WooCommerceMCPServer {
 
   private async getCoupon(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.coupon_id) return { content: [{ type: 'text', text: 'coupon_id is required' }], isError: true };
-    return this.get(`/coupons/${args.coupon_id}`);
+    return this.get(`/coupons/${encodeURIComponent(args.coupon_id as string)}`);
   }
 
   private async createCoupon(args: Record<string, unknown>): Promise<ToolResult> {
@@ -729,7 +729,7 @@ export class WooCommerceMCPServer {
     if (!args.coupon_id) return { content: [{ type: 'text', text: 'coupon_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.force) params.force = String(args.force);
-    return this.del(`/coupons/${args.coupon_id}`, params);
+    return this.del(`/coupons/${encodeURIComponent(args.coupon_id as string)}`, params);
   }
 
   private async listShippingZones(): Promise<ToolResult> {
@@ -738,7 +738,7 @@ export class WooCommerceMCPServer {
 
   private async getShippingZone(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.zone_id === undefined) return { content: [{ type: 'text', text: 'zone_id is required' }], isError: true };
-    return this.get(`/shipping/zones/${args.zone_id}`);
+    return this.get(`/shipping/zones/${encodeURIComponent(args.zone_id as string)}`);
   }
 
   private async getSystemStatus(): Promise<ToolResult> {

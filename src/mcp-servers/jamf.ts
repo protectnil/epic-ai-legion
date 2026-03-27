@@ -548,7 +548,7 @@ export class JamfMCPServer {
     if (!args.computer_id) return { content: [{ type: 'text', text: 'computer_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.section) params.section = args.section as string;
-    return this.apiGet(`/api/v1/computers-inventory-detail/${args.computer_id as string}`, params);
+    return this.apiGet(`/api/v1/computers-inventory-detail/${encodeURIComponent(args.computer_id as string)}`, params);
   }
 
   private async searchComputers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -573,7 +573,7 @@ export class JamfMCPServer {
 
   private async getMobileDevice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.device_id) return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    return this.apiGet(`/api/v2/mobile-devices/${args.device_id as string}/detail`);
+    return this.apiGet(`/api/v2/mobile-devices/${encodeURIComponent(args.device_id as string)}/detail`);
   }
 
   private async listPolicies(args: Record<string, unknown>): Promise<ToolResult> {
@@ -588,14 +588,14 @@ export class JamfMCPServer {
 
   private async getPolicy(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.policy_id) return { content: [{ type: 'text', text: 'policy_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/policies/${args.policy_id as string}`);
+    return this.apiGet(`/api/v1/policies/${encodeURIComponent(args.policy_id as string)}`);
   }
 
   private async triggerPolicy(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.computer_id || !args.policy_id) {
       return { content: [{ type: 'text', text: 'computer_id and policy_id are required' }], isError: true };
     }
-    return this.apiPost(`/api/v1/computers/${args.computer_id as string}/policies/${args.policy_id as string}/trigger`, {});
+    return this.apiPost(`/api/v1/computers/${encodeURIComponent(args.computer_id as string)}/policies/${encodeURIComponent(args.policy_id as string)}/trigger`, {});
   }
 
   private async listScripts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -610,7 +610,7 @@ export class JamfMCPServer {
 
   private async getScript(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.script_id) return { content: [{ type: 'text', text: 'script_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/scripts/${args.script_id as string}`);
+    return this.apiGet(`/api/v1/scripts/${encodeURIComponent(args.script_id as string)}`);
   }
 
   private async listGroups(args: Record<string, unknown>): Promise<ToolResult> {
@@ -625,7 +625,7 @@ export class JamfMCPServer {
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.group_id) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/groups/${args.group_id as string}`);
+    return this.apiGet(`/api/v1/groups/${encodeURIComponent(args.group_id as string)}`);
   }
 
   private async listConfigurationProfiles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -639,7 +639,7 @@ export class JamfMCPServer {
 
   private async getConfigurationProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_id) return { content: [{ type: 'text', text: 'profile_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/macos-managed-software-updates/${args.profile_id as string}`);
+    return this.apiGet(`/api/v1/macos-managed-software-updates/${encodeURIComponent(args.profile_id as string)}`);
   }
 
   private async getInventorySummary(): Promise<ToolResult> {
@@ -667,6 +667,6 @@ export class JamfMCPServer {
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/users/${args.user_id as string}`);
+    return this.apiGet(`/api/v1/users/${encodeURIComponent(args.user_id as string)}`);
   }
 }

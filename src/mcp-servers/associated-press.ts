@@ -407,7 +407,7 @@ export class AssociatedPressMCPServer {
 
   private async searchPhotos(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.q) return { content: [{ type: 'text', text: 'q is required' }], isError: true };
-    const params: Record<string, string> = { q: `type:picture AND ${args.q as string}` };
+    const params: Record<string, string> = { q: `type:picture AND ${encodeURIComponent(args.q as string)}` };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     if (args.page !== undefined) params.page = String(args.page);
     if (args.exclude) params.exclude = args.exclude as string;
@@ -416,7 +416,7 @@ export class AssociatedPressMCPServer {
 
   private async searchVideos(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.q) return { content: [{ type: 'text', text: 'q is required' }], isError: true };
-    const params: Record<string, string> = { q: `type:video AND ${args.q as string}` };
+    const params: Record<string, string> = { q: `type:video AND ${encodeURIComponent(args.q as string)}` };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     if (args.page !== undefined) params.page = String(args.page);
     return this.apGet('/content/search', params);
@@ -448,7 +448,7 @@ export class AssociatedPressMCPServer {
 
   private async searchBySubject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.subject) return { content: [{ type: 'text', text: 'subject is required' }], isError: true };
-    const baseQ = args.q ? `${args.q as string} AND subject:${args.subject as string}` : `subject:${args.subject as string}`;
+    const baseQ = args.q ? `${encodeURIComponent(args.q as string)} AND subject:${encodeURIComponent(args.subject as string)}` : `subject:${encodeURIComponent(args.subject as string)}`;
     const params: Record<string, string> = { q: baseQ };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     return this.apGet('/content/search', params);
@@ -457,8 +457,8 @@ export class AssociatedPressMCPServer {
   private async searchByProduct(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
     const baseQ = args.q
-      ? `productid:${args.product_id as string} AND ${args.q as string}`
-      : `productid:${args.product_id as string}`;
+      ? `productid:${encodeURIComponent(args.product_id as string)} AND ${encodeURIComponent(args.q as string)}`
+      : `productid:${encodeURIComponent(args.product_id as string)}`;
     const params: Record<string, string> = { q: baseQ };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     return this.apGet('/content/search', params);
@@ -476,9 +476,9 @@ export class AssociatedPressMCPServer {
   private async searchByDateRange(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.q || !args.from_date) return { content: [{ type: 'text', text: 'q and from_date are required' }], isError: true };
     let q = args.q as string;
-    q += ` AND mindate:>=${args.from_date as string}`;
-    if (args.to_date) q += ` AND maxdate:<=${args.to_date as string}`;
-    if (args.content_type) q += ` AND type:${args.content_type as string}`;
+    q += ` AND mindate:>=${encodeURIComponent(args.from_date as string)}`;
+    if (args.to_date) q += ` AND maxdate:<=${encodeURIComponent(args.to_date as string)}`;
+    if (args.content_type) q += ` AND type:${encodeURIComponent(args.content_type as string)}`;
     const params: Record<string, string> = { q };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     return this.apGet('/content/search', params);

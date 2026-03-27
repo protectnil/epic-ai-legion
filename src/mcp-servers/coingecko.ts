@@ -466,7 +466,7 @@ export class CoinGeckoMCPServer {
       community_data: String(args.community_data ?? false),
       developer_data: String(args.developer_data ?? false),
     };
-    return this.cgGet(`/coins/${args.id}`, params);
+    return this.cgGet(`/coins/${encodeURIComponent(args.id as string)}`, params);
   }
 
   private async listCoins(args: Record<string, unknown>): Promise<ToolResult> {
@@ -501,7 +501,7 @@ export class CoinGeckoMCPServer {
       days: String(args.days),
     };
     if (args.interval) params.interval = args.interval as string;
-    return this.cgGet(`/coins/${args.id}/market_chart`, params);
+    return this.cgGet(`/coins/${encodeURIComponent(args.id as string)}/market_chart`, params);
   }
 
   private async getOhlc(args: Record<string, unknown>): Promise<ToolResult> {
@@ -510,7 +510,7 @@ export class CoinGeckoMCPServer {
       vs_currency: (args.vs_currency as string) ?? 'usd',
       days: String(args.days),
     };
-    return this.cgGet(`/coins/${args.id}/ohlc`, params);
+    return this.cgGet(`/coins/${encodeURIComponent(args.id as string)}/ohlc`, params);
   }
 
   private async getTrending(): Promise<ToolResult> {
@@ -535,7 +535,7 @@ export class CoinGeckoMCPServer {
 
   private async getExchange(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.cgGet(`/exchanges/${args.id}`);
+    return this.cgGet(`/exchanges/${encodeURIComponent(args.id as string)}`);
   }
 
   private async getExchangeTickers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -547,7 +547,7 @@ export class CoinGeckoMCPServer {
     if (typeof args.include_exchange_logo === 'boolean') params.include_exchange_logo = String(args.include_exchange_logo);
     if (typeof args.depth === 'boolean') params.depth = String(args.depth);
     if (args.order) params.order = args.order as string;
-    return this.cgGet(`/exchanges/${args.id}/tickers`, params);
+    return this.cgGet(`/exchanges/${encodeURIComponent(args.id as string)}/tickers`, params);
   }
 
   private async listNfts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -561,6 +561,6 @@ export class CoinGeckoMCPServer {
 
   private async getNft(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.cgGet(`/nfts/${args.id}`);
+    return this.cgGet(`/nfts/${encodeURIComponent(args.id as string)}`);
   }
 }

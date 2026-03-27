@@ -500,7 +500,7 @@ export class CisionMCPServer {
 
   private async getMentionStream(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.streamId) return { content: [{ type: 'text', text: 'streamId is required' }], isError: true };
-    return this.cisionGet(`/mention-streams/${args.streamId}`);
+    return this.cisionGet(`/mention-streams/${encodeURIComponent(args.streamId as string)}`);
   }
 
   private async listMentions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -512,12 +512,12 @@ export class CisionMCPServer {
     if (args.startDate) params.startDate = args.startDate as string;
     if (args.endDate) params.endDate = args.endDate as string;
     if (args.mediaType) params.mediaType = args.mediaType as string;
-    return this.cisionGet(`/mention-streams/${args.streamId}/mentions`, params);
+    return this.cisionGet(`/mention-streams/${encodeURIComponent(args.streamId as string)}/mentions`, params);
   }
 
   private async getMention(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.mentionId) return { content: [{ type: 'text', text: 'mentionId is required' }], isError: true };
-    return this.cisionGet(`/mentions/${args.mentionId}`);
+    return this.cisionGet(`/mentions/${encodeURIComponent(args.mentionId as string)}`);
   }
 
   private async searchMentions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -538,7 +538,7 @@ export class CisionMCPServer {
     const params: Record<string, string> = {};
     if (args.startDate) params.startDate = args.startDate as string;
     if (args.endDate) params.endDate = args.endDate as string;
-    return this.cisionGet(`/mention-streams/${args.streamId}/summary`, params);
+    return this.cisionGet(`/mention-streams/${encodeURIComponent(args.streamId as string)}/summary`, params);
   }
 
   private async listMediaReleases(args: Record<string, unknown>): Promise<ToolResult> {
@@ -552,7 +552,7 @@ export class CisionMCPServer {
 
   private async getMediaRelease(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.releaseId) return { content: [{ type: 'text', text: 'releaseId is required' }], isError: true };
-    return this.cisionGet(`/media-releases/${args.releaseId}`);
+    return this.cisionGet(`/media-releases/${encodeURIComponent(args.releaseId as string)}`);
   }
 
   private async createMediaRelease(args: Record<string, unknown>): Promise<ToolResult> {
@@ -573,7 +573,7 @@ export class CisionMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contactId) return { content: [{ type: 'text', text: 'contactId is required' }], isError: true };
-    return this.cisionGet(`/contacts/${args.contactId}`);
+    return this.cisionGet(`/contacts/${encodeURIComponent(args.contactId as string)}`);
   }
 
   private async searchContacts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -598,7 +598,7 @@ export class CisionMCPServer {
 
   private async getMediaOutlet(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.outletId) return { content: [{ type: 'text', text: 'outletId is required' }], isError: true };
-    return this.cisionGet(`/outlets/${args.outletId}`);
+    return this.cisionGet(`/outlets/${encodeURIComponent(args.outletId as string)}`);
   }
 
   private async searchMediaOutlets(args: Record<string, unknown>): Promise<ToolResult> {

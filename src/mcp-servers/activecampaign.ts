@@ -733,7 +733,7 @@ export class ActiveCampaignMCPServer {
 
   private async getContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.get(`/contacts/${args.contact_id}`);
+    return this.get(`/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async createContact(args: Record<string, unknown>): Promise<ToolResult> {
@@ -756,12 +756,12 @@ export class ActiveCampaignMCPServer {
     if (args.phone) contact.phone = args.phone;
     if (args.organization) contact.orgname = args.organization;
     if (args.field_values) contact.fieldValues = args.field_values;
-    return this.put(`/contacts/${args.contact_id}`, { contact });
+    return this.put(`/contacts/${encodeURIComponent(args.contact_id as string)}`, { contact });
   }
 
   private async deleteContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_id) return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
-    return this.delete(`/contacts/${args.contact_id}`);
+    return this.delete(`/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
   private async searchContacts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -784,7 +784,7 @@ export class ActiveCampaignMCPServer {
 
   private async getList(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.list_id) return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
-    return this.get(`/lists/${args.list_id}`);
+    return this.get(`/lists/${encodeURIComponent(args.list_id as string)}`);
   }
 
   private async createList(args: Record<string, unknown>): Promise<ToolResult> {
@@ -830,7 +830,7 @@ export class ActiveCampaignMCPServer {
 
   private async removeTagFromContact(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contact_tag_id) return { content: [{ type: 'text', text: 'contact_tag_id is required' }], isError: true };
-    return this.delete(`/contactTags/${args.contact_tag_id}`);
+    return this.delete(`/contactTags/${encodeURIComponent(args.contact_tag_id as string)}`);
   }
 
   private async listAutomations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -865,7 +865,7 @@ export class ActiveCampaignMCPServer {
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.get(`/campaigns/${args.campaign_id}`);
+    return this.get(`/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async listDeals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -882,7 +882,7 @@ export class ActiveCampaignMCPServer {
 
   private async getDeal(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.deal_id) return { content: [{ type: 'text', text: 'deal_id is required' }], isError: true };
-    return this.get(`/deals/${args.deal_id}`);
+    return this.get(`/deals/${encodeURIComponent(args.deal_id as string)}`);
   }
 
   private async createDeal(args: Record<string, unknown>): Promise<ToolResult> {
@@ -910,7 +910,7 @@ export class ActiveCampaignMCPServer {
     if (args.stage) deal.stage = String(args.stage);
     if (args.status !== undefined) deal.status = String(args.status);
     if (args.percent !== undefined) deal.percent = String(args.percent);
-    return this.put(`/deals/${args.deal_id}`, { deal });
+    return this.put(`/deals/${encodeURIComponent(args.deal_id as string)}`, { deal });
   }
 
   private async listCustomFields(args: Record<string, unknown>): Promise<ToolResult> {

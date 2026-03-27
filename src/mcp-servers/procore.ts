@@ -332,7 +332,7 @@ export class ProcoreMCPServer {
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.company_id || !args.project_id) return { content: [{ type: 'text', text: 'company_id and project_id are required' }], isError: true };
-    return this.get(`/rest/v1.0/projects/${args.project_id}`, { company_id: String(args.company_id) });
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}`, { company_id: String(args.company_id) });
   }
 
   private async listRfis(args: Record<string, unknown>): Promise<ToolResult> {
@@ -341,12 +341,12 @@ export class ProcoreMCPServer {
     if (args.status) params['filters[status]'] = args.status as string;
     if (args.per_page) params.per_page = String(args.per_page);
     if (args.page) params.page = String(args.page);
-    return this.get(`/rest/v1.0/projects/${args.project_id}/rfis`, params);
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/rfis`, params);
   }
 
   private async getRfi(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.rfi_id) return { content: [{ type: 'text', text: 'project_id and rfi_id are required' }], isError: true };
-    return this.get(`/rest/v1.0/projects/${args.project_id}/rfis/${args.rfi_id}`);
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/rfis/${encodeURIComponent(args.rfi_id as string)}`);
   }
 
   private async createRfi(args: Record<string, unknown>): Promise<ToolResult> {
@@ -355,7 +355,7 @@ export class ProcoreMCPServer {
     if (args.assignee_id) rfi.assignee_id = args.assignee_id;
     if (args.due_date) rfi.due_date = args.due_date;
     if (args.specification_section) rfi.specification_section = args.specification_section;
-    return this.post(`/rest/v1.0/projects/${args.project_id}/rfis`, { rfi });
+    return this.post(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/rfis`, { rfi });
   }
 
   private async listSubmittals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -364,12 +364,12 @@ export class ProcoreMCPServer {
     if (args.status) params['filters[status]'] = args.status as string;
     if (args.per_page) params.per_page = String(args.per_page);
     if (args.page) params.page = String(args.page);
-    return this.get(`/rest/v1.0/projects/${args.project_id}/submittals`, params);
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/submittals`, params);
   }
 
   private async getSubmittal(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.submittal_id) return { content: [{ type: 'text', text: 'project_id and submittal_id are required' }], isError: true };
-    return this.get(`/rest/v1.0/projects/${args.project_id}/submittals/${args.submittal_id}`);
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/submittals/${encodeURIComponent(args.submittal_id as string)}`);
   }
 
   private async listObservations(args: Record<string, unknown>): Promise<ToolResult> {
@@ -379,7 +379,7 @@ export class ProcoreMCPServer {
     if (args.type_id) params['filters[type_id]'] = String(args.type_id);
     if (args.per_page) params.per_page = String(args.per_page);
     if (args.page) params.page = String(args.page);
-    return this.get(`/rest/v1.0/projects/${args.project_id}/observations/items`, params);
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/observations/items`, params);
   }
 
   private async createObservation(args: Record<string, unknown>): Promise<ToolResult> {
@@ -390,7 +390,7 @@ export class ProcoreMCPServer {
     if (args.assignee_id) observation.assignee_id = args.assignee_id;
     if (args.due_date) observation.due_date = args.due_date;
     if (args.priority) observation.priority = args.priority;
-    return this.post(`/rest/v1.0/projects/${args.project_id}/observations/items`, { observation });
+    return this.post(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/observations/items`, { observation });
   }
 
   private async listDailyLogs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -401,7 +401,7 @@ export class ProcoreMCPServer {
     if (args.end_date) params.end_date = args.end_date as string;
     if (args.per_page) params.per_page = String(args.per_page);
     if (args.page) params.page = String(args.page);
-    return this.get(`/rest/v1.0/projects/${args.project_id}/daily_logs`, params);
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/daily_logs`, params);
   }
 
   private async listBudgetLineItems(args: Record<string, unknown>): Promise<ToolResult> {
@@ -409,7 +409,7 @@ export class ProcoreMCPServer {
     const params: Record<string, string> = {};
     if (args.per_page) params.per_page = String(args.per_page);
     if (args.page) params.page = String(args.page);
-    return this.get(`/rest/v1.0/projects/${args.project_id}/budget_line_items`, params);
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/budget_line_items`, params);
   }
 
   private async listCompanies(args: Record<string, unknown>): Promise<ToolResult> {
@@ -421,6 +421,6 @@ export class ProcoreMCPServer {
 
   private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.company_id) return { content: [{ type: 'text', text: 'company_id is required' }], isError: true };
-    return this.get(`/rest/v1.0/companies/${args.company_id}`);
+    return this.get(`/rest/v1.0/companies/${encodeURIComponent(args.company_id as string)}`);
   }
 }

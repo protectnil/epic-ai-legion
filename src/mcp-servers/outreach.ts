@@ -764,7 +764,7 @@ export class OutreachMCPServer {
   }
 
   private async getProspect(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.getJson(`${this.baseUrl}/prospects/${args.id}`);
+    return this.getJson(`${this.baseUrl}/prospects/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createProspect(args: Record<string, unknown>): Promise<ToolResult> {
@@ -811,7 +811,7 @@ export class OutreachMCPServer {
   }
 
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.getJson(`${this.baseUrl}/accounts/${args.id}`);
+    return this.getJson(`${this.baseUrl}/accounts/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createAccount(args: Record<string, unknown>): Promise<ToolResult> {
@@ -835,7 +835,7 @@ export class OutreachMCPServer {
   }
 
   private async getSequence(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.getJson(`${this.baseUrl}/sequences/${args.id}`);
+    return this.getJson(`${this.baseUrl}/sequences/${encodeURIComponent(args.id as string)}`);
   }
 
   private async listSequenceStates(args: Record<string, unknown>): Promise<ToolResult> {
@@ -874,7 +874,7 @@ export class OutreachMCPServer {
   }
 
   private async getOpportunity(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.getJson(`${this.baseUrl}/opportunities/${args.id}`);
+    return this.getJson(`${this.baseUrl}/opportunities/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createOpportunity(args: Record<string, unknown>): Promise<ToolResult> {
@@ -905,7 +905,7 @@ export class OutreachMCPServer {
   }
 
   private async getMailing(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.getJson(`${this.baseUrl}/mailings/${args.id}`);
+    return this.getJson(`${this.baseUrl}/mailings/${encodeURIComponent(args.id as string)}`);
   }
 
   private async listCalls(args: Record<string, unknown>): Promise<ToolResult> {
@@ -917,7 +917,7 @@ export class OutreachMCPServer {
   }
 
   private async getCall(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.getJson(`${this.baseUrl}/calls/${args.id}`);
+    return this.getJson(`${this.baseUrl}/calls/${encodeURIComponent(args.id as string)}`);
   }
 
   private async listTasks(args: Record<string, unknown>): Promise<ToolResult> {
@@ -930,7 +930,7 @@ export class OutreachMCPServer {
   }
 
   private async getTask(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.getJson(`${this.baseUrl}/tasks/${args.id}`);
+    return this.getJson(`${this.baseUrl}/tasks/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createTask(args: Record<string, unknown>): Promise<ToolResult> {
@@ -956,6 +956,6 @@ export class OutreachMCPServer {
   }
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.getJson(`${this.baseUrl}/users/${args.id}`);
+    return this.getJson(`${this.baseUrl}/users/${encodeURIComponent(args.id as string)}`);
   }
 }

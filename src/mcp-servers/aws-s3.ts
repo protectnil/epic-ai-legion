@@ -708,7 +708,7 @@ export class AWSS3MCPServer {
       return { content: [{ type: 'text', text: 'source_bucket, source_key, destination_bucket, and destination_key are required' }], isError: true };
     }
     const url = this.bucketUrl(args.destination_bucket as string, args.destination_key as string);
-    const copySource = `/${args.source_bucket as string}/${args.source_key as string}`;
+    const copySource = `/${encodeURIComponent(args.source_bucket as string)}/${encodeURIComponent(args.source_key as string)}`;
     const headers: Record<string, string> = { 'x-amz-copy-source': encodeURIComponent(copySource) };
     if (args.acl) headers['x-amz-acl'] = args.acl as string;
     const response = await this.s3Request('PUT', url, headers);

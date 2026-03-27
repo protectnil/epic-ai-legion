@@ -658,7 +658,7 @@ export class FastlyMCPServer {
 
   private async getService(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id) return { content: [{ type: 'text', text: 'service_id is required' }], isError: true };
-    return this.fastlyGet(`/service/${args.service_id}`);
+    return this.fastlyGet(`/service/${encodeURIComponent(args.service_id as string)}`);
   }
 
   private async createService(args: Record<string, unknown>): Promise<ToolResult> {
@@ -673,49 +673,49 @@ export class FastlyMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.comment) body.comment = args.comment;
-    return this.fastlyPut(`/service/${args.service_id}`, body);
+    return this.fastlyPut(`/service/${encodeURIComponent(args.service_id as string)}`, body);
   }
 
   private async deleteService(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id) return { content: [{ type: 'text', text: 'service_id is required' }], isError: true };
-    return this.fastlyDelete(`/service/${args.service_id}`);
+    return this.fastlyDelete(`/service/${encodeURIComponent(args.service_id as string)}`);
   }
 
   private async listServiceVersions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id) return { content: [{ type: 'text', text: 'service_id is required' }], isError: true };
-    return this.fastlyGet(`/service/${args.service_id}/version`);
+    return this.fastlyGet(`/service/${encodeURIComponent(args.service_id as string)}/version`);
   }
 
   private async cloneServiceVersion(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id) return { content: [{ type: 'text', text: 'service_id and version_id are required' }], isError: true };
-    return this.fastlyPut(`/service/${args.service_id}/version/${args.version_id}/clone`, {});
+    return this.fastlyPut(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/clone`, {});
   }
 
   private async activateServiceVersion(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id) return { content: [{ type: 'text', text: 'service_id and version_id are required' }], isError: true };
-    return this.fastlyPut(`/service/${args.service_id}/version/${args.version_id}/activate`, {});
+    return this.fastlyPut(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/activate`, {});
   }
 
   private async listDomains(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id) return { content: [{ type: 'text', text: 'service_id and version_id are required' }], isError: true };
-    return this.fastlyGet(`/service/${args.service_id}/version/${args.version_id}/domain`);
+    return this.fastlyGet(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/domain`);
   }
 
   private async createDomain(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id || !args.name) return { content: [{ type: 'text', text: 'service_id, version_id, and name are required' }], isError: true };
     const body: Record<string, unknown> = { name: args.name };
     if (args.comment) body.comment = args.comment;
-    return this.fastlyPost(`/service/${args.service_id}/version/${args.version_id}/domain`, body);
+    return this.fastlyPost(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/domain`, body);
   }
 
   private async deleteDomain(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id || !args.domain_name) return { content: [{ type: 'text', text: 'service_id, version_id, and domain_name are required' }], isError: true };
-    return this.fastlyDelete(`/service/${args.service_id}/version/${args.version_id}/domain/${args.domain_name}`);
+    return this.fastlyDelete(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/domain/${encodeURIComponent(args.domain_name as string)}`);
   }
 
   private async listBackends(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id) return { content: [{ type: 'text', text: 'service_id and version_id are required' }], isError: true };
-    return this.fastlyGet(`/service/${args.service_id}/version/${args.version_id}/backend`);
+    return this.fastlyGet(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/backend`);
   }
 
   private async createBackend(args: Record<string, unknown>): Promise<ToolResult> {
@@ -726,7 +726,7 @@ export class FastlyMCPServer {
     if (args.port) body.port = args.port;
     if (typeof args.use_ssl === 'boolean') body.use_ssl = args.use_ssl;
     if (args.ssl_hostname) body.ssl_sni_hostname = args.ssl_hostname;
-    return this.fastlyPost(`/service/${args.service_id}/version/${args.version_id}/backend`, body);
+    return this.fastlyPost(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/backend`, body);
   }
 
   private async updateBackend(args: Record<string, unknown>): Promise<ToolResult> {
@@ -737,14 +737,14 @@ export class FastlyMCPServer {
     if (args.address) body.address = args.address;
     if (args.port) body.port = args.port;
     if (typeof args.use_ssl === 'boolean') body.use_ssl = args.use_ssl;
-    return this.fastlyPut(`/service/${args.service_id}/version/${args.version_id}/backend/${args.backend_name}`, body);
+    return this.fastlyPut(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/backend/${encodeURIComponent(args.backend_name as string)}`, body);
   }
 
   private async deleteBackend(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id || !args.backend_name) {
       return { content: [{ type: 'text', text: 'service_id, version_id, and backend_name are required' }], isError: true };
     }
-    return this.fastlyDelete(`/service/${args.service_id}/version/${args.version_id}/backend/${args.backend_name}`);
+    return this.fastlyDelete(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/backend/${encodeURIComponent(args.backend_name as string)}`);
   }
 
   private async purgeUrl(args: Record<string, unknown>): Promise<ToolResult> {
@@ -763,7 +763,7 @@ export class FastlyMCPServer {
     if (!args.service_id || !args.surrogate_key) return { content: [{ type: 'text', text: 'service_id and surrogate_key are required' }], isError: true };
     const headers: Record<string, string> = { ...this.headers, 'Surrogate-Key': args.surrogate_key as string };
     if (args.soft) headers['Fastly-Soft-Purge'] = '1';
-    const response = await fetch(`${this.baseUrl}/service/${args.service_id}/purge`, { method: 'POST', headers });
+    const response = await fetch(`${this.baseUrl}/service/${encodeURIComponent(args.service_id as string)}/purge`, { method: 'POST', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Purge error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -773,7 +773,7 @@ export class FastlyMCPServer {
 
   private async purgeAll(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id) return { content: [{ type: 'text', text: 'service_id is required' }], isError: true };
-    return this.fastlyPost(`/service/${args.service_id}/purge_all`, {});
+    return this.fastlyPost(`/service/${encodeURIComponent(args.service_id as string)}/purge_all`, {});
   }
 
   private async getServiceStats(args: Record<string, unknown>): Promise<ToolResult> {
@@ -782,22 +782,22 @@ export class FastlyMCPServer {
     if (args.from) params.from = args.from as string;
     if (args.to) params.to = args.to as string;
     if (args.region) params.region = args.region as string;
-    return this.fastlyGet(`/stats/service/${args.service_id}`, params);
+    return this.fastlyGet(`/stats/service/${encodeURIComponent(args.service_id as string)}`, params);
   }
 
   private async listAcls(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id) return { content: [{ type: 'text', text: 'service_id and version_id are required' }], isError: true };
-    return this.fastlyGet(`/service/${args.service_id}/version/${args.version_id}/acl`);
+    return this.fastlyGet(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/acl`);
   }
 
   private async listDictionaries(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id) return { content: [{ type: 'text', text: 'service_id and version_id are required' }], isError: true };
-    return this.fastlyGet(`/service/${args.service_id}/version/${args.version_id}/dictionary`);
+    return this.fastlyGet(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/dictionary`);
   }
 
   private async listLoggingEndpoints(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.version_id) return { content: [{ type: 'text', text: 'service_id and version_id are required' }], isError: true };
     const type = (args.type as string) || 's3';
-    return this.fastlyGet(`/service/${args.service_id}/version/${args.version_id}/logging/${type}`);
+    return this.fastlyGet(`/service/${encodeURIComponent(args.service_id as string)}/version/${encodeURIComponent(args.version_id as string)}/logging/${type}`);
   }
 }

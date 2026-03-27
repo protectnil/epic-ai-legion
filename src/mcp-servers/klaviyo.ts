@@ -655,8 +655,8 @@ export class KlaviyoMCPServer {
       'page[size]': String((args.page_size as number) ?? 20),
     };
     const filters: string[] = [];
-    if (args.channel) filters.push(`equals(messages.channel,"${args.channel as string}")`);
-    if (args.status) filters.push(`equals(status,"${args.status as string}")`);
+    if (args.channel) filters.push(`equals(messages.channel,"${encodeURIComponent(args.channel as string)}")`);
+    if (args.status) filters.push(`equals(status,"${encodeURIComponent(args.status as string)}")`);
     if (filters.length) params.filter = filters.join(',');
     if (args.page_cursor) params['page[cursor]'] = args.page_cursor as string;
     return this.apiGet('/campaigns', params);
@@ -664,7 +664,7 @@ export class KlaviyoMCPServer {
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.apiGet(`/campaigns/${args.campaign_id as string}`);
+    return this.apiGet(`/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async createCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -699,7 +699,7 @@ export class KlaviyoMCPServer {
     if (args.subject) attributes.subject = args.subject;
     if (args.from_name) attributes.from_name = args.from_name;
     const body = { data: { type: 'campaign', id: args.campaign_id, attributes } };
-    return this.apiPatch(`/campaigns/${args.campaign_id as string}`, body);
+    return this.apiPatch(`/campaigns/${encodeURIComponent(args.campaign_id as string)}`, body);
   }
 
   private async listLists(args: Record<string, unknown>): Promise<ToolResult> {
@@ -712,7 +712,7 @@ export class KlaviyoMCPServer {
 
   private async getList(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.list_id) return { content: [{ type: 'text', text: 'list_id is required' }], isError: true };
-    return this.apiGet(`/lists/${args.list_id as string}`);
+    return this.apiGet(`/lists/${encodeURIComponent(args.list_id as string)}`);
   }
 
   private async createList(args: Record<string, unknown>): Promise<ToolResult> {
@@ -733,7 +733,7 @@ export class KlaviyoMCPServer {
 
   private async getSegment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.segment_id) return { content: [{ type: 'text', text: 'segment_id is required' }], isError: true };
-    return this.apiGet(`/segments/${args.segment_id as string}`);
+    return this.apiGet(`/segments/${encodeURIComponent(args.segment_id as string)}`);
   }
 
   private async listProfiles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -748,7 +748,7 @@ export class KlaviyoMCPServer {
 
   private async getProfile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_id) return { content: [{ type: 'text', text: 'profile_id is required' }], isError: true };
-    return this.apiGet(`/profiles/${args.profile_id as string}`);
+    return this.apiGet(`/profiles/${encodeURIComponent(args.profile_id as string)}`);
   }
 
   private async createProfile(args: Record<string, unknown>): Promise<ToolResult> {
@@ -774,13 +774,13 @@ export class KlaviyoMCPServer {
     if (args.phone_number) attributes.phone_number = args.phone_number;
     if (args.properties) attributes.properties = args.properties;
     const body = { data: { type: 'profile', id: args.profile_id, attributes } };
-    return this.apiPatch(`/profiles/${args.profile_id as string}`, body);
+    return this.apiPatch(`/profiles/${encodeURIComponent(args.profile_id as string)}`, body);
   }
 
   private async getProfileByEmail(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.email) return { content: [{ type: 'text', text: 'email is required' }], isError: true };
     const params: Record<string, string> = {
-      filter: `equals(email,"${args.email as string}")`,
+      filter: `equals(email,"${encodeURIComponent(args.email as string)}")`,
     };
     return this.apiGet('/profiles', params);
   }
@@ -789,20 +789,20 @@ export class KlaviyoMCPServer {
     const params: Record<string, string> = {
       'page[size]': String((args.page_size as number) ?? 20),
     };
-    if (args.status) params.filter = `equals(status,"${args.status as string}")`;
+    if (args.status) params.filter = `equals(status,"${encodeURIComponent(args.status as string)}")`;
     if (args.page_cursor) params['page[cursor]'] = args.page_cursor as string;
     return this.apiGet('/flows', params);
   }
 
   private async getFlow(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.flow_id) return { content: [{ type: 'text', text: 'flow_id is required' }], isError: true };
-    return this.apiGet(`/flows/${args.flow_id as string}`);
+    return this.apiGet(`/flows/${encodeURIComponent(args.flow_id as string)}`);
   }
 
   private async updateFlowStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.flow_id || !args.status) return { content: [{ type: 'text', text: 'flow_id and status are required' }], isError: true };
     const body = { data: { type: 'flow', id: args.flow_id, attributes: { status: args.status } } };
-    return this.apiPatch(`/flows/${args.flow_id as string}`, body);
+    return this.apiPatch(`/flows/${encodeURIComponent(args.flow_id as string)}`, body);
   }
 
   private async listMetrics(args: Record<string, unknown>): Promise<ToolResult> {
@@ -815,7 +815,7 @@ export class KlaviyoMCPServer {
 
   private async getMetric(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.metric_id) return { content: [{ type: 'text', text: 'metric_id is required' }], isError: true };
-    return this.apiGet(`/metrics/${args.metric_id as string}`);
+    return this.apiGet(`/metrics/${encodeURIComponent(args.metric_id as string)}`);
   }
 
   private async createEvent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -848,6 +848,6 @@ export class KlaviyoMCPServer {
 
   private async getTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.template_id) return { content: [{ type: 'text', text: 'template_id is required' }], isError: true };
-    return this.apiGet(`/templates/${args.template_id as string}`);
+    return this.apiGet(`/templates/${encodeURIComponent(args.template_id as string)}`);
   }
 }

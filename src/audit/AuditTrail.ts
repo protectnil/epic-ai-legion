@@ -100,6 +100,16 @@ export class AuditTrail {
   }
 
   /**
+   * Update the status of a previously recorded pending audit entry.
+   * Delegates to the adapter's updateStatus if available; silently no-ops otherwise.
+   */
+  async updateStatus(id: string, status: 'completed' | 'failed', output: Record<string, unknown>, durationMs: number): Promise<void> {
+    if (typeof this.adapter.updateStatus === 'function') {
+      await this.adapter.updateStatus(id, status, output, durationMs);
+    }
+  }
+
+  /**
    * Query the audit trail with filters.
    */
   async query(filter: AuditFilter): Promise<ActionRecord[]> {

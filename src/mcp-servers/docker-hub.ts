@@ -448,11 +448,11 @@ export class DockerHubMCPServer {
       page: String((args.page as number) ?? 1),
       page_size: String((args.page_size as number) ?? 25),
     });
-    return this.fetch(`${this.baseUrl}/repositories/${args.namespace}/?${params}`);
+    return this.fetch(`${this.baseUrl}/repositories/${encodeURIComponent(args.namespace as string)}/?${params}`);
   }
 
   private async getRepository(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetch(`${this.baseUrl}/repositories/${args.namespace}/${args.repository}/`);
+    return this.fetch(`${this.baseUrl}/repositories/${encodeURIComponent(args.namespace as string)}/${encodeURIComponent(args.repository as string)}/`);
   }
 
   private async createRepository(args: Record<string, unknown>): Promise<ToolResult> {
@@ -469,7 +469,7 @@ export class DockerHubMCPServer {
   }
 
   private async deleteRepository(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetch(`${this.baseUrl}/repositories/${args.namespace}/${args.repository}/`, { method: 'DELETE' });
+    return this.fetch(`${this.baseUrl}/repositories/${encodeURIComponent(args.namespace as string)}/${encodeURIComponent(args.repository as string)}/`, { method: 'DELETE' });
   }
 
   private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
@@ -478,15 +478,15 @@ export class DockerHubMCPServer {
       page_size: String((args.page_size as number) ?? 25),
     });
     if (args.name) params.set('name', args.name as string);
-    return this.fetch(`${this.baseUrl}/repositories/${args.namespace}/${args.repository}/tags?${params}`);
+    return this.fetch(`${this.baseUrl}/repositories/${encodeURIComponent(args.namespace as string)}/${encodeURIComponent(args.repository as string)}/tags?${params}`);
   }
 
   private async getTag(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetch(`${this.baseUrl}/repositories/${args.namespace}/${args.repository}/tags/${args.tag}/`);
+    return this.fetch(`${this.baseUrl}/repositories/${encodeURIComponent(args.namespace as string)}/${encodeURIComponent(args.repository as string)}/tags/${encodeURIComponent(args.tag as string)}/`);
   }
 
   private async deleteTag(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetch(`${this.baseUrl}/repositories/${args.namespace}/${args.repository}/tags/${args.tag}/`, { method: 'DELETE' });
+    return this.fetch(`${this.baseUrl}/repositories/${encodeURIComponent(args.namespace as string)}/${encodeURIComponent(args.repository as string)}/tags/${encodeURIComponent(args.tag as string)}/`, { method: 'DELETE' });
   }
 
   private async searchRepositories(args: Record<string, unknown>): Promise<ToolResult> {
@@ -508,7 +508,7 @@ export class DockerHubMCPServer {
       page: String((args.page as number) ?? 1),
       page_size: String((args.page_size as number) ?? 25),
     });
-    return this.fetch(`${this.baseUrl}/orgs/${args.organization}/members/?${params}`);
+    return this.fetch(`${this.baseUrl}/orgs/${encodeURIComponent(args.organization as string)}/members/?${params}`);
   }
 
   private async listOrganizationGroups(args: Record<string, unknown>): Promise<ToolResult> {
@@ -516,12 +516,12 @@ export class DockerHubMCPServer {
       page: String((args.page as number) ?? 1),
       page_size: String((args.page_size as number) ?? 25),
     });
-    return this.fetch(`${this.baseUrl}/orgs/${args.organization}/groups/?${params}`);
+    return this.fetch(`${this.baseUrl}/orgs/${encodeURIComponent(args.organization as string)}/groups/?${params}`);
   }
 
   private async getRepositoryVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
     const tag = (args.tag as string) ?? 'latest';
-    return this.fetch(`${this.baseUrl}/repositories/${args.namespace}/${args.repository}/tags/${tag}/vulnerabilities/`);
+    return this.fetch(`${this.baseUrl}/repositories/${encodeURIComponent(args.namespace as string)}/${encodeURIComponent(args.repository as string)}/tags/${tag}/vulnerabilities/`);
   }
 
   private async listAccessTokens(args: Record<string, unknown>): Promise<ToolResult> {
@@ -539,6 +539,6 @@ export class DockerHubMCPServer {
     });
     if (args.action) params.set('action', args.action as string);
     if (args.actor) params.set('actor', args.actor as string);
-    return this.fetch(`${this.baseUrl}/orgs/${args.organization}/audit-logs/?${params}`);
+    return this.fetch(`${this.baseUrl}/orgs/${encodeURIComponent(args.organization as string)}/audit-logs/?${params}`);
   }
 }

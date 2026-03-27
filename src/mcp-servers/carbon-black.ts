@@ -527,7 +527,7 @@ export class CarbonBlackMCPServer {
   }
 
   private async getDevice(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/appservices/v6/orgs/${this.org()}/devices/${args.device_id}`);
+    return this.get(`/appservices/v6/orgs/${this.org()}/devices/${encodeURIComponent(args.device_id as string)}`);
   }
 
   private async quarantineDevice(args: Record<string, unknown>): Promise<ToolResult> {
@@ -569,7 +569,7 @@ export class CarbonBlackMCPServer {
   }
 
   private async getPolicy(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/policyservice/v1/orgs/${this.org()}/policies/${args.policy_id}`);
+    return this.get(`/policyservice/v1/orgs/${this.org()}/policies/${encodeURIComponent(args.policy_id as string)}`);
   }
 
   private async searchProcesses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -644,7 +644,7 @@ export class CarbonBlackMCPServer {
     params.set('rows', String((args.rows as number) ?? 20));
     params.set('start', String((args.start as number) ?? 0));
     if (args.severity) params.set('severity', args.severity as string);
-    return this.get(`/vulnerability/assessment/api/v1/orgs/${this.org()}/devices/${args.device_id}/vulnerabilities?${params}`);
+    return this.get(`/vulnerability/assessment/api/v1/orgs/${this.org()}/devices/${encodeURIComponent(args.device_id as string)}/vulnerabilities?${params}`);
   }
 
   private async listOrgVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
