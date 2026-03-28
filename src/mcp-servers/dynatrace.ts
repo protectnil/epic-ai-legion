@@ -4,14 +4,32 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/dynatrace-oss/dynatrace-mcp — transport: stdio (npx),
-//   auth: OAuth2 client credentials (DT_CLIENT_ID + DT_CLIENT_SECRET) or API token.
-//   Joined GitHub MCP Registry September 2025. Actively maintained.
-//   Vendor MCP tools: execute_dql, explain_dql, nl_to_dql, query_problems, get_problem_by_id,
-//   get_vulnerabilities, get_k8s_events, send_event, ask_dynatrace.
-// Our adapter: 14 tools targeting Dynatrace Platform REST APIs v2 directly (air-gapped deployments).
-// Recommendation: Use vendor MCP for DQL/Davis AI features. Use this adapter for REST-based
-//   integrations or environments where npx runtime is unavailable.
+// Official MCP: https://github.com/dynatrace-oss/dynatrace-mcp — transport: stdio (npx @dynatrace-oss/dynatrace-mcp-server),
+//   auth: OAuth2 Authorization Code Flow (browser) or Platform Token or OAuth2 client credentials.
+//   Published by dynatrace-oss (Dynatrace open-source org). Joined GitHub MCP Registry September 2025.
+//   Actively maintained (commits confirmed through 2025-Q4). Vendor MCP tool count: 9 confirmed tools:
+//   execute_dql (Run DQL), explain_dql (Explain DQL), nl_to_dql (NL to DQL), query_problems,
+//   get_problem_by_id, get_vulnerabilities, get_k8s_events, send_event, ask_dynatrace.
+// Decision: use-both — MCP has 9 tools (DQL/AI/Davis-powered) with no equivalent in the classic REST v2 API.
+//   Our REST adapter covers 14 tools (entities, metrics, problems, events, settings, SLOs, releases, DQL*)
+//   targeting the classic Environment API v2 for air-gapped/token-auth deployments.
+//   * NOTE: execute_dql in our adapter uses the Dynatrace Grail Platform API
+//     (https://{environmentId}.apps.dynatrace.com/platform/storage/query/v1/query:execute), which is a
+//     DIFFERENT base URL from the classic /api/v2 base. See execute_dql implementation for details.
+//   Shared tools: execute_dql (both MCP and our adapter target DQL/Grail, different auth/transport).
+//   MCP-only: explain_dql, nl_to_dql, query_problems, get_problem_by_id, get_vulnerabilities, get_k8s_events,
+//     send_event, ask_dynatrace (Davis AI / Copilot capabilities not available via classic REST API).
+//   REST-only: list_entities, get_entity, query_metrics, list_metric_descriptors, list_problems,
+//     get_problem, close_problem, list_events, create_event, get_settings_objects, list_slos, get_slo,
+//     list_releases (classic Environment API v2 direct access).
+// Integration: use-both
+// MCP-sourced tools (9): execute_dql, explain_dql, nl_to_dql, query_problems, get_problem_by_id,
+//   get_vulnerabilities, get_k8s_events, send_event, ask_dynatrace
+// REST-sourced tools (13): list_entities, get_entity, query_metrics, list_metric_descriptors,
+//   list_problems, get_problem, close_problem, list_events, create_event, get_settings_objects,
+//   list_slos, get_slo, list_releases
+// Combined coverage: 22 tools (MCP: 9 + REST: 13; execute_dql shared but REST version uses classic token auth)
+// Our adapter covers: 14 tools. Vendor MCP covers: 9 tools.
 //
 // Base URL: https://{environmentId}.live.dynatrace.com/api/v2
 //   Managed: https://{host}/e/{environmentId}/api/v2
@@ -26,17 +44,27 @@ interface DynatraceConfig {
   apiToken: string;
   /** Override for Dynatrace Managed deployments: https://your-host/e/ENV_ID */
   baseUrl?: string;
+  /**
+   * Override for the Dynatrace Platform (Grail) base URL used by execute_dql.
+   * Defaults to https://{environmentId}.apps.dynatrace.com/platform/storage/query/v1
+   * Required for Managed deployments: https://your-host/e/{environmentId}/platform/storage/query/v1
+   */
+  platformUrl?: string;
 }
 
 export class DynatraceMCPServer {
   private readonly apiToken: string;
   private readonly baseUrl: string;
+  private readonly platformUrl: string;
 
   constructor(config: DynatraceConfig) {
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl
       ? config.baseUrl.replace(/\/$/, '')
       : `https://${config.environmentId}.live.dynatrace.com/api/v2`;
+    this.platformUrl = config.platformUrl
+      ? config.platformUrl.replace(/\/$/, '')
+      : `https://${config.environmentId}.apps.dynatrace.com/platform/storage/query/v1`;
   }
 
   static catalog() {
@@ -674,16 +702,62 @@ export class DynatraceMCPServer {
   }
 
   private async executeDql(args: Record<string, unknown>): Promise<ToolResult> {
+    // DQL queries use the Dynatrace Platform (Grail) API, NOT the classic /api/v2 endpoint.
+    // Correct endpoint: POST {platformUrl}/query:execute
+    // Docs: https://developer.dynatrace.com/platform-services/services/storage/
+    // The API is async: POST to start query, then poll GET /query:poll?request-token={token}.
+    // requestTimeout requests inline delivery; if not done in time, we poll once.
     const body: Record<string, unknown> = {
       query: args.query,
+      requestTimeout: 25000,
     };
     if (args.defaultTimeframeStart) body.defaultTimeframeStart = args.defaultTimeframeStart;
     if (args.defaultTimeframeEnd) body.defaultTimeframeEnd = args.defaultTimeframeEnd;
     if (args.maxResultRecords) body.maxResultRecords = args.maxResultRecords;
     if (args.timezone) body.timezone = args.timezone;
-    return this.fetch2(`${this.baseUrl}/query/execute`, {
+
+    const startResponse = await fetch(`${this.platformUrl}/query:execute`, {
       method: 'POST',
+      headers: { ...this.authHeaders },
       body: JSON.stringify(body),
     });
+    if (!startResponse.ok) {
+      let errBody = '';
+      try { errBody = await startResponse.text(); } catch { /* ignore */ }
+      return {
+        content: [{ type: 'text', text: `DQL execute error ${startResponse.status} ${startResponse.statusText}${errBody ? ': ' + errBody.slice(0, 500) : ''}` }],
+        isError: true,
+      };
+    }
+    let startData: Record<string, unknown>;
+    try { startData = await startResponse.json() as Record<string, unknown>; } catch {
+      throw new Error(`Dynatrace returned non-JSON response from DQL execute (HTTP ${startResponse.status})`);
+    }
+    // If state is SUCCEEDED the result is already inline
+    if ((startData.state as string) === 'SUCCEEDED') {
+      return { content: [{ type: 'text', text: this.truncate(startData) }], isError: false };
+    }
+    const requestToken = startData.requestToken as string | undefined;
+    if (!requestToken) {
+      return { content: [{ type: 'text', text: this.truncate(startData) }], isError: false };
+    }
+    // Poll once for result
+    const pollResponse = await fetch(
+      `${this.platformUrl}/query:poll?request-token=${encodeURIComponent(requestToken)}`,
+      { headers: this.authHeaders },
+    );
+    if (!pollResponse.ok) {
+      let errBody = '';
+      try { errBody = await pollResponse.text(); } catch { /* ignore */ }
+      return {
+        content: [{ type: 'text', text: `DQL poll error ${pollResponse.status} ${pollResponse.statusText}${errBody ? ': ' + errBody.slice(0, 500) : ''}` }],
+        isError: true,
+      };
+    }
+    let pollData: unknown;
+    try { pollData = await pollResponse.json(); } catch {
+      throw new Error(`Dynatrace returned non-JSON response from DQL poll (HTTP ${pollResponse.status})`);
+    }
+    return { content: [{ type: 'text', text: this.truncate(pollData) }], isError: false };
   }
 }

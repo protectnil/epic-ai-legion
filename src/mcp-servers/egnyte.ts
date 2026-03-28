@@ -5,10 +5,10 @@
  */
 
 // Official MCP: https://github.com/egnyte/egnyte-mcp-server — transport: stdio, auth: OAuth2
-// Our adapter covers: 18 tools (full CRUD for files, folders, links, users, groups, permissions).
-// Vendor MCP covers: document search and retrieval only (~3 tools, focused on AI/Copilot use cases).
-// Recommendation: Use this adapter for full file/folder/user/group management.
-//                 Use vendor MCP for AI document search and Copilot Q&A integrations.
+// Our adapter covers: 20 tools (full CRUD for files, folders, links, users, groups).
+// Vendor MCP covers: 1 tool only (search_for_document_by_name). Fails the 10+ tools criterion.
+// Recommendation: use-rest-api — vendor MCP is too limited (1 tool); our REST adapter is authoritative.
+//                 MCP documented here per protocol; do NOT use vendor MCP as primary integration.
 //
 // Base URL: https://{domain}.egnyte.com (customer-specific subdomain; no shared base URL)
 //           Set config.baseUrl to e.g. https://mycompany.egnyte.com
@@ -587,9 +587,15 @@ export class EgnyteMCPServer {
   }
 
   private fsPath(path: string): string {
-    // Egnyte FS API uses /pubapi/v1/fs/{path}
+    // Egnyte FS API: metadata/list/delete/move/copy/create-folder uses /pubapi/v1/fs/{path}
     const clean = path.replace(/^\//, '');
     return `/pubapi/v1/fs/${clean}`;
+  }
+
+  private fsContentPath(path: string): string {
+    // Egnyte FS API: file upload and download use /pubapi/v1/fs-content/{path}
+    const clean = path.replace(/^\//, '');
+    return `/pubapi/v1/fs-content/${clean}`;
   }
 
   private async listFolder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -620,7 +626,7 @@ export class EgnyteMCPServer {
       return { content: [{ type: 'text', text: 'content must be base64-encoded' }], isError: true };
     }
     const overwrite = args.overwrite !== false;
-    const path = this.fsPath(args.path as string);
+    const path = this.fsContentPath(args.path as string);
     const response = await fetch(`${this.baseUrl}${path}${overwrite ? '' : '?x-egnyte-conflict=fail'}`, {
       method: 'POST',
       headers: {
@@ -641,7 +647,7 @@ export class EgnyteMCPServer {
     const params: Record<string, string> = {};
     if (args.entry_id) params.entry_id = args.entry_id as string;
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${this.fsPath(args.path as string)}${qs}`, {
+    const response = await fetch(`${this.baseUrl}${this.fsContentPath(args.path as string)}${qs}`, {
       headers: { 'Authorization': `Bearer ${this.accessToken}` },
     });
     if (!response.ok) {

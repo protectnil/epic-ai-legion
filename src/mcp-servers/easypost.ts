@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official EasyPost MCP server was found on GitHub or the EasyPost developer portal.
+// Third-party aggregator mcpbundles.com lists an EasyPost MCP (9 read-only list tools) but
+// this is NOT an official EasyPost-published server and covers fewer operations than our adapter.
 //
 // Base URL: https://api.easypost.com/v2
 // Auth: HTTP Basic Authentication — API key as the username, empty string as the password.
@@ -401,7 +403,7 @@ export class EasyPostMCPServer {
       },
       {
         name: 'list_batches',
-        description: 'List all batches with pagination',
+        description: 'List all batches with pagination; supports before_id cursor and page_size filters',
         inputSchema: {
           type: 'object',
           properties: {
@@ -436,7 +438,7 @@ export class EasyPostMCPServer {
       },
       {
         name: 'buy_batch',
-        description: 'Purchase labels for all unpurchased shipments in a batch and generate a USPS scan form',
+        description: 'Purchase labels for all unpurchased shipments in a batch; optionally specify label format (PDF, ZPL, EPL2, PNG)',
         inputSchema: {
           type: 'object',
           properties: {
