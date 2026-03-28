@@ -4,9 +4,33 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Delinea MCP server was found on GitHub or the Delinea developer portal.
-// Delinea does publish an official SDK and REST API — this adapter wraps the REST API directly.
+// Official MCP: https://github.com/DelineaXPM/delinea-mcp — transport: stdio or SSE, auth: OAuth2 password grant
+// Published by DelineaXPM (official Delinea GitHub org). Last commit: March 2026. 29 tools.
+// Our adapter covers: 18 tools (secrets CRUD, folders, users, groups, roles, templates, policies, audit).
+// Vendor MCP covers: 29 tools (search, fetch, reports, access requests, inbox, health check, safe create/update, env vars).
+// Recommendation: use-both — MCP has unique tools (run_report, ai_generate_and_run_report, health_check,
+//   handle_access_request, get_pending_access_requests, get_inbox_messages, mark_inbox_messages_read,
+//   create_secret_with_generated_password, set_secret_field_environment_variable, update_secret_generated_password,
+//   check_secret_template, check_secret_template_field, get_secret_template_field, get_secret_environment_variable,
+//   list_example_reports, search_users, search_secrets, search_folders, user_management, role_management,
+//   user_role_management, group_management, user_group_management, group_role_management, folder_management).
+//   REST adapter has unique tools (create_secret, update_secret, delete_secret, list_users, get_user,
+//   list_groups, list_roles, list_secret_templates, get_secret_template, list_secret_policies,
+//   get_secret_policy, get_secret_audit). Full coverage requires the union of both.
+// Integration: use-both
+// MCP-sourced tools (29): search, fetch, run_report, ai_generate_and_run_report, list_example_reports,
+//   get_secret, get_folder, user_management, role_management, user_role_management, group_management,
+//   user_group_management, group_role_management, folder_management, health_check, search_users,
+//   search_secrets, search_folders, get_secret_environment_variable, check_secret_template,
+//   check_secret_template_field, handle_access_request, get_pending_access_requests, get_inbox_messages,
+//   mark_inbox_messages_read, get_secret_template_field, create_secret_with_generated_password,
+//   set_secret_field_environment_variable, update_secret_generated_password
+// REST-sourced tools (12): create_secret, update_secret, delete_secret, list_users, get_user,
+//   list_groups, list_roles, list_secret_templates, get_secret_template, list_secret_policies,
+//   get_secret_policy, get_secret_audit
+// Shared tools (6): search_secrets (≈search), get_secret, get_folder, search_users (≈user_management), search_folders
+//   (shared ops routed through MCP by FederationManager)
+// Combined coverage: 35 unique operations (MCP: 29 + REST: 12 - shared: ~6)
 //
 // Base URL: https://{your-tenant}.secretservercloud.com/api/v1  (cloud)
 //           https://{your-server}/SecretServer/api/v1           (on-prem)
@@ -14,8 +38,8 @@
 // Auth: OAuth2 Resource Owner Password Credentials (grant_type=password).
 //   Token endpoint: {baseUrl}/oauth2/token  (or /oauth/token on older versions)
 //   Token cached and refreshed 60s before expiry.
-// Docs: https://docs.delinea.com/secretserver/current/api-scripting/rest-api/
-//       https://docs.delinea.com/secretserver/cloud/api-scripting/rest-api/
+// Docs: https://docs.delinea.com/online-help/secret-server/api-scripting/rest-api/index.htm
+//       https://github.com/DelineaXPM/delinea-mcp
 // Rate limits: Not publicly documented; depends on server configuration and edition.
 
 import { ToolDefinition, ToolResult } from './types.js';

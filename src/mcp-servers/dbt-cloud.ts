@@ -4,12 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/dbt-labs/dbt-mcp — official dbt Labs MCP server.
-// Transport: stdio. Auth: dbt Cloud service token or user PAT.
-// Vendor MCP covers: dbt Core, dbt Fusion, dbt Platform, deep CLI integration (semantic layer, metadata).
+// Official MCP: https://github.com/dbt-labs/dbt-mcp — transport: stdio (default) + streamable-HTTP, auth: dbt Cloud service token or user PAT
+// Vendor MCP is official (dbt Labs org). Actively maintained — 503 commits, last commit Mar 27, 2026.
+// Vendor MCP covers: 24+ tools for dbt Core, dbt Fusion, dbt Platform — CLI, semantic layer, metadata, docs.
 // Our adapter covers: 18 tools (REST API v2 — jobs, runs, projects, environments, service tokens, webhooks).
-// Recommendation: Use vendor MCP for local dbt Core/CLI workflows. Use this adapter for headless CI/CD
-// pipelines, air-gapped deployments, or environments where the dbt CLI is not available.
+// Integration: use-both — MCP and REST API cover completely non-overlapping capabilities.
+// MCP-sourced tools (24): execute_sql, text_to_sql, get_dimensions, get_entities, get_metrics_compiled_sql,
+//   list_metrics, list_saved_queries, query_metrics, get_environment_details, get_job_last_run_results,
+//   get_model_details, get_model_health, get_model_parents, get_model_performance, get_related_models,
+//   get_seed_details, get_semantic_model_details, get_snapshot_details, get_source_details, get_test_details,
+//   get_product_doc_pages, search_product_docs, get_mcp_server_branch, get_mcp_server_version
+// REST-sourced tools (18): get_account, list_projects, get_project, list_environments, get_environment,
+//   list_jobs, get_job, create_job, update_job, delete_job, trigger_job_run, list_runs, get_run,
+//   cancel_run, list_run_artifacts, get_run_artifact, list_service_tokens, list_webhooks
+// Combined coverage: 42 tools (MCP: 24 + REST: 18 — shared: 0). Use vendor MCP for semantic layer,
+// SQL execution, and metadata queries. Use this adapter for headless CI/CD job management, run
+// triggering, and artifact retrieval where the dbt CLI/Platform connection is not available.
 //
 // Base URL: https://cloud.getdbt.com/api/v2
 //   EMEA: https://emea.dbt.com/api/v2

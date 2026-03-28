@@ -5,9 +5,13 @@
  */
 
 // Official MCP: https://github.com/DeepLcom/deepl-mcp-server — transport: stdio, auth: API key
-// Our adapter covers: 12 tools (translate, rephrase, document, glossary, languages, usage).
-// Vendor MCP covers: ~8 tools (translate, rephrase, document, glossary, languages).
-// Recommendation: Use this adapter for broader coverage including usage monitoring and glossary CRUD.
+// Published by DeepLcom (official). Last commit: 2026-01-28. 8 tools only (fails 10+ tool criterion).
+// Our adapter covers: 12 tools. Vendor MCP covers: 8 tools (translate-text, translate-document,
+//   rephrase-text, get-source-languages, get-target-languages, list-glossaries, get-glossary-info,
+//   get-glossary-dictionary-entries). MCP missing: check_usage, create_glossary, delete_glossary,
+//   list_glossary_language_pairs.
+// Recommendation: use-rest-api — official MCP fails the 10+ tool criterion (only 8 tools). Our adapter
+//   provides broader coverage including usage monitoring, glossary creation/deletion, and language pairs.
 //
 // Base URL: https://api.deepl.com (Pro) or https://api-free.deepl.com (Free tier)
 // Auth: Authorization header — "DeepL-Auth-Key <key>"
@@ -140,20 +144,20 @@ export class DeepLMCPServer {
               type: 'string',
               description: 'Text to rephrase',
             },
-            language: {
+            target_lang: {
               type: 'string',
-              description: 'Language code of the text (e.g. EN-US, DE, FR). Required for rephrasing.',
+              description: 'Language code of the text to rephrase (e.g. EN-US, EN-GB, DE). Must match the source language. Required for rephrasing.',
             },
             writing_style: {
               type: 'string',
-              description: 'Desired writing style: academic, business, casual, default',
+              description: 'Desired writing style: academic, business, casual, simple, default, or prefer_* variants (prefer_academic, prefer_business, prefer_casual, prefer_simple). Cannot be combined with tone.',
             },
             tone: {
               type: 'string',
               description: 'Desired tone: confident, default, diplomatic, enthusiastic, friendly, professional',
             },
           },
-          required: ['text', 'language'],
+          required: ['text', 'target_lang'],
         },
       },
       {
@@ -381,12 +385,12 @@ export class DeepLMCPServer {
   }
 
   private async rephraseText(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.text || !args.language) {
-      return { content: [{ type: 'text', text: 'text and language are required' }], isError: true };
+    if (!args.text || !args.target_lang) {
+      return { content: [{ type: 'text', text: 'text and target_lang are required' }], isError: true };
     }
     const body: Record<string, unknown> = {
       text: [args.text as string],
-      language: (args.language as string).toUpperCase(),
+      target_lang: (args.target_lang as string).toUpperCase(),
     };
     if (args.writing_style) body.writing_style = args.writing_style;
     if (args.tone) body.tone = args.tone;

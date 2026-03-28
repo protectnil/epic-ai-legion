@@ -4,9 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/DataDog/datadog-mcp-server — transport: stdio, auth: DD-API-KEY
-// Our adapter covers: 14 tools (security surface). Vendor MCP covers: broader surface area.
-// Recommendation: Use vendor MCP for full tool parity. Use this adapter for air-gapped deployments.
+// Official MCP: https://github.com/datadog-labs/mcp-server — transport: streamable-HTTP, auth: DD-API-KEY + DD-APPLICATION-KEY
+// Vendor MCP is Datadog's hosted managed server (datadog-labs org). Actively maintained (last commit Mar 2026).
+// Vendor MCP exposes a 'security' toolset with tools: search_datadog_security_signals, security_findings_schema,
+// analyze_security_findings. Our adapter covers 14 tools targeting the Security Monitoring REST API surface.
+// Integration: use-both — MCP provides 3 hosted search/schema tools; REST adapter covers full CRUD
+// (detection rules, suppression rules, triage, findings, vulnerabilities, monitors) not in hosted MCP.
+// MCP-sourced tools (3): search_datadog_security_signals, security_findings_schema, analyze_security_findings
+// REST-sourced tools (14): list_security_signals, get_signal, triage_signal, list_detection_rules,
+//   get_detection_rule, create_detection_rule, update_detection_rule, delete_detection_rule,
+//   list_suppression_rules, create_suppression_rule, delete_suppression_rule,
+//   get_cloud_security_findings, list_vulnerabilities, list_monitors
+// Combined coverage: 17 tools (MCP: 3 + REST: 14 — shared: 0)
 //
 // Base URL: https://api.{site}  (site examples: datadoghq.com, datadoghq.eu, us3.datadoghq.com)
 // Auth: DD-API-KEY + DD-APPLICATION-KEY headers

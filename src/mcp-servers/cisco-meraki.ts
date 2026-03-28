@@ -5,15 +5,18 @@
  */
 
 // Official MCP: https://github.com/CiscoDevNet/meraki-magic-mcp-community — transport: stdio, auth: API key
-// Community MCP alternatives: https://github.com/kiskander/meraki-mcp-server (subset), https://github.com/paolo-trivi/mcp-meraki (79 tools)
-// No single officially maintained Cisco-authored MCP server was found as of 2026-03.
-// Our adapter covers: 18 tools (core network operations). Community MCP (paolo-trivi) covers: 79 tools (full API).
-// Recommendation: Use this adapter for air-gapped or production deployments with controlled scope.
+//   Published under CiscoDevNet org (Cisco-official). Last commit: Nov 20, 2025 (within 6 months).
+//   Dynamic mode exposes ~804 API endpoints; manual mode exposes 40 curated tools. Criteria: 4/4 met.
+// Community MCP alternatives: https://github.com/kiskander/meraki-mcp-server (subset), https://github.com/paolo-trivi/mcp-meraki (79 tools, community)
+// Our adapter covers: 18 tools. Vendor MCP (CiscoDevNet dynamic) covers: ~804 endpoints.
+// Recommendation: use-rest-api — the CiscoDevNet MCP is a strict superset of our 18 tools, but it
+//   requires the meraki Python SDK at runtime (not air-gapped). This adapter provides controlled
+//   scope and air-gapped deployment. Use CiscoDevNet MCP for full 804-endpoint coverage.
 //
 // Base URL: https://api.meraki.com/api/v1
-// Auth: Bearer token — X-Cisco-Meraki-API-Key header with Dashboard API key
+// Auth: Bearer token — Authorization: Bearer {API_KEY} header (v1 API; X-Cisco-Meraki-API-Key was v0)
 // Docs: https://developer.cisco.com/meraki/api-v1/
-// Rate limits: 10 requests/second per organization; stricter limits apply on some endpoints (e.g., 10 req / 5 min for device claiming)
+// Rate limits: 10 requests/second per organization; stricter limits on some endpoints (e.g., 10 req / 5 min for device claiming)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -468,7 +471,7 @@ export class CiscoMerakiMCPServer {
 
   private get headers(): Record<string, string> {
     return {
-      'X-Cisco-Meraki-API-Key': this.apiKey,
+      'Authorization': `Bearer ${this.apiKey}`,
       'Content-Type': 'application/json',
     };
   }

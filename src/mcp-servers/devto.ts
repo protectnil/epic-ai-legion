@@ -4,17 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Dev.to or Forem MCP server was found on GitHub.
-// Our adapter covers: 16 tools (articles, users, comments, tags, follows, reactions,
-//   organizations, reading-list, webhooks).
+// Official MCP: None found as of 2026-03-28.
+// No official Dev.to or Forem MCP server found. One community repo (Siddhant-K-code/mcp-devto-server)
+// was archived June 2025, 2 stars — not official and unmaintained.
+// Our adapter covers: 13 tools (articles, users, comments, tags, organizations, reading-list).
+//
+// Note: search_articles (GET /articles/search), follow_tags (PUT /follows/tags), and
+// list_organizations were removed — none of these endpoints exist in the Forem v1 API.
+// Only GET /followed_tags exists; tag follow/unfollow is not exposed via the v1 API.
 //
 // Base URL: https://dev.to/api  (Forem self-hosted: https://your-instance.com/api)
 // Auth: API key header — api-key: {your_key}
 //   Generate at https://dev.to/settings/extensions → DEV Community API Keys.
 //   Read-only operations work without a key on public data.
 // Docs: https://developers.forem.com/api/v1
-//       https://dev.to/t/api
 // Rate limits: 10 req/s per API key for write operations. Read operations are more permissive.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -44,11 +47,11 @@ export class DevToMCPServer {
       keywords: ['devto', 'dev.to', 'forem', 'developer', 'blog', 'article', 'post', 'community', 'tech-blog', 'programming', 'content', 'publication'],
       toolNames: [
         'list_articles', 'get_article', 'create_article', 'update_article',
-        'get_my_articles', 'search_articles',
+        'get_my_articles',
         'list_comments', 'get_comment',
         'get_user', 'get_my_profile',
-        'list_tags', 'follow_tags',
-        'list_organizations', 'get_organization', 'list_organization_articles',
+        'list_tags',
+        'get_organization', 'list_organization_articles',
         'list_reading_list',
       ],
       description: 'Manage Dev.to content: read and publish articles, search posts, manage comments, user profiles, tags, organizations, and reading lists.',
@@ -217,28 +220,6 @@ export class DevToMCPServer {
         },
       },
       {
-        name: 'search_articles',
-        description: 'Full-text search Dev.to articles by query string, with optional pagination.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            q: {
-              type: 'string',
-              description: 'Search query string.',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1).',
-            },
-            per_page: {
-              type: 'number',
-              description: 'Number of results per page (default: 30).',
-            },
-          },
-          required: ['q'],
-        },
-      },
-      {
         name: 'list_comments',
         description: 'List comments for a Dev.to article or podcast episode, with optional pagination.',
         inputSchema: {
@@ -313,35 +294,6 @@ export class DevToMCPServer {
         },
       },
       {
-        name: 'follow_tags',
-        description: 'Follow or unfollow a list of Dev.to tags for the authenticated user.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            tags: {
-              type: 'array',
-              description: 'Array of tag objects with name and points: [{name: "javascript", points: 1}, ...]. Set points to -1 to unfollow.',
-              items: { type: 'object' },
-            },
-          },
-          required: ['tags'],
-        },
-      },
-      {
-        name: 'list_organizations',
-        description: 'List articles published by a specific Dev.to organization, or retrieve organization details by username.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            username: {
-              type: 'string',
-              description: 'Organization username slug (e.g. "the-practical-dev").',
-            },
-          },
-          required: ['username'],
-        },
-      },
-      {
         name: 'get_organization',
         description: 'Retrieve public details for a Dev.to organization by its username slug.',
         inputSchema: {
@@ -410,8 +362,6 @@ export class DevToMCPServer {
           return await this.updateArticle(args);
         case 'get_my_articles':
           return await this.getMyArticles(args);
-        case 'search_articles':
-          return await this.searchArticles(args);
         case 'list_comments':
           return await this.listComments(args);
         case 'get_comment':
@@ -422,10 +372,6 @@ export class DevToMCPServer {
           return await this.getMyProfile();
         case 'list_tags':
           return await this.listTags(args);
-        case 'follow_tags':
-          return await this.followTags(args);
-        case 'list_organizations':
-          return await this.listOrganizations(args);
         case 'get_organization':
           return await this.getOrganization(args);
         case 'list_organization_articles':
@@ -551,14 +497,6 @@ export class DevToMCPServer {
     return this.request(`/articles/me${qs}`);
   }
 
-  private async searchArticles(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.q) return { content: [{ type: 'text', text: 'q is required' }], isError: true };
-    const params = new URLSearchParams({ q: args.q as string });
-    if (args.page != null) params.set('page', String(args.page as number));
-    if (args.per_page != null) params.set('per_page', String(args.per_page as number));
-    return this.request(`/articles/search?${params}`);
-  }
-
   private async listComments(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.a_id != null) params.set('a_id', String(args.a_id as number));
@@ -590,20 +528,6 @@ export class DevToMCPServer {
     if (args.per_page != null) params.set('per_page', String(args.per_page as number));
     const qs = params.toString() ? `?${params}` : '';
     return this.request(`/tags${qs}`);
-  }
-
-  private async followTags(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.tags) return { content: [{ type: 'text', text: 'tags is required' }], isError: true };
-    return this.request('/follows/tags', {
-      method: 'PUT',
-      body: JSON.stringify(args.tags),
-    });
-  }
-
-  private async listOrganizations(args: Record<string, unknown>): Promise<ToolResult> {
-    const username = args.username as string;
-    if (!username) return { content: [{ type: 'text', text: 'username is required' }], isError: true };
-    return this.request(`/organizations/${encodeURIComponent(username)}`);
   }
 
   private async getOrganization(args: Record<string, unknown>): Promise<ToolResult> {

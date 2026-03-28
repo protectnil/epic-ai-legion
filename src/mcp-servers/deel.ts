@@ -4,18 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/JonasDNielsen/deel-mcp-server — community-maintained, read-only,
-// ~25 tools, requires OAuth2 only (no API-key support). Last commit activity: 2024.
-// Our adapter covers: 20 tools (core operations). Community MCP covers: ~25 tools (read-only).
-// Recommendation: Use this adapter — it adds write operations and supports Bearer token (API key) auth.
+// Official MCP: https://mcp.deel.com — transport: SSE (streamable-HTTP), auth: OAuth2 / Bearer token (PAT)
+// Published by Deel (official). 30+ tools covering contracts, people, time-off, payments, invoices, EOR, HRIS.
+// Actively maintained — referenced in Deel developer docs (developer.deel.com/mcp) as of 2026-03.
+// Our adapter covers: 20 tools. Vendor MCP covers: 30+ tools (full API surface including write operations).
+// Recommendation: use-vendor-mcp — official MCP meets all 4 criteria (official, maintained, 30+ tools, SSE).
+//   Use this REST adapter for air-gapped deployments or clients that do not support SSE MCP.
+//   Note: community fork github.com/JonasDNielsen/deel-mcp-server (25 read-only tools, 2024) is NOT official.
 //
 // Base URL: https://api.letsdeel.com
-// Auth: Bearer token. Generate from Deel account → Developer Center → API Tokens.
+// Auth: Bearer token (Authorization: Bearer <token>). Generate from Deel account → Developer Center → API Tokens.
 //   Personal Token: tied to user account, expires if user leaves org.
 //   Organization Token: not user-linked, no expiry, cannot sign contracts.
-//   OAuth2 also available: requires Authorization header AND x-client-id header.
-// Docs: https://developer.letsdeel.com/api-reference/v2/introduction
-//       https://developer.letsdeel.com/docs/authentication
+//   OAuth2 also available.
+// Docs: https://developer.deel.com/api/introduction
+//       https://developer.deel.com/mcp
 // Rate limits: Documented per-endpoint; general guidance ~600 req/min on paid plans.
 
 import { ToolDefinition, ToolResult } from './types.js';
