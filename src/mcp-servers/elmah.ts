@@ -70,14 +70,14 @@ export class ElmahMCPServer {
       });
       const text = await resp.text();
       if (resp.status === 204) {
-        return { content: [{ type: 'text', text: 'Success (no content)' }] };
+        return { content: [{ type: 'text', text: 'Success (no content)' }], isError: false };
       }
       let data: unknown;
       try { data = JSON.parse(text); } catch { data = text; }
       if (!resp.ok) {
         return { content: [{ type: 'text', text: `HTTP ${resp.status}: ${text}` }], isError: true };
       }
-      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
     } catch (err) {
       return { content: [{ type: 'text', text: String(err) }], isError: true };
     }

@@ -27,13 +27,13 @@ interface GameSparksConfig {
 
 export class GameSparksGameDetailsMCPServer {
   private readonly accessToken: string;
-  private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GameSparksConfig) {
     this.accessToken = config.accessToken;
-    this.apiKey = config.apiKey || '';
     this.baseUrl = config.baseUrl || 'https://config2.gamesparks.net';
+    // apiKey stored via accessToken/JWT; individual tool calls pass apiKey per request
+    void config.apiKey;
   }
 
   static catalog() {
@@ -93,7 +93,7 @@ export class GameSparksGameDetailsMCPServer {
       if (!resp.ok) {
         return { content: [{ type: 'text', text: `HTTP ${resp.status}: ${text}` }], isError: true };
       }
-      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
     } catch (err) {
       return { content: [{ type: 'text', text: String(err) }], isError: true };
     }

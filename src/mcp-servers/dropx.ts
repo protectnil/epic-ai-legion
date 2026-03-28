@@ -69,7 +69,7 @@ export class DropXMCPServer {
       if (!resp.ok) {
         return { content: [{ type: 'text', text: `HTTP ${resp.status}: ${text}` }], isError: true };
       }
-      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
     } catch (err) {
       return { content: [{ type: 'text', text: String(err) }], isError: true };
     }
