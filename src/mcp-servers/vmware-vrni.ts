@@ -1902,7 +1902,7 @@ export class VmwareVrniMCPServer {
         case 'get_infra_node':                return this.requireId(args, id => this.request('GET', `/infra/nodes/${encodeURIComponent(id)}`));
         // Applications
         case 'list_applications':             return this.listEntities('/groups/applications', args);
-        case 'add_application':               return this.request('POST', '/groups/applications', args);
+        case 'add_application':               return this.addApplication(args);
         case 'get_application':               return this.requireId(args, id => this.request('GET', `/groups/applications/${encodeURIComponent(id)}`));
         case 'delete_application':            return this.requireId(args, id => this.request('DELETE', `/groups/applications/${encodeURIComponent(id)}`));
         case 'list_application_tiers':        return this.requireId(args, id => this.request('GET', `/groups/applications/${encodeURIComponent(id)}/tiers`));
@@ -2057,7 +2057,12 @@ export class VmwareVrniMCPServer {
 
   // ── Micro-segmentation ─────────────────────────────────────────────────────
 
-  private async getRecommendedRules(args: Record<string, unknown>): Promise<ToolResult> {
+  private async addApplication(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
+    return this.request('POST', '/groups/applications', args);
+  }
+
+    private async getRecommendedRules(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_id) {
       return { content: [{ type: 'text', text: 'application_id is required' }], isError: true };
     }

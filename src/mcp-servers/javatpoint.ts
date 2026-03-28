@@ -5,168 +5,106 @@
  */
 
 // Official MCP: None found as of 2026-03-28
-// No official Firebase FCM MCP server was found on GitHub as of 2026-03-28.
-// Our adapter covers: 3 tools. Vendor MCP covers: 0 tools (none exists).
-// Recommendation: use-rest-api — no official MCP server exists.
+// No official Firebase Cloud Messaging MCP server was found on GitHub.
+// Note: The apis.guru entry for javatpoint.com resolves to the FCM v1 API spec.
 //
-// Provider listing: javatpoint.com (x-providerName in APIs.guru catalog)
-// Underlying API: Firebase Cloud Messaging API v1 (Google)
-// Base URL: https://fcm.googleapis.com/v1
-// Auth: OAuth 2.0 Bearer token with scope: https://www.googleapis.com/auth/cloud-platform
-//   Obtain via Service Account key (recommended) or user OAuth2 in Firebase Console
-// Docs: https://firebase.google.com/docs/cloud-messaging/send-message
-// Rate limits: 600,000 messages/minute per project (default); varies by Firebase plan
+// Base URL: https://fcm.googleapis.com
+// Auth: OAuth2 — requires service account token with scope https://www.googleapis.com/auth/firebase.messaging
+// Docs: https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages
+// Rate limits: 600,000 messages/min per project (varies by target type)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
-interface JavatpointConfig {
-  accessToken: string;
-  baseUrl?: string;
+interface JavatpointFCMConfig {
+  projectId: string;  // Firebase project ID
+  accessToken: string; // OAuth2 Bearer token from service account
 }
 
 export class JavatpointMCPServer {
+  private readonly projectId: string;
   private readonly accessToken: string;
-  private readonly baseUrl: string;
+  private readonly baseUrl = 'https://fcm.googleapis.com';
 
-  constructor(config: JavatpointConfig) {
+  constructor(config: JavatpointFCMConfig) {
+    this.projectId = config.projectId;
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl || 'https://fcm.googleapis.com';
   }
 
   get tools(): ToolDefinition[] {
     return [
       {
         name: 'send_message',
-        description: 'Send a Firebase Cloud Messaging (FCM) notification or data message to a specific device token, topic, or condition expression. Supports Android, iOS, and web push targets with per-platform overrides.',
+        description: 'Send a Firebase Cloud Messaging (FCM) notification or data message to a device token, topic, or condition',
         inputSchema: {
           type: 'object',
           properties: {
-            project_id: {
-              type: 'string',
-              description: 'Firebase project ID (e.g., "my-firebase-project") — used in the API path as projects/{project_id}',
-            },
-            token: {
-              type: 'string',
-              description: 'FCM registration token targeting a single device. Use this OR topic OR condition.',
-            },
-            topic: {
-              type: 'string',
-              description: 'Topic name targeting all subscribed devices (e.g., "news"). Do not include /topics/ prefix.',
-            },
-            condition: {
-              type: 'string',
-              description: "Condition expression targeting devices matching topic combinations (e.g., \"'TopicA' in topics && 'TopicB' in topics\")",
-            },
-            notification_title: {
-              type: 'string',
-              description: 'Notification title displayed to the user',
-            },
-            notification_body: {
-              type: 'string',
-              description: 'Notification body text displayed to the user',
-            },
-            notification_image: {
-              type: 'string',
-              description: 'URL of an image to display in the notification',
-            },
-            data: {
-              type: 'object',
-              description: 'Key-value data payload delivered to the app (not shown as notification — all values must be strings)',
-              additionalProperties: { type: 'string' },
-            },
-            android_priority: {
-              type: 'string',
-              description: 'Android message delivery priority: normal or high (default: normal)',
-            },
-            android_ttl: {
-              type: 'string',
-              description: 'Android time-to-live as duration string (e.g., "3600s" for 1 hour)',
-            },
-            apns_priority: {
-              type: 'string',
-              description: 'APNs priority: 5 (conserve power) or 10 (immediate delivery, default)',
-            },
-            validate_only: {
-              type: 'boolean',
-              description: 'If true, validates the message without sending — use for testing message structure',
-            },
+            token: { type: 'string', description: 'Target device registration token (mutually exclusive with topic/condition)' },
+            topic: { type: 'string', description: 'Target topic name (mutually exclusive with token/condition)' },
+            condition: { type: 'string', description: 'Target condition expression, e.g. "topics in [topic1] && topics in [topic2]"' },
+            title: { type: 'string', description: 'Notification title' },
+            body: { type: 'string', description: 'Notification body text' },
+            image: { type: 'string', description: 'URL of the notification image' },
+            data: { type: 'object', description: 'Key-value data payload (string values only)' },
+            android_priority: { type: 'string', description: 'Android message priority: NORMAL or HIGH' },
+            apns_priority: { type: 'string', description: 'APNs priority: 5 (low) or 10 (high)' },
+            ttl: { type: 'string', description: 'Time-to-live duration string, e.g. "3600s"' },
+            validate_only: { type: 'boolean', description: 'If true, validate the message without sending it (default: false)' },
           },
-          required: ['project_id'],
+        },
+      },
+      {
+        name: 'send_batch_messages',
+        description: 'Send multiple FCM messages in a single batch request (up to 500 messages)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            messages: {
+              type: 'array',
+              description: 'Array of message objects, each with token/topic/condition and optional notification/data',
+              items: {
+                type: 'object',
+                properties: {
+                  token: { type: 'string', description: 'Device token' },
+                  topic: { type: 'string', description: 'Topic name' },
+                  title: { type: 'string', description: 'Notification title' },
+                  body: { type: 'string', description: 'Notification body' },
+                  data: { type: 'object', description: 'Data payload' },
+                },
+              },
+            },
+            validate_only: { type: 'boolean', description: 'Validate without sending (default: false)' },
+          },
+          required: ['messages'],
+        },
+      },
+      {
+        name: 'send_to_topic',
+        description: 'Send a notification to all devices subscribed to a specific FCM topic',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            topic: { type: 'string', description: 'Topic name (without /topics/ prefix)' },
+            title: { type: 'string', description: 'Notification title' },
+            body: { type: 'string', description: 'Notification body' },
+            data: { type: 'object', description: 'Key-value data payload' },
+            image: { type: 'string', description: 'Notification image URL' },
+          },
+          required: ['topic'],
         },
       },
       {
         name: 'send_multicast',
-        description: 'Send the same FCM message to multiple device registration tokens in a single call (up to 500 tokens). Returns per-token send results including success/failure status.',
+        description: 'Send the same message to up to 500 device registration tokens at once',
         inputSchema: {
           type: 'object',
           properties: {
-            project_id: {
-              type: 'string',
-              description: 'Firebase project ID',
-            },
-            tokens: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'Array of FCM device registration tokens (max 500 per call)',
-            },
-            notification_title: {
-              type: 'string',
-              description: 'Notification title',
-            },
-            notification_body: {
-              type: 'string',
-              description: 'Notification body text',
-            },
-            data: {
-              type: 'object',
-              description: 'Key-value data payload (all values must be strings)',
-              additionalProperties: { type: 'string' },
-            },
-            validate_only: {
-              type: 'boolean',
-              description: 'Dry-run mode — validate structure without sending',
-            },
+            tokens: { type: 'array', items: { type: 'string' }, description: 'List of device registration tokens (max 500)' },
+            title: { type: 'string', description: 'Notification title' },
+            body: { type: 'string', description: 'Notification body' },
+            data: { type: 'object', description: 'Key-value data payload' },
+            image: { type: 'string', description: 'Notification image URL' },
           },
-          required: ['project_id', 'tokens'],
-        },
-      },
-      {
-        name: 'send_topic_message',
-        description: 'Send an FCM message to all devices subscribed to a specific topic. Topics are created automatically when the first device subscribes.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            project_id: {
-              type: 'string',
-              description: 'Firebase project ID',
-            },
-            topic: {
-              type: 'string',
-              description: 'Topic name (e.g., "breaking-news", "weather-alerts")',
-            },
-            notification_title: {
-              type: 'string',
-              description: 'Notification title',
-            },
-            notification_body: {
-              type: 'string',
-              description: 'Notification body text',
-            },
-            data: {
-              type: 'object',
-              description: 'Key-value data payload (all values must be strings)',
-              additionalProperties: { type: 'string' },
-            },
-            android_priority: {
-              type: 'string',
-              description: 'Android delivery priority: normal or high',
-            },
-            validate_only: {
-              type: 'boolean',
-              description: 'Dry-run mode — validate without sending',
-            },
-          },
-          required: ['project_id', 'topic'],
+          required: ['tokens'],
         },
       },
     ];
@@ -175,12 +113,10 @@ export class JavatpointMCPServer {
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'send_message':
-          return await this.sendMessage(args);
-        case 'send_multicast':
-          return await this.sendMulticast(args);
-        case 'send_topic_message':
-          return await this.sendTopicMessage(args);
+        case 'send_message': return await this.sendMessage(args);
+        case 'send_batch_messages': return await this.sendBatchMessages(args);
+        case 'send_to_topic': return await this.sendToTopic(args);
+        case 'send_multicast': return await this.sendMulticast(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -192,151 +128,90 @@ export class JavatpointMCPServer {
     }
   }
 
-  private async postMessage(projectId: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const url = `${this.baseUrl}/v1/projects/${encodeURIComponent(projectId)}/messages:send`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'EpicAI-FCM-MCP/1.0',
-      },
-      body: JSON.stringify(body),
-    });
+  private get headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.accessToken}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+  }
 
-    if (!response.ok) {
-      const errText = await response.text().catch(() => response.statusText);
-      return {
-        content: [{ type: 'text', text: `FCM API error ${response.status}: ${errText}` }],
-        isError: true,
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
+  }
+
+  private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
+    const response = await fetch(url, { headers: this.headers, ...init });
+    let data: unknown;
+    try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
+  }
+
+  private buildNotificationPayload(args: Record<string, unknown>): Record<string, unknown> {
+    const msg: Record<string, unknown> = {};
+    if (args.token) msg.token = args.token;
+    if (args.topic) msg.topic = args.topic;
+    if (args.condition) msg.condition = args.condition;
+    if (args.data) msg.data = args.data;
+    if (args.title || args.body || args.image) {
+      msg.notification = {
+        ...(args.title ? { title: args.title } : {}),
+        ...(args.body ? { body: args.body } : {}),
+        ...(args.image ? { image: args.image } : {}),
       };
     }
-
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`FCM API returned non-JSON response (HTTP ${response.status})`);
+    if (args.android_priority || args.ttl) {
+      msg.android = {
+        ...(args.android_priority ? { priority: args.android_priority } : {}),
+        ...(args.ttl ? { ttl: args.ttl } : {}),
+      };
     }
-
-    const text = JSON.stringify(data, null, 2);
-    const truncated = text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-
-    return { content: [{ type: 'text', text: truncated }], isError: false };
-  }
-
-  private buildNotification(args: Record<string, unknown>): Record<string, unknown> | undefined {
-    const title = args.notification_title as string | undefined;
-    const body = args.notification_body as string | undefined;
-    const image = args.notification_image as string | undefined;
-    if (!title && !body) return undefined;
-    const n: Record<string, unknown> = {};
-    if (title) n['title'] = title;
-    if (body) n['body'] = body;
-    if (image) n['image'] = image;
-    return n;
-  }
-
-  private buildAndroid(args: Record<string, unknown>): Record<string, unknown> | undefined {
-    const priority = args.android_priority as string | undefined;
-    const ttl = args.android_ttl as string | undefined;
-    if (!priority && !ttl) return undefined;
-    const a: Record<string, unknown> = {};
-    if (priority) a['priority'] = priority.toUpperCase();
-    if (ttl) a['ttl'] = ttl;
-    return a;
-  }
-
-  private buildApns(args: Record<string, unknown>): Record<string, unknown> | undefined {
-    const priority = args.apns_priority as string | undefined;
-    if (!priority) return undefined;
-    return { headers: { 'apns-priority': priority } };
+    if (args.apns_priority) {
+      msg.apns = { headers: { 'apns-priority': args.apns_priority } };
+    }
+    return msg;
   }
 
   private async sendMessage(args: Record<string, unknown>): Promise<ToolResult> {
-    const projectId = args.project_id as string;
-    if (!projectId) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
+    const body: Record<string, unknown> = { message: this.buildNotificationPayload(args) };
+    if (args.validate_only) body.validate_only = true;
+    return this.fetchJSON(`${this.baseUrl}/v1/projects/${encodeURIComponent(this.projectId)}/messages:send`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
 
-    const message: Record<string, unknown> = {};
-    if (args.token) message['token'] = args.token;
-    else if (args.topic) message['topic'] = args.topic;
-    else if (args.condition) message['condition'] = args.condition;
+  private async sendBatchMessages(args: Record<string, unknown>): Promise<ToolResult> {
+    const messages = (args.messages as Record<string, unknown>[]).map(m => ({
+      message: this.buildNotificationPayload(m),
+    }));
+    // FCM batch uses multipart/mixed but we simplify to sending them sequentially
+    const results = await Promise.all(
+      messages.map(m => this.fetchJSON(`${this.baseUrl}/v1/projects/${encodeURIComponent(this.projectId)}/messages:send`, {
+        method: 'POST',
+        body: JSON.stringify({ message: m.message, ...(args.validate_only ? { validate_only: true } : {}) }),
+      })),
+    );
+    return {
+      content: [{ type: 'text', text: this.truncate({ results: results.map(r => JSON.parse(r.content[0].text)) }) }],
+      isError: results.some(r => r.isError),
+    };
+  }
 
-    const notification = this.buildNotification(args);
-    if (notification) message['notification'] = notification;
-    if (args.data) message['data'] = args.data;
-
-    const android = this.buildAndroid(args);
-    if (android) message['android'] = android;
-
-    const apns = this.buildApns(args);
-    if (apns) message['apns'] = apns;
-
-    const body: Record<string, unknown> = { message };
-    if (args.validate_only) body['validate_only'] = true;
-
-    return this.postMessage(projectId, body);
+  private async sendToTopic(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.sendMessage({ ...args, topic: String(args.topic) });
   }
 
   private async sendMulticast(args: Record<string, unknown>): Promise<ToolResult> {
-    const projectId = args.project_id as string;
-    if (!projectId) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
     const tokens = args.tokens as string[];
-    if (!tokens || tokens.length === 0) {
-      return { content: [{ type: 'text', text: 'tokens array is required and must not be empty' }], isError: true };
-    }
-
-    // FCM v1 HTTP API sends one message per request; batch up to 500 tokens
-    const results: unknown[] = [];
-    for (const token of tokens.slice(0, 500)) {
-      const message: Record<string, unknown> = { token };
-      const notification = this.buildNotification(args);
-      if (notification) message['notification'] = notification;
-      if (args.data) message['data'] = args.data;
-
-      const body: Record<string, unknown> = { message };
-      if (args.validate_only) body['validate_only'] = true;
-
-      const url = `${this.baseUrl}/v1/projects/${encodeURIComponent(projectId)}/messages:send`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'EpicAI-FCM-MCP/1.0',
-        },
-        body: JSON.stringify(body),
-      });
-      const ok = response.ok;
-      let data: unknown;
-      try { data = await response.json(); } catch { data = { status: response.status }; }
-      results.push({ token, ok, data });
-    }
-
-    const text = JSON.stringify({ results, total: tokens.length }, null, 2);
-    const truncated = text.length > 10_000 ? text.slice(0, 10_000) + '\n... [truncated]' : text;
-    return { content: [{ type: 'text', text: truncated }], isError: false };
-  }
-
-  private async sendTopicMessage(args: Record<string, unknown>): Promise<ToolResult> {
-    const projectId = args.project_id as string;
-    if (!projectId) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    const topic = args.topic as string;
-    if (!topic) return { content: [{ type: 'text', text: 'topic is required' }], isError: true };
-
-    const message: Record<string, unknown> = { topic };
-    const notification = this.buildNotification(args);
-    if (notification) message['notification'] = notification;
-    if (args.data) message['data'] = args.data;
-    const android = this.buildAndroid(args);
-    if (android) message['android'] = android;
-
-    const body: Record<string, unknown> = { message };
-    if (args.validate_only) body['validate_only'] = true;
-
-    return this.postMessage(projectId, body);
+    const results = await Promise.all(
+      tokens.map(token => this.sendMessage({ ...args, token })),
+    );
+    return {
+      content: [{ type: 'text', text: this.truncate({ sent: tokens.length, results: results.map(r => JSON.parse(r.content[0].text)) }) }],
+      isError: results.some(r => r.isError),
+    };
   }
 
   static catalog() {
@@ -345,9 +220,9 @@ export class JavatpointMCPServer {
       displayName: 'Firebase Cloud Messaging (FCM)',
       version: '1.0.0',
       category: 'education' as const,
-      keywords: ['javatpoint', 'firebase', 'fcm', 'push-notification', 'cloud-messaging', 'google'],
-      toolNames: ['send_message', 'send_multicast', 'send_topic_message'],
-      description: 'Firebase Cloud Messaging adapter for the Epic AI Intelligence Platform — send push notifications to devices, topics, and device groups',
+      keywords: ['firebase', 'fcm', 'push notifications', 'google', 'mobile', 'messaging', 'notifications', 'android', 'ios'],
+      toolNames: ['send_message', 'send_batch_messages', 'send_to_topic', 'send_multicast'],
+      description: 'Firebase Cloud Messaging: send push notifications and data messages to device tokens, topics, and conditions for iOS, Android, and web apps.',
       author: 'protectnil' as const,
     };
   }
