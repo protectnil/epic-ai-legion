@@ -4,16 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/incident-io/incidentio-mcp-golang — transport: stdio, auth: API key env var
-// Actively maintained (last commit March 2026). Go binary; requires Go runtime or pre-built binary.
+// Official MCP: https://github.com/incident-io/incidentio-mcp-golang — transport: stdio + HTTP, auth: API key env var
+// NOTE: This Go MCP server is being deprecated by end of March 2026 in favour of a new remote MCP server.
+//   See: https://incident.io/blog/we-built-an-mcp-server-so-claude-can-access-your-incidents
+//   The replacement remote MCP server was not yet publicly available as of 2026-03-28.
+//   Treat this MCP as unmaintained/deprecated — use this REST adapter.
 // Our adapter covers: 18 tools (incidents, actions, alerts, severities, roles, statuses, types, workflows, catalog).
-// Vendor MCP covers: full incident.io API. Use vendor MCP when Go runtime is available.
-// Recommendation: Use this adapter for air-gapped TypeScript-only deployments.
+// Recommendation: use-rest-api — vendor MCP is deprecated (end of March 2026); remote replacement not yet public.
 //
-// Base URL: https://api.incident.io/v2
+// Base URL: https://api.incident.io  (constructor appends /v2; V1 endpoints override to /v1 directly)
 // Auth: Authorization: Bearer {api_key}
 // Docs: https://api-docs.incident.io/
-// Rate limits: Not publicly documented. Avoid bulk polling; use pagination cursors.
+// Rate limits: 1,200 requests/minute per API key (429 on exceed, exponential backoff recommended)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -25,10 +27,13 @@ interface IncidentIoConfig {
 export class IncidentIoMCPServer {
   private readonly apiKey: string;
   private readonly baseUrl: string;
+  private readonly baseUrlV1: string;
 
   constructor(config: IncidentIoConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = (config.baseUrl ?? 'https://api.incident.io').replace(/\/$/, '') + '/v2';
+    const authority = (config.baseUrl ?? 'https://api.incident.io').replace(/\/$/, '');
+    this.baseUrl = authority + '/v2';
+    this.baseUrlV1 = authority + '/v1';
   }
 
   static catalog() {
@@ -493,13 +498,27 @@ export class IncidentIoMCPServer {
   }
 
   private async listSeverities(): Promise<ToolResult> {
-    return this.apiGet('/severities');
+    // Severities V1 — lives at /v1/severities, not /v2/severities
+    const url = `${this.baseUrlV1}/severities`;
+    const response = await fetch(url, { headers: this.authHeaders });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async getSeverity(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.severity_id as string;
     if (!id) return { content: [{ type: 'text', text: 'severity_id is required' }], isError: true };
-    return this.apiGet(`/severities/${encodeURIComponent(id)}`);
+    // Severities V1 — lives at /v1/severities/{id}
+    const url = `${this.baseUrlV1}/severities/${encodeURIComponent(id)}`;
+    const response = await fetch(url, { headers: this.authHeaders });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async listIncidentRoles(): Promise<ToolResult> {
@@ -507,11 +526,25 @@ export class IncidentIoMCPServer {
   }
 
   private async listIncidentStatuses(): Promise<ToolResult> {
-    return this.apiGet('/incident_statuses');
+    // Incident Statuses V1 — lives at /v1/incident_statuses, not /v2/incident_statuses
+    const url = `${this.baseUrlV1}/incident_statuses`;
+    const response = await fetch(url, { headers: this.authHeaders });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async listIncidentTypes(): Promise<ToolResult> {
-    return this.apiGet('/incident_types');
+    // Incident Types V1 — lives at /v1/incident_types, not /v2/incident_types
+    const url = `${this.baseUrlV1}/incident_types`;
+    const response = await fetch(url, { headers: this.authHeaders });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async listWorkflows(): Promise<ToolResult> {

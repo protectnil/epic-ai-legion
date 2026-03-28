@@ -8,7 +8,7 @@
 // The Microsoft EnterpriseMCP server exposes 3 tools (suggest_queries, get, list_properties) using
 // delegated permissions only. It does not support service principal / client_credentials auth and
 // is read-only (no create/update/delete operations).
-// Our adapter covers 20 tools with full service-principal auth (client_credentials) including
+// Our adapter covers 21 tools with full service-principal auth (client_credentials) including
 // write operations (create user, update user, assign role, manage groups, reset password).
 // Recommendation: Use microsoft/EnterpriseMCP for interactive/read-only Entra scenarios.
 //   Use this adapter for automation, service accounts, and write operations.

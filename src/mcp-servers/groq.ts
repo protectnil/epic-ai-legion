@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Groq MCP server was found on GitHub or npm.
+// Official MCP: https://github.com/groq/groq-mcp-server — transport: stdio, auth: API key (GROQ_API_KEY)
+// Last commit: April 15, 2025 (~11 months ago as of 2026-03-28). Fails active-maintenance criterion (>6 months).
+// Our adapter covers: 9 tools. Vendor MCP covers: ~8 tools (TTS, STT, translate, vision x2, compound-beta, list_batches, list_voices, list_stt_models).
+// Recommendation: use-rest-api. Vendor MCP is unmaintained since 2025-04 and partially overlaps our REST adapter.
 //
 // Base URL: https://api.groq.com/openai/v1
 // Auth: Bearer token — Authorization: Bearer <GROQ_API_KEY>
@@ -14,6 +16,7 @@
 // Rate limits: Vary by model and tier. Free tier: ~30 req/min for chat, ~20 req/min for audio.
 //              On-demand tier: higher limits; Flex tier: ~10x rate limits. See console.groq.com/docs/rate-limits.
 //              Batch API (async): up to 24-hour turnaround, 50% cost savings for non-realtime workloads.
+//              Batch requires pre-uploaded files via POST /v1/files — input_file_id, not a URL.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -197,24 +200,20 @@ export class GroqMCPServer {
       },
       {
         name: 'create_batch',
-        description: 'Submit an async batch of chat completion requests from a JSONL file URL for up to 24-hour processing at 50% cost savings',
+        description: 'Submit an async batch of chat completion requests using a pre-uploaded JSONL file ID for up to 24-hour processing at 50% cost savings',
         inputSchema: {
           type: 'object',
           properties: {
-            input_file_url: {
+            input_file_id: {
               type: 'string',
-              description: 'Publicly accessible URL of a JSONL file where each line is a chat completion request object with a custom_id field',
-            },
-            model: {
-              type: 'string',
-              description: 'Model to use for all requests in the batch (e.g. llama-3.3-70b-versatile)',
+              description: 'ID of a file previously uploaded via POST /v1/files with purpose=batch (e.g. file_01jh6x76wtemjr74t1fh0faj5t)',
             },
             completion_window: {
               type: 'string',
-              description: 'Maximum time window for batch processing: 24h (default)',
+              description: 'Maximum time window for batch processing: 24h (default and only supported value)',
             },
           },
-          required: ['input_file_url', 'model'],
+          required: ['input_file_id'],
         },
       },
       {
@@ -410,13 +409,13 @@ export class GroqMCPServer {
   }
 
   private async createBatch(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.input_file_url || !args.model) {
-      return { content: [{ type: 'text', text: 'input_file_url and model are required' }], isError: true };
+    if (!args.input_file_id) {
+      return { content: [{ type: 'text', text: 'input_file_id is required' }], isError: true };
     }
 
     const body: Record<string, unknown> = {
-      input_file_url: args.input_file_url,
-      model: args.model,
+      input_file_id: args.input_file_id,
+      endpoint: '/v1/chat/completions',
       completion_window: (args.completion_window as string) || '24h',
     };
 

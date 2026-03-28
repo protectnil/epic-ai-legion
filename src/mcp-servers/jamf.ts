@@ -4,13 +4,28 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/dbankscard/jamf-mcp-server — transport: stdio, auth: Bearer token
-// Our adapter covers: 18 tools (core device management + policy + inventory). Vendor MCP covers: broader set.
-// Recommendation: Use this adapter for air-gapped deployments. Evaluate vendor MCP for full coverage.
+// Official MCP: None found as of 2026-03-28
+// Jamf hosts a remote MCP server at https://mcp.jamf.com for API documentation lookup only
+// (not a device management MCP — it exposes API spec documentation, not operational tools).
+// Community MCP: https://github.com/dbankscard/jamf-mcp-server — transport: stdio, auth: Bearer token
+//   108 tools, last commit Feb 2026, maintained. NOT published by Jamf — community project.
+//   Fails criterion 1 (not official). Decision: use-rest-api.
+// Our adapter covers: 13 tools (Jamf Pro API endpoints verified). Vendor MCP covers: 108 tools (community).
+// Recommendation: use-rest-api — no official Jamf MCP server exists for device management.
+//   Community MCP (dbankscard/jamf-mcp-server) documented above for reference only.
+//
+// IMPORTANT — Mixed API surface: Jamf has two APIs:
+//   Jamf Pro API (modern, JSON, /api/v1/...): computers-inventory, scripts, categories,
+//     mobile-devices, computer-groups, users, inventory-information, oauth/token
+//   Classic API (legacy, XML/JSON, /JSSResource/...): policies, osxconfigurationprofiles
+//   This adapter uses Jamf Pro API for all supported endpoints.
+//   Policies and macOS configuration profiles are only in the Classic API and are NOT
+//   implemented in this adapter (no verified Jamf Pro API equivalent exists as of 2026-03-28).
+//   trigger_policy does not exist in either API (Jamf Nation confirmed policies cannot be
+//   triggered remotely via API — the Jamf binary on the managed device initiates policy runs).
 //
 // Base URL: https://{instance}.jamfcloud.com (cloud) or https://{on-prem-host}:8443 (on-prem)
 // Auth: OAuth2 client credentials flow via /api/oauth/token (Jamf Pro 10.49+)
-//       Falls back to Bearer token via POST /api/v1/auth/token (Basic auth)
 // Docs: https://developer.jamf.com/jamf-pro/docs/jamf-pro-api-overview
 // Rate limits: Not officially published; community guidance is max 5 concurrent requests to avoid 429s
 
@@ -44,20 +59,18 @@ export class JamfMCPServer {
       category: 'misc' as const,
       keywords: [
         'jamf', 'mdm', 'apple', 'mac', 'macos', 'ios', 'ipad', 'device-management',
-        'computer', 'mobile-device', 'policy', 'inventory', 'compliance',
-        'patch', 'script', 'configuration-profile', 'smart-group',
+        'computer', 'mobile-device', 'inventory', 'compliance',
+        'script', 'smart-group', 'category', 'user',
       ],
       toolNames: [
         'list_computers', 'get_computer', 'search_computers',
         'list_mobile_devices', 'get_mobile_device',
-        'list_policies', 'get_policy', 'trigger_policy',
         'list_scripts', 'get_script',
         'list_groups', 'get_group',
-        'list_configuration_profiles', 'get_configuration_profile',
         'get_inventory_summary', 'list_categories',
         'list_users', 'get_user',
       ],
-      description: 'Jamf Pro Apple device management: computers, mobile devices, policies, scripts, configuration profiles, smart groups, and inventory.',
+      description: 'Jamf Pro Apple device management: computers, mobile devices, scripts, computer groups, categories, users, and inventory (Jamf Pro API endpoints only).',
       author: 'protectnil',
     };
   }
@@ -169,63 +182,6 @@ export class JamfMCPServer {
         },
       },
       {
-        name: 'list_policies',
-        description: 'List Jamf Pro policies with their trigger, scope, and enabled/disabled status',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            filter: {
-              type: 'string',
-              description: 'RSQL filter expression (e.g. enabled==true)',
-            },
-            sort: {
-              type: 'string',
-              description: 'Sort field and direction (e.g. name:asc)',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number (0-indexed, default: 0)',
-            },
-            page_size: {
-              type: 'number',
-              description: 'Results per page (default: 100)',
-            },
-          },
-        },
-      },
-      {
-        name: 'get_policy',
-        description: 'Get full details of a Jamf Pro policy including scope, scripts, packages, and trigger configuration',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            policy_id: {
-              type: 'string',
-              description: 'Jamf policy ID (numeric string)',
-            },
-          },
-          required: ['policy_id'],
-        },
-      },
-      {
-        name: 'trigger_policy',
-        description: 'Trigger a Jamf Pro policy to run immediately on a specific computer by computer ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            computer_id: {
-              type: 'string',
-              description: 'Jamf computer ID to trigger the policy on',
-            },
-            policy_id: {
-              type: 'string',
-              description: 'Jamf policy ID to trigger',
-            },
-          },
-          required: ['computer_id', 'policy_id'],
-        },
-      },
-      {
         name: 'list_scripts',
         description: 'List all scripts stored in Jamf Pro with their names, categories, and script language',
         inputSchema: {
@@ -301,41 +257,6 @@ export class JamfMCPServer {
             },
           },
           required: ['group_id'],
-        },
-      },
-      {
-        name: 'list_configuration_profiles',
-        description: 'List macOS configuration profiles managed by Jamf Pro with their scope and deployment status',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            filter: {
-              type: 'string',
-              description: 'RSQL filter expression',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number (0-indexed, default: 0)',
-            },
-            page_size: {
-              type: 'number',
-              description: 'Results per page (default: 100)',
-            },
-          },
-        },
-      },
-      {
-        name: 'get_configuration_profile',
-        description: 'Get the full configuration profile XML payload and scope for a specific Jamf Pro profile',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            profile_id: {
-              type: 'string',
-              description: 'Jamf configuration profile ID (numeric string)',
-            },
-          },
-          required: ['profile_id'],
         },
       },
       {
@@ -422,12 +343,6 @@ export class JamfMCPServer {
           return this.listMobileDevices(args);
         case 'get_mobile_device':
           return this.getMobileDevice(args);
-        case 'list_policies':
-          return this.listPolicies(args);
-        case 'get_policy':
-          return this.getPolicy(args);
-        case 'trigger_policy':
-          return this.triggerPolicy(args);
         case 'list_scripts':
           return this.listScripts(args);
         case 'get_script':
@@ -436,10 +351,6 @@ export class JamfMCPServer {
           return this.listGroups(args);
         case 'get_group':
           return this.getGroup(args);
-        case 'list_configuration_profiles':
-          return this.listConfigurationProfiles(args);
-        case 'get_configuration_profile':
-          return this.getConfigurationProfile(args);
         case 'get_inventory_summary':
           return this.getInventorySummary();
         case 'list_categories':
@@ -516,23 +427,6 @@ export class JamfMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      return {
-        content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
-        isError: true,
-      };
-    }
-    const data = await response.json();
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
   private async listComputers(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {
       'page-size': String((args.page_size as number) ?? 100),
@@ -576,28 +470,6 @@ export class JamfMCPServer {
     return this.apiGet(`/api/v2/mobile-devices/${encodeURIComponent(args.device_id as string)}/detail`);
   }
 
-  private async listPolicies(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      'page-size': String((args.page_size as number) ?? 100),
-      page: String((args.page as number) ?? 0),
-    };
-    if (args.filter) params.filter = args.filter as string;
-    if (args.sort) params.sort = args.sort as string;
-    return this.apiGet('/api/v1/policies', params);
-  }
-
-  private async getPolicy(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.policy_id) return { content: [{ type: 'text', text: 'policy_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/policies/${encodeURIComponent(args.policy_id as string)}`);
-  }
-
-  private async triggerPolicy(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.computer_id || !args.policy_id) {
-      return { content: [{ type: 'text', text: 'computer_id and policy_id are required' }], isError: true };
-    }
-    return this.apiPost(`/api/v1/computers/${encodeURIComponent(args.computer_id as string)}/policies/${encodeURIComponent(args.policy_id as string)}/trigger`, {});
-  }
-
   private async listScripts(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {
       'page-size': String((args.page_size as number) ?? 100),
@@ -620,26 +492,12 @@ export class JamfMCPServer {
     };
     if (args.filter) params.filter = args.filter as string;
     if (args.sort) params.sort = args.sort as string;
-    return this.apiGet('/api/v1/groups', params);
+    return this.apiGet('/api/v1/computer-groups', params);
   }
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.group_id) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/groups/${encodeURIComponent(args.group_id as string)}`);
-  }
-
-  private async listConfigurationProfiles(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      'page-size': String((args.page_size as number) ?? 100),
-      page: String((args.page as number) ?? 0),
-    };
-    if (args.filter) params.filter = args.filter as string;
-    return this.apiGet('/api/v1/macos-managed-software-updates/available-updates', params);
-  }
-
-  private async getConfigurationProfile(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.profile_id) return { content: [{ type: 'text', text: 'profile_id is required' }], isError: true };
-    return this.apiGet(`/api/v1/macos-managed-software-updates/${encodeURIComponent(args.profile_id as string)}`);
+    return this.apiGet(`/api/v1/computer-groups/${encodeURIComponent(args.group_id as string)}`);
   }
 
   private async getInventorySummary(): Promise<ToolResult> {

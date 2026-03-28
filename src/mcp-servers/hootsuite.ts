@@ -4,15 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // Community MCP servers exist (github.com/asklokesh/hootsuite-mcp-server,
 // github.com/LokiMCPUniverse/hootsuite-mcp-server) but neither is maintained by Hootsuite Inc.
 // The official Hootsuite GitHub org (github.com/hootsuite) has no MCP server.
+// Our adapter covers: 13 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api
 //
 // Base URL: https://platform.hootsuite.com/v1
 // Auth: OAuth2 Authorization Code flow. Token endpoint: https://platform.hootsuite.com/oauth2/token
 //       Client credentials passed as Basic auth header (clientId:clientSecret base64-encoded).
 //       Access tokens expire; use refresh_token grant to renew.
+//       This adapter accepts a pre-obtained accessToken via HootsuiteConfig.
 // Docs: https://developer.hootsuite.com/docs/getting-started-with-the-rest-api
 //       API reference: https://apidocs.hootsuite.com/docs/api/index.html
 // Rate limits: 20 requests/second; 100,000 calls/day maximum
@@ -47,7 +50,7 @@ export class HootsuiteMCPServer {
       toolNames: [
         'get_me', 'list_social_profiles', 'get_social_profile',
         'schedule_message', 'get_message', 'delete_message',
-        'list_media', 'get_media_status',
+        'get_media_status',
         'list_organizations', 'list_teams', 'get_team', 'list_team_members',
         'list_members', 'get_member',
       ],
@@ -144,19 +147,6 @@ export class HootsuiteMCPServer {
             },
           },
           required: ['message_id'],
-        },
-      },
-      {
-        name: 'list_media',
-        description: 'List media items (images, videos) uploaded to Hootsuite that are available to attach to messages',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of media items to return (default: 50)',
-            },
-          },
         },
       },
       {
@@ -269,8 +259,6 @@ export class HootsuiteMCPServer {
           return this.getMessage(args);
         case 'delete_message':
           return this.deleteMessage(args);
-        case 'list_media':
-          return this.listMedia(args);
         case 'get_media_status':
           return this.getMediaStatus(args);
         case 'list_organizations':
@@ -349,7 +337,7 @@ export class HootsuiteMCPServer {
   }
 
   private async listSocialProfiles(): Promise<ToolResult> {
-    return this.hootGet('/socialProfiles');
+    return this.hootGet('/me/socialProfiles');
   }
 
   private async getSocialProfile(args: Record<string, unknown>): Promise<ToolResult> {
@@ -387,11 +375,6 @@ export class HootsuiteMCPServer {
     return this.hootDelete(`/messages/${encodeURIComponent(args.message_id as string)}`);
   }
 
-  private async listMedia(args: Record<string, unknown>): Promise<ToolResult> {
-    const limit = (args.limit as number) || 50;
-    return this.hootGet(`/media?limit=${limit}`);
-  }
-
   private async getMediaStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.media_id) {
       return { content: [{ type: 'text', text: 'media_id is required' }], isError: true };
@@ -400,7 +383,7 @@ export class HootsuiteMCPServer {
   }
 
   private async listOrganizations(): Promise<ToolResult> {
-    return this.hootGet('/organizations');
+    return this.hootGet('/me/organizations');
   }
 
   private async listTeams(args: Record<string, unknown>): Promise<ToolResult> {

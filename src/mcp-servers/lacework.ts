@@ -4,14 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Lacework MCP server was found in the lacework GitHub org or the MCP registry.
+// Official MCP: None found as of 2026-03-28
+// No official Lacework/FortiCNAPP MCP server was found in the lacework GitHub org or the MCP registry.
 // Lacework is now branded as Fortinet FortiCNAPP following the 2024 acquisition.
+// Our adapter covers: 16 tools. Vendor MCP covers: 0 tools (none found).
+// Recommendation: use-rest-api — no vendor MCP exists.
 //
 // Base URL: https://{account}.lacework.net/api/v2
-// Auth: OAuth2-style token exchange — POST /api/v2/access/tokens with keyId + secret → Bearer token
-// Docs: https://docs.lacework.net/api/v2/docs/
-// Rate limits: 480 API requests per hour per user
+// Auth: POST /api/v2/access/tokens with X-LW-UAKS: {secret} header and JSON body {keyId, expiryTime} → Bearer token
+// Docs: https://api.lacework.net/api/v2/docs/lacework-api-v2.0.yaml (OpenAPI 3.0)
+// Rate limits: 480 requests per hour per user (token bucket per-functionality; headers: RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -60,17 +62,17 @@ export class LaceworkMCPServer {
     return [
       {
         name: 'list_alerts',
-        description: 'List Lacework security alerts with optional filters for severity, status, and time range',
+        description: 'List Lacework security alerts with optional filters for severity, status, and time range; results are paginated (up to 5000 rows per page)',
         inputSchema: {
           type: 'object',
           properties: {
             start_time: {
               type: 'string',
-              description: 'Start time in ISO 8601 format (e.g. "2026-01-01T00:00:00Z")',
+              description: 'Start time in ISO 8601 format (e.g. "2026-01-01T00:00:00Z"); defaults to 24 hours ago',
             },
             end_time: {
               type: 'string',
-              description: 'End time in ISO 8601 format (e.g. "2026-01-31T23:59:59Z")',
+              description: 'End time in ISO 8601 format (e.g. "2026-01-31T23:59:59Z"); defaults to now',
             },
             severity: {
               type: 'string',
@@ -79,10 +81,6 @@ export class LaceworkMCPServer {
             status: {
               type: 'string',
               description: 'Filter by status: Open, Dismissed, Resolved',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of alerts to return (default: 50, max: 5000)',
             },
           },
         },
@@ -120,17 +118,17 @@ export class LaceworkMCPServer {
       },
       {
         name: 'search_vulnerabilities_hosts',
-        description: 'Search Lacework host vulnerability assessments with filters for severity, package, and CVE ID',
+        description: 'Search Lacework host vulnerability assessments with filters for severity, fix status, and CVE ID; paginated results up to 5000 rows',
         inputSchema: {
           type: 'object',
           properties: {
             start_time: {
               type: 'string',
-              description: 'Start time for the search window in ISO 8601 format',
+              description: 'Start time for the search window in ISO 8601 format; defaults to 24 hours ago',
             },
             end_time: {
               type: 'string',
-              description: 'End time for the search window in ISO 8601 format',
+              description: 'End time for the search window in ISO 8601 format; defaults to now',
             },
             cve_id: {
               type: 'string',
@@ -144,26 +142,22 @@ export class LaceworkMCPServer {
               type: 'string',
               description: 'Filter by fix status: EXCEPTION, FIX_AVAILABLE, NO_FIX, SUPPRESSED',
             },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of results to return (default: 50)',
-            },
           },
         },
       },
       {
         name: 'search_vulnerabilities_containers',
-        description: 'Search Lacework container image vulnerability assessments with CVE, severity, and image filters',
+        description: 'Search Lacework container image vulnerability assessments with CVE, severity, and image ID filters; paginated results up to 5000 rows',
         inputSchema: {
           type: 'object',
           properties: {
             start_time: {
               type: 'string',
-              description: 'Start time for the search window in ISO 8601 format',
+              description: 'Start time for the search window in ISO 8601 format; defaults to 24 hours ago',
             },
             end_time: {
               type: 'string',
-              description: 'End time for the search window in ISO 8601 format',
+              description: 'End time for the search window in ISO 8601 format; defaults to now',
             },
             cve_id: {
               type: 'string',
@@ -176,10 +170,6 @@ export class LaceworkMCPServer {
             image_id: {
               type: 'string',
               description: 'Filter by container image ID',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of results to return (default: 50)',
             },
           },
         },
@@ -204,36 +194,18 @@ export class LaceworkMCPServer {
       },
       {
         name: 'list_compliance_frameworks',
-        description: 'List available Lacework compliance evaluation frameworks for AWS, GCP, and Azure',
+        description: 'List available Lacework compliance evaluation schema types (framework names and subtypes available for compliance queries)',
         inputSchema: {
           type: 'object',
-          properties: {
-            cloud_provider: {
-              type: 'string',
-              description: 'Filter by cloud provider: AWS, GCP, Azure (default: all)',
-            },
-          },
+          properties: {},
         },
       },
       {
         name: 'list_policies',
-        description: 'List Lacework detection policies with optional filters for enabled status and severity',
+        description: 'List all Lacework detection policies in the account; returns the full policy list including ID, severity, enabled status, and associated query',
         inputSchema: {
           type: 'object',
-          properties: {
-            enabled: {
-              type: 'boolean',
-              description: 'Filter by enabled status (true = active policies only)',
-            },
-            severity: {
-              type: 'string',
-              description: 'Filter by policy severity: Critical, High, Medium, Low, Info',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of policies to return (default: 100)',
-            },
-          },
+          properties: {},
         },
       },
       {
@@ -313,42 +285,38 @@ export class LaceworkMCPServer {
       },
       {
         name: 'search_machines',
-        description: 'Search Lacework machine/host inventory with filters for hostname, OS, and active status',
+        description: 'Search Lacework machine/host inventory by hostname and time window; paginated results with up to 5000 rows per page',
         inputSchema: {
           type: 'object',
           properties: {
             start_time: {
               type: 'string',
-              description: 'Start time for the search window in ISO 8601 format',
+              description: 'Start time for the search window in ISO 8601 format; defaults to 24 hours ago',
             },
             end_time: {
               type: 'string',
-              description: 'End time for the search window in ISO 8601 format',
+              description: 'End time for the search window in ISO 8601 format; defaults to now',
             },
             hostname: {
               type: 'string',
               description: 'Filter by hostname (partial match supported)',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of results to return (default: 50)',
             },
           },
         },
       },
       {
         name: 'search_containers',
-        description: 'Search Lacework container inventory with filters for image, namespace, and cluster',
+        description: 'Search Lacework container inventory with filters for image repository and Kubernetes namespace; paginated results up to 5000 rows',
         inputSchema: {
           type: 'object',
           properties: {
             start_time: {
               type: 'string',
-              description: 'Start time for the search window in ISO 8601 format',
+              description: 'Start time for the search window in ISO 8601 format; defaults to 24 hours ago',
             },
             end_time: {
               type: 'string',
-              description: 'End time for the search window in ISO 8601 format',
+              description: 'End time for the search window in ISO 8601 format; defaults to now',
             },
             image_repo: {
               type: 'string',
@@ -358,24 +326,15 @@ export class LaceworkMCPServer {
               type: 'string',
               description: 'Filter by Kubernetes namespace',
             },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of results to return (default: 50)',
-            },
           },
         },
       },
       {
         name: 'list_agent_access_tokens',
-        description: 'List Lacework agent access tokens used to authorize agent installations',
+        description: 'List all Lacework agent access tokens used to authorize agent installations; returns token alias, enabled status, and version',
         inputSchema: {
           type: 'object',
-          properties: {
-            limit: {
-              type: 'number',
-              description: 'Maximum number of tokens to return (default: 50)',
-            },
-          },
+          properties: {},
         },
       },
       {
@@ -500,7 +459,6 @@ export class LaceworkMCPServer {
   private async listAlerts(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {
       ...this.buildTimeFilter(args),
-      returns: (args.limit as number) ?? 50,
     };
     const fieldFilters: Array<Record<string, unknown>> = [];
     if (args.severity) fieldFilters.push({ field: 'severity', expression: 'eq', value: args.severity });
@@ -549,7 +507,6 @@ export class LaceworkMCPServer {
   private async searchVulnerabilitiesHosts(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {
       ...this.buildTimeFilter(args),
-      returns: (args.limit as number) ?? 50,
     };
     const fieldFilters: Array<Record<string, unknown>> = [];
     if (args.cve_id) fieldFilters.push({ field: 'vulnId', expression: 'eq', value: args.cve_id });
@@ -571,7 +528,6 @@ export class LaceworkMCPServer {
   private async searchVulnerabilitiesContainers(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {
       ...this.buildTimeFilter(args),
-      returns: (args.limit as number) ?? 50,
     };
     const fieldFilters: Array<Record<string, unknown>> = [];
     if (args.cve_id) fieldFilters.push({ field: 'vulnId', expression: 'eq', value: args.cve_id });
@@ -603,11 +559,10 @@ export class LaceworkMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async listComplianceFrameworks(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.cloud_provider) params.set('cloudProvider', args.cloud_provider as string);
-    const qs = params.toString();
-    const response = await fetch(`${this.baseUrl}/Configs/ComplianceEvaluations${qs ? `?${qs}` : ''}`, { headers });
+  private async listComplianceFrameworks(headers: Record<string, string>, _args: Record<string, unknown>): Promise<ToolResult> {
+    // GET /api/v2/Schemas/ComplianceEvaluations returns the available compliance evaluation schema types.
+    // cloudProvider filtering is not a supported query param on this endpoint.
+    const response = await fetch(`${this.baseUrl}/Schemas/ComplianceEvaluations`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);
@@ -616,14 +571,10 @@ export class LaceworkMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async listPolicies(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (typeof args.enabled === 'boolean') params.set('enabled', String(args.enabled));
-    if (args.severity) params.set('severity', args.severity as string);
-    if (args.limit) params.set('limit', String(args.limit));
-    const qs = params.toString();
-
-    const response = await fetch(`${this.baseUrl}/Policies${qs ? `?${qs}` : ''}`, { headers });
+  private async listPolicies(headers: Record<string, string>, _args: Record<string, unknown>): Promise<ToolResult> {
+    // GET /api/v2/Policies returns all policies; no query-param filtering is supported.
+    // Filtering by enabled/severity requires POST /api/v2/Policies/search (not implemented here).
+    const response = await fetch(`${this.baseUrl}/Policies`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);
@@ -700,7 +651,6 @@ export class LaceworkMCPServer {
   private async searchMachines(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {
       ...this.buildTimeFilter(args),
-      returns: (args.limit as number) ?? 50,
     };
     if (args.hostname) {
       body.filters = [{ field: 'hostname', expression: 'ilike', value: `%${encodeURIComponent(args.hostname as string)}%` }];
@@ -720,7 +670,6 @@ export class LaceworkMCPServer {
   private async searchContainers(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {
       ...this.buildTimeFilter(args),
-      returns: (args.limit as number) ?? 50,
     };
     const fieldFilters: Array<Record<string, unknown>> = [];
     if (args.image_repo) fieldFilters.push({ field: 'imageRepo', expression: 'ilike', value: `%${encodeURIComponent(args.image_repo as string)}%` });
@@ -738,12 +687,8 @@ export class LaceworkMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async listAgentAccessTokens(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.limit) params.set('limit', String(args.limit));
-    const qs = params.toString();
-
-    const response = await fetch(`${this.baseUrl}/AgentAccessTokens${qs ? `?${qs}` : ''}`, { headers });
+  private async listAgentAccessTokens(headers: Record<string, string>, _args: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}/AgentAccessTokens`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);

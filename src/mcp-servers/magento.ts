@@ -4,17 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Adobe-published Magento MCP server exists on GitHub. Community-built servers
-// (rafaelstz/adobe-commerce-dev-mcp, Codexpect/adobe-commerce-mcp) use GraphQL, not full REST.
-// This adapter covers REST API v1: 18 tools (products, categories, orders, customers, carts, inventory).
+// Official MCP: None found as of 2026-03-28
+// No official Adobe-published Magento/Adobe Commerce MCP server exists on GitHub or npmjs.com.
+// Community-built servers (rafaelstz/adobe-commerce-dev-mcp, Codexpect/adobe-commerce-mcp) use
+// GraphQL only and are not published by Adobe — not official. Decision: use-rest-api.
+// This adapter covers REST API V1: 18 tools (products, categories, orders, customers, inventory).
 //
 // Base URL: https://{your-store}/rest/V1  (self-hosted; no single global base URL)
 // Auth: Bearer token via POST /V1/integration/admin/token (username + password → token)
-//       or long-lived Integration access token from Magento Admin > System > Integrations
+//       or long-lived Integration access token from Magento Admin > System > Integrations.
+//       For Adobe Commerce as a Cloud Service, IMS OAuth2 is required instead.
 // Docs: https://developer.adobe.com/commerce/webapi/rest/
-// Rate limits: No global documented limit; site-level config. Default page limit: 300 items/page.
-//              Input list limit: 20 entities per request by default (configurable in admin).
+// Rate limits: No global documented limit; site-level configuration.
+//              Default page size limit: 300 items/page. Input list limit: 20 entities by default.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

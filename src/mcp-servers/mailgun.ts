@@ -4,14 +4,38 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/mailgun/mailgun-mcp-server — transport: stdio, auth: API key env var
-// Our adapter covers: 16 tools (send, domains, events, suppressions, routes, templates, stats).
-// Vendor MCP covers: focused email-specific tools. Recommendation: Use vendor MCP for minimal
-// footprint. Use this adapter for air-gapped deployments or broader programmatic control.
+// Official MCP: https://github.com/mailgun/mailgun-mcp-server — transport: stdio, auth: API key env var (MAILGUN_API_KEY)
+// Vendor MCP is official (published by mailgun org), actively maintained (last commit Mar 17 2026),
+// exposes 50+ operations across Sending, Domains, Analytics, Templates, Suppressions, Webhooks,
+// Routes, Mailing Lists, IPs, Tracking. Meets all 4 MCP criteria.
+// Our adapter covers: 16 tools. Vendor MCP covers: 50+ tools.
 //
-// Base URL: https://api.mailgun.net (US) or https://api.eu.mailgun.net (EU)
+// OVERLAP ANALYSIS:
+//   Shared (in both MCP and our adapter): send_email, send_mime_email, list_domains, get_domain,
+//     create_domain, delete_domain, verify_domain, get_events, get_stats, list_bounces,
+//     delete_bounce, list_unsubscribes, create_unsubscribe, delete_unsubscribe, list_routes,
+//     create_route
+//   MCP-only (50+ total — examples): list_mailing_lists, create_mailing_list,
+//     list_mailing_list_members, create_mailing_list_member, list_templates, create_template,
+//     list_webhooks, create_webhook, get_ip_pools, query_metrics, get_bounce_classification,
+//     list_complaints, create_complaint, delete_complaint, list_allowlist, create_allowlist,
+//     delete_allowlist, and many more (analytics, tracking config, stored messages, etc.)
+//   API-only: none — vendor MCP is a superset of our REST adapter
+//   Ours-only: none — all 16 tools map to verified API endpoints
+//
+// Integration: use-both
+// MCP-sourced tools: all 50+ MCP tools (templates, webhooks, mailing lists, metrics, IPs, etc.)
+// REST-sourced tools (16): send_email, send_mime_email, list_domains, get_domain, create_domain,
+//   delete_domain, verify_domain, get_events, get_stats, list_bounces, delete_bounce,
+//   list_unsubscribes, create_unsubscribe, delete_unsubscribe, list_routes, create_route
+// Combined coverage: 50+ tools (MCP superset; REST adapter provides air-gapped fallback for the 16 core ops)
+// Note: Our REST adapter is NOT redundant — it serves air-gapped deployments and provides
+//   deterministic tool routing without spawning a subprocess. FederationManager routes shared
+//   tools through MCP by default when MCP is available.
+//
+// Base URL: https://api.mailgun.net (US) or https://api.eu.mailgun.net (EU); methods append /v3/ or /v4/ per endpoint
 // Auth: HTTP Basic auth — username "api", password is the Mailgun API key
-// Docs: https://documentation.mailgun.com/docs/mailgun/api-reference/
+// Docs: https://documentation.mailgun.com/docs/mailgun/api-reference/api-overview
 // Rate limits: Domains API: 300 req/min per account. Events: 300/min. Tags: 1,000/min.
 //              Suppressions: 10,000/min. Routes: 1,000/min.
 
@@ -620,7 +644,16 @@ export class MailgunMCPServer {
 
   private async verifyDomain(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.domain) return { content: [{ type: 'text', text: 'domain is required' }], isError: true };
-    return this.apiPost(`/v3/domains/${encodeURIComponent(args.domain as string)}/verify`, {});
+    // Vendor docs: PUT /v4/domains/{name}/verify (not POST, not v3)
+    const response = await fetch(`${this.baseUrl.replace('/v3', '')}/v4/domains/${encodeURIComponent(args.domain as string)}/verify`, {
+      method: 'PUT',
+      headers: { Authorization: this.authHeader },
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async getEvents(args: Record<string, unknown>): Promise<ToolResult> {

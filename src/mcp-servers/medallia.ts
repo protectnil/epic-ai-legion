@@ -4,13 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Medallia MCP server was found on GitHub or the MCP registry.
+// Official MCP: None found as of 2026-03-28
+// No official Medallia MCP server was found on GitHub, npmjs, or the MCP registry.
 //
 // Base URL: https://{instance}-{company}.apis.medallia.com (instance-specific; set via baseUrl)
-// Auth: OAuth2 client credentials — token endpoint: https://{instance}.medallia.com/oauth/{company}/token
+// Auth: OAuth2 client credentials — token issued by MEC reporting instance:
+//   POST https://{instance}.medallia.com/oauth/{company}/token (Basic auth: clientId:clientSecret)
 // Docs: https://developer.medallia.com/medallia-apis/reference/integrations
-// Rate limits: Cost-unit throttling per query; Query API capped at 3,000,000 cost-units per query
+// Rate limits (from docs):
+//   Query API: 70 req/sec, 975,000 req/day, 90s timeout
+//   Users API: 70 req/sec, 10,000 req/day, 180s timeout
+//   Roles API: 70 req/sec, 10,000 req/day, 180s timeout
+//   Import API: 1-10 req/sec, 1,950,000 req/day
+//   Global: 60,000 API calls per 24-hour window per instance
+// Note: Medallia API paths below (/feedback/v1/, /reporting/v1/, /admin/v1/) are UNVERIFIED from
+//   public docs (full API reference requires authenticated access). query_feedback (GraphQL POST) and
+//   OAuth token URL are confirmed; all other REST sub-paths are UNVERIFIED.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

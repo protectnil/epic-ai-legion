@@ -4,15 +4,33 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://www.mabl.com/mabl-mcp-server — transport: stdio, auth: API key via @mablhq/mabl-cli
-// npm: @mablhq/mabl-cli (run: mabl mcp start) — announced August 2025, actively maintained.
-// Our adapter covers: 14 tools (plans, deployments, results, executions, environments, applications, labels).
-// Recommendation: Use the official mabl MCP (@mablhq/mabl-cli) for IDE-integrated workflows.
-// Use this adapter for REST API access, CI/CD pipelines, or air-gapped deployments.
+// Official MCP: https://help.mabl.com/hc/en-us/articles/47299375773844-mabl-MCP-overview
+//   Published by mablhq via @mablhq/mabl-cli npm package (run: npx @mablhq/mabl-cli@latest mcp start).
+//   Transport: stdio. Auth: OAuth login via mabl CLI (mabl auth login).
+//   Actively maintained as of 2026-03 (cloud + local server options; released July 2025, expanded since).
+//   Cloud MCP tools (8): analyze_failure, assign_xray_to_mabl_test, get_applications, get_credentials,
+//     get_latest_test_runs, get_mabl_deployment, get_mabl_test_details, get_mabl_tests
+//   Local MCP tools (+6 more, 14 total): create_mabl_test_cloud, create_mabl_test_from_plan,
+//     get_plan_run_result, get_plans, run_mabl_test_local, switch_workspace
+// Our adapter covers: 13 tools (plans, deployments, results, executions, environments, applications, labels).
+// Vendor MCP covers: 14 tools (test creation, local execution, failure analysis — not available via REST).
+//
+// Integration: use-both
+//   MCP-sourced tools (6 unique): analyze_failure, assign_xray_to_mabl_test, get_credentials,
+//     get_mabl_test_details, get_mabl_tests, create_mabl_test_cloud, create_mabl_test_from_plan,
+//     run_mabl_test_local
+//   REST-sourced tools (13, our adapter): list_plans, get_plan, list_environments, get_environment,
+//     create_environment, list_applications, get_application, trigger_deployment, get_deployment_result,
+//     list_executions, get_execution, list_labels, get_workspace
+//   Shared (partial overlap): get_applications/list_applications, get_plans/list_plans,
+//     get_mabl_deployment/get_deployment_result — REST adapter is authoritative for CRUD/write ops.
+//   The vendor MCP has unique tools (test creation, local execution, AI failure analysis) not available
+//   via REST. The REST adapter has unique tools (create_environment, trigger_deployment, list_executions,
+//   get_execution, list_labels, get_workspace) not covered by the MCP. Full coverage requires both.
 //
 // Base URL: https://api.mabl.com
 // Auth: Basic auth with literal string "key" as username and API key as password
-// Docs: https://api.help.mabl.com/docs/getting-started
+// Docs: https://help.mabl.com/hc/en-us/articles/32148379464340-mabl-API-overview
 // Rate limits: Not publicly documented; workspace-scoped per API key tier.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -49,7 +67,6 @@ export class MablMCPServer {
         'trigger_deployment', 'get_deployment_result',
         'list_executions', 'get_execution',
         'list_labels', 'get_workspace',
-        'get_deployment_status',
       ],
       description: 'mabl AI test automation: trigger deployments, retrieve test execution results, manage plans, environments, and applications via the mabl REST API.',
       author: 'protectnil',
@@ -258,20 +275,6 @@ export class MablMCPServer {
           properties: {},
         },
       },
-      {
-        name: 'get_deployment_status',
-        description: 'Poll the status of a triggered deployment event to check if all tests have completed',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            event_id: {
-              type: 'string',
-              description: 'Deployment event ID to check status for',
-            },
-          },
-          required: ['event_id'],
-        },
-      },
     ];
   }
 
@@ -304,8 +307,6 @@ export class MablMCPServer {
           return this.listLabels();
         case 'get_workspace':
           return this.getWorkspace();
-        case 'get_deployment_status':
-          return this.getDeploymentStatus(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -439,8 +440,4 @@ export class MablMCPServer {
     return this.apiGet('workspace/v1');
   }
 
-  private async getDeploymentStatus(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.event_id) return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
-    return this.apiGet(`execution/result/event/${encodeURIComponent(args.event_id as string)}`);
-  }
 }

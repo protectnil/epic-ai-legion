@@ -4,11 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/hashicorp/vault-mcp-server — transport: stdio, auth: Vault token
-// The official MCP covers KV v2 reads and basic PKI operations (16 tools, actively maintained).
-// Our adapter extends coverage: KV v2 full CRUD, sys/health, sys/mounts, sys/auth, sys/policies,
-// sys/leases, auth/token lifecycle, and Transit encryption — ops not in the official MCP.
-// Recommendation: Use vendor MCP for read-only KV access. Use this adapter for ops and admin tasks.
+// Official MCP: https://github.com/hashicorp/vault-mcp-server — transport: stdio + streamable-HTTP, auth: Vault token
+// Vendor MCP covers 16 tools (KV: list_secrets, create_secret, read_secret, delete_secret;
+//   sys: list_mounts, create_mount, delete_mount;
+//   PKI: enable_pki, create_pki_issuer, list_pki_issuers, read_pki_issuer, create_pki_role,
+//        read_pki_role, list_pki_roles, delete_pki_role, issue_pki_certificate).
+// Our adapter covers 25 tools adding: sys/health, sys/auth, full policy CRUD, token lifecycle,
+//   lease management, and Transit encryption — none of which the official MCP exposes.
+// Recommendation: use-both. MCP provides PKI tools our adapter lacks; our adapter provides
+//   health, auth methods, policies, token ops, leases, and transit that the MCP lacks.
 //
 // Base URL: https://{vaultAddr}/v1 — caller supplies their Vault address (no default; Vault is self-hosted)
 // Auth: X-Vault-Token header (canonical). Vault Enterprise: X-Vault-Namespace header.
@@ -634,8 +638,13 @@ export class HashiCorpVaultMCPServer {
 
   private async renewToken(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {};
-    if (args.token) body.token = args.token;
     if (args.increment) body.increment = args.increment;
+    // If a specific token is provided, use /auth/token/renew (renews any token by value).
+    // Otherwise use /auth/token/renew-self (renews the caller's own token).
+    if (args.token) {
+      body.token = args.token;
+      return this.vaultPost('auth/token/renew', body);
+    }
     return this.vaultPost('auth/token/renew-self', body);
   }
 

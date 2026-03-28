@@ -476,7 +476,7 @@ export class GoogleVertexAIMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async predict(args: Record<string, unknown>): Promise<ToolResult> {
@@ -508,7 +508,7 @@ export class GoogleVertexAIMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listBatchPredictionJobs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -530,7 +530,7 @@ export class GoogleVertexAIMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listTuningJobs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -552,6 +552,6 @@ export class GoogleVertexAIMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 }

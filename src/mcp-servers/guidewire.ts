@@ -4,19 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Guidewire MCP server was found on GitHub or npm.
 //
 // Base URL: https://{tenant}.cloud.guidewire.com/pc/rest (set via tenantUrl constructor config)
 // Auth: OAuth2 client credentials flow.
 //       Token endpoint: https://{tenant}.cloud.guidewire.com/oauth2/token (configurable via tokenUrl)
-//       Grant type: client_credentials
+//       Grant type: client_credentials (client_id + client_secret as form-encoded body params)
 //       Scopes: pc.policies, pc.accounts (configured in Guidewire Integration Gateway)
-// Docs: https://docs.guidewire.com/cloud/pc/202511/cloudapica/
-//       PolicyCenter Cloud API Consumer Guide: https://docs.guidewire.com/cloud/pc/202411/cloudapibf/
+// Docs: https://docs.guidewire.com/cloud/pc/202503/apiref/
+//       PolicyCenter Cloud API Consumer Guide: https://docs.guidewire.com/cloud/pc/202511/cloudapibf/
 // Rate limits: Not publicly documented. Governed per-tenant by Guidewire Cloud infrastructure.
 // Note: Base URL and API paths are tenant-specific. Paths below follow Guidewire Cloud API v1 conventions
 //       as documented in the PolicyCenter Cloud API reference (202503 release).
+//       Account API = /account/v1, Job API = /job/v1, Policy API = /policy/v1, Common API = /common/v1
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -246,21 +247,29 @@ export class GuidewireMCPServer {
       },
       {
         name: 'create_submission',
-        description: 'Create a new policy submission (quote request) for an existing account with product and effective date',
+        description: 'Create a new policy submission (quote request) for an existing account with product, effective date, base state, and producer code',
         inputSchema: {
           type: 'object',
           properties: {
             account_id: {
               type: 'string',
-              description: 'Policyholder account ID to create the submission for',
+              description: 'Policyholder account ID to create the submission for (e.g. pc:1234)',
             },
             product_code: {
               type: 'string',
-              description: 'Insurance product code for the submission (e.g. BusinessAuto, PersonalAuto, CommercialProperty)',
+              description: 'Insurance product ID for the submission (e.g. PersonalAuto, BusinessAuto, CommercialProperty)',
             },
             effective_date: {
               type: 'string',
               description: 'Requested policy effective date (ISO 8601, e.g. 2025-01-01)',
+            },
+            base_state: {
+              type: 'string',
+              description: 'Two-letter jurisdiction/state code for the primary location (e.g. CA, NY). Required by Guidewire at runtime.',
+            },
+            producer_code: {
+              type: 'string',
+              description: 'Producer code ID (e.g. pc:16). Required by Guidewire at runtime.',
             },
             expiration_date: {
               type: 'string',
@@ -492,19 +501,26 @@ export class GuidewireMCPServer {
     const params = this.buildPageParams(args);
     if (args.account_name) params['accountName'] = args.account_name as string;
     if (args.account_type) params['accountType'] = args.account_type as string;
-    return this.gwGet('/common/v1/accounts', params);
+    return this.gwGet('/account/v1/accounts', params);
   }
 
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    return this.gwGet(`/common/v1/accounts/${encodeURIComponent(args.account_id as string)}`);
+    return this.gwGet(`/account/v1/accounts/${encodeURIComponent(args.account_id as string)}`);
   }
 
   private async searchAccounts(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
-    const params = this.buildPageParams(args);
-    params['searchValue'] = args.query as string;
-    return this.gwGet('/common/v1/accounts/search', params);
+    // POST /account/v1/search/accounts-freetext — free-text account search per Guidewire Cloud API docs.
+    const pageSize = (args.page_size as number) || 25;
+    return this.gwPost('/account/v1/search/accounts-freetext', {
+      data: {
+        attributes: {
+          searchValue: args.query,
+          pageSize,
+        },
+      },
+    });
   }
 
   private async listPolicies(args: Record<string, unknown>): Promise<ToolResult> {
@@ -524,22 +540,34 @@ export class GuidewireMCPServer {
 
   private async searchPolicies(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
-    const params = this.buildPageParams(args);
-    params['searchValue'] = args.query as string;
-    return this.gwGet('/policy/v1/policies/search', params);
+    // POST /policy/v1/search/policies — free-text policy search per Guidewire Cloud API pattern.
+    const pageSize = (args.page_size as number) || 25;
+    return this.gwPost('/policy/v1/search/policies', {
+      data: {
+        attributes: {
+          searchValue: args.query,
+          pageSize,
+        },
+      },
+    });
   }
 
   private async listSubmissions(args: Record<string, unknown>): Promise<ToolResult> {
+    // Submissions are jobs of type "Submission" in the Job API.
+    // GET /job/v1/jobs with filter=jobType:eq:Submission per Guidewire Cloud API docs.
     const params = this.buildPageParams(args);
+    const filters: string[] = ['jobType:eq:Submission'];
     if (args.account_id) params['accountId'] = args.account_id as string;
-    if (args.status) params['status'] = args.status as string;
+    if (args.status) filters.push(`status:eq:${args.status as string}`);
     if (args.product_code) params['productCode'] = args.product_code as string;
-    return this.gwGet('/policy/v1/submissions', params);
+    params['filter'] = filters.join(',');
+    return this.gwGet('/job/v1/jobs', params);
   }
 
   private async getSubmission(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.submission_id) return { content: [{ type: 'text', text: 'submission_id is required' }], isError: true };
-    return this.gwGet(`/policy/v1/submissions/${encodeURIComponent(args.submission_id as string)}`);
+    // Submissions are jobs — retrieve via /job/v1/jobs/{jobId}
+    return this.gwGet(`/job/v1/jobs/${encodeURIComponent(args.submission_id as string)}`);
   }
 
   private async createSubmission(args: Record<string, unknown>): Promise<ToolResult> {
@@ -547,25 +575,32 @@ export class GuidewireMCPServer {
       return { content: [{ type: 'text', text: 'account_id, product_code, and effective_date are required' }], isError: true };
     }
 
-    const body: Record<string, unknown> = {
+    // Guidewire Cloud API schema: POST /job/v1/submissions with nested data.attributes.
+    // Required: account.id, product.id, jobEffectiveDate, baseState.code, producerCode.id.
+    // base_state and producer_code are optional here but may be required by Guidewire at runtime.
+    const attributes: Record<string, unknown> = {
       account: { id: args.account_id },
-      policy: {
-        productCode: args.product_code,
-        effectiveDate: args.effective_date,
-      },
+      product: { id: args.product_code },
+      jobEffectiveDate: args.effective_date,
     };
-    if (args.expiration_date) (body.policy as Record<string, unknown>).expirationDate = args.expiration_date;
+    if (args.base_state) attributes['baseState'] = { code: args.base_state };
+    if (args.producer_code) attributes['producerCode'] = { id: args.producer_code };
+    if (args.expiration_date) attributes['jobExpirationDate'] = args.expiration_date;
 
-    return this.gwPost('/policy/v1/submissions', body);
+    return this.gwPost('/job/v1/submissions', { data: { attributes } });
   }
 
   private async listRenewals(args: Record<string, unknown>): Promise<ToolResult> {
+    // Renewals are jobs of type "Renewal" in the Job API.
+    // GET /job/v1/jobs with filter=jobType:eq:Renewal per Guidewire Cloud API docs.
     const params = this.buildPageParams(args);
+    const filters: string[] = ['jobType:eq:Renewal'];
     if (args.account_id) params['accountId'] = args.account_id as string;
-    if (args.status) params['status'] = args.status as string;
-    if (args.expiration_date_min) params['expirationDateMin'] = args.expiration_date_min as string;
-    if (args.expiration_date_max) params['expirationDateMax'] = args.expiration_date_max as string;
-    return this.gwGet('/policy/v1/renewals', params);
+    if (args.status) filters.push(`status:eq:${args.status as string}`);
+    if (args.expiration_date_min) filters.push(`jobExpirationDate:gte:${args.expiration_date_min as string}`);
+    if (args.expiration_date_max) filters.push(`jobExpirationDate:lte:${args.expiration_date_max as string}`);
+    params['filter'] = filters.join(',');
+    return this.gwGet('/job/v1/jobs', params);
   }
 
   private async getPolicyDocuments(args: Record<string, unknown>): Promise<ToolResult> {

@@ -4,17 +4,26 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Klaviyo MCP server was found on GitHub.
+// Official MCP: https://developers.klaviyo.com/en/docs/klaviyo_mcp_server — transport: streamable-HTTP (remote) + stdio (local), auth: Private API key
+// Klaviyo publishes an official MCP server (remote-hosted, GA August 2025). No public GitHub repo — vendor-hosted only.
+// Our adapter covers: 22 tools. Vendor MCP covers: 18 tools.
+// Recommendation: use-both — each side has unique tools the other lacks.
+//   MCP-only tools (6): assign_template_to_campaign_message, get_catalog_items, subscribe_profile_to_marketing,
+//     unsubscribe_profile_from_marketing, get_campaign_report, get_flow_report
+//   REST-only tools (10): list_lists, get_list, create_list, list_segments, get_segment, list_profiles,
+//     get_profile_by_email, update_flow_status, list_metrics, list_templates
+//   Shared tools (12): get_campaigns/list_campaigns, get_campaign, create_campaign, get_events/create_event,
+//     get_metrics/get_metric, get_profile, create_profile, update_profile, list_flows/get_flow,
+//     get_email_template/get_template, create_email_template, get_account_details
 //
 // Base URL: https://a.klaviyo.com/api
 // Auth: Private API key in Authorization header as "Klaviyo-API-Key {key}"
 //   Private keys have prefix pk_. Generate in Klaviyo account > Settings > API Keys.
 //   Public keys (site IDs) are for client-side only — do NOT use here.
 // Docs: https://developers.klaviyo.com/en/reference/api_overview
-// Rate limits: Tiered by endpoint — XS (1 req/s, 15/min), S, M, L, XL tiers.
+// Rate limits: Tiered by endpoint — burst and steady limits vary per endpoint (e.g. Get Campaigns: 10/s burst, 150/m steady).
 //   Monitor 429 responses and respect the Retry-After header.
-//   API revision: Use header "revision: 2025-01-15" (current stable as of 2026-03).
+//   API revision: Use header "revision: 2026-01-15" (current stable as of 2026-03).
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -32,7 +41,7 @@ export class KlaviyoMCPServer {
   constructor(config: KlaviyoConfig) {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://a.klaviyo.com/api';
-    this.revision = config.revision || '2025-01-15';
+    this.revision = config.revision || '2026-01-15';
   }
 
   static catalog() {

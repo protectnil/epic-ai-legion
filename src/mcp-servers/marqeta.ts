@@ -4,11 +4,26 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/marqeta/marqeta-mcp — transport: stdio, auth: Basic (username + password)
+// Official MCP: https://github.com/marqeta/marqeta-mcp — transport: stdio, auth: Basic (MARQETA_USERNAME + MARQETA_PASSWORD)
 // Our adapter covers: 20 tools (users, cards, card products, transactions, velocity controls, funding).
-// Vendor MCP covers: 33 tools across 7 service categories (full Core API surface). Transport: stdio.
-// Recommendation: Use vendor MCP for full Core API coverage. Use this adapter for air-gapped deployments
-// or when you need programmatic access to a targeted subset of card issuing operations.
+// Vendor MCP covers: 33 tools across 7 service categories (Card Products, Card Transitions, Cards, Disputes,
+//   Transactions, Users, Velocity Control). Last release: v1.0.4, Oct 28 2025. Maintained.
+// Recommendation: use-both — MCP and our REST adapter have non-overlapping coverage.
+//   MCP adds: disputes (disputes_listCases, disputes_createCase), card barcode lookup, card PAN visibility,
+//     related-transaction lookup, user child accounts, user notes, user SSN, card transition read, auth-token lookup.
+//   Our REST adapter covers: list_funding_sources, get_funding_source — not exposed by vendor MCP.
+//   Combined coverage: 20 (REST) + MCP-only tools for full Core API surface.
+//
+// Integration: use-both
+// MCP-sourced tools (REST adapter does NOT cover): disputes_listCases, disputes_createCase,
+//   cards_getCardsbyBarcode, cards_getCardsbyTokenandShowpan, cards_postCardsbyPan,
+//   transactions_getTransactionsbyFundingsourcetoken, transactions_getRelatedTransactionsbyToken,
+//   users_getUsersAuthbyClientAccessToken, users_getChildrenUsersbyParenttoken,
+//   users_getUsersbyPhonenumber, users_getUsersNotesbyToken, users_getUsersSSNbyToken,
+//   cardtransitions_getCardtransitionsbyCardToken, cardtransitions_getCardtransitionsbyToken,
+//   velocitycontrol_getVelocitycontrolsbyAccountToken, velocitycontrol_getVelocitycontrolsbyUserToken,
+//   velocitycontrol_deleteVelocitycontrolsToken
+// REST-sourced tools (vendor MCP does NOT cover): list_funding_sources, get_funding_source
 //
 // Base URL: https://shared-sandbox-api.marqeta.com/v3 (sandbox) | production URL provided by Marqeta
 // Auth: HTTP Basic — username is the application token, password is the access token

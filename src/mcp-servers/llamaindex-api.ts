@@ -4,12 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official LlamaIndex Cloud MCP server was found on GitHub or developers.llamaindex.ai.
+// Official MCP: https://github.com/run-llama/mcp-server-llamacloud — transport: stdio, auth: API key
+// Published as @llamaindex/mcp-server-llamacloud on npm. Last release: v0.1.3, Jun 24 2025 (maintained).
+// That MCP server only exposes per-index query tools (dynamic, auto-named get_information_{index_name});
+// it does NOT expose pipeline management, project management, file upload, or parse job operations.
+// A second package @llamaindex/llama-cloud-mcp exposes only 2 tools (docs_search + code_executor).
+// Neither MCP exposes the full REST API surface. Decision: use-rest-api.
+// MCP fails criterion 3 (does not expose 10+ fixed tools covering the full API surface).
 //
-// Base URL: https://api.cloud.llamaindex.ai/api/v1
+// Our adapter covers: 18 tools. Vendor MCP covers: dynamic query-only tools (not a fixed API surface).
+// Recommendation: Use this REST adapter for full pipeline/project/file/parse management.
+//
+// Base URL: https://api.cloud.llamaindex.ai (base; paths include /api/v1, /api/v1/beta, /api/v2 prefixes)
 // Auth: Bearer token (LLAMA_CLOUD_API_KEY from LlamaIndex Cloud dashboard)
-// Docs: https://developers.llamaindex.ai/python/cloud/llamacloud/guides/api_sdk/
+// Docs: https://developers.api.llamaindex.ai/api
 // Rate limits: Not publicly documented; enforced server-side. Retry on 429 with Retry-After header.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -27,7 +35,7 @@ export class LlamaIndexMCPServer {
 
   constructor(config: LlamaIndexConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = (config.baseUrl ?? 'https://api.cloud.llamaindex.ai/api/v1').replace(/\/$/, '');
+    this.baseUrl = (config.baseUrl ?? 'https://api.cloud.llamaindex.ai').replace(/\/$/, '');
   }
 
   static catalog() {
@@ -253,7 +261,7 @@ export class LlamaIndexMCPServer {
       },
       {
         name: 'create_parse_job',
-        description: 'Submit a document URL or file ID to LlamaParse for extraction and parsing into structured text.',
+        description: 'Submit a document URL or file ID to LlamaParse v2 for extraction and parsing into structured text.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -261,7 +269,7 @@ export class LlamaIndexMCPServer {
             url: { type: 'string', description: 'Publicly accessible URL to fetch and parse (alternative to file_id).' },
             parse_mode: {
               type: 'string',
-              description: 'Parsing mode: fast, cost_effective, agentic, agentic_plus (default: fast).',
+              description: 'Parsing tier: fast, cost_effective, agentic, agentic_plus (default: fast). Maps to the v2 API "tier" parameter.',
             },
           },
         },
@@ -389,6 +397,20 @@ export class LlamaIndexMCPServer {
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
+  private async put(path: string, body: unknown): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: this.authHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    let data: unknown;
+    try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
+  }
+
   private async del(path: string): Promise<ToolResult> {
     const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.authHeaders });
     if (!response.ok) {
@@ -402,12 +424,12 @@ export class LlamaIndexMCPServer {
     if (args.project_id) params.set('project_id', args.project_id as string);
     if (args.page) params.set('page', String(args.page));
     if (args.page_size) params.set('page_size', String(args.page_size));
-    return this.get('/pipelines', params);
+    return this.get('/api/v1/pipelines', params);
   }
 
   private async getPipeline(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.pipeline_id) return { content: [{ type: 'text', text: 'pipeline_id is required' }], isError: true };
-    return this.get(`/pipelines/${encodeURIComponent(args.pipeline_id as string)}`);
+    return this.get(`/api/v1/pipelines/${encodeURIComponent(args.pipeline_id as string)}`);
   }
 
   private async createPipeline(args: Record<string, unknown>): Promise<ToolResult> {
@@ -415,12 +437,12 @@ export class LlamaIndexMCPServer {
     const body: Record<string, unknown> = { name: args.name, project_id: args.project_id };
     if (args.embedding_config) body.embedding_config = args.embedding_config;
     if (args.transform_config) body.transform_config = args.transform_config;
-    return this.post('/pipelines', body);
+    return this.post('/api/v1/pipelines', body);
   }
 
   private async deletePipeline(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.pipeline_id) return { content: [{ type: 'text', text: 'pipeline_id is required' }], isError: true };
-    return this.del(`/pipelines/${encodeURIComponent(args.pipeline_id as string)}`);
+    return this.del(`/api/v1/pipelines/${encodeURIComponent(args.pipeline_id as string)}`);
   }
 
   private async listPipelineFiles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -428,34 +450,35 @@ export class LlamaIndexMCPServer {
     const params = new URLSearchParams();
     if (args.page) params.set('page', String(args.page));
     if (args.page_size) params.set('page_size', String(args.page_size));
-    return this.get(`/pipelines/${encodeURIComponent(args.pipeline_id as string)}/files`, params);
+    return this.get(`/api/v1/pipelines/${encodeURIComponent(args.pipeline_id as string)}/files`, params);
   }
 
   private async addFilesToPipeline(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.pipeline_id || !args.file_ids) return { content: [{ type: 'text', text: 'pipeline_id and file_ids are required' }], isError: true };
-    return this.post(`/pipelines/${encodeURIComponent(args.pipeline_id as string)}/files`, { file_ids: args.file_ids });
+    // API uses PUT, not POST, for adding files to a pipeline.
+    return this.put(`/api/v1/pipelines/${encodeURIComponent(args.pipeline_id as string)}/files`, { file_ids: args.file_ids });
   }
 
   private async getPipelineFileStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.pipeline_id) return { content: [{ type: 'text', text: 'pipeline_id is required' }], isError: true };
-    return this.get(`/pipelines/${encodeURIComponent(args.pipeline_id as string)}/files/status-counts`);
+    return this.get(`/api/v1/pipelines/${encodeURIComponent(args.pipeline_id as string)}/files/status-counts`);
   }
 
   private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.page) params.set('page', String(args.page));
     if (args.page_size) params.set('page_size', String(args.page_size));
-    return this.get('/projects', params);
+    return this.get('/api/v1/projects', params);
   }
 
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    return this.get(`/projects/${encodeURIComponent(args.project_id as string)}`);
+    return this.get(`/api/v1/projects/${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async createProject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
-    return this.post('/projects', { name: args.name });
+    return this.post('/api/v1/projects', { name: args.name });
   }
 
   private async uploadFile(args: Record<string, unknown>): Promise<ToolResult> {
@@ -468,7 +491,7 @@ export class LlamaIndexMCPServer {
       text: args.text,
     };
     if (args.metadata) body.metadata = args.metadata;
-    return this.post('/files', body);
+    return this.post('/api/v1/beta/files', body);
   }
 
   private async listFiles(args: Record<string, unknown>): Promise<ToolResult> {
@@ -476,46 +499,51 @@ export class LlamaIndexMCPServer {
     const params = new URLSearchParams({ project_id: args.project_id as string });
     if (args.page) params.set('page', String(args.page));
     if (args.page_size) params.set('page_size', String(args.page_size));
-    return this.get('/files', params);
+    return this.get('/api/v1/beta/files', params);
   }
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.file_id) return { content: [{ type: 'text', text: 'project_id and file_id are required' }], isError: true };
-    return this.del(`/files/${encodeURIComponent(args.file_id as string)}?project_id=${encodeURIComponent(args.project_id as string)}`);
+    return this.del(`/api/v1/beta/files/${encodeURIComponent(args.file_id as string)}?project_id=${encodeURIComponent(args.project_id as string)}`);
   }
 
   private async queryPipeline(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.pipeline_id || !args.query) return { content: [{ type: 'text', text: 'pipeline_id and query are required' }], isError: true };
     const body: Record<string, unknown> = { query: args.query };
     if (args.top_k !== undefined) body.top_k = args.top_k;
-    return this.post(`/pipelines/${encodeURIComponent(args.pipeline_id as string)}/query`, body);
+    return this.post(`/api/v1/pipelines/${encodeURIComponent(args.pipeline_id as string)}/query`, body);
   }
 
   private async retrievePipeline(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.pipeline_id || !args.query) return { content: [{ type: 'text', text: 'pipeline_id and query are required' }], isError: true };
     const body: Record<string, unknown> = { query: args.query };
     if (args.top_k !== undefined) body.top_k = args.top_k;
-    return this.post(`/pipelines/${encodeURIComponent(args.pipeline_id as string)}/retrieve`, body);
+    // Verified: POST /api/v1/pipelines/{pipeline_id}/retrieve (docs: "Run Search" endpoint)
+    return this.post(`/api/v1/pipelines/${encodeURIComponent(args.pipeline_id as string)}/retrieve`, body);
   }
 
   private async createParseJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.file_id && !args.url) return { content: [{ type: 'text', text: 'Either file_id or url is required' }], isError: true };
+    // v2 API: POST /api/v2/parse (JSON body with file_id or url + tier parameter)
     const body: Record<string, unknown> = {
-      parse_mode: (args.parse_mode as string) ?? 'fast',
+      tier: (args.parse_mode as string) ?? 'fast',
     };
     if (args.file_id) body.file_id = args.file_id;
     if (args.url) body.url = args.url;
-    return this.post('/parsing/upload', body);
+    return this.post('/api/v2/parse', body);
   }
 
   private async getParseJobStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.get(`/parsing/job/${encodeURIComponent(args.job_id as string)}`);
+    // v2 API: GET /api/v2/parse/{job_id} returns job status in response body
+    return this.get(`/api/v2/parse/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async getParseJobResult(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
+    // v2 API: GET /api/v2/parse/{job_id}?expand=markdown (or text, json) returns result inline
     const resultType = (args.result_type as string) ?? 'markdown';
-    return this.get(`/parsing/job/${encodeURIComponent(args.job_id as string)}/result/${resultType}`);
+    const params = new URLSearchParams({ expand: resultType });
+    return this.get(`/api/v2/parse/${encodeURIComponent(args.job_id as string)}`, params);
   }
 }

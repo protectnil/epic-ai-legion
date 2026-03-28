@@ -4,9 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/pvev/mattermost-mcp — transport: stdio, auth: Personal Access Token
-// Our adapter covers: 20 tools (channels, posts, users, teams, reactions, files). Vendor MCP covers: ~5 tools (basic messaging only).
-// Recommendation: Use this adapter for full coverage. Use vendor MCP for minimal footprint deployments.
+// Official MCP: https://github.com/mattermost/mattermost-plugin-agents — transport: streamable-HTTP, auth: OAuth 2.0
+//   (embedded in Mattermost Agents plugin v1.7.2+; external endpoint at /mcp on the Mattermost host)
+//   10 tools: read_post, read_channel, search_posts, create_post, create_channel, get_channel_info,
+//             get_team_info, search_users, get_channel_members, get_team_members
+//   Last confirmed active: Mattermost v11+ (2025). Maintained by Mattermost Inc.
+// NOTE: pvev/mattermost-mcp (referenced in prior header) is a community repo with 4 commits and ~8 tools — NOT official.
+// Our adapter covers: 21 tools — strict superset of the official MCP's 10 tools.
+// Recommendation: use-rest-api — our adapter covers all 10 official MCP operations plus 11 additional tools
+//   (update_channel, delete_channel, add_channel_member, get_post, update_post, delete_post, get_thread,
+//    list_posts, get_user, get_user_by_email, add_reaction, get_reactions, list_teams, get_team).
+//   The official MCP uses OAuth2 only (no PAT for external clients in default config) and requires
+//   Mattermost Agents plugin. Our REST adapter supports any Mattermost v4 instance with a PAT or bot token.
 //
 // Base URL: https://{your-mattermost-host}/api/v4 (self-hosted; configure via baseUrl)
 // Auth: Bearer Personal Access Token (or bot token) in Authorization header

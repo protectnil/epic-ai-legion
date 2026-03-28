@@ -4,11 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Intrinio MCP server was found on GitHub or npm.
 //
 // Base URL: https://api-v2.intrinio.com
-// Auth: Authorization: Bearer {apiKey} header. API key obtained from Intrinio account dashboard.
+// Auth: Authorization: Bearer {apiKey} header (preferred), or ?api_key={apiKey} query param.
 //       Public key authentication also supported via X-Authorization-Public-Key header for
 //       client-side/untrusted environments.
 // Docs: https://docs.intrinio.com/documentation/api_v2/getting_started
@@ -319,7 +319,7 @@ export class IntrinioMCPServer {
       },
       {
         name: 'get_earnings',
-        description: 'Get historical EPS earnings results including actual, estimated, and surprise for a security',
+        description: 'Get historical EPS surprise results (Zacks) including actual, estimated, surprise, and announcement dates for a security',
         inputSchema: {
           type: 'object',
           properties: {
@@ -337,7 +337,7 @@ export class IntrinioMCPServer {
       },
       {
         name: 'get_dividends',
-        description: 'Get historical dividend payment history for a security including ex-dates, amounts, and frequency',
+        description: 'Get historical dividend adjustments for a security including ex-dates, dividend amounts, and split factors',
         inputSchema: {
           type: 'object',
           properties: {
@@ -735,14 +735,14 @@ export class IntrinioMCPServer {
 
   private async getEarnings(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.identifier) return { content: [{ type: 'text', text: 'identifier is required' }], isError: true };
-    return this.intrinioGet(`/securities/${encodeURIComponent(args.identifier as string)}/earnings`, {
+    return this.intrinioGet(`/securities/${encodeURIComponent(args.identifier as string)}/zacks/eps_surprises`, {
       page_size: String((args.page_size as number) || 10),
     });
   }
 
   private async getDividends(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.identifier) return { content: [{ type: 'text', text: 'identifier is required' }], isError: true };
-    return this.intrinioGet(`/securities/${encodeURIComponent(args.identifier as string)}/dividends`, {
+    return this.intrinioGet(`/securities/${encodeURIComponent(args.identifier as string)}/prices/adjustments/dividends`, {
       page_size: String((args.page_size as number) || 100),
     });
   }
@@ -754,7 +754,7 @@ export class IntrinioMCPServer {
     };
     if (args.start_date) params.start_date = args.start_date as string;
     if (args.end_date) params.end_date = args.end_date as string;
-    return this.intrinioGet(`/companies/${encodeURIComponent(args.identifier as string)}/insider_transactions`, params);
+    return this.intrinioGet(`/companies/${encodeURIComponent(args.identifier as string)}/insider_transaction_filings`, params);
   }
 
   private async getInstitutionalOwnership(args: Record<string, unknown>): Promise<ToolResult> {
@@ -768,17 +768,18 @@ export class IntrinioMCPServer {
     if (!args.symbol || !args.expiration) {
       return { content: [{ type: 'text', text: 'symbol and expiration are required' }], isError: true };
     }
-    const params: Record<string, string> = {
-      expiration: args.expiration as string,
-    };
+    const params: Record<string, string> = {};
     if (args.strike) params.strike = String(args.strike);
     if (args.type) params.type = args.type as string;
-    return this.intrinioGet(`/options/chain/${encodeURIComponent(args.symbol as string)}/realtime`, params);
+    return this.intrinioGet(
+      `/options/chain/${encodeURIComponent(args.symbol as string)}/${encodeURIComponent(args.expiration as string)}/realtime`,
+      params,
+    );
   }
 
   private async getOptionsStats(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.identifier) return { content: [{ type: 'text', text: 'identifier is required' }], isError: true };
-    return this.intrinioGet(`/options/stats/${encodeURIComponent(args.identifier as string)}/realtime`);
+    return this.intrinioGet(`/options/prices/${encodeURIComponent(args.identifier as string)}/realtime/stats`);
   }
 
   private async getTechnicalIndicator(args: Record<string, unknown>, indicator: string): Promise<ToolResult> {

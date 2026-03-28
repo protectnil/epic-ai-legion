@@ -4,15 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Mimecast MCP server found on GitHub or in vendor documentation.
-// Recommendation: Use this adapter for full Mimecast API 1.0 coverage.
+// Official MCP: None found as of 2026-03-28 — no official Mimecast MCP server for the Email
+//   Security platform exists on GitHub or in vendor documentation.
+//   NOTE: Mimecast does publish an "Incydr MCP server" (mimecastsupport.zendesk.com/hc/en-us/articles/46837183313299)
+//   but this is for Mimecast Incydr (insider threat / DLP product), NOT the Email Security gateway.
+//   It is not relevant to this adapter.
+// Our adapter covers: 22 tools. Vendor MCP covers: 0 tools (N/A).
+// Recommendation: use-rest-api — no relevant MCP server exists for Mimecast Email Security.
 //
 // Base URL: https://api.mimecast.com (global)
 //   Regional: https://us-api.mimecast.com (US), https://uk-api.mimecast.com (UK)
 //   API 2.0 base: https://api.services.mimecast.com (global)
-// Auth: OAuth2 client_credentials — POST /oauth/token with client_id + client_secret
-//   Token endpoint: https://api.mimecast.com/oauth/token (API 1.0)
+// Auth: This adapter targets API 1.0 endpoint paths using OAuth2 client_credentials flow
+//   (Mimecast API 2.0 auth). The canonical API 1.0 auth is HMAC-SHA1 (access key + secret key).
+//   If deploying against pure API 1.0, switch to HMAC-SHA1 per:
+//   https://integrations.mimecast.com/documentation/api-overview/authorization/
+//   Token endpoint (API 2.0 OAuth2): https://api.services.mimecast.com/oauth/token
 // Docs: https://integrations.mimecast.com/documentation/endpoint-reference/
 //   API 2.0: https://developer.services.mimecast.com/
 // Rate limits: Not publicly documented; recommend 10 req/sec or less per token
@@ -733,7 +740,7 @@ export class MimecastMCPServer {
     if (args.from) payload.from = args.from;
     if (args.to) payload.to = args.to;
     if (args.sender) payload.sender = args.sender;
-    const data = await this.request('/api/ttp/logs/get-rejection-logs', payload);
+    const data = await this.request('/api/gateway/get-rejections', payload);
     return this.result(data);
   }
 

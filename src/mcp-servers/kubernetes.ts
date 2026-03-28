@@ -4,15 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/containers/kubernetes-mcp-server — transport: stdio/HTTP, auth: kubeconfig/service account token
-// Maintained by Red Hat (containers org). Covers pods, deployments, services, nodes, namespaces, and more.
-// Our adapter covers: 20 tools (core Kubernetes API operations via direct REST). Vendor MCP covers: 30+ tools.
-// Recommendation: Use containers/kubernetes-mcp-server for full coverage. Use this adapter for air-gapped/token-auth deployments.
+// Official MCP: https://github.com/containers/kubernetes-mcp-server — transport: stdio/streamable-HTTP/SSE, auth: kubeconfig or in-cluster service account
+// Maintained by Red Hat (containers org); last commit Mar 2026. Actively maintained.
+// Our adapter covers: 20 tools (type-specific REST operations). Vendor MCP covers: ~15 core tools (generic resource CRUD: configuration_get, resources_list, resources_get, resources_create_or_update, resources_delete, pods_list, pods_get, pods_delete, pods_log, pods_top, pods_exec, pods_run, namespaces_list, events_list, + helm/kubevirt optional toolsets).
+// Recommendation: use-both — MCP has unique tools not in our adapter (pods_exec, pods_top, pods_run, resources_create_or_update, resources_delete, generic CRD/RBAC access via resources_list/get).
+//   Our adapter has resource-type-specific tools the MCP generic approach doesn't directly expose (get_node, list_replicasets, list_statefulsets, list_daemonsets, list_jobs, list_cronjobs, list_ingresses, list_persistent_volumes, list_configmaps, list_secrets, scale_deployment).
+// Integration: use-both
+// MCP-sourced tools (6): [pods_exec, pods_top, pods_run, resources_create_or_update, resources_delete, generic_resource_access_via_resources_list_get]
+// REST-sourced tools (20): [list_namespaces, list_nodes, get_node, list_pods, get_pod, get_pod_logs, list_deployments, get_deployment, scale_deployment, list_services, list_configmaps, list_secrets, list_statefulsets, list_daemonsets, list_jobs, list_cronjobs, list_ingresses, list_replicasets, list_events, list_persistent_volumes]
+// Combined coverage: 26 logical operations (MCP: 6 unique + REST: 20, shared list/get functionality routed through MCP by default)
 //
-// Base URL: https://{api_server} (Kubernetes API server address)
+// Base URL: https://{api_server} (Kubernetes API server address — no trailing slash)
 // Auth: Bearer token (service account token or kubeconfig token)
 // Docs: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/
-// Rate limits: Determined by kube-apiserver configuration (default: 400 req/s burst)
+// Rate limits: Determined by kube-apiserver configuration (default: 400 req/s burst, 400 req/s steady state)
 
 import { ToolDefinition, ToolResult } from './types.js';
 

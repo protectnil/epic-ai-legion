@@ -4,14 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Hopin / RingCentral Events MCP server was found on GitHub or the developer portal.
 // Hopin was acquired by RingCentral; the product is now branded RingCentral Events.
 // The external API is documented at https://developer.events.ringcentral.com/external-api
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api
 //
 // Base URL: https://api.hopin.com (legacy Hopin base; RingCentral Events API also at
-//   https://api.events.ringcentral.com — both active as of 2026-03)
-// Auth: OAuth2 client credentials flow — POST /v1/oauth/token with client_id + client_secret
+//   https://api.events.ringcentral.com — both active as of 2026-03-28)
+// Auth: OAuth2 Authorization Code flow (redirect_uri + code exchange) per official docs at
+//   https://developer.events.ringcentral.com/external-api/guides/authentication
+//   NOTE: The official docs document Authorization Code flow only, NOT client_credentials.
+//   Client credentials (server-to-server) is NOT documented. This adapter implements
+//   client_credentials as a pragmatic server-to-server approach; confirm with RingCentral Events
+//   support whether a machine-to-machine (client_credentials) grant is available before production use.
+//   Token URL: https://api.hopin.com/v1/oauth/token (legacy endpoint; unconfirmed in current docs)
 // Docs: https://developer.events.ringcentral.com/external-api/reference
 // Rate limits: Not publicly documented; implement exponential backoff on 429 responses
 
@@ -256,7 +264,7 @@ export class HopinMCPServer {
       },
       {
         name: 'cancel_registration',
-        description: 'Cancel a specific attendee registration for a Hopin event',
+        description: 'Cancel a specific attendee registration for a Hopin event by patching its status to cancelled',
         inputSchema: {
           type: 'object',
           properties: {
@@ -630,18 +638,6 @@ export class HopinMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async apiDelete(path: string): Promise<ToolResult> {
-    const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
-    }
-    const text = await response.text();
-    return { content: [{ type: 'text', text: text || '{"deleted":true}' }], isError: false };
-  }
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {
@@ -713,7 +709,12 @@ export class HopinMCPServer {
     if (!args.event_id || !args.registration_id) {
       return { content: [{ type: 'text', text: 'event_id and registration_id are required' }], isError: true };
     }
-    return this.apiDelete(`/v1/events/${encodeURIComponent(args.event_id as string)}/registrations/${encodeURIComponent(args.registration_id as string)}`);
+    // The RingCentral Events API uses PATCH to update registrations (including cancellation).
+    // There is no DELETE endpoint for individual registrations per the official API reference.
+    return this.apiPatch(
+      `/v1/events/${encodeURIComponent(args.event_id as string)}/registrations/${encodeURIComponent(args.registration_id as string)}`,
+      { data: { type: 'registration', attributes: { status: 'cancelled' } } },
+    );
   }
 
   private async listSessions(args: Record<string, unknown>): Promise<ToolResult> {

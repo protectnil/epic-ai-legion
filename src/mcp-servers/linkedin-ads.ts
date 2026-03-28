@@ -4,17 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found from LinkedIn/Microsoft as of 2026-03. Community MCP servers exist
-// (e.g. danielpopamd/linkedin-ads-mcp, CDataSoftware/linkedin-ads-mcp-server-by-cdata) but none
-// are vendor-published with 10+ tools and stdio/streamable-HTTP transport.
+// Official MCP: None found as of 2026-03-28. Community MCP servers exist (e.g. Pipedream Connect
+// linkedin-ads-mcp, danielpopamd/linkedin-ads-mcp) but none are vendor-published by LinkedIn/Microsoft
+// with 10+ tools and stdio/streamable-HTTP transport.
 // Our adapter covers: 16 tools (accounts, campaigns, creatives, analytics, audiences, conversions).
-// Recommendation: Use this adapter; no official vendor MCP qualifies for delegation.
+// Recommendation: use-rest-api — no official vendor MCP qualifies for delegation.
 //
-// Base URL: https://api.linkedin.com/v2
+// Base URL: https://api.linkedin.com/rest  (versioned Marketing API, active since 202206)
+//   NOTE: The legacy https://api.linkedin.com/v2 base path is sunset for Marketing APIs.
+//   All versioned Marketing API calls (202206+) use https://api.linkedin.com/rest.
+//   The LinkedIn-Version header (YYYYMM format) must accompany every request.
+//   Since version 202305: adCampaignGroups, adCampaigns, and creatives are account-scoped:
+//     GET /rest/adAccounts/{accountId}/adCampaignGroups
+//     GET /rest/adAccounts/{accountId}/adCampaigns
+//     GET /rest/adAccounts/{accountId}/creatives
 // Auth: OAuth2 3-legged (member authorization) — Bearer access token in Authorization header
 // Docs: https://learn.microsoft.com/en-us/linkedin/marketing/
-// Rate limits: Daily application limits vary by endpoint; 429 returned when exceeded.
-// Note: Marketing API access requires LinkedIn Marketing Developer Platform approval.
+// Rate limits: Daily application limits vary by endpoint (500 calls/day standard); 429 on exceed.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -29,7 +35,7 @@ export class LinkedInAdsMCPServer {
 
   constructor(config: LinkedInAdsConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl || 'https://api.linkedin.com/v2';
+    this.baseUrl = config.baseUrl || 'https://api.linkedin.com/rest';
   }
 
   static catalog() {
@@ -296,6 +302,10 @@ export class LinkedInAdsMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
+            account_id: {
+              type: 'string',
+              description: 'Ad account ID (required for the versioned creatives endpoint)',
+            },
             campaign_id: {
               type: 'string',
               description: 'Campaign ID to list creatives for',
@@ -313,7 +323,7 @@ export class LinkedInAdsMCPServer {
               description: 'Filter by creative status: ACTIVE, PAUSED, ARCHIVED, CANCELLED, DRAFT',
             },
           },
-          required: ['campaign_id'],
+          required: ['account_id', 'campaign_id'],
         },
       },
       {
@@ -551,14 +561,14 @@ export class LinkedInAdsMCPServer {
 
   private async listCampaignGroups(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
+    // Versioned API (202305+): account-scoped path /adAccounts/{id}/adCampaignGroups
     const params: Record<string, string> = {
       q: 'search',
-      'search.account.values[0]': `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`,
       start: String((args.start as number) ?? 0),
       count: String((args.count as number) ?? 10),
     };
     if (args.status) params['search.status.values[0]'] = args.status as string;
-    return this.apiGet('adCampaignGroups', params);
+    return this.apiGet(`adAccounts/${encodeURIComponent(args.account_id as string)}/adCampaignGroups`, params);
   }
 
   private async getCampaignGroup(args: Record<string, unknown>): Promise<ToolResult> {
@@ -579,7 +589,8 @@ export class LinkedInAdsMCPServer {
         currencyCode: args.totalBudget_currencyCode,
       };
     }
-    return this.apiPost('adCampaignGroups', body);
+    // Versioned API (202305+): account-scoped path /adAccounts/{id}/adCampaignGroups
+    return this.apiPost(`adAccounts/${encodeURIComponent(args.account_id as string)}/adCampaignGroups`, body);
   }
 
   private async updateCampaignGroup(args: Record<string, unknown>): Promise<ToolResult> {
@@ -592,15 +603,15 @@ export class LinkedInAdsMCPServer {
 
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
+    // Versioned API (202305+): account-scoped path /adAccounts/{id}/adCampaigns
     const params: Record<string, string> = {
       q: 'search',
-      'search.account.values[0]': `urn:li:sponsoredAccount:${encodeURIComponent(args.account_id as string)}`,
       start: String((args.start as number) ?? 0),
       count: String((args.count as number) ?? 10),
     };
     if (args.status) params['search.status.values[0]'] = args.status as string;
     if (args.campaign_group_id) params['search.campaignGroup.values[0]'] = `urn:li:sponsoredCampaignGroup:${encodeURIComponent(args.campaign_group_id as string)}`;
-    return this.apiGet('adCampaigns', params);
+    return this.apiGet(`adAccounts/${encodeURIComponent(args.account_id as string)}/adCampaigns`, params);
   }
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -626,7 +637,8 @@ export class LinkedInAdsMCPServer {
         currencyCode: args.dailyBudget_currencyCode,
       };
     }
-    return this.apiPost('adCampaigns', body);
+    // Versioned API (202305+): account-scoped path /adAccounts/{id}/adCampaigns
+    return this.apiPost(`adAccounts/${encodeURIComponent(args.account_id as string)}/adCampaigns`, body);
   }
 
   private async updateCampaign(args: Record<string, unknown>): Promise<ToolResult> {
@@ -639,6 +651,9 @@ export class LinkedInAdsMCPServer {
 
   private async listCreatives(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
+    // Versioned API (202305+): account-scoped path uses 'creatives' (not 'adCreatives').
+    // Requires account_id in path; campaign filter via search.campaign query param.
+    if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required for versioned creatives endpoint' }], isError: true };
     const params: Record<string, string> = {
       q: 'search',
       'search.campaign.values[0]': `urn:li:sponsoredCampaign:${encodeURIComponent(args.campaign_id as string)}`,
@@ -646,12 +661,12 @@ export class LinkedInAdsMCPServer {
       count: String((args.count as number) ?? 10),
     };
     if (args.status) params['search.status.values[0]'] = args.status as string;
-    return this.apiGet('adCreatives', params);
+    return this.apiGet(`adAccounts/${encodeURIComponent(args.account_id as string)}/creatives`, params);
   }
 
   private async getCreative(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.creative_id) return { content: [{ type: 'text', text: 'creative_id is required' }], isError: true };
-    return this.apiGet(`adCreatives/${encodeURIComponent(args.creative_id as string)}`);
+    return this.apiGet(`creatives/${encodeURIComponent(args.creative_id as string)}`);
   }
 
   private async getAdAnalytics(args: Record<string, unknown>): Promise<ToolResult> {

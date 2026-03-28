@@ -4,15 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// A Pipedream-hosted Heap integration exists at mcp.pipedream.com/app/heap but it is a
-// third-party connector, not an official Heap MCP server. No official Heap MCP server was
-// found on GitHub (github.com/heap).
+// Official MCP: None found as of 2026-03-28
+// No official Heap MCP server was found on GitHub or npmjs. A Pipedream-hosted Heap
+// integration exists at mcp.pipedream.com/app/heap but is third-party, not vendor-official.
+// Our adapter covers: 5 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official vendor MCP exists.
 //
 // Base URL: https://heapanalytics.com/api
 // Auth: app_id passed as a field in the JSON request body — no Authorization header for
-//       server-side track/identify APIs. The Delete API requires a separate auth_token
-//       passed as a Bearer token.
+//       server-side track/identify/add_user_properties/add_account_properties APIs.
+//       The User Deletion API uses a separate 2-step flow: POST /api/auth with Basic auth
+//       (app_id:api_key) to obtain an access_token, then Bearer token on
+//       POST /api/public/v0/user_deletion. The authToken config field should be a
+//       pre-acquired access_token (Bearer) for the deletion API.
 // Docs: https://developers.heap.io/reference/server-side-apis-overview
 // Rate limits: Not publicly documented; Heap recommends batching events where possible
 
@@ -280,9 +284,9 @@ export class HeapMCPServer {
     if (!this.authToken) {
       return { content: [{ type: 'text', text: 'authToken is required for user deletion — configure HeapMCPServer with authToken' }], isError: true };
     }
-    return this.post('delete_user', {
+    return this.post('public/v0/user_deletion', {
       app_id: this.appId,
-      identity: args.identity,
+      users: [{ identity: args.identity }],
     }, this.authToken);
   }
 }

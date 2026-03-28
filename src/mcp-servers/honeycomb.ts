@@ -5,16 +5,20 @@
  */
 
 // Official MCP: https://github.com/honeycombio/honeycomb-mcp — transport: stdio, auth: API key
-// Official MCP is actively maintained by Honeycomb but targets Enterprise customers only with a
-// hosted deployment requirement. Our adapter targets the Honeycomb REST API v1 directly using
-// an API key for any plan with REST API access, and provides broader coverage: datasets, queries,
-// query results, columns, boards, SLOs, triggers, markers, events, and recipients.
-// Recommendation: Use vendor MCP for Enterprise with hosted deployment. Use this adapter for all plans.
+// Vendor MCP is maintained by Honeycomb (official) but exposes only 8 tools (list_datasets,
+// get_columns, run_query, analyze_columns, list_slos, list_triggers, list_markers, list_boards)
+// and is restricted to Honeycomb Enterprise customers only.
+// Recommendation: use-rest-api — vendor MCP fails the 10+ tools criterion (only 8 tools) and is
+// Enterprise-only. Our REST adapter covers all plans and exposes 28 tools including full CRUD
+// for datasets, columns, SLOs, triggers, markers, boards, event ingestion, and recipients.
+//
+// Our adapter covers: 28 tools. Vendor MCP covers: 8 tools (Enterprise-only, fails 10-tool threshold).
 //
 // Base URL: https://api.honeycomb.io (US default) or https://api.eu1.honeycomb.io (EU region)
-// Auth: X-Honeycomb-Team header containing the API key.
+// Auth: X-Honeycomb-Team header containing the API key (Ingest or Configuration key).
 // Docs: https://docs.honeycomb.io/api/
-// Rate limits: Not publicly documented per-endpoint; 429 responses indicate throttling.
+// Rate limits: Rate-limited per window; headers RateLimit and RateLimit-Policy on each response.
+//   Create Query Result: max 10 requests/min. Create Query Result (relational): max 1 request/min.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Lever MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28
+// No official Lever MCP server was found on GitHub or npm. One community repo exists
+// (github.com/the-sid-dani/lever-mcp-integration, Python/stdio) and a community Go
+// server on mcpmarket.com (59 tools), but neither is published by Lever Inc.
 //
 // Base URL: https://api.lever.co/v1
 // Auth: Basic auth — API key as username, password left blank. Generate in Lever Settings > Integrations and API > API Credentials.

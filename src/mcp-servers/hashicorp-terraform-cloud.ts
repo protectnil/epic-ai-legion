@@ -4,11 +4,28 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/hashicorp/terraform-mcp-server — transport: stdio, auth: API token
-// The official MCP focuses on Terraform Registry provider/module discovery and basic workspace ops.
-// Our adapter covers the full HCP Terraform Cloud REST API v2: workspaces, runs, state, variables,
-// organizations, teams, projects, variable sets, and policy sets — ops not fully covered by the MCP.
-// Recommendation: Use vendor MCP for registry browsing. Use this adapter for run lifecycle and ops.
+// Official MCP: https://github.com/hashicorp/terraform-mcp-server — transport: stdio + streamable-HTTP, auth: API token
+// The official Terraform MCP (actively maintained, v0.4+, 20+ tools) covers Terraform Registry provider/module
+// discovery, private registry, AND HCP Terraform workspace/run/variable-set/tags/stacks operations.
+// Our adapter covers: 25 tools (full run lifecycle, state, teams, policy sets, variable CRUD).
+// Recommendation: use-both — MCP has search_providers, get_provider_details, get_latest_provider_version,
+//   search_modules, get_module_details, list_stacks, get_stack_details and registry-private tools not in REST API.
+//   REST adapter has list_organizations, get_organization, list_runs, get_run, apply_run, discard_run,
+//   cancel_run, get_current_state_version, list_state_versions, list_teams, get_team, list_policy_sets,
+//   create_workspace_variable, update_workspace_variable, delete_workspace_variable not covered by MCP.
+//
+// Integration: use-both
+// MCP-sourced tools (via hashicorp/terraform-mcp-server): search_providers, get_provider_details,
+//   get_latest_provider_version, search_modules, get_module_details, list_terraform_orgs,
+//   list_terraform_projects, list_workspaces, get_workspace_details, create_workspace, update_workspace,
+//   delete_workspace_safely, list_runs (MCP), get_run_details, create_run (MCP), action_run,
+//   list_variable_sets (MCP), create_variable_set, create_variable_in_variable_set,
+//   delete_variable_in_variable_set, attach_variable_set_to_workspaces, detach_variable_set_from_workspaces,
+//   list_workspace_variables (MCP), create_workspace_tags, read_workspace_tags, list_stacks, get_stack_details,
+//   search_private_modules
+// REST-sourced tools (this adapter, unique): list_organizations, get_organization, apply_run, discard_run,
+//   cancel_run, get_current_state_version, list_state_versions, list_teams, get_team, list_policy_sets,
+//   create_workspace_variable, update_workspace_variable, delete_workspace_variable
 //
 // Base URL: https://app.terraform.io (HCP Terraform) or https://tfe.example.com (TFE)
 // Auth: Bearer token via Authorization header. Content-Type: application/vnd.api+json (JSON:API).
@@ -231,15 +248,16 @@ export class HashicorpTerraformCloudMCPServer {
       },
       {
         name: 'list_state_versions',
-        description: 'List state versions for a workspace ordered by creation time, with pagination support.',
+        description: 'List state versions for a workspace ordered by creation time. Requires workspace name and organization name (not IDs), with pagination support.',
         inputSchema: {
           type: 'object',
           properties: {
-            workspaceId: { type: 'string', description: 'The workspace ID (ws-xxxxxxxxxxxxxxxx).' },
+            workspaceName: { type: 'string', description: 'The workspace name (not the ID). Required by the API filter.' },
+            organization: { type: 'string', description: 'The organization name that owns the workspace. Required by the API filter.' },
             pageNumber: { type: 'number', description: 'Page number for pagination (default: 1).' },
             pageSize: { type: 'number', description: 'Results per page (default: 20, max: 100).' },
           },
-          required: ['workspaceId'],
+          required: ['workspaceName', 'organization'],
         },
       },
       {
@@ -659,10 +677,13 @@ export class HashicorpTerraformCloudMCPServer {
   }
 
   private async listStateVersions(args: Record<string, unknown>): Promise<ToolResult> {
-    const wsId = args.workspaceId as string;
-    if (!wsId) return { content: [{ type: 'text', text: 'workspaceId is required' }], isError: true };
+    const wsName = args.workspaceName as string;
+    const org = args.organization as string;
+    // The API requires filter[workspace][name] (workspace name, NOT id) and filter[organization][name].
+    if (!wsName || !org) return { content: [{ type: 'text', text: 'workspaceName and organization are required' }], isError: true };
     const p = this.buildPageParams(args);
-    p.append('filter[workspace][name]', wsId);
+    p.append('filter[workspace][name]', wsName);
+    p.append('filter[organization][name]', org);
     return this.apiGet(`/api/v2/state-versions${this.qs(p)}`);
   }
 

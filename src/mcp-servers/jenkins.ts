@@ -5,10 +5,23 @@
  */
 
 // Official MCP: https://github.com/jenkinsci/mcp-server-plugin — official Jenkins MCP plugin,
-//   requires installation on the Jenkins controller; transport: stdio via plugin. Actively maintained.
-//   Our adapter covers: 13 tools (core CI operations). Vendor MCP: full server API surface.
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped or
-//   plugin-install-restricted deployments.
+//   requires installation on the Jenkins controller; transport: SSE + Streamable HTTP (server-side plugin).
+//   Actively maintained (158+ commits, last release within 4 weeks as of 2026-03-28).
+//   Vendor MCP tools: getJob, getJobs, triggerBuild, getQueueItem, getBuild, getBuildLog,
+//     getJobScm, getBuildScm, getBuildChangeSets, findJobsWithScmUrl, whoAmI, getStatus (~12+ tools).
+//   Our adapter covers: 13 tools (core CI operations).
+// Recommendation: use-both — vendor MCP has SCM tools (getJobScm, getBuildScm, getBuildChangeSets,
+//   findJobsWithScmUrl, whoAmI, getStatus) not in our adapter; our adapter has node management,
+//   enable/disable job, cancel queue item, and last-build-status tools not in vendor MCP.
+//   Combined coverage requires both integrations.
+//
+// Integration: use-both
+// MCP-sourced tools (6 unique): getJobScm, getBuildScm, getBuildChangeSets, findJobsWithScmUrl, whoAmI, getStatus
+// REST-sourced tools (7 unique): list_nodes, get_node_info, enable_job, disable_job, cancel_queue_item,
+//   get_last_build_status, get_queue (no equivalent in vendor MCP)
+// Shared tools (6 overlap): list_jobs→getJobs, get_job_info→getJob, get_build_info→getBuild,
+//   get_build_log→getBuildLog, trigger_build→triggerBuild, cancel_queue_item→getQueueItem
+// Combined coverage: 19 tools (MCP: 12 + REST: 13 - shared: 6)
 //
 // Base URL: https://jenkins.example.com (customer-hosted; no default — required in config)
 // Auth: HTTP Basic — username + API token. CSRF crumb NOT required when using API tokens (Jenkins 2.107+ LTS).

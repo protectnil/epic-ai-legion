@@ -4,16 +4,29 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Harness MCP server was found on GitHub or npm.
+// Official MCP: https://github.com/harness/mcp-server — transport: stdio, auth: API token
+// The official Harness MCP (actively maintained, 50+ tools) covers pipelines, executions, connectors,
+// secrets, environments, services, pull requests, repos, dashboards, CCM, chaos, STO, IDP, FME, GitOps.
+// Our adapter covers: 17 tools. Vendor MCP covers: 50+ tools.
+// Recommendation: use-both — MCP has registry/code/CCM/chaos/STO/IDP tools not in this REST adapter;
+//   REST adapter has list_projects, get_project not in MCP default toolset. Use MCP for full coverage.
 //
-// Base URL: https://app.harness.io/v1
+// Base URL: https://app.harness.io/v1 (v1 NextGen REST API, Beta endpoints)
 // Auth: API key in x-api-key header and account ID in Harness-Account header.
 //       Generate API tokens in Harness Platform → My Profile → My API Keys.
 // Docs: https://apidocs.harness.io/
 //       Getting started: https://developer.harness.io/docs/platform/automation/api/api-quickstart/
 // Rate limits: Not publicly documented per-endpoint. Subject to account plan limits.
 //              Include Harness-Account header on every request.
+//
+// Integration: use-both
+// MCP-sourced tools (via github.com/harness/mcp-server): get_connector_details, list_connector_catalogue,
+//   list_connectors, list_pipelines, get_pipeline, get_execution, list_executions, fetch_execution_url,
+//   list_dashboards, get_dashboard_data, get_service, list_services, get_environment, list_environments,
+//   list_secrets, get_secret, and 34+ more (CCM, chaos, STO, IDP, FME, GitOps, pull requests, repos)
+// REST-sourced tools (this adapter, 3 unique): list_projects, get_project (no MCP equivalent in default
+//   toolset); execute_pipeline, retry_execution, abort_execution (MCP read-only by default)
+// Combined coverage: 17 REST tools + 50+ MCP tools (shared ~10)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -256,28 +269,28 @@ export class HarnessCICDMCPServer {
       },
       {
         name: 'abort_execution',
-        description: 'Abort a running or queued pipeline execution by plan execution ID',
+        description: 'Abort a running or queued pipeline execution by plan execution ID using an AbortAll interrupt',
         inputSchema: {
           type: 'object',
           properties: {
             org: {
               type: 'string',
-              description: 'Organization identifier',
+              description: 'Organization identifier (orgIdentifier) for the execution',
             },
             project: {
               type: 'string',
-              description: 'Project identifier',
+              description: 'Project identifier (projectIdentifier) for the execution',
             },
             pipeline: {
               type: 'string',
-              description: 'Pipeline identifier',
+              description: 'Pipeline identifier (informational only; not sent to API)',
             },
             execution_id: {
               type: 'string',
-              description: 'Plan execution ID of the running execution to abort',
+              description: 'Plan execution ID (planExecutionId) of the running execution to abort',
             },
           },
-          required: ['org', 'project', 'pipeline', 'execution_id'],
+          required: ['org', 'project', 'execution_id'],
         },
       },
       {
@@ -712,10 +725,26 @@ export class HarnessCICDMCPServer {
     if (!args.org || !args.project || !args.pipeline || !args.execution_id) {
       return { content: [{ type: 'text', text: 'org, project, pipeline, and execution_id are required' }], isError: true };
     }
-    return this.harnessPost(
-      `/orgs/${encodeURIComponent(args.org as string)}/projects/${encodeURIComponent(args.project as string)}/pipelines/${encodeURIComponent(args.pipeline as string)}/execute/interrupt/${encodeURIComponent(args.execution_id as string)}`,
-      { interruptType: 'AbortAll' },
-    );
+    // The Harness interrupt endpoint is at /pipeline/api/interrupts/{planExecutionId} (non-v1 path).
+    // Strip the trailing /v1 from baseUrl when calling the older API surface.
+    const nonV1Base = this.baseUrl.replace(/\/v1$/, '');
+    const params = new URLSearchParams({
+      accountIdentifier: this.accountId,
+      orgIdentifier: args.org as string,
+      projectIdentifier: args.project as string,
+      interruptType: 'AbortAll',
+    });
+    const url = `${nonV1Base}/pipeline/api/interrupts/${encodeURIComponent(args.execution_id as string)}?${params.toString()}`;
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: this.headers,
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {

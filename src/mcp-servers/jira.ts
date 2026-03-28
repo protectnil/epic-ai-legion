@@ -4,12 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/atlassian/atlassian-mcp-server — hosted-only, requires OAuth2
-//   and an Atlassian Cloud account; transport: stdio.
-//   Our adapter covers: 15 tools (core Jira issue and project operations).
-//   Vendor MCP covers: full Atlassian platform API surface (Jira + Confluence + Bitbucket).
-// Recommendation: Use vendor MCP for full Atlassian platform coverage. Use this adapter for
-//   API-token / Basic-auth use cases (CI pipelines, self-hosted scripts, air-gapped environments).
+// Official MCP: https://github.com/atlassian/atlassian-mcp-server (Atlassian Rovo MCP Server)
+//   Remote cloud-hosted endpoint: https://mcp.atlassian.com/v1/sse — transport: streamable-HTTP,
+//   auth: OAuth 2.1 (3LO) or org-admin-enabled API token. Covers Jira, Confluence, Compass.
+//   Actively maintained by Atlassian (2025–2026). Jira tools: 15 (13 core + 2 beta Teamwork Graph).
+//
+// Integration: use-both
+// MCP-sourced tools (6): getJiraIssueRemoteIssueLinks, getJiraIssueTypeMetaWithFields,
+//   getJiraProjectIssueTypesMetadata, lookupJiraAccountId, getTeamworkGraphContext (beta),
+//   getTeamworkGraphObject (beta)
+// REST-sourced tools (15): list_issues, get_issue, create_issue, update_issue, delete_issue,
+//   transition_issue, get_transitions, add_comment, add_worklog, search_jql, list_projects,
+//   get_project, list_priorities, get_myself, search_users
+// Combined coverage: 21 tools (MCP: 15 + REST: 15 - shared: 9)
+//
+// Reason: MCP meets all 4 criteria (official, maintained, 10+ tools, streamable-HTTP). Each side
+// has unique operations: MCP exposes remote links, issue-type metadata, and Teamwork Graph context;
+// REST exposes delete_issue, list_priorities, get_myself, search_users, and get_project. Use both
+// for full coverage. MCP requires OAuth 2.1; this REST adapter covers Basic-auth / air-gapped use.
 //
 // Base URL: https://{instance}.atlassian.net/rest/api/3
 // Auth: HTTP Basic — email:api_token (Base64-encoded). API tokens generated at id.atlassian.com.

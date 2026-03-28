@@ -4,8 +4,12 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Google Document AI MCP server was found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// No official Google Document AI MCP server was found on GitHub or in Google's remote MCP catalog
+// (https://docs.cloud.google.com/mcp/supported-products). Document AI is not listed as a supported
+// remote MCP product. googleapis/gcloud-mcp does not include Document AI tooling.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP exists; this adapter is the primary integration.
 //
 // Base URL: https://documentai.googleapis.com/v1
 // Auth: Bearer token (OAuth2 access token or service account token) in Authorization header
@@ -612,5 +616,44 @@ export class GoogleDocumentAIMCPServer {
     if (args.filter) params.filter = args.filter as string;
     if (args.page_token) params.pageToken = args.page_token as string;
     return this.docaiGet(`/projects/${project}/locations/${location}/operations`, params);
+  }
+
+  private async cancelOperation(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.operation_name) return { content: [{ type: 'text', text: 'operation_name is required' }], isError: true };
+    // POST /v1/{name}:cancel
+    return this.docaiPost(`/${encodeURIComponent(args.operation_name as string)}:cancel`, {});
+  }
+
+  private async setDefaultProcessorVersion(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.processor_name || !args.processor_version) {
+      return { content: [{ type: 'text', text: 'processor_name and processor_version are required' }], isError: true };
+    }
+    // POST /v1/{processor}:setDefaultProcessorVersion
+    return this.docaiPost(`/${encodeURIComponent(args.processor_name as string)}:setDefaultProcessorVersion`, {
+      defaultProcessorVersion: args.processor_version,
+    });
+  }
+
+  private async deployProcessorVersion(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.processor_version_name) return { content: [{ type: 'text', text: 'processor_version_name is required' }], isError: true };
+    // POST /v1/{name}:deploy
+    return this.docaiPost(`/${encodeURIComponent(args.processor_version_name as string)}:deploy`, {});
+  }
+
+  private async undeployProcessorVersion(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.processor_version_name) return { content: [{ type: 'text', text: 'processor_version_name is required' }], isError: true };
+    // POST /v1/{name}:undeploy
+    return this.docaiPost(`/${encodeURIComponent(args.processor_version_name as string)}:undeploy`, {});
+  }
+
+  private async listProcessorTypes(args: Record<string, unknown>): Promise<ToolResult> {
+    const project = this.resolveProject(args);
+    const location = this.resolveLocation(args);
+    const params: Record<string, string> = {
+      pageSize: String((args.page_size as number) || 50),
+    };
+    if (args.page_token) params.pageToken = args.page_token as string;
+    // GET /v1/projects/{project}/locations/{location}/processorTypes
+    return this.docaiGet(`/projects/${project}/locations/${location}/processorTypes`, params);
   }
 }

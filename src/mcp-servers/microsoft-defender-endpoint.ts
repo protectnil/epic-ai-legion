@@ -475,11 +475,11 @@ export class MicrosoftDefenderEndpointMCPServer {
             },
             indicatorType: {
               type: 'string',
-              description: 'Type: FileSha256, FileSha1, FileMd5, IpAddress, DomainName, Url',
+              description: 'Type: FileSha1, FileMd5, CertificateThumbprint, FileSha256, IpAddress, DomainName, Url',
             },
             action: {
               type: 'string',
-              description: 'Action: Alert, AlertAndBlock, Block, Allowed, Audit',
+              description: 'Action: Alert, Warn, Block, Audit, BlockAndRemediate, AlertAndBlock, Allowed. Note: Audit requires generateAlert=true.',
             },
             title: {
               type: 'string',
@@ -498,7 +498,7 @@ export class MicrosoftDefenderEndpointMCPServer {
               description: 'Expiration datetime in ISO 8601 format (optional)',
             },
           },
-          required: ['indicatorValue', 'indicatorType', 'action', 'title'],
+          required: ['indicatorValue', 'indicatorType', 'action', 'title', 'description'],
         },
       },
       {

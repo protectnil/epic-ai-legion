@@ -4,9 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Google-maintained Workspace MCP server was found on GitHub.
-// This adapter covers Gmail, Google Docs, Google Sheets, Google Calendar, and Google Drive.
+// Official MCP: None found as of 2026-03-28 for the Workspace productivity suite (Gmail, Drive, Docs, Sheets, Calendar).
+// Google announced official MCP support for Google Cloud services (BigQuery, GCE, GKE, Maps, YouTube) in Dec 2025
+// (https://cloud.google.com/blog/products/ai-machine-learning/announcing-official-mcp-support-for-google-services),
+// but that does NOT cover the Workspace productivity APIs. No official Google-published MCP server exists for
+// Gmail/Drive/Docs/Sheets/Calendar. Community forks only (e.g. epaproditus/google-workspace-mcp-server,
+// taylorwilsdon/google_workspace_mcp) — none are published by Google.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools (N/A).
+// Recommendation: use-rest-api — no official vendor MCP exists for Workspace productivity APIs.
 //
 // Base URLs:
 //   Drive:    https://www.googleapis.com/drive/v3

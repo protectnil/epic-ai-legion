@@ -4,12 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/atlassian/atlassian-mcp-server — hosted-only, requires OAuth2
-//   and an Atlassian Cloud account; transport: stdio.
-//   Our adapter covers: 16 tools (core JSM service desk, request, SLA, queue, and approval operations).
-//   Vendor MCP covers: full Atlassian platform API surface.
-// Recommendation: Use vendor MCP for full Atlassian platform coverage. Use this adapter for
-//   API-token / Basic-auth use cases that the official server does not support.
+// Official MCP: https://github.com/atlassian/atlassian-mcp-server (Atlassian Rovo MCP Server)
+//   Remote cloud-hosted endpoint: https://mcp.atlassian.com/v1/sse — transport: streamable-HTTP,
+//   auth: OAuth 2.1 (3LO) or org-admin-enabled API token. Covers Jira, Confluence, Compass.
+//   Actively maintained by Atlassian (2025–2026). The official Rovo MCP server exposes Jira-level
+//   tools (issues, projects, transitions, worklogs, comments) but does NOT expose JSM-specific
+//   servicedeskapi endpoints (service desks, request types, queues, SLA, approvals, organizations).
+//
+// Integration: use-rest-api
+// The Atlassian Rovo MCP server covers Jira issues, projects, and Confluence — but exposes zero
+// JSM-specific servicedeskapi tools (no service desks, request types, queues, SLA, approvals, or
+// organizations). Our REST adapter is the sole integration for all JSM portal operations.
+// REST-sourced tools (16): list_service_desks, list_request_types, create_request, get_request,
+//   list_requests, add_comment, get_comments, add_attachment, get_request_sla, get_request_status,
+//   list_queues, get_queue_issues, get_approvals, answer_approval, list_organizations,
+//   transition_request
+//
+// Decision: use-rest-api — the official Rovo MCP has no JSM servicedeskapi tools; REST adapter
+// provides full JSM coverage. The Rovo MCP is documented here as it covers related Jira operations.
 //
 // Base URL: https://{domain} (e.g. https://mycompany.atlassian.net)
 // Auth: HTTP Basic — email:api_token (Base64-encoded). Tokens at id.atlassian.com.

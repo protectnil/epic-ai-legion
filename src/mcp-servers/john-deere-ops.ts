@@ -4,17 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://glama.ai/mcp/servers/@CoreyFransen08/john-deere-ops-mcp — community-maintained, not official
-//               Also: https://github.com/easavin/ag-mcp — community agriculture MCP, not official Deere
-// No official John Deere MCP server found on GitHub as of 2026-03.
+// Official MCP: None found as of 2026-03-28
+// Community repos exist (glama.ai/@CoreyFransen08/john-deere-ops-mcp, github.com/easavin/ag-mcp) but neither
+// is published or maintained by John Deere Inc. No official Deere MCP server found on GitHub or npmjs.
 // Our adapter covers: 15 tools (organizations, fields, equipment, files, field operations, machine alerts).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
-// Base URL: https://api.deere.com (production) / https://sandboxapi.deere.com (sandbox)
-// Auth: OAuth2 authorization code flow (user-delegated) or client credentials
+// Base URL: https://api.deere.com/platform (production) / https://sandboxapi.deere.com/platform (sandbox)
+// Auth: OAuth2 authorization code flow (user-delegated); access token passed as Bearer header
 //       Token endpoint: https://signin.johndeere.com/oauth2/aus78tnlaysMraFhC1t7/v1/token
-//       Scopes: ag1 (read ag data), ag2 (write ag data), ag3 (additional ag data), offline_access
-// Docs: https://developer.deere.com
-// Rate limits: Not officially published; implement backoff on 429 responses
+//       Scopes: ag1 (read ag data), ag2 (write ag data), eq1 (read equipment/alerts), files (files)
+// Docs: https://developer.deere.com/dev-doc-landing
+// Rate limits: Not officially published; implement exponential backoff on 429 responses
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -202,17 +203,13 @@ export class JohnDeereOpsMCPServer {
       },
       {
         name: 'list_machine_alerts',
-        description: 'List active and recent machine alerts for equipment in an organization including fault codes, severity, and resolution status',
+        description: 'List active DTC and geofence alerts for a specific machine including fault codes, engine hours, and alert type',
         inputSchema: {
           type: 'object',
           properties: {
-            org_id: {
+            machine_id: {
               type: 'string',
-              description: 'Organization ID to retrieve alerts for',
-            },
-            severity: {
-              type: 'string',
-              description: 'Filter by severity level: critical, warning, info (default: all)',
+              description: 'Machine principal ID to retrieve alerts for (from list_equipment)',
             },
             limit: {
               type: 'number',
@@ -223,36 +220,40 @@ export class JohnDeereOpsMCPServer {
               description: 'Offset for pagination (default: 0)',
             },
           },
-          required: ['org_id'],
+          required: ['machine_id'],
         },
       },
       {
         name: 'get_machine_alert',
-        description: 'Get details for a specific machine alert including fault code description, affected machine, and recommended action',
+        description: 'Get details for a specific machine alert including fault code description, suspect parameter name, and failure mode indicator',
         inputSchema: {
           type: 'object',
           properties: {
-            org_id: {
+            machine_id: {
               type: 'string',
-              description: 'Organization ID that owns the alerted machine',
+              description: 'Machine principal ID that owns the alert',
             },
             alert_id: {
               type: 'string',
               description: 'Alert ID from list_machine_alerts',
             },
           },
-          required: ['org_id', 'alert_id'],
+          required: ['machine_id', 'alert_id'],
         },
       },
       {
         name: 'list_field_operations',
-        description: 'List field operations (harvest, planting, application, tillage) for an organization with date range and type filters',
+        description: 'List field operations (seeding, application, harvest, tillage) for a specific field with optional date range filters',
         inputSchema: {
           type: 'object',
           properties: {
             org_id: {
               type: 'string',
-              description: 'Organization ID to retrieve field operations for',
+              description: 'Organization ID that owns the field',
+            },
+            field_id: {
+              type: 'string',
+              description: 'Field ID to retrieve operations for (from list_fields)',
             },
             operation_type: {
               type: 'string',
@@ -271,12 +272,12 @@ export class JohnDeereOpsMCPServer {
               description: 'Maximum number of operations to return (default: 50)',
             },
           },
-          required: ['org_id'],
+          required: ['org_id', 'field_id'],
         },
       },
       {
         name: 'get_field_operation',
-        description: 'Get details for a specific field operation including crop, area worked, applied rate, and associated field boundaries',
+        description: 'Get details for a specific field operation including crop, area worked, applied rate, machines used, and associated field boundaries',
         inputSchema: {
           type: 'object',
           properties: {
@@ -284,12 +285,16 @@ export class JohnDeereOpsMCPServer {
               type: 'string',
               description: 'Organization ID that owns the field operation',
             },
+            field_id: {
+              type: 'string',
+              description: 'Field ID that owns the field operation',
+            },
             operation_id: {
               type: 'string',
               description: 'Field operation ID from list_field_operations',
             },
           },
-          required: ['org_id', 'operation_id'],
+          required: ['org_id', 'field_id', 'operation_id'],
         },
       },
       {
@@ -503,34 +508,33 @@ export class JohnDeereOpsMCPServer {
   }
 
   private async listMachineAlerts(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.org_id) return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
+    if (!args.machine_id) return { content: [{ type: 'text', text: 'machine_id is required' }], isError: true };
     const params: Record<string, string> = {
       limit: String((args.limit as number) ?? 50),
       start: String((args.start as number) ?? 0),
     };
-    if (args.severity) params.severity = args.severity as string;
-    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/alerts`, params);
+    return this.apiGet(`/platform/machines/${encodeURIComponent(args.machine_id as string)}/alerts`, params);
   }
 
   private async getMachineAlert(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.org_id || !args.alert_id) return { content: [{ type: 'text', text: 'org_id and alert_id are required' }], isError: true };
-    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/alerts/${encodeURIComponent(args.alert_id as string)}`);
+    if (!args.machine_id || !args.alert_id) return { content: [{ type: 'text', text: 'machine_id and alert_id are required' }], isError: true };
+    return this.apiGet(`/platform/machines/${encodeURIComponent(args.machine_id as string)}/alerts/${encodeURIComponent(args.alert_id as string)}`);
   }
 
   private async listFieldOperations(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.org_id) return { content: [{ type: 'text', text: 'org_id is required' }], isError: true };
+    if (!args.org_id || !args.field_id) return { content: [{ type: 'text', text: 'org_id and field_id are required' }], isError: true };
     const params: Record<string, string> = {
       limit: String((args.limit as number) ?? 50),
     };
     if (args.operation_type) params.operationType = args.operation_type as string;
     if (args.start_date) params.startDate = args.start_date as string;
     if (args.end_date) params.endDate = args.end_date as string;
-    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/fieldOperations`, params);
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/fields/${encodeURIComponent(args.field_id as string)}/fieldOperations`, params);
   }
 
   private async getFieldOperation(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.org_id || !args.operation_id) return { content: [{ type: 'text', text: 'org_id and operation_id are required' }], isError: true };
-    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/fieldOperations/${encodeURIComponent(args.operation_id as string)}`);
+    if (!args.org_id || !args.field_id || !args.operation_id) return { content: [{ type: 'text', text: 'org_id, field_id, and operation_id are required' }], isError: true };
+    return this.apiGet(`/platform/organizations/${encodeURIComponent(args.org_id as string)}/fields/${encodeURIComponent(args.field_id as string)}/fieldOperations/${encodeURIComponent(args.operation_id as string)}`);
   }
 
   private async listFiles(args: Record<string, unknown>): Promise<ToolResult> {

@@ -4,15 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/langchain-ai/langsmith-mcp-server — transport: stdio + HTTP-streamable, auth: API key
-// Vendor MCP is actively maintained (langchain-ai org). Covers runs, prompts, projects, datasets, feedback, threads.
-// Our adapter covers: 16 tools (core REST operations). Vendor MCP covers: 12+ tools (full API).
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// Official MCP: https://github.com/langchain-ai/langsmith-mcp-server — transport: stdio + streamable-HTTP, auth: LANGSMITH-API-KEY header
+// Vendor MCP is actively maintained (langchain-ai org, latest release Feb 25, 2026). Covers 14 tools: runs, prompts, projects,
+// datasets, examples, experiments, billing, threads.
+// Our adapter covers: 16 tools (core REST operations). Vendor MCP covers: 14 tools.
+// Recommendation: use-both — our adapter has unique tools (query_runs, create_dataset, create_example, list_feedback, create_feedback,
+// get_trace) not in the vendor MCP; vendor MCP has unique tools (get_thread_history, fetch_runs with pagination, get_billing_usage,
+// run_experiment, update_examples, read_dataset, read_example) not in our adapter. Union gives broadest coverage.
+// MCP-sourced tools (7): get_thread_history, fetch_runs, get_billing_usage, run_experiment, update_examples, read_dataset, read_example
+// REST-sourced tools (16): list_projects, get_project, list_runs, get_run, query_runs, list_datasets, get_dataset, create_dataset,
+//   list_examples, create_example, list_feedback, create_feedback, list_prompts, get_prompt, list_experiments, get_trace
 //
 // Base URL: https://api.smith.langchain.com/api/v1
 // Auth: x-api-key header (LangSmith API key from Settings → API Keys)
-// Docs: https://api.smith.langchain.com/docs
-// Rate limits: Not publicly documented; standard LangSmith account limits apply
+// Docs: https://api.smith.langchain.com/redoc
+// Rate limits: Not publicly documented; varies by plan
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -639,21 +645,22 @@ export class LangChainMCPServer {
     if (args.is_public !== undefined) params.set('is_public', String(args.is_public));
     if (args.query !== undefined) params.set('query', String(args.query));
 
-    const { ok, status, statusText, data } = await this.fetchJSON(`${this.baseUrl}/commits?${params}`);
+    const { ok, status, statusText, data } = await this.fetchJSON(`${this.baseUrl}/repos?${params}`);
     if (!ok) return { content: [{ type: 'text', text: `API error ${status}: ${statusText}` }], isError: true };
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async getPrompt(args: Record<string, unknown>): Promise<ToolResult> {
     const { ok, status, statusText, data } = await this.fetchJSON(
-      `${this.baseUrl}/commits/${encodeURIComponent(args.prompt_name as string)}`
+      `${this.baseUrl}/repos/${encodeURIComponent(args.prompt_name as string)}`
     );
     if (!ok) return { content: [{ type: 'text', text: `API error ${status}: ${statusText}` }], isError: true };
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async listExperiments(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams({ reference_dataset: args.dataset_id as string ?? '' });
+    const params = new URLSearchParams();
+    if (args.dataset_id !== undefined) params.set('reference_dataset', args.dataset_id as string);
     if (args.limit !== undefined) params.set('limit', String(args.limit));
     if (args.offset !== undefined) params.set('offset', String(args.offset));
 

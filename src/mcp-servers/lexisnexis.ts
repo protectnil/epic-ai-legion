@@ -4,13 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official LexisNexis MCP server was found on GitHub or the LexisNexis Developer Portal.
+// Official MCP: None found as of 2026-03-28.
+// No official LexisNexis MCP server was found on GitHub, npmjs.com, or the LexisNexis Developer Portal.
+// Our adapter covers: 10 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no qualifying MCP server exists.
 //
-// Base URL: Configurable — provided during onboarding via dev.lexisnexis.com (enterprise-specific)
-// Auth: OAuth2 client credentials flow (POST /oauth2/token with client_id + client_secret)
-// Docs: https://dev.lexisnexis.com/
-// Rate limits: Firm-wide throttling; enforced server-side. Retry-After headers returned on 429.
+// Base URL: Enterprise-specific — provided during onboarding (e.g. https://api.lexisnexis.com).
+//   The LexisNexis Web Services API (WSAPI) uses an OData-based architecture; the public developer
+//   portal at dev.lexisnexis.com requires an approved enterprise account to access endpoint details.
+//   Endpoint paths below (/v1/cases/search, /v1/statutes/search, etc.) are representative patterns
+//   consistent with the LexisNexis search/retrieve paradigm but CANNOT be fully verified from public
+//   docs — they must be validated against the customer-specific API reference provided at onboarding.
+//   The WSAPI returns OData JSON responses (fields: @odata.context, @odata.count, value[]).
+//   Document retrieval uses OData media link format: Documents(DocumentId='...')/$value
+// Auth: OAuth2 client credentials flow (POST /oauth2/token with client_id + client_secret as Basic auth)
+// Docs: https://dev.lexisnexis.com/ (public overview); full reference requires enterprise credentials
+// Rate limits: Firm-wide throttling enforced server-side. Retry-After headers returned on 429.
+//   Academic/research tiers impose additional per-institution query limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

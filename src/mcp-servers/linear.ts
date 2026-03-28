@@ -4,9 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Linear MCP server was found on GitHub. Generic GraphQL MCP servers exist
-// (e.g. blurrah/mcp-graphql) but are not Linear-specific and require schema introspection.
+// Official MCP: https://api.linear.app/mcp — transport: streamable-HTTP + SSE, auth: OAuth 2.1 (dynamic client registration)
+// Linear publishes an official hosted MCP server (https://linear.app/docs/mcp). It is actively maintained
+// (updated 2025-11). However, available evidence shows it exposes ~4-7 tools (list_issues, get_issue,
+// list_teams, create_issue, update_issue, list_projects, create_comment) — below the 10-tool threshold
+// required to prefer the vendor MCP over a REST adapter. The official Linear MCP does NOT meet criterion #3.
+// Our adapter covers: 17 tools. Vendor MCP covers: ~7 tools (below 10-tool threshold).
+// Recommendation: use-rest-api — vendor MCP exists but fails the 10+ tools criterion. Use this adapter.
+// Air-gapped deployments also benefit from this adapter over the hosted OAuth MCP.
 //
 // Base URL: https://api.linear.app/graphql (single GraphQL endpoint)
 // Auth: Bearer token (personal API key from Linear Settings → API → Personal API keys)

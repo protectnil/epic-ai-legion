@@ -4,17 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Mandiant/Google MCP server was found on GitHub or npm.
-// Note: Mandiant Advantage Threat Intelligence has been migrated to Google Threat Intelligence
-// (GTI). The MATI API v4 (api.intelligence.mandiant.com) remains accessible for existing
-// customers. New customers should evaluate the GTI API (www.virustotal.com/api/v3/).
-// Our adapter covers 12 tools against the MATI v4 API surface.
+// Official MCP: None found as of 2026-03-28 (google/mcp-security provides GTI MCP at github.com/google/mcp-security,
+//   transport: stdio, auth: VirusTotal API key — but this targets the Google Threat Intelligence API, not the legacy
+//   MATI v4 API. It is not a Mandiant MCP server and does not cover the same endpoints. MCP tool count: ~20+ tools
+//   across files, domains, IPs, URLs, collections, threat profiles, and intelligence search — but uses GTI/VirusTotal
+//   object model, not Mandiant v4 object model. Not a direct substitute for MATI v4.)
+// Our adapter covers: 12 tools. Vendor MCP (GTI): ~20+ tools but different API surface (GTI, not MATI v4).
+// Recommendation: use-rest-api — GTI MCP is a different product/API; our adapter targets the MATI v4 endpoint
+//   for existing Mandiant customers. No official Mandiant MATI MCP server exists as of 2026-03-28.
+// Note: Mandiant Advantage Threat Intelligence has been migrated to Google Threat Intelligence (GTI). The MATI API v4
+//   (api.intelligence.mandiant.com) remains accessible for existing customers. New customers should use the GTI API.
 //
 // Base URL: https://api.intelligence.mandiant.com/v4
-// Auth: OAuth2 client_credentials — POST /token with client_id + client_secret as form body.
-//       Bearer token is short-lived (~1 hour). Adapter caches and refreshes automatically.
-//       Set X-App-Name header on all requests per Mandiant API requirements.
+// Auth: OAuth2 client_credentials — POST /token with Authorization: Basic base64(clientId:clientSecret) header
+//       and grant_type=client_credentials in the form body. Bearer token is short-lived (~1 hour).
+//       Adapter caches and refreshes automatically. Set X-App-Name header on all requests.
 // Docs: https://docs.mandiant.com/home/mati-threat-intelligence-api-v4
 // Rate limits: Not publicly documented; varies by subscription tier
 
@@ -261,16 +265,16 @@ export class MandiantMCPServer {
     if (this.accessToken && this.tokenExpiry > now) {
       return this.accessToken;
     }
+    const basicCredential = btoa(`${this.clientId}:${this.clientSecret}`);
     const response = await fetch(this.tokenUrl, {
       method: 'POST',
       headers: {
+        'Authorization': `Basic ${basicCredential}`,
         'Content-Type': 'application/x-www-form-urlencoded',
         'X-App-Name': this.appName,
       },
       body: new URLSearchParams({
         grant_type: 'client_credentials',
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
       }).toString(),
     });
     if (!response.ok) {

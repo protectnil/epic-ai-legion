@@ -5,14 +5,18 @@
  */
 
 // Official MCP: https://mcp.logrocket.com/mcp — transport: streamable-HTTP, auth: API key
-// npm: @logrocket/mcp — actively maintained, covers sessions, metrics, issues, and more.
-// Our adapter covers: 12 tools (sessions, issues, metrics, users, highlights) via REST API.
-// Recommendation: Use the official LogRocket MCP (https://mcp.logrocket.com/mcp) for full coverage.
-// Use this adapter for air-gapped deployments or environments that cannot reach the remote MCP endpoint.
+// The official LogRocket MCP server (npm: published by logrocket-npm, v0.4.0, 2026-03-20) exposes
+// ONE tool: use_logrocket (a single natural-language Galileo AI query tool). This fails the 10-tool
+// threshold criterion, so the MCP is NOT preferred for structured tool-level integrations.
+// Vendor MCP tool count: 1. Our adapter covers: 12 tools (sessions, issues, metrics, users, highlights).
+// Recommendation: use-rest-api — vendor MCP has only 1 tool (< 10 threshold); our REST adapter
+// provides 12 discrete structured tools with full schema coverage for orchestration.
 //
 // Base URL: https://api.logrocket.com/v1
 // Auth: Bearer API key in Authorization header (regeneratable per-org in LogRocket dashboard)
-// Docs: https://docs.logrocket.com/reference
+//   Note: User Identification API uses "token" prefix; main REST API auth format is UNVERIFIED
+//   from public docs as of 2026-03-28; "Bearer" is used here based on common practice.
+// Docs: https://docs.logrocket.com/reference (auth-gated), https://docs.logrocket.com/docs/mcp
 // Rate limits: Not publicly documented; Pro and Enterprise plans have higher limits.
 
 import { ToolDefinition, ToolResult } from './types.js';

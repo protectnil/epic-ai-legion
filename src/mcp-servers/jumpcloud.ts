@@ -4,10 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://mcp.jumpcloud.com/v1 — transport: HTTP-streamable, auth: API key + OAuth2
-// Vendor MCP is GA as of Nov 2025. Covers users, devices, groups, SSO apps, Directory Insights, bulk actions.
-// Our adapter covers: 18 tools (core REST operations via v1/v2 APIs).
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// Official MCP: https://mcp.jumpcloud.com/v1 — transport: streamable-HTTP, auth: API key (Bearer) or OAuth2
+// Vendor MCP is GA as of 2025-10-01. Covers users, devices, groups, SSO apps, Directory Insights, bulk actions.
+// Our adapter covers: 18 tools. Vendor MCP tool count not enumerated in public docs (tool list behind login).
+// Recommendation: use-vendor-mcp for full coverage. Use this REST adapter for air-gapped deployments.
+// NOTE: Vendor MCP (https://mcp.jumpcloud.com/v1) is official and actively maintained — prefer vendor MCP.
 //
 // Base URL (v1): https://console.jumpcloud.com/api
 // Base URL (v2): https://console.jumpcloud.com/api/v2
@@ -142,7 +143,7 @@ export class JumpCloudMCPServer {
       },
       {
         name: 'update_user',
-        description: 'Update attributes of an existing JumpCloud system user by ID using PATCH',
+        description: 'Update attributes of an existing JumpCloud system user by ID using PUT (full update via /api/systemusers/{id})',
         inputSchema: {
           type: 'object',
           properties: {

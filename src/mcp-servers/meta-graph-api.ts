@@ -4,15 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03. No official Meta Graph API MCP server from Meta Inc.
-// Community servers exist (hashcott/meta-ads-mcp-server, brijr/meta-mcp) but cover only Marketing API,
-// not the full Graph API surface (Pages, Instagram, Users, Posts, Photos, Videos).
+// Official MCP: None found as of 2026-03-28. No official Meta Graph API MCP server from Meta Inc.
+// Community servers exist (hashcott/meta-ads-mcp-server, brijr/meta-mcp, serkanhaslak/meta-mcp) but
+// cover only the Marketing/Ads API, not the full Graph API surface (Pages, Instagram, Users, Posts,
+// Photos, Videos, Comments, Reactions, Search).
 // Recommendation: Use this adapter for full Graph API coverage.
 //
-// Base URL: https://graph.facebook.com/v22.0
-// Auth: Bearer access token (user token or page token) in Authorization header
+// Base URL: https://graph.facebook.com/v25.0 (v25.0 released Feb 18, 2026 — current latest)
+// Auth: access_token query parameter or Bearer token in Authorization header. Meta recommends
+//       passing the access_token as a query parameter for Graph API calls (user token or page token).
+//       Our adapter passes access_token as a query parameter via URLSearchParams — correct.
 // Docs: https://developers.facebook.com/docs/graph-api/
-// Rate limits: App-level rate limiting: 200 calls per hour per user per app (standard);
+// Rate limits: App-level rate limiting: 200 calls per hour per user per app (standard tier);
 //              Marketing API: BUC-based (Billion Units of Computation) — varies by tier
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -28,7 +31,7 @@ export class MetaGraphAPIMCPServer {
 
   constructor(config: MetaGraphAPIConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl || 'https://graph.facebook.com/v22.0';
+    this.baseUrl = config.baseUrl || 'https://graph.facebook.com/v25.0';
   }
 
   static catalog() {

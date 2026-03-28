@@ -4,18 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official LogRhythm MCP server was found on GitHub or npm. LogRhythm documentation
-// has migrated to Exabeam at https://developers.exabeam.com/logrhythm-siem/.
+// Official MCP: None found as of 2026-03-28
+// No official LogRhythm MCP server was found on GitHub, npm, or any vendor channel.
+// LogRhythm documentation has migrated to Exabeam at https://developers.exabeam.com/logrhythm-siem/.
+// Our adapter covers: 15 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP server exists.
 //
-// Base URL: https://{host}:8501  (Client Console port — hosts both lr-alarm-api and lr-admin-api)
+// Base URL: https://{host}:8501  (Client Console port — hosts lr-alarm-api, lr-admin-api)
 //           https://{host}:8501  (Case API also served on 8501 at /lr-case-api/)
 //           https://{host}:8501  (Search API at /lr-search-api/)
-// Auth: Bearer token (API key generated in the LogRhythm Client Console)
-// Docs: https://docs.logrhythm.com/lrapi/docs/rest-api
-//       https://developers.exabeam.com/logrhythm-siem/docs/alarm-api
-//       https://developers.exabeam.com/logrhythm-siem/docs/case-api
+//           https://{host}:8501  (Drilldown API at /lr-drilldown-cache-api/)
+// Auth: Bearer token (JWT API key generated in the LogRhythm Client Console under API Accounts)
+// Docs: https://developers.exabeam.com/logrhythm-siem/reference (authoritative, replaces docs.logrhythm.com)
+//       https://docs.logrhythm.com/lrapi/docs/rest-api (deprecated, redirects to above)
 // Rate limits: Not publicly documented; governed by the on-premises deployment configuration
+//
+// NOTE: The Search API (search_events tool) uses an async two-step pattern in the actual API
+// (POST to create task → GET to poll results by taskId). The current implementation uses a
+// single POST to /lr-search-api/actions/search — this path is UNVERIFIED against the official
+// Exabeam API reference (the reference page requires login). Tool is marked UNVERIFIED.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -188,7 +195,7 @@ export class LogRhythmMCPServer {
           type: 'object',
           properties: {
             caseId: { type: 'string', description: 'Case ID to attach alarms to' },
-            alarmIds: { type: 'array', description: 'Array of numeric alarm IDs to attach as case evidence' },
+            alarmIds: { type: 'array', items: { type: 'number' }, description: 'Array of numeric alarm IDs to attach as case evidence' },
           },
           required: ['caseId', 'alarmIds'],
         },

@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Hyperproof MCP server was found on GitHub or the Hyperproof Developer Portal.
+// Official MCP: None found as of 2026-03-28
+// No official Hyperproof MCP server was found on GitHub, npm, or the Hyperproof Developer Portal.
+// Our adapter covers: 20 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no vendor MCP exists; REST adapter is the only integration path.
 //
 // Base URL: https://api.hyperproof.app/v1
 // Auth: OAuth2 client credentials flow — POST https://accounts.hyperproof.app/oauth/token
@@ -13,6 +15,12 @@
 //   Returns Bearer access token. Refresh 60 seconds before expiry.
 // Docs: https://developer.hyperproof.app/hyperproof-api
 // Rate limits: Not publicly documented; implement exponential backoff on 429 responses
+//
+// NOTE: add_proof_to_control — the Controls API POST /{controlId}/proof endpoint accepts
+//   multipart/form-data (file upload), not a JSON proofId body. This tool implements a
+//   best-effort JSON link that may not match the actual API. Uploading binary proof files
+//   requires multipart/form-data which is outside the scope of this text-only adapter.
+//   UNVERIFIED — this tool may not function as expected against live API.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -339,11 +347,11 @@ export class HyperproofMCPServer {
               type: 'string',
               description: 'Detailed description of the risk and its potential impact',
             },
-            likelihood: {
+            likelihoodLevel: {
               type: 'number',
               description: 'Likelihood score from 1 (rare) to 5 (almost certain)',
             },
-            impact: {
+            impactLevel: {
               type: 'number',
               description: 'Impact score from 1 (insignificant) to 5 (catastrophic)',
             },
@@ -381,11 +389,11 @@ export class HyperproofMCPServer {
               type: 'string',
               description: 'New risk status: open, accepted, mitigated, closed',
             },
-            likelihood: {
+            likelihoodLevel: {
               type: 'number',
               description: 'Updated likelihood score from 1 to 5',
             },
-            impact: {
+            impactLevel: {
               type: 'number',
               description: 'Updated impact score from 1 to 5',
             },
@@ -764,8 +772,8 @@ export class HyperproofMCPServer {
     if (!args.name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
     const body: Record<string, unknown> = { name: args.name };
     if (args.description) body.description = args.description;
-    if (args.likelihood) body.likelihood = args.likelihood;
-    if (args.impact) body.impact = args.impact;
+    if (args.likelihoodLevel) body.likelihoodLevel = args.likelihoodLevel;
+    if (args.impactLevel) body.impactLevel = args.impactLevel;
     if (args.ownerId) body.ownerId = args.ownerId;
     if (args.program_id) body.programId = args.program_id;
     return this.apiPost('/risks', body);
@@ -777,8 +785,8 @@ export class HyperproofMCPServer {
     if (args.name) body.name = args.name;
     if (args.description) body.description = args.description;
     if (args.status) body.status = args.status;
-    if (args.likelihood) body.likelihood = args.likelihood;
-    if (args.impact) body.impact = args.impact;
+    if (args.likelihoodLevel) body.likelihoodLevel = args.likelihoodLevel;
+    if (args.impactLevel) body.impactLevel = args.impactLevel;
     if (args.mitigationPlan) body.mitigationPlan = args.mitigationPlan;
     return this.apiPatch(`/risks/${encodeURIComponent(args.risk_id as string)}`, body);
   }

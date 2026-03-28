@@ -4,17 +4,29 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/mapbox/mcp-server — transport: Streamable HTTP (cloud-hosted, OAuth)
-// Our adapter covers: 12 tools (geocoding, reverse geocoding, directions, matrix, isochrone, POI search,
-//   static maps, styles, datasets, tokens). Vendor MCP covers: 9 tools (geocoding, routing, POI).
-// Recommendation: Use vendor MCP for conversational agents needing location intelligence.
-// Use this adapter for programmatic/air-gapped access with broader API surface.
+// Official MCP: https://github.com/mapbox/mcp-server — transport: stdio/streamable-HTTP, auth: access token
+// Our adapter covers: 12 tools. Vendor MCP covers: 13 tools (forward_geocode_tool, reverse_geocode_tool,
+//   directions_tool, matrix_tool, isochrone_tool, optimization_tool, map_matching_tool,
+//   search_and_geocode_tool, category_search_tool, poi_search_tool, static_map_image_tool,
+//   resource_reader_tool, version_tool).
+// Note: A second official Mapbox DevKit MCP server also exists at https://github.com/mapbox/mcp-devkit-server
+//   covering style management, token creation, and validation (developer tooling, not location intelligence).
+// Integration: use-both
+// MCP-sourced tools (2): optimization_tool, map_matching_tool (not covered by our REST adapter)
+// REST-sourced tools (10): geocode_forward, geocode_reverse, geocode_batch, get_isochrone,
+//   get_travel_matrix, get_directions, search_places, get_static_map, list_styles, get_style,
+//   list_datasets, list_tokens (styles/datasets/tokens not in vendor MCP)
+// Combined coverage: both transports needed for full surface. MCP handles optimization and map-matching;
+//   REST adapter handles styles API, Datasets API, Tokens API, and batch geocoding not in MCP.
+// Recommendation: route optimization_tool and map_matching_tool through vendor MCP; all others via this adapter.
 //
 // Base URL: https://api.mapbox.com
 // Auth: Access token appended as ?access_token={token} query parameter on every request
 // Docs: https://docs.mapbox.com/api/overview/
-// Rate limits: Directions API: 300 req/min. Geocoding API: 600 req/min. Matrix: 60 req/min.
-//              Isochrone: 300 req/min. Static Images: 600 req/min.
+// Rate limits: Directions API: 300 req/min. Geocoding API (v5): 600 req/min. Geocoding API (v6): 1000 req/min.
+//              Matrix API (driving/walking/cycling): 60 req/min. Matrix API (driving-traffic): 30 req/min.
+//              Isochrone: 300 req/min. Static Images: 600 req/min. Tokens API: 100 req/min.
+//              Datasets API (Read): 480 req/min. Datasets API (Write): 40 req/min.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -127,13 +139,13 @@ export class MapboxMCPServer {
       },
       {
         name: 'geocode_batch',
-        description: 'Geocode up to 50 addresses or place names in a single request using Mapbox Batch Geocoding',
+        description: 'Geocode up to 1000 addresses or place names in a single POST request using Mapbox Geocoding v6 Batch',
         inputSchema: {
           type: 'object',
           properties: {
             queries: {
               type: 'string',
-              description: 'JSON array of address strings to geocode (max 50), e.g. ["Times Square, NY", "Golden Gate Bridge, CA"]',
+              description: 'JSON array of address strings to geocode (max 1000), e.g. ["Times Square, NY", "Golden Gate Bridge, CA"]',
             },
             country: {
               type: 'string',
@@ -255,7 +267,7 @@ export class MapboxMCPServer {
       },
       {
         name: 'search_places',
-        description: 'Search for points of interest (POI), businesses, and landmarks near a location using Mapbox Search API',
+        description: 'Search for POIs, businesses, and landmarks near a location using the Mapbox Search Box forward endpoint; returns results with coordinates',
         inputSchema: {
           type: 'object',
           properties: {
@@ -509,13 +521,19 @@ export class MapboxMCPServer {
     } catch {
       return { content: [{ type: 'text', text: 'queries must be a valid JSON array of strings' }], isError: true };
     }
-    if (!Array.isArray(queries) || queries.length === 0 || queries.length > 50) {
-      return { content: [{ type: 'text', text: 'queries must be a JSON array of 1-50 strings' }], isError: true };
+    if (!Array.isArray(queries) || queries.length === 0 || queries.length > 1000) {
+      return { content: [{ type: 'text', text: 'queries must be a JSON array of 1-1000 strings' }], isError: true };
     }
-    const body: Record<string, unknown> = { queries: queries.map(q => ({ q })) };
-    if (args.country) body.country = args.country;
-    if (args.language) body.language = args.language;
-    return this.apiPost('/search/geocode/v6/batch', body);
+    // Geocoding v6 batch body is a raw JSON array of query objects (not wrapped in a key).
+    // Each forward geocoding query uses the { "q": "..." } shape; optional country/language
+    // fields are per-query parameters per the v6 batch spec.
+    const queryObjects = queries.map(q => {
+      const obj: Record<string, unknown> = { q };
+      if (args.country) obj.country = args.country;
+      if (args.language) obj.language = args.language;
+      return obj;
+    });
+    return this.apiPost('/search/geocode/v6/batch', queryObjects);
   }
 
   private async getDirections(args: Record<string, unknown>): Promise<ToolResult> {
@@ -560,13 +578,15 @@ export class MapboxMCPServer {
 
   private async searchPlaces(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
+    // Use the /forward endpoint (Text Search) instead of /suggest to avoid the mandatory
+    // session_token billing parameter required by the interactive /suggest endpoint.
     const params: Record<string, string> = { q: args.query as string };
     if (args.proximity) params.proximity = args.proximity as string;
     if (args.bbox) params.bbox = args.bbox as string;
     if (args.country) params.country = args.country as string;
     if (args.language) params.language = args.language as string;
     if (args.limit) params.limit = String(args.limit);
-    return this.apiGet('/search/searchbox/v1/suggest', params);
+    return this.apiGet('/search/searchbox/v1/forward', params);
   }
 
   private async getStaticMap(args: Record<string, unknown>): Promise<ToolResult> {

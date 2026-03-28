@@ -4,8 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Kandji (now Iru) MCP server was found on GitHub.
+// Official MCP: None found as of 2026-03-28 — no official Kandji/Iru MCP server exists.
+// A community MCP server exists at https://github.com/mangopudding/mcp-server-iru-api (23 tools,
+// last commit October 2025) but is NOT published by Kandji/Iru — it is a community project.
+// It does not meet criterion 1 (vendor-published). Decision: use-rest-api.
+// Our adapter covers: 14 tools. Community MCP covers: ~23 tools (not official).
+// Recommendation: REST adapter is the authoritative integration. Community MCP documents additional
+// operations (device actions, compliance summary, licensing, tags, audit events, lost mode,
+// device parameters, device status, behavioral detections, vulnerability detections,
+// affected devices/software) not yet in this adapter.
 //
 // Note: Kandji has rebranded to Iru as of 2026. API documentation continues
 // to be available at api-docs.kandji.io. Existing API tokens and URLs remain valid.

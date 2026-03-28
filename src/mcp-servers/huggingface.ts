@@ -4,17 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/huggingface/hf-mcp-server — transport: stdio + SSE + streamable-HTTP
-// The official HF MCP server is actively maintained and covers models, datasets, spaces, papers, and Gradio apps.
-// Our adapter covers: 14 tools (Hub models, datasets, spaces, inference, user/org management).
-// Vendor MCP covers: full Hub surface including Gradio tool federation.
-// Recommendation: Use vendor MCP for Gradio app federation and Papers. Use this adapter for air-gapped deployments
-//   or direct REST-only usage without uv/Python runtime.
+// Official MCP: https://hf.co/mcp (remote, streamable-HTTP + SSE + stdio) — transport: streamable-HTTP (production)
+//   GitHub: https://github.com/huggingface/hf-mcp-server — actively maintained (last commit 2026-03)
+// Vendor MCP built-in tools (6): Spaces Semantic Search, Papers Semantic Search, Model Search, Dataset Search,
+//   Documentation Semantic Search, Run and Manage Jobs — these are semantic/search-oriented, not REST CRUD.
+// Our adapter covers: 14 tools (Hub REST CRUD: list/get/search models/datasets/spaces, user/org, inference).
+// Recommendation: use-both — vendor MCP has Papers search and Gradio Space federation not in our REST adapter;
+//   our REST adapter has direct inference execution (text generation, classification, embeddings, summarization),
+//   user profile reads, and org model listing not exposed by the vendor MCP built-in tools.
 //
 // Base URL: https://huggingface.co/api  (Hub API)
-//           https://router.huggingface.co  (Inference Providers router)
+//           https://router.huggingface.co  (Inference Providers router — replaces deprecated api-inference.huggingface.co)
 // Auth: Authorization: Bearer {api_token} (User Access Token with read or Inference permissions)
-// Docs: https://huggingface.co/docs/hub/en/api
+// Docs: https://huggingface.co/docs/hub/api
 // Rate limits: Free tier — rate limited; PRO account unlocks higher limits. Exact limits not published.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -449,7 +451,7 @@ export class HuggingFaceMCPServer {
     if (!modelId || !inputs) {
       return { content: [{ type: 'text', text: 'model_id and inputs are required' }], isError: true };
     }
-    const response = await fetch(`${this.inferenceBaseUrl}/pipeline/feature-extraction/${encodeURIComponent(modelId)}`, {
+    const response = await fetch(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
       method: 'POST',
       headers: this.hubHeaders,
       body: JSON.stringify({ inputs }),

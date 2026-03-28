@@ -4,12 +4,34 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/jfrog/mcp-jfrog — actively maintained JFrog MCP server;
-//   transport: stdio, auth: OAuth2/Access Token, requires JFrog Cloud account.
+// Official MCP: https://github.com/jfrog/mcp-jfrog — experimental open-source JFrog MCP server;
+//   transport: stdio (default) or SSE, auth: JFrog Access Token. Actively maintained (last
+//   README update Mar 2026). JFrog also hosts an official managed remote MCP server at
+//   https://github.com/jfrog/jfrog-mcp-server (Cloud SaaS only, OAuth, no install required).
+//   Vendor MCP (mcp-jfrog) tools: jfrog_get_package_info, jfrog_get_package_versions,
+//     jfrog_get_package_version_vulnerabilities, create_local_repository, create_remote_repository,
+//     create_virtual_repository, list_repositories, set_folder_property, execute_aql,
+//     list_jfrog_builds, get_specific_build, list_jfrog_runtime_clusters, create_project (~13 tools).
 //   Our adapter covers: 14 tools (core artifact and repository operations).
-//   Vendor MCP covers: full JFrog platform API surface.
-// Recommendation: Use vendor MCP for full JFrog platform coverage. Use this adapter for
-//   air-gapped or self-hosted Artifactory deployments where npm install at runtime is restricted.
+// Recommendation: use-both — vendor MCP has unique tools (create_local_repository,
+//   create_remote_repository, create_virtual_repository, jfrog_get_package_info,
+//   jfrog_get_package_versions, jfrog_get_package_version_vulnerabilities, set_folder_property,
+//   create_project, list_jfrog_runtime_clusters) not in our adapter; our adapter has
+//   get_artifact_info, get_artifact_properties, set_artifact_properties, search_artifacts_quick,
+//   copy_artifact, move_artifact, delete_artifact, get_storage_summary, get_system_info not
+//   in vendor MCP. Air-gapped/self-hosted deployments use REST adapter only.
+//
+// Integration: use-both
+// MCP-sourced tools (9 unique): create_local_repository, create_remote_repository,
+//   create_virtual_repository, jfrog_get_package_info, jfrog_get_package_versions,
+//   jfrog_get_package_version_vulnerabilities, set_folder_property, create_project,
+//   list_jfrog_runtime_clusters
+// REST-sourced tools (9 unique): get_artifact_info, get_artifact_properties,
+//   set_artifact_properties, search_artifacts_quick, copy_artifact, move_artifact,
+//   delete_artifact, get_storage_summary, get_system_info
+// Shared tools (5 overlap): list_repositories, search_artifacts_aql→execute_aql,
+//   list_builds→list_jfrog_builds, get_build_info→get_specific_build, get_repository
+// Combined coverage: 23 tools (MCP: 13 + REST: 14 - shared: 4)
 //
 // Base URL: https://mycompany.jfrog.io (customer-hosted; required in config, no default)
 // Auth: Bearer token (JFrog Platform Access Token — preferred over Basic auth)

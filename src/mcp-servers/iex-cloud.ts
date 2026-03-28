@@ -4,13 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official IEX Cloud MCP server was found on GitHub or npm.
+// Our adapter covers: 20 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no vendor MCP exists.
 //
-// Base URL: https://cloud.iexapis.com/stable
+// *** WARNING: IEX Cloud shut down on August 31, 2024. All API endpoints are offline. ***
+// *** This adapter is non-functional against cloud.iexapis.com as of that date.       ***
+// *** Retained for reference and potential migration to a compatible successor API.   ***
+//
+// Base URL: https://cloud.iexapis.com/stable (OFFLINE as of 2024-08-31)
 // Auth: API token passed as query parameter (?token=YOUR_TOKEN). Publishable tokens begin with
 //       pk_ (safe for client-side). Secret tokens begin with sk_ (server-side only).
-// Docs: https://iexcloud.io/docs/api/
+// Docs: https://iexcloud.io/docs/api/ (archived — service is shut down)
 // Rate limits: Message-based quota system. Free tier: 500,000 messages/month. Paid plans start
 //              at 5M messages/month. Each endpoint consumes a documented message credit count.
 

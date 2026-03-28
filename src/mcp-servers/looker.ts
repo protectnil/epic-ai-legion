@@ -4,16 +4,37 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Google/Looker MCP server was found on GitHub or npm. Community servers
-// (e.g. datadaddy89/looker-mcp, kokevidaurre/looker-admin-mcp) are unofficial and unmaintained.
-// Our adapter covers 18 tools via the Looker API 4.0 REST interface.
+// Official MCP: https://github.com/googleapis/genai-toolbox — transport: stdio, auth: client_id + client_secret
+// Google publishes the "MCP Toolbox for Databases" (googleapis/genai-toolbox) which includes a prebuilt Looker
+// integration. Last release: v0.28.0 (2026-03-02), actively maintained. MCP tool count: 30+ Looker-specific tools
+// (get_models, get_explores, get_dimensions, get_measures, get_filters, get_parameters, query, query_sql,
+//  query_url, get_looks, run_look, make_look, get_dashboards, run_dashboard, make_dashboard,
+//  add_dashboard_element, add_dashboard_filter, generate_embed_url, health_pulse, health_analyze, health_vacuum,
+//  dev_mode, get_projects, get_project_files, get_project_file, create_project_file, update_project_file,
+//  delete_project_file, get_connections, get_connection_schemas, get_connection_databases, and more).
+// Our adapter covers: 18 tools (core Looks, Dashboards, Queries, Explores, Folders, Users, ScheduledPlans).
+// Recommendation: use-both — the MCP toolbox covers LookML authoring, SQL generation, and health checks that
+//   our REST adapter doesn't implement. Our REST adapter covers user management, folder navigation, and
+//   scheduled plans that the MCP toolbox doesn't expose. Full coverage requires both.
+//
+// Integration: use-both
+// MCP-sourced tools (unique to MCP): [get_models, query_sql, query_url, health_pulse, health_analyze,
+//   health_vacuum, dev_mode, get_projects, get_project_files, get_project_file, create_project_file,
+//   update_project_file, delete_project_file, get_connections, get_connection_schemas, get_dimensions,
+//   get_measures, get_filters, get_parameters, get_connection_databases, add_dashboard_element,
+//   add_dashboard_filter, generate_embed_url, run_dashboard]
+// REST-sourced tools (unique to our adapter): [create_look, update_look, list_folders, get_folder,
+//   list_users, get_current_user, list_scheduled_plans]
+// Shared (in both MCP and REST): [list_looks/get_looks, get_look, run_look, list_dashboards/get_dashboards,
+//   get_dashboard, search_dashboards, run_inline_query/query, create_query, run_query_by_id,
+//   list_explores/get_explores, get_explore, make_look, make_dashboard]
 //
 // Base URL: https://{instance}:19999  (on-premises)  or  https://{instance}.cloud.looker.com  (GCC)
 // Auth: Looker API 4.0 login — POST /api/4.0/login with client_id + client_secret as form body;
-//       returns Bearer token. API 3.1 was removed in Looker 23.18.
+//       returns access token. Authorization header format: "token {access_token}" (NOT "Bearer").
+//       API 3.1 was removed in Looker 23.18.
 // Docs: https://docs.cloud.google.com/looker/docs/reference/looker-api/latest
-//       https://docs.cloud.google.com/looker/docs/api-4-ga
+//       https://docs.cloud.google.com/looker/docs/api-auth
 // Rate limits: Not publicly documented; governed by instance configuration (default ~10 req/s)
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -342,7 +363,7 @@ export class LookerMCPServer {
 
   private async getAccessToken(): Promise<string> {
     const now = Date.now();
-    if (this.accessToken && now < this.tokenExpiresAt - 30_000) {
+    if (this.accessToken && now < this.tokenExpiresAt - 60_000) {
       return this.accessToken;
     }
     const response = await fetch(`${this.baseUrl}/api/4.0/login`, {
@@ -365,7 +386,7 @@ export class LookerMCPServer {
   private async headers(): Promise<Record<string, string>> {
     const token = await this.getAccessToken();
     return {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `token ${token}`,
       'Content-Type': 'application/json',
     };
   }

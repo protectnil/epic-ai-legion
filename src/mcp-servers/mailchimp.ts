@@ -4,10 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Intuit/Mailchimp MCP server was found on GitHub or npm. Multiple community
-// adapters exist but none are officially maintained by Mailchimp.
-// Our adapter covers 18 tools across audiences, campaigns, templates, segments, and journeys.
+// Official MCP: None found as of 2026-03-28
+// No official Mailchimp/Intuit MCP server was found on GitHub, npm, or Mailchimp developer docs.
+// Multiple community adapters exist (AgentX-ai/mailchimp-mcp, BusyBee3333/mailchimp-mcp-2026-complete,
+// alien-lifestyles/mailchimp-mcp, Apify/mailchimp-mcp-server) but none are published or
+// officially maintained by Mailchimp or Intuit. All fail the "official" criterion.
+// Our adapter covers: 18 tools. Vendor MCP: None.
+// Recommendation: use-rest-api — no official MCP exists; REST adapter is the primary integration.
 //
 // Base URL: https://{dc}.api.mailchimp.com/3.0
 //   The datacenter (dc) is the suffix of the API key after the last dash.

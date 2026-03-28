@@ -4,13 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/langchain-ai/langsmith-mcp-server — transport: stdio/HTTP, auth: API key
-// Our adapter covers: 16 tools (runs, projects, feedback, datasets, examples, prompts). Vendor MCP covers: runs, threads, prompts, datasets.
-// Recommendation: Use this adapter for broader REST coverage including feedback and experiments. Use vendor MCP for minimal deployments.
+// Official MCP: https://github.com/langchain-ai/langsmith-mcp-server — transport: stdio + streamable-HTTP, auth: LANGSMITH-API-KEY header
+// Vendor MCP is actively maintained (langchain-ai org, latest release Feb 25, 2026). Covers 14 tools: list_prompts, get_prompt,
+//   get_thread_history, fetch_runs, list_projects, list_datasets, list_examples, read_dataset, read_example, create_dataset,
+//   update_examples, list_experiments, run_experiment, get_billing_usage.
+// Our adapter covers: 16 tools (runs, projects, feedback, datasets, examples, prompts). Vendor MCP covers: 14 tools.
+// Recommendation: use-both — our adapter has unique tools (create_project, delete_project, create_run, update_run,
+//   create_feedback, list_feedback, get_dataset, create_dataset, create_example, list_runs with cursor) not in the vendor MCP;
+//   vendor MCP has unique tools (get_thread_history, get_billing_usage, run_experiment, update_examples, read_example, fetch_runs paginated).
+// MCP-sourced tools (6): get_thread_history, get_billing_usage, run_experiment, update_examples, read_example, fetch_runs
+// REST-sourced tools (16): list_projects, get_project, create_project, delete_project, list_runs, get_run, create_run, update_run,
+//   create_feedback, list_feedback, list_datasets, get_dataset, create_dataset, list_examples, create_example, list_prompts
 //
 // Base URL: https://api.smith.langchain.com
-// Auth: API key in X-Api-Key header (generated from LangSmith Settings > API Keys)
-// Docs: https://api.smith.langchain.com/docs (Swagger UI), https://docs.smith.langchain.com/
+// Auth: X-Api-Key header (LangSmith API key from Settings → API Keys)
+// Docs: https://api.smith.langchain.com/redoc
 // Rate limits: Varies by plan — developer plan is rate-limited; contact LangChain for enterprise limits
 
 import { ToolDefinition, ToolResult } from './types.js';

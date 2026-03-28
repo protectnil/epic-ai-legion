@@ -5,11 +5,16 @@
  */
 
 // Official MCP: https://github.com/intercom/intercom-mcp-server — transport: streamable-HTTP (remote hosted)
-// Officially maintained. Currently limited to US-hosted workspaces only (as of 2026-03).
-// Entry point: npx mcp-remote https://mcp.intercom.com/mcp — covers ~6 tools (search-centric).
-// Our adapter covers: 22 tools (conversations, contacts, notes, tags, articles, admins, teams, companies).
-// Recommendation: Use vendor MCP for US workspaces if search-only coverage suffices.
-//   Use this adapter for EU workspaces, air-gapped deployments, or full CRUD coverage.
+// Officially maintained by Intercom. Limited to US-hosted workspaces only (as of 2026-03).
+// Entry point: npx mcp-remote https://mcp.intercom.com/mcp — 6 tools (search/read-only, no write operations):
+//   search, fetch, search_conversations, get_conversation, search_contacts, get_contact
+// Our adapter covers: 22 tools (full CRUD for conversations, contacts, notes, tags, articles, admins, teams, companies).
+// Recommendation: use-both — Vendor MCP 6 tools are read/search-only (US only). Our adapter adds all write operations
+//   and covers EU/AU workspaces. MCP-sourced tools (6): search, fetch, search_conversations, get_conversation,
+//   search_contacts, get_contact. REST-sourced tools (16 additional): reply_to_conversation, assign_conversation,
+//   snooze_conversation, close_conversation, create_contact, update_contact, create_note, list_tags, tag_conversation,
+//   untag_conversation, list_articles, get_article, list_admins, get_me, list_teams, list_companies.
+//   Use vendor MCP for US-only read access; use this adapter for writes and non-US regions.
 //
 // Base URL: https://api.intercom.io
 // Auth: Authorization: Bearer {access_token}  (Private App or OAuth2 access token)

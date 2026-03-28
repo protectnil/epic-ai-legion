@@ -4,12 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Lattice MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28
+// No official Lattice MCP server was found on GitHub or npm. A community server exists at
+// https://github.com/cyrilnoah1/lattice-hq-mcp but it is not published by Lattice Inc. and
+// has only 8 commits — not maintained by the vendor. Decision: use-rest-api.
 //
 // Base URL: https://api.latticehq.com/v1
-// Auth: Bearer token — API key generated in Lattice Admin > Platform > API Keys
-// Docs: https://lattice.com/api, https://help.lattice.com/hc/en-us/articles/360059449534-Lattice-s-Public-API
+// Auth: Bearer token — API key generated in Lattice Admin > Settings > API Keys
+// Docs: https://developers.lattice.com/reference/api_users
 // Rate limits: Not publicly documented — contact Lattice support for limits
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -45,8 +47,7 @@ export class LatticeMCPServer {
         'list_goals', 'get_goal', 'create_goal', 'update_goal',
         'list_review_cycles', 'get_review_cycle',
         'list_reviews', 'get_review',
-        'list_feedback', 'create_feedback',
-        'list_one_on_ones',
+        'list_feedback',
       ],
       description: 'Lattice performance management: query users, goals/OKRs, performance review cycles, peer feedback, 1-on-1 meetings, and department structure.',
       author: 'protectnil',
@@ -356,57 +357,6 @@ export class LatticeMCPServer {
           },
         },
       },
-      {
-        name: 'create_feedback',
-        description: 'Submit peer feedback for a Lattice user with optional visibility setting',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            recipient_id: {
-              type: 'string',
-              description: 'User ID of the person receiving the feedback',
-            },
-            message: {
-              type: 'string',
-              description: 'Feedback message content',
-            },
-            visibility: {
-              type: 'string',
-              description: 'Visibility of the feedback: public (visible to recipient), private, manager_only (default: public)',
-            },
-          },
-          required: ['recipient_id', 'message'],
-        },
-      },
-      {
-        name: 'list_one_on_ones',
-        description: 'List 1-on-1 meeting records with optional filters for participant and date range',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            participant_id: {
-              type: 'string',
-              description: 'Filter 1-on-1s involving a specific user ID',
-            },
-            start_date: {
-              type: 'string',
-              description: 'ISO 8601 date — only return 1-on-1s on or after this date',
-            },
-            end_date: {
-              type: 'string',
-              description: 'ISO 8601 date — only return 1-on-1s on or before this date',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of 1-on-1 records to return (default: 50)',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-          },
-        },
-      },
     ];
   }
 
@@ -439,10 +389,6 @@ export class LatticeMCPServer {
           return this.getReview(args);
         case 'list_feedback':
           return this.listFeedback(args);
-        case 'create_feedback':
-          return this.createFeedback(args);
-        case 'list_one_on_ones':
-          return this.listOneOnOnes(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -619,26 +565,4 @@ export class LatticeMCPServer {
     return this.httpGet('/feedback', params);
   }
 
-  private async createFeedback(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.recipient_id || !args.message) {
-      return { content: [{ type: 'text', text: 'recipient_id and message are required' }], isError: true };
-    }
-    const body: Record<string, unknown> = {
-      recipient_id: args.recipient_id,
-      message: args.message,
-      visibility: (args.visibility as string) || 'public',
-    };
-    return this.httpPost('/feedback', body);
-  }
-
-  private async listOneOnOnes(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      limit: String((args.limit as number) || 50),
-      page: String((args.page as number) || 1),
-    };
-    if (args.participant_id) params.participant_id = args.participant_id as string;
-    if (args.start_date) params.start_date = args.start_date as string;
-    if (args.end_date) params.end_date = args.end_date as string;
-    return this.httpGet('/one-on-ones', params);
-  }
 }

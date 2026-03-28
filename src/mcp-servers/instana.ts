@@ -4,11 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/instana/mcp-instana — transport: stdio, auth: API token via env or HTTP header
-// Python-based (requires uv). Actively maintained (2026). Exposes infrastructure, application, and event tools.
+// Official MCP: https://github.com/instana/mcp-instana — transport: stdio + streamable-HTTP, auth: API token via env or HTTP header
+// Official IBM repo (instana org), Python-based (requires uv). Actively maintained (2026-03+). 7 unified tools:
+//   manage_instana_resources, manage_website_resources, manage_custom_dashboards, analyze_infrastructure,
+//   manage_automation, manage_events_resources, manage_slo.
 // Our adapter covers: 16 tools (infrastructure, services, events, traces, metrics, websites, SLI, alert configs).
-// Vendor MCP covers: full Instana REST API surface. Use vendor MCP when Python/uv runtime is available.
-// Recommendation: Use this adapter for air-gapped or TypeScript-native deployments.
+// Vendor MCP covers: 7 unified router tools wrapping the full REST API surface.
+// Recommendation: use-both — Vendor MCP uses aggregate router tools (1 tool per domain vs. our granular operations).
+//   Our REST adapter provides direct per-operation access (get_snapshot, search_traces, get_event, etc.).
+//   MCP-sourced tools (7): manage_instana_resources, manage_website_resources, manage_custom_dashboards,
+//     analyze_infrastructure, manage_automation, manage_events_resources, manage_slo
+//   REST-sourced tools (16): all tools in this adapter — granular per-operation coverage.
+//   Use vendor MCP when Python/uv runtime is available and coarse-grained routing is acceptable.
+//   Use this adapter for air-gapped or TypeScript-native deployments needing per-operation control.
 //
 // Base URL: https://{tenant}.instana.io  (SaaS) or https://instana.internal.example.com  (on-prem)
 //           No fixed default — every deployment is tenant-specific. baseUrl is required.
@@ -511,11 +519,11 @@ export class InstanaMCPServer {
   }
 
   private async listAlertConfigs(): Promise<ToolResult> {
-    return this.apiGet('/api/alerting/rules');
+    return this.apiGet('/api/events/settings/alerts');
   }
 
   private async getSliConfigs(): Promise<ToolResult> {
-    return this.apiGet('/api/sli/configs');
+    return this.apiGet('/api/settings/sli');
   }
 
   private async getApplicationPerspectives(): Promise<ToolResult> {

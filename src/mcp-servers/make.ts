@@ -4,11 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://developers.make.com/mcp-server — transport: Streamable HTTP + SSE (cloud-hosted)
-// Our adapter covers: 14 tools (scenarios, executions, connections, hooks, data stores, teams, orgs).
-// Vendor MCP covers: scenario run + management tools (scope-gated). Requires cloud access.
-// Recommendation: Use vendor MCP for cloud-native deployments. Use this adapter for air-gapped or
-// programmatic automation management via the Make REST API v2.
+// Official MCP: https://developers.make.com/mcp-server — transport: Streamable HTTP + SSE (cloud-hosted), auth: OAuth2 or MCP token
+// Our adapter covers: 14 tools (scenarios, executions, connections, hooks, data stores, teams). Vendor MCP covers: dynamic
+// tools (user's active/on-demand scenarios as callable tools + management tools for scenarios, connections, hooks, data stores,
+// teams, orgs). The vendor MCP's tool list is dynamically generated from the user's account — tool names are not enumerable
+// without a live connection. Management tools cover the same domain as our REST adapter; scenario-as-tool execution is MCP-only.
+// Recommendation: use-both — the vendor MCP uniquely exposes user scenarios as callable tools (not available in REST API).
+// Our REST adapter covers programmatic scenario lifecycle management (create, update, delete, inspect logs) for air-gapped or
+// automation contexts. Shared management operations (list_scenarios, run_scenario) are routed through vendor MCP when available.
+// Integration: use-both
+// MCP-sourced tools: user's active/on-demand scenarios as tools (dynamic, account-specific)
+// REST-sourced tools (14): list_scenarios, get_scenario, create_scenario, update_scenario, delete_scenario, run_scenario,
+//   list_executions, get_execution, list_connections, get_connection, verify_connection, list_hooks, list_data_stores, list_teams
 //
 // Base URL: https://{zone}.make.com/api/v2 (zone examples: us1, eu2, us2 — from your account URL)
 // Auth: Bearer API token (generated in Make > Profile > API Access)
@@ -232,16 +239,20 @@ export class MakeMCPServer {
       },
       {
         name: 'get_execution',
-        description: 'Get detailed log and output of a specific scenario execution by execution ID',
+        description: 'Get detailed log and output of a specific scenario execution by scenario ID and execution ID',
         inputSchema: {
           type: 'object',
           properties: {
+            scenario_id: {
+              type: 'number',
+              description: 'Scenario ID that owns the execution',
+            },
             execution_id: {
               type: 'string',
-              description: 'Execution ID to retrieve (UUID format)',
+              description: 'Execution ID to retrieve (hex string, e.g. cc1c49323b344687a324888762206003)',
             },
           },
-          required: ['execution_id'],
+          required: ['scenario_id', 'execution_id'],
         },
       },
       {
@@ -541,8 +552,9 @@ export class MakeMCPServer {
   }
 
   private async getExecution(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.scenario_id) return { content: [{ type: 'text', text: 'scenario_id is required' }], isError: true };
     if (!args.execution_id) return { content: [{ type: 'text', text: 'execution_id is required' }], isError: true };
-    return this.apiGet(`/logs/${encodeURIComponent(args.execution_id as string)}`);
+    return this.apiGet(`/scenarios/${encodeURIComponent(args.scenario_id as string)}/logs/${encodeURIComponent(args.execution_id as string)}`);
   }
 
   private async listConnections(args: Record<string, unknown>): Promise<ToolResult> {

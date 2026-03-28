@@ -4,14 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Infura MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28
+// No official Infura MCP server was found on GitHub or npm. Community servers that USE Infura as a
+// provider (e.g. zhangzhongnan928/mcp-evm-signer) exist but are not Infura-published MCP servers.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api — no official Infura MCP server exists.
 //
 // Base URL: https://{network}.infura.io/v3/{projectId}  (projectId embedded in URL per Infura convention)
 // Auth: Project ID in URL path. Optional API key secret via Authorization: Basic base64(:{apiSecret})
 //       for additional security when "Require API Key Secret" is enabled on the project.
-// Docs: https://docs.infura.io/api/networks/ethereum
+// Docs: https://docs.metamask.io/services/reference/ethereum/json-rpc-methods/
 // Rate limits: Credit-based daily quota (resets 00:00 UTC). Free tier: 100,000 credits/day.
+//              Each method consumes a specific number of credits (e.g. eth_blockNumber = 80 credits).
 //              Throughput limit applies per second. Exceeding daily quota suspends access until reset.
 
 import { ToolDefinition, ToolResult } from './types.js';

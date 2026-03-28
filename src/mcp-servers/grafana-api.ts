@@ -4,14 +4,39 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/grafana/mcp-grafana — transport: stdio/HTTP, auth: service account token
-// The official Grafana MCP server is actively maintained and covers 60+ tools (Loki, Prometheus, dashboards, incidents, OnCall, Sift, Tempo, Pyroscope).
-// Recommendation: Use the official Grafana MCP server for full observability stack access.
-//                 Use this adapter for air-gapped deployments or when only the REST provisioning API is needed.
+// Official MCP: https://github.com/grafana/mcp-grafana — transport: stdio/streamable-HTTP, auth: service account token
+// The official Grafana MCP server is actively maintained (latest release v0.11.1, Feb 2025) and covers 60+ tools
+// across dashboards, Prometheus, Loki, Tempo, Pyroscope, incidents, OnCall, Sift, alerting, and annotations.
+// Our adapter covers: 19 tools (REST provisioning API). Vendor MCP covers: 60+ tools.
+//
+// Integration: use-both
+// MCP-sourced tools (unique to vendor MCP, not in REST provisioning API):
+//   query_prometheus, query_prometheus_histogram, list_prometheus_metric_names, list_prometheus_metric_metadata,
+//   list_prometheus_label_names, list_prometheus_label_values, query_loki_logs, query_loki_patterns,
+//   query_loki_stats, list_loki_label_names, list_loki_label_values, list_incidents, get_incident,
+//   create_incident, add_activity_to_incident, list_oncall_schedules, get_oncall_shift,
+//   get_current_oncall_users, list_oncall_teams, list_oncall_users, get_sift_investigation,
+//   get_sift_analysis, list_sift_investigations, find_error_pattern_logs, find_slow_requests,
+//   get_dashboard_summary, get_dashboard_property, get_dashboard_panel_queries, search_folders,
+//   get_datasource_by_name, run_panel_query, generate_deeplink, get_panel_image, get_assertions,
+//   get_annotation_tags, update_annotation, fetch_pyroscope_profile, list_pyroscope_profile_types,
+//   list_pyroscope_label_names, list_pyroscope_label_values
+// REST-sourced tools (our adapter — provisioning API operations not in vendor MCP):
+//   create_or_update_dashboard, delete_dashboard, list_folders, get_folder,
+//   list_alert_rules, get_alert_rule, create_alert_rule, update_alert_rule, delete_alert_rule,
+//   list_contact_points, list_silences, create_silence
+// Shared tools (exist in both, MCP takes priority):
+//   search_dashboards, get_dashboard, create_folder, list_datasources, get_datasource,
+//   list_annotations, create_annotation, list_alert_rules (alerting provisioning vs unified alerting)
+// Combined coverage: 19 REST tools + 40+ MCP-only tools = full provisioning + observability
+// Recommendation: use-both — the vendor MCP covers observability queries (Prometheus, Loki, Tempo, Pyroscope,
+//   incidents, OnCall, Sift) which our REST adapter cannot reach. Our REST adapter covers the provisioning API
+//   (create/update/delete dashboards, folders, alert rules, silences, contact points) which the vendor MCP
+//   does not expose. Full coverage requires both transports.
 //
 // Base URL: https://{instance}.grafana.net/api (Grafana Cloud) or https://{host}/api (self-hosted)
 // Auth: Bearer service account token (Authorization: Bearer <token>)
-// Docs: https://grafana.com/docs/grafana/latest/developers/http_api/
+// Docs: https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/
 // Rate limits: Not officially documented; Grafana Cloud applies per-org limits. Self-hosted: no default limit.
 
 import { ToolDefinition, ToolResult } from './types.js';

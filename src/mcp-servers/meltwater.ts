@@ -4,13 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Meltwater MCP server was found on GitHub or the MCP registry.
+// Official MCP: https://api.meltwater.com/mira/mcp (Mira API MCP Server, vendor-published) — transport: streamable-HTTP, auth: apikey header
+// Our adapter covers: 14 tools (full REST API surface). Vendor MCP covers: 2 tools (ask, list_projects — Mira AI only).
+// Recommendation: use-both — Vendor MCP exposes 2 Mira AI tools (ask, list_projects) not covered by any REST equivalent in our adapter.
+//   Our REST adapter covers 12 tools (searches, mentions, analytics, social, newsletters, usage) not in the MCP.
+//   The FederationManager should route ask/list_projects through Mira MCP and all other tools through this REST adapter.
+// Integration: use-both
+// MCP-sourced tools (2): [ask, list_projects]
+// REST-sourced tools (12): [list_searches, get_search, create_search, delete_search, list_mentions, search_mentions, get_mention_analytics, list_social_accounts, get_social_analytics, get_social_account_metrics, list_newsletters, get_newsletter, get_usage_stats, mira_chat]
+// Note: mira_chat in this adapter calls POST /v3/mira/responses and serves as REST fallback for the MCP ask tool.
+// Combined coverage: 14 tools (MCP: 2 + REST: 14; mira_chat overlaps with MCP ask)
 //
 // Base URL: https://api.meltwater.com/v3
 // Auth: API key passed as custom header "apikey" (not Authorization Bearer)
 // Docs: https://developer.meltwater.com/docs/meltwater-api/reference/overview/
-// Rate limits: 100 req/min per endpoint; global 2,000 req/hour per IP; Mira API 60 req/min
+// Rate limits: 100 req/min per endpoint; global 2,000 req/hour per IP; Mira API (responses + MCP) 60 req/min shared
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -33,7 +41,7 @@ export class MeltwaterMCPServer {
       name: 'meltwater',
       displayName: 'Meltwater',
       version: '1.0.0',
-      category: 'misc',
+      category: 'social',
       keywords: ['meltwater', 'media monitoring', 'press', 'news', 'mentions', 'editorial', 'social listening', 'analytics', 'influencer', 'pr', 'public relations', 'brand monitoring', 'sentiment'],
       toolNames: [
         'list_searches',
@@ -127,7 +135,7 @@ export class MeltwaterMCPServer {
       },
       {
         name: 'list_mentions',
-        description: 'Retrieve media mentions for a saved search with optional date range and pagination',
+        description: 'Retrieve media mentions for a saved search by posting a search request with optional date range, pagination, and sort options',
         inputSchema: {
           type: 'object',
           properties: {
@@ -187,7 +195,7 @@ export class MeltwaterMCPServer {
       },
       {
         name: 'get_mention_analytics',
-        description: 'Get aggregated analytics (volume, sentiment, reach, top sources) for a saved search over a time period',
+        description: 'Get aggregated analytics (total volume, daily breakdown, top countries, sentiment) for a saved search over a time period',
         inputSchema: {
           type: 'object',
           properties: {
@@ -305,7 +313,7 @@ export class MeltwaterMCPServer {
       },
       {
         name: 'get_usage_stats',
-        description: 'Retrieve API usage statistics for the current billing period including request counts per endpoint',
+        description: 'Retrieve API request counts and usage statistics across all endpoints for the current period (GET /usage/me/requests)',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -313,7 +321,7 @@ export class MeltwaterMCPServer {
       },
       {
         name: 'mira_chat',
-        description: 'Send a prompt to Meltwater Mira AI for media intelligence insights, trend summaries, or content generation (60 req/min limit)',
+        description: 'Send a prompt to Meltwater Mira AI via REST (POST /mira/responses) for media intelligence insights and trend analysis; REST fallback for Mira MCP (60 req/min shared limit)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -455,13 +463,13 @@ export class MeltwaterMCPServer {
 
   private async listMentions(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.search_id) return { content: [{ type: 'text', text: 'search_id is required' }], isError: true };
-    const params: Record<string, string> = {
-      limit: String((args.limit as number) ?? 50),
-      offset: String((args.offset as number) ?? 0),
+    const body: Record<string, unknown> = {
+      page: (args.offset as number) ?? 0,
+      page_size: (args.limit as number) ?? 50,
     };
-    if (args.start_date) params.startDate = args.start_date as string;
-    if (args.end_date) params.endDate = args.end_date as string;
-    return this.mwGet(`/searches/${encodeURIComponent(args.search_id as string)}/mentions`, params);
+    if (args.start_date) body.start = args.start_date;
+    if (args.end_date) body.end = args.end_date;
+    return this.mwPost(`/search/${encodeURIComponent(args.search_id as string)}`, body);
   }
 
   private async searchMentions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -483,7 +491,7 @@ export class MeltwaterMCPServer {
     };
     if (args.start_date) params.startDate = args.start_date as string;
     if (args.end_date) params.endDate = args.end_date as string;
-    return this.mwGet(`/analytics/${encodeURIComponent(args.search_id as string)}/custom`, params);
+    return this.mwGet(`/analytics/${encodeURIComponent(args.search_id as string)}`, params);
   }
 
   private async listSocialAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -525,20 +533,21 @@ export class MeltwaterMCPServer {
   }
 
   private async getUsageStats(): Promise<ToolResult> {
-    return this.mwGet('/usage');
+    return this.mwGet('/usage/me/requests');
   }
 
   private async miraChat(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.prompt) return { content: [{ type: 'text', text: 'prompt is required' }], isError: true };
+    const userMessage = { role: 'user', content: [{ type: 'text', text: args.prompt as string }] };
     const body: Record<string, unknown> = {
-      messages: [{ role: 'user', content: args.prompt }],
+      input: [userMessage],
     };
     if (args.context) {
-      body.messages = [
-        { role: 'system', content: args.context },
-        { role: 'user', content: args.prompt },
+      body.input = [
+        { role: 'user', content: [{ type: 'text', text: args.context as string }] },
+        userMessage,
       ];
     }
-    return this.mwPost('/mira/chat/completions', body);
+    return this.mwPost('/mira/responses', body);
   }
 }

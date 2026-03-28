@@ -4,17 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28
 // No official Gusto-maintained MCP server was found on GitHub or in Gusto documentation.
+// (BusyBee3333/gusto-mcp-2026-complete is a 0-star community fork, not official.)
 //
 // Base URL: https://api.gusto.com (production) / https://api.gusto-demo.com (sandbox/demo)
 // Auth: OAuth2 Bearer token — obtain via authorization_code or client_credentials flow.
 //       All requests require: Authorization: Bearer {access_token}
 //       Token endpoint: POST https://api.gusto.com/oauth/token
-// Docs: https://docs.gusto.com/app-integrations/docs/introduction
+// Docs: https://docs.gusto.com/embedded-payroll/reference/
 //       https://docs.gusto.com/embedded-payroll/docs/getting-started
-// Rate limits: Not officially published. Gusto enforces per-company and per-token limits.
-//              Recommended: respect HTTP 429 responses and back off with retry.
+// Rate limits: 200 requests per minute per application-user pair (rolling 60-second window).
+//              Returns HTTP 429 with Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining headers.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -372,7 +373,7 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
@@ -384,7 +385,7 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listEmployees(args: Record<string, unknown>): Promise<ToolResult> {
@@ -413,7 +414,7 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async getEmployeeJobs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -425,7 +426,7 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listPayrolls(args: Record<string, unknown>): Promise<ToolResult> {
@@ -473,7 +474,7 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listCompanyBenefits(args: Record<string, unknown>): Promise<ToolResult> {
@@ -485,7 +486,7 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listEmployeeBenefits(args: Record<string, unknown>): Promise<ToolResult> {
@@ -497,7 +498,7 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listContractors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -525,7 +526,7 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listTimeOffRequests(args: Record<string, unknown>): Promise<ToolResult> {
@@ -554,6 +555,6 @@ export class GustoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 }

@@ -4,15 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from LinkedIn/Microsoft as of 2026-03.
-// Community MCP servers exist (e.g. Dishant27/linkedin-mcp-server, felipfr/linkedin-mcpserver)
-// but none are official LinkedIn/Microsoft projects.
+// Official MCP: None found as of 2026-03-28.
+// No official LinkedIn/Microsoft MCP server exists. Community servers found:
+//   - github.com/Dishant27/linkedin-mcp-server (2 tools, unofficial, not maintained with releases)
+//   - github.com/fredericbarthelet/linkedin-mcp-server (2 tools: user-info + create-post, unofficial)
+// None are official LinkedIn/Microsoft projects. All community servers expose < 3 tools.
+// Decision: use-rest-api. No official MCP exists; community MCP servers fail criteria 1, 3.
+//
+// Our adapter covers: 13 tools. Vendor MCP covers: N/A (no official MCP).
+// Recommendation: This REST adapter is the authoritative LinkedIn integration.
 //
 // Base URL: https://api.linkedin.com/v2
-// Auth: OAuth2 Bearer token (access token obtained via OAuth2 authorization code or client credentials flow)
+// Auth: OAuth2 Bearer token (access token obtained via LinkedIn OAuth2 authorization code flow)
 // Docs: https://learn.microsoft.com/en-us/linkedin/
 // Rate limits: Varies by product; most endpoints throttled to 100 requests/day for non-partner apps.
 // Note: Many endpoints require LinkedIn Marketing or Talent Solutions partnership program approval.
+//   The Posts API (versioned) replaces the legacy /ugcPosts API; this adapter uses the legacy
+//   /ugcPosts endpoint which remains functional for approved partner apps.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

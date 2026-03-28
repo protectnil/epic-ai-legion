@@ -5,9 +5,23 @@
  */
 
 // Official MCP: https://github.com/launchdarkly/mcp-server — transport: stdio, auth: API token
-// Our adapter covers: 18 tools (flags, segments, projects, environments, members, teams, webhooks, metrics, audit).
-// Vendor MCP covers: 20+ tools (full API). Recommendation: Use vendor MCP for full coverage.
-// Use this adapter for air-gapped deployments or direct API-key access without the MCP runtime dependency.
+// Vendor MCP (npm: @launchdarkly/mcp-server) — actively maintained, last commit Mar 2026.
+// MCP feature-management server exposes: create-flag, get-flag, list-flags, toggle-flag,
+//   update-flag-settings, update-targeting-rules, update-rollout, list-environments,
+//   get-environments, list-segments, get-segment, create-segment, update-segment,
+//   delete-segment, list-projects (~14 tools).
+// Our REST adapter covers: 18 tools (flags CRUD, segments CRUD, projects, environments,
+//   members, webhooks, audit log) — including webhooks, members, audit log NOT in MCP.
+// Recommendation: use-both — MCP has update-targeting-rules and update-rollout (semantic
+//   patch operations with richer targeting control); REST adapter has webhooks, members,
+//   and audit log not exposed by MCP.
+// Integration: use-both
+// MCP-sourced tools (2): update-targeting-rules, update-rollout
+// REST-sourced tools (18): list_feature_flags, get_feature_flag, create_feature_flag,
+//   update_feature_flag, delete_feature_flag, toggle_flag_targeting, list_segments,
+//   get_segment, create_segment, update_segment, delete_segment, list_projects, get_project,
+//   list_environments, get_environment, list_members, list_webhooks, get_audit_log
+// Combined unique coverage: 20 (MCP: 2 unique + REST: 18)
 //
 // Base URL: https://app.launchdarkly.com (federal: https://app.launchdarkly.us)
 // Auth: API access token passed directly as the Authorization header value (no "Bearer" prefix)

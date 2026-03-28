@@ -4,16 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/alexleventer/marketo-mcp — community, limited scope (forms only).
-// Not actively maintained (last commit >6 months). Our adapter provides broader coverage.
-// Our adapter covers 18 tools across leads, activities, campaigns, programs, assets, and forms.
+// Official MCP: https://github.com/alexleventer/marketo-mcp — transport: stdio, auth: OAuth2 client credentials
+// This is a COMMUNITY MCP server (not published by Adobe/Marketo). It exposes 4 tools (forms only:
+//   get_forms_list, get_form_by_id, clone_form, approve_form) and is not actively maintained
+//   (last commit >6 months as of 2026-03-28). Fails criteria 1 (not official) and 2 (unmaintained).
+// Our adapter covers: 18 tools. Vendor MCP covers: 4 tools (forms only, community-maintained).
+// Recommendation: use-rest-api — no official Marketo MCP server exists as of 2026-03-28.
+//   Community MCP (alexleventer/marketo-mcp) is forms-only and unmaintained; our REST adapter is authoritative.
 //
 // Base URL: Instance-specific. Requires clientId, clientSecret, identityUrl, and restBaseUrl.
 //   Example: identityUrl  = https://284-RPR-133.mktorest.com/identity
 //            restBaseUrl  = https://284-RPR-133.mktorest.com/rest
 // Auth: OAuth2 client_credentials (2-legged).
 //   Token endpoint: GET {identityUrl}/oauth/token?grant_type=client_credentials&client_id=...&client_secret=...
-//   IMPORTANT: As of March 31, 2026, access_token query parameter auth has been removed.
+//   IMPORTANT: Support for access_token query parameter auth was removed June 30, 2025.
 //   This adapter uses Bearer token in Authorization header exclusively.
 //   Token TTL is 3600 seconds; adapter refreshes 60 seconds before expiry.
 // Docs: https://experienceleague.adobe.com/en/docs/marketo-developer/marketo/rest/rest-api
@@ -526,6 +530,7 @@ export class MarketoMCPServer {
   private async listCustomObjects(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.api_name) params.set('names', args.api_name as string);
-    return this.get(`/v1/customobjects/schema.json${params.toString() ? '?' + params.toString() : ''}`);
+    // Correct endpoint: GET /rest/v1/customobjects.json (not /customobjects/schema.json which is for schema management)
+    return this.get(`/v1/customobjects.json${params.toString() ? '?' + params.toString() : ''}`);
   }
 }

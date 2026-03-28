@@ -4,20 +4,31 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03 from Atlassian/Loom directly.
-// Community MCP servers exist (e.g. m2ai-mcp-servers/mcp-loom-video, loom-agents.github.io)
-// but none are vendor-published with stdio/streamable-HTTP transport and 10+ tools.
-// Note: Loom does not publish an official public REST API. Loom's developer platform
-// focuses on the Record SDK (embedded recording) and embed SDK. The REST endpoints
-// used here are documented via community discovery and the Atlassian Loom developer portal.
-// Enterprise customers may have access to additional API endpoints — contact Loom support.
-// Our adapter covers: 12 tools (recordings, comments, folders/spaces, sharing, webhooks).
-// Recommendation: Use this adapter for automation needs; evaluate official MCP if/when Atlassian publishes one.
+// Official MCP: None found as of 2026-03-28
+// No official Loom/Atlassian MCP server was found on GitHub or npm.
 //
-// Base URL: https://api.loom.com/v1
-// Auth: Bearer access token obtained via OAuth2 from the Loom Developer Portal (dev.loom.com)
-// Docs: https://dev.loom.com/docs/record-sdk/details/api
-// Rate limits: Not publicly documented; subject to Loom's fair use policy per account tier.
+// ⚠️  UNVERIFIED ADAPTER — Loom does NOT publish a public REST API.
+// Atlassian's own support page states: "Loom does not offer an open API at this time."
+// (https://support.atlassian.com/loom/docs/does-loom-have-an-open-api/)
+// The only official programmatic surfaces are:
+//   - recordSDK (@loomhq/record-sdk): JavaScript embed SDK for in-browser recording
+//   - embedSDK (@loomhq/loom-embed): JavaScript SDK for embedding Loom videos
+//   - SCIM 2.0: User provisioning only, Enterprise plan only
+// None of these are REST APIs. The endpoint paths in this adapter (recordings, comments,
+// folders, webhooks) are UNVERIFIED — no public documentation exists to confirm them.
+// This adapter should NOT be used in production without explicit confirmation from Loom/Atlassian
+// that these endpoints are accessible for the customer's plan.
+//
+// Our adapter covers: 12 tools (UNVERIFIED — no public REST API exists to verify against).
+// Recommendation: use-rest-api (no official MCP server exists). However, the REST API itself
+//   is unverified. This adapter should be marked DRAFT/UNVERIFIED until Atlassian publishes
+//   public REST API documentation or an official MCP server.
+//
+// Base URL: https://api.loom.com/v1 (UNVERIFIED — not documented publicly)
+// Auth: Bearer access token (UNVERIFIED — dev.loom.com only documents the recordSDK OAuth flow)
+// Docs: https://support.atlassian.com/loom/docs/does-loom-have-an-open-api/ (confirms: no public API)
+//       https://dev.loom.com/docs/record-sdk/details/api (recordSDK only, not a REST API)
+// Rate limits: Not documented
 
 import { ToolDefinition, ToolResult } from './types.js';
 

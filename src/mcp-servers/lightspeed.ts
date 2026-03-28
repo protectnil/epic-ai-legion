@@ -4,15 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03. Community MCP projects exist (e.g. BusyBee3333/Lightspeed-MCP-2026-Complete)
-// but none are vendor-published, actively maintained with 10+ tools, or using stdio/streamable-HTTP transport.
-// Our adapter covers: 18 tools (items, sales, customers, inventory, categories, employees, orders).
-// Recommendation: Use this adapter; no vendor MCP qualifies for delegation.
+// Official MCP: None found as of 2026-03-28.
+// No official Lightspeed HQ MCP server was found on GitHub or npmjs.com. Community forks exist but
+// none are vendor-published, actively maintained, expose 10+ tools, or use stdio/streamable-HTTP transport.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no qualifying MCP server exists.
 //
 // Base URL: https://api.lightspeedapp.com/API/V3/Account/{accountId}
-// Auth: OAuth2 client credentials — access token passed as Bearer header
+//   All resource endpoints follow the pattern: /API/V3/Account/{accountId}/{Resource}.json
+//   (e.g. /API/V3/Account/123/Item.json, /API/V3/Account/123/Sale/456.json)
+// Auth: OAuth2 — access token passed as Bearer header. Token obtained via Authorization Code Grant.
+//   Scopes defined at https://developers.lightspeedhq.com/retail/authentication/scopes/
 // Docs: https://developers.lightspeedhq.com/retail/introduction/introduction/
-// Rate limits: Leaky-bucket algorithm — bucket size 60, drip rate 1/sec. GET=1 unit, PUT/POST/DELETE=10 units.
+// Rate limits: Leaky-bucket algorithm. Time-of-day buckets:
+//   09:00–18:00 EST: bucket=60, drip=1 unit/sec
+//   18:00–21:00 EST: bucket=60, drip=1 unit/sec
+//   21:00–09:00 EST: bucket=180, drip=3 units/sec
+//   GET requests cost 1 unit; PUT/POST/DELETE cost 10 units. HTTP 429 on overflow.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

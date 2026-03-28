@@ -4,15 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/hubspot/mcp-server — transport: stdio + streamable-HTTP, auth: Private App token
-// Our adapter covers: 18 tools (CRM contacts, companies, deals, tickets, owners, pipelines, search, associations).
-// Vendor MCP covers: full HubSpot API surface (60+ tools). In public beta as of 2026-03.
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// Official MCP: https://mcp.hubspot.com (remote, streamable-HTTP, OAuth2/PKCE auth) — in public beta as of 2026-03
+//   Also: npm @hubspot/mcp-server (local stdio, Private App token auth) — 21 tools
+// Our adapter covers: 18 tools (CRM contacts, companies, deals, tickets, owners, pipelines, search).
+// Vendor MCP covers: 21 tools (read-only CRM objects + associations + engagements + workflows + UI links).
+// Recommendation: use-both — MCP adds engagements (create task/note), workflow read, and UI link generation
+//   not covered by our REST adapter. Our REST adapter adds create/update/delete write operations not yet in MCP.
 //
 // Base URL: https://api.hubapi.com
 // Auth: Bearer token (Private App access token — passed as Authorization: Bearer {token})
 // Docs: https://developers.hubspot.com/docs/api/crm/contacts
-// Rate limits: 100 req/10 sec per token (Private App); burst up to 150 req/10 sec
+// Rate limits: 100 req/10 sec (Free/Starter private app); 190 req/10 sec (Pro/Enterprise private app)
 
 import { ToolDefinition, ToolResult } from './types.js';
 

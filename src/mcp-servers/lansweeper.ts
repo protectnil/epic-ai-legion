@@ -5,12 +5,14 @@
  */
 
 // Official MCP: https://github.com/Lansweeper-public/MCP-server-lansweeper — transport: stdio, auth: Personal Access Token
-// Our adapter covers: 12 tools (assets, sites, software, users, scanned devices). Vendor MCP covers: 3 tools (get-asset-details, get-authorized-sites, get-assets-resources).
-// Recommendation: Use this adapter for broader coverage. Use vendor MCP for minimal footprint deployments.
+// MCP status: Official (published under Lansweeper-public org). Experimental label, ~56 commits. Only 3 tools — fails 10+ tool criterion.
+// Our adapter covers: 12 tools. Vendor MCP covers: 3 tools (get-asset-details, get-authorized-sites, get-assets-resources).
+// Recommendation: use-rest-api — vendor MCP fails criterion 3 (only 3 tools, need 10+). Our adapter provides full coverage.
 //
-// Base URL: https://api.lansweeper.com/api/v2/graphql (GraphQL endpoint)
-// Auth: Personal Access Token (PAT) — Bearer in Authorization header. Generated in Lansweeper Sites > Developer Tools.
-//       OAuth2 also supported: POST https://api.lansweeper.com/api/v2/oauth/token with client_credentials grant.
+// Base URL: https://api.lansweeper.com/api/v2/graphql (GraphQL endpoint — single endpoint for all queries)
+// Auth: Personal Access Token (PAT) — Authorization: Token <PAT> header. Generated in Lansweeper Sites > Settings > Developer Tools.
+//       OAuth2 also supported for integrations: POST https://api.lansweeper.com/api/v2/oauth/token (client_credentials),
+//       OAuth access token uses Authorization: Bearer <token>.
 // Docs: https://developer.lansweeper.com/docs/data-api/get-started/quickstart/
 // Rate limits: Not publicly documented — consult Lansweeper support for enterprise rate limits
 
@@ -361,7 +363,7 @@ export class LansweeperMCPServer {
 
   private get headers(): Record<string, string> {
     return {
-      'Authorization': `Bearer ${this.accessToken}`,
+      'Authorization': `Token ${this.accessToken}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };

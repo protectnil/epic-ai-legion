@@ -4,9 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Help Scout MCP server was found on GitHub. Community implementation exists
-// (drewburchfield/help-scout-mcp-server) but is unmaintained (no recent commits).
+// Official MCP: None found as of 2026-03-28 — no MCP server published by Help Scout themselves.
+// Community MCP: https://github.com/drewburchfield/help-scout-mcp-server — transport: stdio,
+//   auth: OAuth2 client credentials. Actively maintained (v1.7.0 released 2026-03-25).
+//   ~10 tools (searchConversations, comprehensiveConversationSearch, advancedConversationSearch,
+//   structuredConversationFilter, listCustomers, searchCustomersByEmail, getCustomer,
+//   getCustomerContacts, listOrganizations, getOrganization, getOrganizationMembers,
+//   getOrganizationConversations, getThreads). NOT published by Help Scout (community author).
+//   Fails criterion 1 (not official vendor MCP) — use-rest-api decision.
+// Our adapter covers: 20 tools. Community MCP covers: ~13 tools (read-only; no write operations).
+// Recommendation: use-rest-api. Our REST adapter covers write operations (create, update, delete,
+//   reply, note, webhooks) that the community MCP does not expose.
 //
 // Base URL: https://api.helpscout.net/v2
 // Auth: OAuth2 Client Credentials — POST https://api.helpscout.net/v2/oauth2/token
@@ -518,20 +526,20 @@ export class HelpScoutMCPServer {
     const id = args.conversation_id as number;
     const text = args.text as string;
     if (!id || !text) return { content: [{ type: 'text', text: 'conversation_id and text are required' }], isError: true };
-    const body: Record<string, unknown> = { type: 'reply', text };
+    const body: Record<string, unknown> = { text };
     if (args.user) body.user = { id: args.user };
     if (args.cc) body.cc = args.cc;
     if (args.bcc) body.bcc = args.bcc;
-    return this.hsPost(`/conversations/${id}/threads`, body);
+    return this.hsPost(`/conversations/${id}/reply`, body);
   }
 
   private async addNoteToConversation(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.conversation_id as number;
     const text = args.text as string;
     if (!id || !text) return { content: [{ type: 'text', text: 'conversation_id and text are required' }], isError: true };
-    const body: Record<string, unknown> = { type: 'note', text };
+    const body: Record<string, unknown> = { text };
     if (args.user) body.user = { id: args.user };
-    return this.hsPost(`/conversations/${id}/threads`, body);
+    return this.hsPost(`/conversations/${id}/notes`, body);
   }
 
   private async listMailboxes(args: Record<string, unknown>): Promise<ToolResult> {

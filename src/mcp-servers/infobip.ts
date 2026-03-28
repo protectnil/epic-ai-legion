@@ -4,11 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/infobip/mcp — transport: remote HTTP (Infobip-hosted), auth: API key
-// The official Infobip MCP server is a remote server hosted by Infobip covering their messaging APIs.
-// Our adapter covers: 18 tools (SMS, WhatsApp, email, voice, 2FA, contacts, reports).
-// Recommendation: Use official MCP for Infobip-hosted remote execution. Use this adapter for
-//                 self-hosted or air-gapped deployments where you control the API calls directly.
+// Official MCP: https://github.com/infobip/mcp — transport: streamable-HTTP (remote, Infobip-hosted), auth: API key
+//   Infobip hosts remote MCP servers per channel: SMS, WhatsApp, Viber, RCS.
+//   Maintained: actively maintained (52+ commits, 2026). Official Infobip publication.
+//   MCP tool count: covers SMS send/preview/schedule/delivery/logs, WA send/templates/delivery/logs,
+//     Viber send/delivery/logs, RCS send/delivery/logs — does NOT cover email, voice/TTS, 2FA, or People CRM.
+//
+// Integration: use-both
+//   MCP-sourced tools (SMS/WhatsApp/Viber/RCS channels): send_sms, get_sms_delivery_reports, get_sent_sms_logs,
+//     send_whatsapp_text, send_whatsapp_template, get_whatsapp_templates
+//   REST-sourced tools (no MCP equivalent): send_email, get_email_delivery_reports, get_email_logs,
+//     send_voice_message, get_voice_logs, send_2fa_pin, verify_2fa_pin, resend_2fa_pin,
+//     get_account_balance, list_sent_message_logs, create_contact, get_contact
+//   Combined coverage: 18 tools (MCP: 6 overlapping + REST: 12 unique)
 //
 // Base URL: https://{baseUrl}.api.infobip.com  (personal base URL assigned per account — required)
 // Auth: Authorization: App {apiKey} header (API key assigned on account creation)
@@ -645,23 +653,22 @@ export class InfobipMCPServer {
     if (!args.text && !args.html) {
       return { content: [{ type: 'text', text: 'either text or html body is required' }], isError: true };
     }
-    // Email API uses multipart/form-data — build FormData equivalent as URLSearchParams for simplicity
-    const formParts: Record<string, string> = {
-      from: args.from as string,
-      to: args.to as string,
-      subject: args.subject as string,
-    };
-    if (args.text) formParts.text = args.text as string;
-    if (args.html) formParts.html = args.html as string;
-    if (args.reply_to) formParts.replyto = args.reply_to as string;
+    // Email API requires multipart/form-data — use native FormData (Node 20+, no npm deps)
+    const form = new FormData();
+    form.append('from', args.from as string);
+    form.append('to', args.to as string);
+    form.append('subject', args.subject as string);
+    if (args.text) form.append('text', args.text as string);
+    if (args.html) form.append('html', args.html as string);
+    if (args.reply_to) form.append('replyto', args.reply_to as string);
 
     const response = await fetch(`${this.baseUrl}/email/3/send`, {
       method: 'POST',
       headers: {
         Authorization: `App ${this.apiKey}`,
-        // Content-Type is set automatically with FormData boundary
+        // Content-Type with multipart boundary is set automatically by fetch when body is FormData
       },
-      body: new URLSearchParams(formParts),
+      body: form,
     });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

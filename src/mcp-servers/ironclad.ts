@@ -4,13 +4,30 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Ironclad MCP server was found on GitHub or npmjs.com.
+// Official MCP: None found as of 2026-03-28
+// No official Ironclad MCP server was found on GitHub, npmjs.com, or the Ironclad developer hub.
+// Our adapter covers: 12 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no MCP server exists.
 //
 // Base URL: https://{region}.ironcladapp.com/public/api/v1
 // Auth: Bearer token (API access token from Ironclad admin settings)
 // Docs: https://developer.ironcladapp.com/reference/getting-started-api
 // Rate limits: Not publicly documented; Ironclad recommends standard retry-with-backoff
+//
+// Vendor REST API endpoints (verified from developer.ironcladapp.com/reference):
+// Workflows: Create (sync+async), List, Retrieve, Status of async job, List Approvals,
+//   Retrieve Approval Requests, Update Approval (PATCH), Retrieve Turn History,
+//   Sign Step Status, Send/Cancel Signature Request, Update/Delete/Remind Signer,
+//   List Signers, Create Recipient URL, Create Embeddable Recipient URL,
+//   Create Signed Document, List Participants, Pause, Cancel, Revert to Review
+// Workflow Schemas: List All (GET /workflow-schemas), Retrieve a Schema
+// Records: List All, Create, Smart Import, Upload Smart Import, Retrieve, Replace (PUT),
+//   Delete, Update Metadata (PATCH), Retrieve Schema, Attachments (create/get/delete),
+//   Run an Action, Retrieve XLSX Export
+// Entities: Get All Types, List All, Create, Retrieve, Update, Delete
+// Obligations: List All, Create, Retrieve, Update
+// Webhooks: Create, List All, Retrieve, Update, Delete, Retrieve Verification Key
+// Exports: Submit, Check Status, Download (Security & Data Pro add-on required)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -407,7 +424,7 @@ export class IroncladMCPServer {
     if (args.comment) body.comment = args.comment;
     return this.request(
       `${this.baseUrl}/workflows/${encodeURIComponent(workflowId)}/approvals/${encodeURIComponent(approvalId)}`,
-      { method: 'PUT', body: JSON.stringify(body) },
+      { method: 'PATCH', body: JSON.stringify(body) },
     );
   }
 

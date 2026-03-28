@@ -4,12 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/hibobio/hibob-public-mcp — transport: hosted-only (Python/uvx),
-// auth: service user token via environment variable. Actively maintained by HiBob.
-// Our adapter targets the same REST API v1 using Basic auth (service user ID + token) and adds
-// broader coverage: employee CRUD, search, work/employment details, documents, tasks, time-off
-// submit/cancel, attendance, and out-of-office — ops not all covered by the official MCP.
-// Recommendation: Use vendor MCP for hosted deployments. Use this adapter for self-hosted/air-gapped.
+// Official MCP: https://github.com/hibobio/hibob-public-mcp — transport: stdio (uvx/Python/FastMCP),
+// auth: HIBOB_API_TOKEN env var (Bearer token). Published by HiBob (hibobio org). Only 2 commits
+// as of 2026-03-28; tool count cannot be determined (source not publicly readable). Criteria
+// assessment: official=yes, maintained=UNCERTAIN (2 commits, no releases), tools=UNKNOWN (<10
+// likely), transport=stdio. Fails MCP criteria — too new/sparse to confirm 10+ tools or maintenance.
+// Our adapter covers 19 tools with broader REST coverage; use-rest-api is the correct decision.
+// Recommendation: Use this REST adapter. Document the official MCP for future re-evaluation.
 //
 // Base URL: https://api.hibob.com/v1
 // Auth: Basic auth — Base64(serviceUserId:token) in Authorization header.
@@ -559,7 +560,7 @@ export class HiBobMCPServer {
   private async getPayrollHistory(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as string;
     if (!id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.bobGet(`/payroll/history/${encodeURIComponent(id)}`);
+    return this.bobGet(`/people/${encodeURIComponent(id)}/salaries`);
   }
 
   private async listFields(): Promise<ToolResult> {

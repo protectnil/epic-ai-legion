@@ -4,14 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Juro MCP server was found on GitHub. A Zapier-based Juro MCP integration exists
-// at https://zapier.com/mcp/juro-1 but is not vendor-published and not suitable for air-gapped use.
+// Official MCP: None found as of 2026-03-28
+// No official Juro MCP server was found on GitHub or npmjs.com.
+// A Zapier-based Juro MCP integration exists at https://zapier.com/mcp/juro-1 but is not
+// vendor-published and not suitable for air-gapped use. A Wordsmith partnership MCP integration
+// was announced August 2025 (https://legaltechnology.com/2025/08/28/juro-announces-a-partnership-and-mcp-integration-with-wordsmith-with-more-to-come/)
+// but is not publicly available as a standalone server. Decision: use-rest-api.
+// Our adapter covers: 12 tools. Vendor MCP covers: 0 tools (no official server).
+// Recommendation: REST adapter is the authoritative integration.
 //
 // Base URL: https://api.juro.com/v3
 // Auth: x-api-key header (API key from Juro workspace settings)
 // Docs: https://api-docs.juro.com/
-// Rate limits: Not publicly documented
+// Rate limits: Contract creation rate-limited at 5 req/s with burst of 10; overall limits not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -112,7 +117,7 @@ export class JuroMCPServer {
       },
       {
         name: 'update_contract',
-        description: 'Update smartfield values on an existing Juro contract using PATCH',
+        description: 'Update fields, name, or signing sides on an existing Juro contract using PATCH',
         inputSchema: {
           type: 'object',
           properties: {
@@ -120,12 +125,24 @@ export class JuroMCPServer {
               type: 'string',
               description: 'The Juro contract ID to update',
             },
-            answers: {
-              type: 'object',
-              description: 'Key-value map of smartfield names to new values to update on the contract',
+            fields: {
+              type: 'array',
+              description: 'List of field items to update on the contract (array of field objects)',
+            },
+            name: {
+              type: 'string',
+              description: 'New contract name to set',
+            },
+            signingSides: {
+              type: 'array',
+              description: 'List of signing side items to update on the contract',
+            },
+            tables: {
+              type: 'array',
+              description: 'List of table items to update on the contract',
             },
           },
-          required: ['contract_id', 'answers'],
+          required: ['contract_id'],
         },
       },
       {
@@ -144,24 +161,27 @@ export class JuroMCPServer {
       },
       {
         name: 'upload_contract',
-        description: 'Upload a PDF or DOCX file to create a Juro contract record from an existing document',
+        description: 'Upload a PDF document against a Juro template to create a contract record, optionally marking it as fully signed',
         inputSchema: {
           type: 'object',
           properties: {
-            filename: {
+            templateId: {
               type: 'string',
-              description: 'The filename of the document being uploaded (e.g. "agreement.pdf")',
+              description: 'The Juro template ID to associate with the uploaded document',
             },
-            base64_content: {
+            status: {
               type: 'string',
-              description: 'Base64-encoded content of the PDF or DOCX file',
+              description: 'Contract status to assign: "fully signed" or "uploaded" (default: "uploaded")',
             },
-            title: {
+            name: {
               type: 'string',
-              description: 'Title to assign to the uploaded contract',
+              description: 'Contract name to assign to the uploaded document',
+            },
+            owner: {
+              type: 'string',
+              description: 'Username of the contract owner (defaults to the integration user if omitted)',
             },
           },
-          required: ['filename', 'base64_content'],
         },
       },
       {
@@ -378,9 +398,15 @@ export class JuroMCPServer {
   }
 
   private async updateContract(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {};
+    if (args.fields !== undefined) body.fields = args.fields;
+    if (args.name !== undefined) body.name = args.name;
+    if (args.signingSides !== undefined) body.signingSides = args.signingSides;
+    if (args.tables !== undefined) body.tables = args.tables;
+
     const { ok, status, statusText, data } = await this.fetchJSON(
       `${this.baseUrl}/contracts/${encodeURIComponent(args.contract_id as string)}`,
-      { method: 'PATCH', body: JSON.stringify({ answers: args.answers }) }
+      { method: 'PATCH', body: JSON.stringify(body) }
     );
     if (!ok) return { content: [{ type: 'text', text: `API error ${status}: ${statusText}` }], isError: true };
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
@@ -398,17 +424,23 @@ export class JuroMCPServer {
   }
 
   private async uploadContract(args: Record<string, unknown>): Promise<ToolResult> {
-    const body: Record<string, unknown> = {
-      filename: args.filename,
-      content: args.base64_content,
-    };
-    if (args.title !== undefined) body.title = args.title;
+    // Juro upload endpoint requires multipart/form-data (not JSON)
+    const formData = new FormData();
+    if (args.templateId !== undefined) formData.append('templateId', args.templateId as string);
+    if (args.status !== undefined) formData.append('status', args.status as string);
+    if (args.name !== undefined) formData.append('name', args.name as string);
+    if (args.owner !== undefined) formData.append('owner', args.owner as string);
 
-    const { ok, status, statusText, data } = await this.fetchJSON(`${this.baseUrl}/contracts/upload`, {
+    // Send without Content-Type header so fetch sets multipart boundary automatically
+    const uploadHeaders: Record<string, string> = { 'x-api-key': this.apiKey, 'Accept': 'application/json' };
+    const response = await fetch(`${this.baseUrl}/contracts/upload`, {
       method: 'POST',
-      body: JSON.stringify(body),
+      headers: uploadHeaders,
+      body: formData,
     });
-    if (!ok) return { content: [{ type: 'text', text: `API error ${status}: ${statusText}` }], isError: true };
+    let data: unknown;
+    try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
+    if (!response.ok) return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 

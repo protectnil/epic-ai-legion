@@ -4,16 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/hubspot/mcp-server — transport: stdio + streamable-HTTP, auth: Private App token
-// The official HubSpot MCP server (in public beta as of 2026-03) covers the full HubSpot API surface (60+ tools).
-// Our adapter focuses on Marketing Hub specifically: campaigns, emails, forms, contact lists,
-// subscriptions, and marketing events. Complements hubspot.ts (CRM adapter) which covers contacts/deals/companies.
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for Marketing Hub in air-gapped deployments.
+// Official MCP: https://mcp.hubspot.com — transport: streamable-HTTP, auth: OAuth 2.0 (PKCE)
+// The official HubSpot Remote MCP server (public beta as of 2026-01) covers CRM objects only:
+// contacts, companies, deals, tickets, invoices, products, line items, quotes, subscriptions, orders,
+// carts, users — READ-ONLY. It does NOT cover Marketing Hub (campaigns, marketing emails, forms,
+// contact lists, subscriptions preferences, or marketing events).
+// MCP maintained: yes — HubSpot-published, actively updated. MCP tool count: ~12 (CRM read-only).
+// MCP FAILS criteria 3 (fewer than 10 Marketing Hub tools — 0 in fact) and is CRM-scope only.
+// Our adapter covers: 20 tools (Marketing Hub). Vendor MCP covers: 0 Marketing Hub tools.
+// Recommendation: use-rest-api — vendor MCP does not cover Marketing Hub at all.
 //
 // Base URL: https://api.hubapi.com
 // Auth: Bearer token (HubSpot Private App access token — does not expire, can be revoked)
 //   Set Authorization: Bearer {token} on all requests.
 // Docs: https://developers.hubspot.com/docs/api-reference/marketing-campaigns-public-api-v3/guide
+//       https://developers.hubspot.com/docs/api-reference/marketing-marketing-emails-v3/guide
+//       https://developers.hubspot.com/docs/api-reference/marketing-forms-v3/guide
+//       https://developers.hubspot.com/docs/api-reference/communication-preferences-subscriptions-v3/guide
+//       https://developers.hubspot.com/docs/api-reference/marketing-marketing-events-v3/guide
 // Rate limits: 100 req/10 sec per token (Private App); burst up to 150 req/10 sec
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -165,25 +173,21 @@ export class HubSpotMarketingMCPServer {
       },
       {
         name: 'list_marketing_emails',
-        description: 'List marketing emails in HubSpot with optional status, campaign, and type filters',
+        description: 'List marketing emails in HubSpot with optional createdAfter date filter and pagination cursor',
         inputSchema: {
           type: 'object',
           properties: {
             limit: {
               type: 'number',
-              description: 'Maximum number of emails to return (default: 20, max: 300)',
+              description: 'Maximum number of emails to return (default: 20)',
             },
-            offset: {
-              type: 'number',
-              description: 'Offset for pagination (default: 0)',
-            },
-            status: {
+            after: {
               type: 'string',
-              description: 'Filter by status: DRAFT, SCHEDULED, PROCESSING, SENT, CANCELED, ERROR',
+              description: 'Pagination cursor from a previous response paging.next.after field',
             },
-            campaignName: {
+            createdAfter: {
               type: 'string',
-              description: 'Filter by associated campaign name',
+              description: 'Filter emails created after this ISO 8601 date (e.g. 2026-01-01T00:00:00Z)',
             },
           },
         },
@@ -204,17 +208,13 @@ export class HubSpotMarketingMCPServer {
       },
       {
         name: 'send_marketing_email',
-        description: 'Schedule or immediately send a HubSpot marketing email to a contact list',
+        description: 'Publish a HubSpot marketing email to move it from DRAFT to PUBLISHED status, enabling scheduled sends',
         inputSchema: {
           type: 'object',
           properties: {
             email_id: {
-              type: 'number',
-              description: 'Numeric ID of the marketing email to send',
-            },
-            scheduledAt: {
               type: 'string',
-              description: 'ISO 8601 datetime to schedule the send (send immediately if omitted)',
+              description: 'ID of the marketing email to publish (required Marketing Hub Enterprise or transactional email add-on)',
             },
           },
           required: ['email_id'],
@@ -222,13 +222,13 @@ export class HubSpotMarketingMCPServer {
       },
       {
         name: 'get_email_statistics',
-        description: 'Get performance statistics for a sent HubSpot marketing email: opens, clicks, bounces, unsubscribes',
+        description: 'Get performance statistics for a HubSpot marketing email including opens, clicks, bounces, and unsubscribes from the stats object',
         inputSchema: {
           type: 'object',
           properties: {
             email_id: {
-              type: 'number',
-              description: 'Numeric ID of the sent marketing email',
+              type: 'string',
+              description: 'ID of the marketing email to retrieve statistics for',
             },
           },
           required: ['email_id'],
@@ -429,7 +429,7 @@ export class HubSpotMarketingMCPServer {
       },
       {
         name: 'create_marketing_event',
-        description: 'Create a HubSpot marketing event to track attendance and engagement for webinars and conferences',
+        description: 'Create a HubSpot marketing event to track attendance and engagement for webinars, conferences, and workshops',
         inputSchema: {
           type: 'object',
           properties: {
@@ -447,11 +447,15 @@ export class HubSpotMarketingMCPServer {
             },
             externalEventId: {
               type: 'string',
-              description: 'Unique ID from the external event platform (e.g. Zoom webinar ID)',
+              description: 'Unique ID for the event in the external platform (e.g. Zoom webinar ID) — must be unique per app',
+            },
+            externalAccountId: {
+              type: 'string',
+              description: 'Account ID in the external platform that owns this event — required for event creation',
             },
             eventOrganizer: {
               type: 'string',
-              description: 'Name of the event organizer or company',
+              description: 'Name of the event organizer or company — required by HubSpot',
             },
             eventUrl: {
               type: 'string',
@@ -462,7 +466,7 @@ export class HubSpotMarketingMCPServer {
               description: 'Type of event: WEBINAR, CONFERENCE, WORKSHOP, VIRTUAL_CONFERENCE (default: WEBINAR)',
             },
           },
-          required: ['eventName', 'startDateTime', 'endDateTime', 'externalEventId'],
+          required: ['eventName', 'startDateTime', 'endDateTime', 'externalEventId', 'externalAccountId', 'eventOrganizer'],
         },
       },
     ];
@@ -586,29 +590,27 @@ export class HubSpotMarketingMCPServer {
 
   private async listMarketingEmails(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {
-      count: String((args.limit as number) ?? 20),
-      offset: String((args.offset as number) ?? 0),
+      limit: String((args.limit as number) ?? 20),
     };
-    if (args.status) params.status = args.status as string;
-    if (args.campaignName) params.campaignName = args.campaignName as string;
-    return this.apiGet('/marketing-emails/v1/emails', params);
+    if (args.after) params.after = args.after as string;
+    if (args.createdAfter) params.createdAfter = args.createdAfter as string;
+    return this.apiGet('/marketing/v3/emails', params);
   }
 
   private async getMarketingEmail(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.email_id) return { content: [{ type: 'text', text: 'email_id is required' }], isError: true };
-    return this.apiGet(`/marketing-emails/v1/emails/${encodeURIComponent(args.email_id as string)}`);
+    return this.apiGet(`/marketing/v3/emails/${encodeURIComponent(args.email_id as string)}`);
   }
 
   private async sendMarketingEmail(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.email_id) return { content: [{ type: 'text', text: 'email_id is required' }], isError: true };
-    const body: Record<string, unknown> = {};
-    if (args.scheduledAt) body.scheduledAt = args.scheduledAt;
-    return this.apiPost(`/marketing-emails/v1/emails/${encodeURIComponent(args.email_id as string)}/send-test`, body);
+    return this.apiPost(`/marketing/v3/emails/${encodeURIComponent(args.email_id as string)}/publish`, {});
   }
 
   private async getEmailStatistics(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.email_id) return { content: [{ type: 'text', text: 'email_id is required' }], isError: true };
-    return this.apiGet(`/marketing-emails/v1/emails/${encodeURIComponent(args.email_id as string)}/statistics`);
+    // Statistics are returned inline in the email object under the `stats` field
+    return this.apiGet(`/marketing/v3/emails/${encodeURIComponent(args.email_id as string)}`);
   }
 
   private async listForms(args: Record<string, unknown>): Promise<ToolResult> {
@@ -694,18 +696,19 @@ export class HubSpotMarketingMCPServer {
   }
 
   private async createMarketingEvent(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.eventName || !args.startDateTime || !args.endDateTime || !args.externalEventId) {
-      return { content: [{ type: 'text', text: 'eventName, startDateTime, endDateTime, and externalEventId are required' }], isError: true };
+    if (!args.eventName || !args.startDateTime || !args.endDateTime || !args.externalEventId || !args.externalAccountId || !args.eventOrganizer) {
+      return { content: [{ type: 'text', text: 'eventName, startDateTime, endDateTime, externalEventId, externalAccountId, and eventOrganizer are required' }], isError: true };
     }
     const body: Record<string, unknown> = {
       eventName: args.eventName,
       startDateTime: args.startDateTime,
       endDateTime: args.endDateTime,
       externalEventId: String(args.externalEventId),
+      externalAccountId: String(args.externalAccountId),
+      eventOrganizer: args.eventOrganizer,
       eventType: args.eventType ?? 'WEBINAR',
     };
-    if (args.eventOrganizer) body.eventOrganizer = args.eventOrganizer;
     if (args.eventUrl) body.eventUrl = args.eventUrl;
-    return this.apiPost('/marketing/v3/marketing-events', body);
+    return this.apiPost('/marketing/v3/marketing-events/events', body);
   }
 }

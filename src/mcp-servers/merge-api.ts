@@ -4,14 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Merge unified API MCP server was found on GitHub or the MCP registry.
+// Official MCP: https://github.com/merge-api/merge-mcp — transport: stdio, auth: API key + account token (env vars)
+// Merge publishes an official MCP server (merge-mcp) available via PyPI/uvx. Tools are dynamically generated
+// from the Merge API schema based on category (HRIS, ATS, CRM, Ticketing, etc.) and enabled scopes.
+// Tool count is dynamic and schema-driven (covers all CRUD operations per model per category).
+// Recommendation: use-both — Merge MCP covers individual-category model operations; our REST adapter
+// provides cross-category linked-account management, sync status, and force-resync which the Merge MCP
+// does not expose as first-class tools (it operates within a single linked account context per config).
+// Our adapter covers: 20 tools. Vendor MCP covers: dynamic (schema-driven per category).
 //
 // Base URL: https://api.merge.dev/api
 // Auth: Two-header pattern — Authorization: Bearer {api_key} + X-Account-Token: {account_token}
 //       The account_token scopes each request to a specific linked end-user integration.
-// Docs: https://docs.merge.dev/basics/authentication/
-// Rate limits: Per-linked-account limits; see https://docs.merge.dev/basics/rate-limits/ for current values
+// Docs: https://docs.merge.dev/hris/, https://docs.merge.dev/ats/, https://docs.merge.dev/crm/,
+//       https://docs.merge.dev/ticketing/, https://docs.merge.dev/basics/authentication/
+// Rate limits: Launch: 100/min per Linked Account; Professional: 400/min; Enterprise: 600/min
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -598,20 +605,27 @@ export class MergeApiMCPServer {
   }
 
   private async listLinkedAccounts(args: Record<string, unknown>): Promise<ToolResult> {
+    // Merge linked-accounts endpoint is category-scoped: /{category}/v1/linked-accounts
+    // The category param is required to select the correct category prefix.
+    const category = (args.category as string) || 'hris';
     const params = this.buildListParams(args);
-    if (args.category) params.category = args.category as string;
     if (args.status) params.status = args.status as string;
-    return this.mergeGet('/integrations/linked-accounts', params);
+    return this.mergeGet(`/${encodeURIComponent(category)}/v1/linked-accounts`, params);
   }
 
   private async getLinkedAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.linked_account_id) return { content: [{ type: 'text', text: 'linked_account_id is required' }], isError: true };
-    return this.mergeGet(`/integrations/linked-accounts/${encodeURIComponent(args.linked_account_id as string)}`);
+    // Merge API retrieves a single linked account by passing id as a query param on the list endpoint.
+    const category = (args.category as string) || 'hris';
+    const params: Record<string, string> = { id: args.linked_account_id as string };
+    return this.mergeGet(`/${encodeURIComponent(category)}/v1/linked-accounts`, params);
   }
 
   private async deleteLinkedAccount(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.linked_account_id) return { content: [{ type: 'text', text: 'linked_account_id is required' }], isError: true };
-    return this.mergeDelete(`/integrations/linked-accounts/${encodeURIComponent(args.linked_account_id as string)}`);
+    // Merge delete linked account: DELETE /{category}/v1/linked-accounts/{id}
+    const category = (args.category as string) || 'hris';
+    return this.mergeDelete(`/${encodeURIComponent(category)}/v1/linked-accounts/${encodeURIComponent(args.linked_account_id as string)}`);
   }
 
   private async listEmployees(args: Record<string, unknown>): Promise<ToolResult> {
@@ -709,12 +723,15 @@ export class MergeApiMCPServer {
   }
 
   private async listSyncStatus(args: Record<string, unknown>): Promise<ToolResult> {
+    // Sync status is category-scoped: GET /{category}/v1/sync-status
+    const category = (args.category as string) || 'hris';
     const params = this.buildListParams(args);
-    return this.mergeGet('/integrations/sync-status', params);
+    return this.mergeGet(`/${encodeURIComponent(category)}/v1/sync-status`, params);
   }
 
   private async forceResync(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.category) return { content: [{ type: 'text', text: 'category is required' }], isError: true };
-    return this.mergePost(`/${encodeURIComponent(args.category as string)}/v1/sync`, {});
+    // Correct endpoint: POST /{category}/v1/sync-status/resync (requires X-Account-Token header)
+    return this.mergePost(`/${encodeURIComponent(args.category as string)}/v1/sync-status/resync`, {});
   }
 }

@@ -4,15 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Hightouch MCP server was found on GitHub (github.com/hightouchio).
-// apitracker.io/a/hightouch-io/mcp lists no MCP servers for Hightouch.
+// Official MCP: None found as of 2026-03-28
+// No official Hightouch MCP server was found on GitHub (github.com/hightouchio) or npmjs.com.
+// Recommendation: use-rest-api — no vendor MCP exists.
 //
 // Base URL: https://api.hightouch.com/api/v1
 // Auth: Bearer token — Authorization: Bearer <api_key>
 //       API key must be created by an Admin user in Hightouch workspace Settings > API keys
 // Docs: https://hightouch.com/docs/api-reference
 // Rate limits: 200 requests per 10 seconds per workspace
+//
+// Our adapter covers: 11 tools (core read + trigger operations). Vendor MCP covers: 0 tools (none).
+// Vendor REST API exposes 32 endpoints total. Our adapter covers the core sync/model/source/destination
+// read operations plus sync run history and trigger. Not yet implemented: PATCH update operations
+// (update_sync, update_model, update_source, update_destination), POST create operations
+// (create_sync, create_model, create_source, create_destination), trigger_sync_by_slug
+// (POST /syncs/trigger with syncSlug body param), Decision Engine flows/messages, Event Contracts,
+// and IDR (Identity Resolution) run operations.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

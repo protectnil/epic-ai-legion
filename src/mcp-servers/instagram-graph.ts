@@ -4,24 +4,28 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// Multiple community MCP servers exist (anand-kamble/mcp-instagram, arq0017/instagram-mcp-server,
-// BilalTariq01/instagram-analytics-mcp) but none are official Meta releases, and none cover
-// the full Graph API surface. No official Meta/Instagram MCP server was found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// Multiple community MCP servers exist (jlbadano/ig-mcp, anand-kamble/mcp-instagram,
+// BilalTariq01/instagram-analytics-mcp) but none are official Meta releases.
+// jlbadano/ig-mcp (96 stars, 46 commits, MIT) is community-maintained, not vendor-official;
+// it also uses Python/FastMCP and does not meet the vendor-published criterion.
+// Our adapter covers: 20 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api — no official Meta/Instagram MCP server exists.
 //
-// Base URL: https://graph.facebook.com/v21.0
-// Auth: Authorization: Bearer {accessToken} (User or Page access token via OAuth 2.0).
-//       Business/Creator accounts only. Short-lived tokens expire in 1 hour; long-lived tokens
-//       expire after 60 days of non-use and can be refreshed after 24 hours.
-// Docs: https://developers.facebook.com/docs/instagram-platform
+// Base URL: https://graph.facebook.com/v25.0  (v25.0 released 2026-02-18; was v21.0 — updated)
+// Auth: Bearer {accessToken} — User or Page access token via OAuth 2.0 (Facebook Login for Business).
+//       Business/Creator accounts only. Short-lived tokens expire in ~1 hour; long-lived tokens
+//       expire after 60 days of non-use. Refresh with GET /refresh_access_token.
+// Docs: https://developers.facebook.com/docs/instagram-platform/reference/
 // Rate limits: 200 API calls per hour per user token. 4,800 calls/24h per app.
+//              Content publishing: 50 posts per 24-hour period per IG User.
 //              Messaging: 200 DMs/hour per account.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface InstagramGraphConfig {
   accessToken: string;
-  apiVersion?: string;  // Default: v21.0
+  apiVersion?: string;  // Default: v25.0
 }
 
 export class InstagramGraphMCPServer {
@@ -30,7 +34,7 @@ export class InstagramGraphMCPServer {
 
   constructor(config: InstagramGraphConfig) {
     this.accessToken = config.accessToken;
-    const version = config.apiVersion || 'v21.0';
+    const version = config.apiVersion || 'v25.0';
     this.baseUrl = `https://graph.facebook.com/${version}`;
   }
 
@@ -640,8 +644,7 @@ export class InstagramGraphMCPServer {
     if (!args.ig_user_id || !args.comment_id || !args.message) {
       return { content: [{ type: 'text', text: 'ig_user_id, comment_id, and message are required' }], isError: true };
     }
-    return this.igPost(`/${encodeURIComponent(args.ig_user_id as string)}/replies`, {
-      comment_id: args.comment_id as string,
+    return this.igPost(`/${encodeURIComponent(args.comment_id as string)}/replies`, {
       message: args.message as string,
     });
   }
