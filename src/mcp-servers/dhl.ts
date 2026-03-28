@@ -4,30 +4,59 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official DHL-maintained MCP server was found on GitHub. Community tools exist (benbonn/utapimcp)
-// but are not officially maintained by DHL.
+// Official MCP: None found as of 2026-03-28
+// No official DHL-maintained MCP server was found on GitHub. Community tool (benbonn/utapimcp)
+// exposes only 1 tool (track-shipment), not officially maintained by DHL.
+// Our adapter covers: 11 tools. Vendor MCP covers: 1 tool (tracking only).
+// Recommendation: use-rest-api — community MCP has only 1 tool vs our 11.
 //
-// Base URL: https://api.dhl.com
-// Auth: DHL-API-Key header (subscription key obtained from developer.dhl.com)
-// Docs: https://developer.dhl.com/api-catalog
-// Rate limits: Shipment Tracking — 250 calls/day at 1 call/5 sec (development); higher limits on request.
-//   Location Finder — similar tiered limits. MyDHL Express — plan-dependent.
+// NOTE: This adapter spans THREE separate DHL APIs with DIFFERENT base URLs and auth:
+//
+// [1] DHL Shipment Tracking - Unified
+//     Base URL: https://api.dhl.com
+//     Auth: DHL-API-Key header (developer portal subscription key from developer.dhl.com)
+//     Docs: https://developer.dhl.com/api-reference/shipment-tracking
+//     Rate limits: 250 calls/day at 1 call/5 sec (development tier); higher on request
+//     Tools: track_shipment, get_shipment_events
+//
+// [2] DHL Location Finder - Unified
+//     Base URL: https://api.dhl.com
+//     Auth: DHL-API-Key header (same developer portal subscription key)
+//     Docs: https://developer.dhl.com/api-reference/location-finder
+//     Rate limits: 500 calls/day (development tier)
+//     Tools: find_service_points, get_service_point
+//
+// [3] DHL Express - MyDHL API
+//     Base URL: https://express.api.dhl.com/mydhlapi
+//     Auth: BasicAuth (Authorization: Basic base64(username:password)) — credentials provided by DHL
+//           Express consultant, separate from developer portal key
+//     Docs: https://developer.dhl.com/api-reference/mydhl-api-dhl-express
+//     Rate limits: 500 calls/day (test); production limits plan-dependent
+//     Tools: get_rate_quote, get_transit_times, create_shipment, cancel_shipment,
+//            create_pickup, cancel_pickup, get_capabilities
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface DHLConfig {
-  apiKey: string;
+  apiKey: string;          // Developer portal subscription key (Tracking + Location Finder APIs)
+  expressUsername?: string; // DHL Express MyDHL API BasicAuth username (from DHL Express consultant)
+  expressPassword?: string; // DHL Express MyDHL API BasicAuth password (from DHL Express consultant)
   baseUrl?: string;
 }
 
 export class DHLMCPServer {
   private readonly apiKey: string;
+  private readonly expressUsername: string;
+  private readonly expressPassword: string;
   private readonly baseUrl: string;
+  private readonly expressBaseUrl: string;
 
   constructor(config: DHLConfig) {
     this.apiKey = config.apiKey;
+    this.expressUsername = config.expressUsername || '';
+    this.expressPassword = config.expressPassword || '';
     this.baseUrl = config.baseUrl || 'https://api.dhl.com';
+    this.expressBaseUrl = 'https://express.api.dhl.com/mydhlapi';
   }
 
   static catalog() {
@@ -498,9 +527,19 @@ export class DHLMCPServer {
     }
   }
 
+  // Used by Tracking Unified and Location Finder Unified (developer portal subscription key)
   private get authHeader(): Record<string, string> {
     return {
       'DHL-API-Key': this.apiKey,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  // Used by DHL Express MyDHL API (BasicAuth with username:password from DHL consultant)
+  private get expressAuthHeader(): Record<string, string> {
+    const credentials = Buffer.from(`${this.expressUsername}:${this.expressPassword}`).toString('base64');
+    return {
+      'Authorization': `Basic ${credentials}`,
       'Content-Type': 'application/json',
     };
   }
@@ -606,7 +645,7 @@ export class DHLMCPServer {
     if (args.width) params.set('width', String(args.width));
     if (args.height) params.set('height', String(args.height));
 
-    const response = await fetch(`${this.baseUrl}/rates?${params}`, { headers: this.authHeader });
+    const response = await fetch(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -629,7 +668,7 @@ export class DHLMCPServer {
     if (args.origin_postal_code) params.set('originPostalCode', args.origin_postal_code as string);
     if (args.destination_postal_code) params.set('destinationPostalCode', args.destination_postal_code as string);
 
-    const response = await fetch(`${this.baseUrl}/rates?${params}`, { headers: this.authHeader });
+    const response = await fetch(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -685,9 +724,9 @@ export class DHLMCPServer {
         company: args.destination_company || '',
       },
     };
-    const response = await fetch(`${this.baseUrl}/shipments`, {
+    const response = await fetch(`${this.expressBaseUrl}/shipments`, {
       method: 'POST',
-      headers: this.authHeader,
+      headers: this.expressAuthHeader,
       body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -701,9 +740,9 @@ export class DHLMCPServer {
     if (!args.shipment_tracking_number) {
       return { content: [{ type: 'text', text: 'shipment_tracking_number is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/shipments/${encodeURIComponent(args.shipment_tracking_number as string)}`, {
+    const response = await fetch(`${this.expressBaseUrl}/shipments/${encodeURIComponent(args.shipment_tracking_number as string)}`, {
       method: 'DELETE',
-      headers: this.authHeader,
+      headers: this.expressAuthHeader,
     });
     if (response.status === 204 || response.ok) {
       return { content: [{ type: 'text', text: `Shipment ${encodeURIComponent(args.shipment_tracking_number as string)} cancelled successfully` }], isError: false };
@@ -747,9 +786,9 @@ export class DHLMCPServer {
         },
       ],
     };
-    const response = await fetch(`${this.baseUrl}/pickups`, {
+    const response = await fetch(`${this.expressBaseUrl}/pickups`, {
       method: 'POST',
-      headers: this.authHeader,
+      headers: this.expressAuthHeader,
       body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -764,8 +803,8 @@ export class DHLMCPServer {
       return { content: [{ type: 'text', text: 'dispatch_confirmation_number and origin_country are required' }], isError: true };
     }
     const response = await fetch(
-      `${this.baseUrl}/pickups/${encodeURIComponent(args.dispatch_confirmation_number as string)}?originCountryCode=${encodeURIComponent(args.origin_country as string)}`,
-      { method: 'DELETE', headers: this.authHeader },
+      `${this.expressBaseUrl}/pickups/${encodeURIComponent(args.dispatch_confirmation_number as string)}?originCountryCode=${encodeURIComponent(args.origin_country as string)}`,
+      { method: 'DELETE', headers: this.expressAuthHeader },
     );
     if (response.status === 204 || response.ok) {
       return { content: [{ type: 'text', text: `Pickup ${encodeURIComponent(args.dispatch_confirmation_number as string)} cancelled successfully` }], isError: false };
@@ -788,7 +827,7 @@ export class DHLMCPServer {
     if (args.origin_postal_code) params.set('originPostalCode', args.origin_postal_code as string);
     if (args.destination_postal_code) params.set('destinationPostalCode', args.destination_postal_code as string);
 
-    const response = await fetch(`${this.baseUrl}/rates?${params}`, { headers: this.authHeader });
+    const response = await fetch(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

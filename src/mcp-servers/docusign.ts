@@ -4,11 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-//   Third-party adapters exist (luthersystems/mcp-server-docusign, thisdot/docusign-navigator-mcp)
-//   but no official docusign/mcp-server exists on GitHub.
+// Official MCP: https://mcp.docusign.com — vendor-hosted, transport: streamable-HTTP, auth: Bearer
+//   (Beta as of 2026-03-28. Documented at https://developers.docusign.com/platform/mcp-server/.)
+//   Third-party adapters also exist: luthersystems/mcp-server-docusign (Python, stdio),
+//   thisdot/docusign-navigator-mcp (Navigator API only, streamable-HTTP).
 // Our adapter covers: 16 tools (envelopes, templates, recipients, tabs, documents, folders,
-//   users, signing views). Use this adapter for JWT/OAuth2 access-token-based integrations.
+//   users, signing views). Vendor MCP covers: tool count not publicly enumerated (beta, developer
+//   preview covers eSignature, Navigator, Maestro, Connected Fields API groups).
+// Recommendation: use-rest-api. The vendor MCP is in beta with no published tool list or
+//   stable contract; our REST adapter provides verified, stable eSignature v2.1 coverage.
+//   Revisit use-vendor-mcp once the vendor MCP exits beta and publishes a stable tool manifest.
 //
 // Base URL: https://{basePath}/restapi/v2.1 (account-specific — obtain basePath from GET
 //   https://account.docusign.com/oauth/userinfo after authentication)

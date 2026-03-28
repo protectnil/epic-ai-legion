@@ -4,11 +4,31 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/aledlie/doppler-mcp — community-maintained CLI wrapper,
-//   not an official Doppler release. Targets the CLI, not the REST API directly.
-// Our adapter covers: 18 tools (projects, configs, secrets, environments, service tokens,
-//   service accounts, activity logs, workplaces). Targets the Doppler REST API v3 directly
-//   for API-key and service-token use cases without requiring the Doppler CLI.
+// Official MCP: https://github.com/DopplerHQ/mcp-server — official Doppler release,
+//   npm: @dopplerhq/mcp-server v1.0.4, transport: stdio, auth: DOPPLER_TOKEN env var.
+//   Last published: ~2026-02 (within 6 months as of 2026-03-28). 27 tools (full API surface).
+//   Community wrapper aledlie/doppler-mcp also exists but is NOT the official server.
+// Our adapter covers: 18 tools. Vendor MCP covers: 27 tools (workplace_get, workplace_update,
+//   users_list, groups_list, service_accounts_list, projects_list, projects_create, projects_get,
+//   projects_delete, environments_list, environments_create, environments_get, configs_list,
+//   configs_create, configs_get, configs_update, configs_lock, configs_unlock, secrets_list,
+//   secrets_get, secrets_update, secrets_download, integrations_list, syncs_list, webhooks_list,
+//   config_logs_list, config_logs_rollback).
+// Recommendation: use-both. MCP meets all 4 criteria (official, maintained, 27 tools, stdio).
+//   MCP-only tools (9): workplace_get, workplace_update, users_list, groups_list,
+//     service_accounts_list, environments_create, configs_create, integrations_list,
+//     syncs_list, webhooks_list, configs_unlock, config_logs_rollback.
+//   REST-only tools (3): get_environment (retrieve single environment), create_service_token,
+//     revoke_service_token (service token management not in MCP), list_activity_logs.
+//   Shared (15): projects_list/get/create/delete, environments_list, configs_list/get/delete,
+//     secrets_list/get/update/download, config_logs_list and partial secret ops.
+// Integration: use-both
+// MCP-sourced tools (12): workplace_get, workplace_update, users_list, groups_list,
+//   service_accounts_list, environments_create, configs_create, configs_unlock,
+//   integrations_list, syncs_list, webhooks_list, config_logs_rollback
+// REST-sourced tools (6): get_environment, delete_config, get_secret, delete_secret,
+//   create_service_token, revoke_service_token, list_service_tokens, list_activity_logs
+// Combined coverage: 27 MCP + 18 REST - ~15 shared = ~30 unique tools
 //
 // Base URL: https://api.doppler.com/v3
 // Auth: Bearer token — Authorization: Bearer {token} (personal token, service token, or service account token)

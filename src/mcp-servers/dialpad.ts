@@ -4,14 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// Dialpad's "Dialtone MCP Server" (github.com/dialpad/dialtone) is a design-system search tool,
-// not an API integration MCP. No official Dialpad API MCP server found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// Dialpad's "Dialtone MCP Server" (github.com/dialpad/dialtone) is a design-system UI component
+// search tool, NOT a Dialpad API integration MCP. No official Dialpad API MCP server found on GitHub.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools (Dialtone is UI/design-system only).
+// Recommendation: use-rest-api — no official Dialpad API MCP server exists.
 //
 // Base URL: https://dialpad.com/api/v2
-// Auth: Bearer token (API key used as bearer token in Authorization header)
-// Docs: https://developers.dialpad.com/docs/welcome
-// Rate limits: 20 requests per second per company
+// Auth: Bearer token (API key sent as Authorization: Bearer {apiKey})
+// Docs: https://developers.dialpad.com/reference
+// Rate limits: 20 requests/second per company; per-endpoint limits (e.g. 1200/min for most list endpoints)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -45,7 +47,7 @@ export class DialpadMCPServer {
         'list_calls', 'get_call', 'initiate_call',
         'send_sms', 'list_sms',
         'list_contacts', 'get_contact', 'create_contact', 'update_contact', 'delete_contact',
-        'list_call_logs', 'get_call_analytics',
+        'initiate_stats_export', 'get_stats_result',
         'list_departments', 'get_department',
         'list_numbers', 'get_number',
       ],
@@ -345,62 +347,59 @@ export class DialpadMCPServer {
         },
       },
       {
-        name: 'list_call_logs',
-        description: 'List call log records with filters for date range, user, and call type for reporting purposes',
+        name: 'initiate_stats_export',
+        description: 'Initiate async export of Dialpad call or messaging statistics for a date range; returns an export ID to poll with get_stats_result',
         inputSchema: {
           type: 'object',
           properties: {
-            started_after: {
+            stat_type: {
+              type: 'string',
+              description: 'Type of statistics to export: calls, sms, voicemail (required)',
+            },
+            export_type: {
+              type: 'string',
+              description: 'Export format: stats (aggregated) or records (one row per call/message)',
+            },
+            days_ago_start: {
               type: 'number',
-              description: 'Filter logs for calls started after this Unix timestamp (milliseconds)',
+              description: 'Start of date range as number of days ago (e.g. 7 for one week ago). Use 0 for today.',
             },
-            started_before: {
+            days_ago_end: {
               type: 'number',
-              description: 'Filter logs for calls started before this Unix timestamp (milliseconds)',
+              description: 'End of date range as number of days ago (e.g. 0 for today)',
             },
-            user_id: {
+            is_today: {
+              type: 'boolean',
+              description: 'Query real-time tables refreshed every 30 minutes (overrides days_ago params)',
+            },
+            target_id: {
               type: 'string',
-              description: 'Filter logs for a specific user ID',
+              description: 'Filter by specific target (office, department, call center, or user ID)',
             },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of log records to return (default: 25, max: 100)',
-            },
-            cursor: {
+            office_id: {
               type: 'string',
-              description: 'Pagination cursor from a previous response',
-            },
-          },
-        },
-      },
-      {
-        name: 'get_call_analytics',
-        description: 'Retrieve call analytics data including volume, duration, and performance metrics for a date range',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            date_start: {
-              type: 'string',
-              description: 'Start date for analytics in YYYY-MM-DD format',
-            },
-            date_end: {
-              type: 'string',
-              description: 'End date for analytics in YYYY-MM-DD format',
-            },
-            user_id: {
-              type: 'string',
-              description: 'Filter analytics for a specific user ID',
-            },
-            department_id: {
-              type: 'string',
-              description: 'Filter analytics for a specific department ID',
+              description: 'Filter by office ID (overridden by target_id if both provided)',
             },
             timezone: {
               type: 'string',
-              description: 'Timezone for date grouping (e.g. America/New_York). Default: UTC',
+              description: 'Timezone for date grouping as tz database name (e.g. America/New_York). Default: UTC',
             },
           },
-          required: ['date_start', 'date_end'],
+          required: ['stat_type'],
+        },
+      },
+      {
+        name: 'get_stats_result',
+        description: 'Retrieve the CSV result of a previously initiated Dialpad stats export by export ID; poll until status is done',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            export_id: {
+              type: 'string',
+              description: 'Export ID returned by initiate_stats_export',
+            },
+          },
+          required: ['export_id'],
         },
       },
       {
@@ -497,10 +496,10 @@ export class DialpadMCPServer {
           return this.updateContact(args);
         case 'delete_contact':
           return this.deleteContact(args);
-        case 'list_call_logs':
-          return this.listCallLogs(args);
-        case 'get_call_analytics':
-          return this.getCallAnalytics(args);
+        case 'initiate_stats_export':
+          return this.initiateStatsExport(args);
+        case 'get_stats_result':
+          return this.getStatsResult(args);
         case 'list_departments':
           return this.listDepartments(args);
         case 'get_department':
@@ -684,27 +683,26 @@ export class DialpadMCPServer {
     return this.dialpadDelete(`/contacts/${encodeURIComponent(args.contact_id as string)}`);
   }
 
-  private async listCallLogs(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = { limit: String((args.limit as number) || 25) };
-    if (args.cursor) params.cursor = args.cursor as string;
-    if (args.started_after) params.started_after = String(args.started_after);
-    if (args.started_before) params.started_before = String(args.started_before);
-    if (args.user_id) params.user_id = args.user_id as string;
-    return this.dialpadGet('/call-logs', params);
+  private async initiateStatsExport(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.stat_type) {
+      return { content: [{ type: 'text', text: 'stat_type is required' }], isError: true };
+    }
+    const body: Record<string, unknown> = { stat_type: args.stat_type };
+    if (args.export_type) body.export_type = args.export_type;
+    if (args.days_ago_start !== undefined) body.days_ago_start = args.days_ago_start;
+    if (args.days_ago_end !== undefined) body.days_ago_end = args.days_ago_end;
+    if (args.is_today !== undefined) body.is_today = args.is_today;
+    if (args.target_id) body.target_id = args.target_id;
+    if (args.office_id) body.office_id = args.office_id;
+    if (args.timezone) body.timezone = args.timezone;
+    return this.dialpadPost('/stats', body);
   }
 
-  private async getCallAnalytics(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.date_start || !args.date_end) {
-      return { content: [{ type: 'text', text: 'date_start and date_end are required' }], isError: true };
+  private async getStatsResult(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.export_id) {
+      return { content: [{ type: 'text', text: 'export_id is required' }], isError: true };
     }
-    const params: Record<string, string> = {
-      date_start: args.date_start as string,
-      date_end: args.date_end as string,
-    };
-    if (args.user_id) params.user_id = args.user_id as string;
-    if (args.department_id) params.department_id = args.department_id as string;
-    if (args.timezone) params.timezone = args.timezone as string;
-    return this.dialpadGet('/analytics/calls', params);
+    return this.dialpadGet(`/stats/${encodeURIComponent(args.export_id as string)}`);
   }
 
   private async listDepartments(args: Record<string, unknown>): Promise<ToolResult> {
