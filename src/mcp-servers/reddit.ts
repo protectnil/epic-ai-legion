@@ -4,10 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Reddit MCP server was found on GitHub as of March 2026.
-// Reddit's API is OAuth2-based; this adapter uses the oauth.reddit.com base
-// with a pre-obtained Bearer access token.
+// Official MCP: None found as of 2026-03-28 — no official Reddit MCP server exists on GitHub or npm.
+// Community forks exist (Arindam200/reddit-mcp, GeLi2001/reddit-mcp) but are NOT published by Reddit Inc.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP server found.
 //
 // Base URL: https://oauth.reddit.com
 // Auth: OAuth2 Bearer token (obtained via client_credentials or authorization_code flow)

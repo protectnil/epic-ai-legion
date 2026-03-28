@@ -512,7 +512,7 @@ export class PostgreSQLMCPServer {
     const analyze = args.analyze !== false;
     const params = (args.params as unknown[]) ?? [];
     const keyword = analyze ? 'EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)' : 'EXPLAIN (FORMAT JSON)';
-    const sql = `${keyword} ${encodeURIComponent(args.query as string)}`;
+    const sql = `${keyword} ${args.query as string}`;
     return this.runQuery(sql, params);
   }
 
@@ -556,7 +556,7 @@ export class PostgreSQLMCPServer {
       FROM pg_stat_activity blocked
       JOIN pg_stat_activity blocking
         ON blocking.pid = ANY(pg_blocking_pids(blocked.pid))
-      WHERE blocked.cardinality(pg_blocking_pids(blocked.pid)) > 0
+      WHERE cardinality(pg_blocking_pids(blocked.pid)) > 0
       ORDER BY blocked_duration DESC NULLS LAST
     `;
     return this.runQuery(sql);

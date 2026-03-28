@@ -4,10 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/pandadoc/pandadoc-mcp-server — PandaDoc ships an official
-// MCP server. Transport: stdio. Auth: API key. Coverage: documents, templates, contacts, forms.
-// Recommendation: Use the official PandaDoc MCP for full coverage. Use this adapter for
-// deployments that cannot install npm packages at runtime (air-gapped or locked environments).
+// Official MCP: https://developers.pandadoc.com/mcp — PandaDoc ships an official hosted MCP
+// server (streamable-HTTP, accessed via mcp-remote). Auth: API-Key header. The vendor docs at
+// https://github.com/pandadoc/pandadoc-mcp-server return 404 — no separate GitHub repo exists;
+// the server is hosted at the URL above. Coverage: document creation, sending, tracking,
+// template management, contacts, and workflow automation via natural-language instructions.
+// Transport: streamable-HTTP. Maintained: yes (active as of 2026-03 per developer.pandadoc.com).
+// Recommendation: use-both — the hosted MCP is primarily a developer-assistant/API-exploration
+// server that also executes operations; our REST adapter provides direct programmatic control
+// over all document, template, contact, and webhook operations for air-gapped or automated use.
 //
 // Base URL: https://api.pandadoc.com/public/v1
 // Auth: Two modes:

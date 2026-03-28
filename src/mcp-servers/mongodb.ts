@@ -4,12 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/mongodb-js/mongodb-mcp-server — transport: stdio, auth: connection string
-// The official MongoDB MCP server (mongodb-js/mongodb-mcp-server) is actively maintained and connects
-// via native MongoDB driver (connection string). It exposes 20+ tools covering the full query surface.
-// Recommendation: Use official MCP for direct driver access. Use this adapter for Atlas Data API
-// (HTTPS-only, no driver install required, firewall-friendly, air-gapped deployments).
-//
+// Official MCP: https://github.com/mongodb-js/mongodb-mcp-server (renamed to mongodb-mcp-server on npm) — transport: stdio, auth: connection string + Atlas API credentials
+// The official MongoDB MCP server is actively maintained by MongoDB (mongodb-js org). npm package
+// @mongodb-js/mongodb-mcp-server deprecated and renamed to mongodb-mcp-server. Current as of 2026.
+// It exposes 30+ tools: database tools (find, aggregate, count, insert-one, insert-many, update-one,
+//   update-many, delete-one, delete-many, create-index, drop-index, rename-collection, create-collection,
+//   drop-collection, drop-database, list-databases, list-collections, collection-indexes, db-stats, explain, export)
+//   plus Atlas management tools (atlas-list-orgs, atlas-list-projects, atlas-create-project,
+//   atlas-list-clusters, atlas-inspect-cluster, atlas-create-free-cluster, atlas-connect-cluster,
+//   atlas-list-db-users, atlas-create-db-user, atlas-create-access-list, atlas-inspect-access-list,
+//   atlas-list-alerts, atlas-get-performance-advisor) + local Atlas tools.
+// Recommendation: use-both — vendor MCP has Atlas management tools and advanced DB tools (explain, export,
+//   create-index, drop-index, collection-schema, db-stats, list-databases, list-collections, rename-collection,
+//   create-collection, drop-collection, drop-database) not covered by Data API.
+//   Our REST adapter covers the Data API HTTPS surface (no driver, no npm, firewall-friendly, air-gapped).
 // NOTE: The MongoDB Atlas Data API (app-services endpoint) reached End-of-Life in September 2025.
 // This adapter targets the legacy Data API v1 for existing deployments still using it.
 // New deployments should use the official MCP server with a connection string.
@@ -334,7 +342,7 @@ export class MongoDBMCPServer {
       },
       {
         name: 'count_documents',
-        description: 'Count documents in a MongoDB collection matching an optional filter.',
+        description: 'Count documents in a MongoDB collection matching an optional filter. Implemented via aggregate $count pipeline (Atlas Data API has no dedicated count endpoint).',
         inputSchema: {
           type: 'object',
           properties: {
@@ -478,9 +486,16 @@ export class MongoDBMCPServer {
   }
 
   private async countDocuments(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.doAction('action/count', {
+    // The Atlas Data API v1 has no action/count endpoint. Count is performed via
+    // the aggregate endpoint using a $match + $count pipeline.
+    const filter = args.filter ?? {};
+    const pipeline = [
+      { $match: filter },
+      { $count: 'count' },
+    ];
+    return this.doAction('action/aggregate', {
       ...this.basePayload(args),
-      filter: args.filter ?? {},
+      pipeline,
     });
   }
 }

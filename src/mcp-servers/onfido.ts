@@ -4,18 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Onfido (now Entrust Identity Verification) MCP server was found on GitHub.
 // Onfido publishes official client SDKs (Python, PHP, Java, Node) but no MCP server.
+// Our adapter covers: 22 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP exists.
 //
 // Base URL: https://api.eu.onfido.com/v3.6  (EU region — default)
 //   US region: https://api.us.onfido.com/v3.6
 //   CA region: https://api.ca.onfido.com/v3.6
 //   Note: api.onfido.com was deprecated in API v3.6; always use region-specific URLs.
-// Auth: Bearer token — include API token in Authorization header as "Token token=<API_TOKEN>"
+// Auth: API token in Authorization header as "Token token=<API_TOKEN>"
 //   Tokens are generated in the Onfido Dashboard under Developer Tools > API Tokens
-// Docs: https://documentation.onfido.com/api/3.0.0
-// Rate limits: Not publicly specified; use exponential backoff on 429 responses
+// Docs: https://documentation.identity.entrust.com/api/latest/index.html
+// Rate limits: Not publicly documented; use exponential backoff on 429 responses
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -547,6 +549,19 @@ export class OnfidoMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
+  private async put(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
   private async patch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PATCH',
@@ -613,7 +628,7 @@ export class OnfidoMCPServer {
     if (args.last_name) body.last_name = args.last_name;
     if (args.email) body.email = args.email;
     if (args.dob) body.dob = args.dob;
-    return this.patch(`/applicants/${encodeURIComponent(args.applicant_id as string)}`, body);
+    return this.put(`/applicants/${encodeURIComponent(args.applicant_id as string)}`, body);
   }
 
   private async deleteApplicant(args: Record<string, unknown>): Promise<ToolResult> {
@@ -631,7 +646,7 @@ export class OnfidoMCPServer {
 
   private async listDocuments(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.applicant_id) return { content: [{ type: 'text', text: 'applicant_id is required' }], isError: true };
-    return this.get(`/applicants/${encodeURIComponent(args.applicant_id as string)}/documents`);
+    return this.get('/documents', { applicant_id: args.applicant_id as string });
   }
 
   private async getDocument(args: Record<string, unknown>): Promise<ToolResult> {
@@ -659,7 +674,7 @@ export class OnfidoMCPServer {
 
   private async listChecks(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.applicant_id) return { content: [{ type: 'text', text: 'applicant_id is required' }], isError: true };
-    return this.get(`/applicants/${encodeURIComponent(args.applicant_id as string)}/checks`);
+    return this.get('/checks', { applicant_id: args.applicant_id as string });
   }
 
   private async resumeCheck(args: Record<string, unknown>): Promise<ToolResult> {

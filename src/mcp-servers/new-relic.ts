@@ -4,16 +4,41 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/newrelic/mcp-server — transport: stdio, auth: API key
-// Vendor MCP covers: NRQL queries, alert policies, conditions, incidents, synthetic monitors,
-//   entity search, deployment analysis, user-impact reports. Currently in Public Preview.
-// Our adapter covers: 14 tools (full REST + NerdGraph surface for programmatic workflows).
-// Recommendation: Use vendor MCP for interactive AI agent workflows. Use this adapter for
-//   air-gapped deployments or when REST API v2 endpoints are preferred over NerdGraph.
+// Official MCP: https://github.com/newrelic/mcp-server — transport: streamable-HTTP, auth: API key or OAuth
+//   Published by New Relic (official vendor repo). In Public Preview as of 2025-11-05. Maintained.
+//   Vendor MCP tools (26): convert_time_period_to_epoch_ms, get_dashboard, get_entity,
+//     list_related_entities, list_available_new_relic_accounts, list_dashboards, list_entity_types,
+//     search_entity_with_tag, execute_nrql_query, natural_language_to_nrql_query,
+//     list_alert_conditions, search_incident, list_alert_policies, list_recent_issues,
+//     list_synthetic_monitors, analyze_deployment_impact, generate_alert_insights_report,
+//     generate_user_impact_report, list_entity_error_groups, list_change_events,
+//     analyze_entity_logs, analyze_golden_metrics, analyze_kafka_metrics, analyze_threads,
+//     analyze_transactions, list_garbage_collection_metrics, list_recent_logs
+// Our adapter covers: 14 tools (REST API v2 + NerdGraph surface for programmatic workflows).
+// Recommendation: use-both — Vendor MCP has unique tools not in REST API (analyze_deployment_impact,
+//   generate_alert_insights_report, generate_user_impact_report, analyze_entity_logs,
+//   analyze_golden_metrics, analyze_kafka_metrics, analyze_threads, analyze_transactions,
+//   list_garbage_collection_metrics, list_recent_logs, natural_language_to_nrql_query,
+//   list_change_events, list_entity_error_groups, convert_time_period_to_epoch_ms,
+//   list_related_entities, list_available_new_relic_accounts, list_dashboards, list_entity_types,
+//   search_entity_with_tag). Our adapter has REST-only tools (list_applications, get_application,
+//   create_alert_policy, create_nrql_condition, list_open_incidents, list_key_transactions,
+//   create_deployment_marker) with direct programmatic control.
+// Integration: use-both
+// MCP-sourced tools (19): convert_time_period_to_epoch_ms, get_dashboard, list_related_entities,
+//   list_available_new_relic_accounts, list_dashboards, list_entity_types, search_entity_with_tag,
+//   natural_language_to_nrql_query, list_recent_issues, analyze_deployment_impact,
+//   generate_alert_insights_report, generate_user_impact_report, list_entity_error_groups,
+//   list_change_events, analyze_entity_logs, analyze_golden_metrics, analyze_kafka_metrics,
+//   analyze_threads, analyze_transactions, list_garbage_collection_metrics, list_recent_logs
+// REST-sourced tools (14): query_nrql, search_entities, get_entity, list_applications,
+//   get_application, list_alert_policies, create_alert_policy, list_nrql_conditions,
+//   create_nrql_condition, list_open_incidents, list_synthetic_monitors, get_synthetic_monitor,
+//   create_deployment_marker, list_key_transactions
 //
 // Base URL: https://api.newrelic.com/v2 (REST API v2 — APM, alerts, key transactions)
 // GraphQL URL: https://api.newrelic.com/graphql (NerdGraph — NRQL, entities, workloads, synthetics)
-// Auth: X-Api-Key header (User API key or User key)
+// Auth: Api-Key header (User API key — same key works for both REST v2 and NerdGraph)
 // Docs: https://docs.newrelic.com/docs/apis/intro-apis/introduction-new-relic-apis/
 // Rate limits: 1000 requests/min per API key for REST API v2
 
@@ -399,7 +424,7 @@ export class NewRelicMCPServer {
 
   private get restHeaders(): Record<string, string> {
     return {
-      'X-Api-Key': this.apiKey,
+      'Api-Key': this.apiKey,
       'Content-Type': 'application/json',
     };
   }

@@ -4,12 +4,27 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// Oracle has not published an official NetSuite MCP server. Community adapters exist
-// (glints-dev/mcp-netsuite, dsvantien/netsuite-mcp-server) but are unofficial and unmaintained.
-// Oracle's "NetSuite AI Connector Service" is a hosted product, not an open MCP server.
-// This adapter calls the NetSuite SuiteTalk REST Web Services API directly using
-// Token-Based Authentication (TBA / OAuth 1.0a with HMAC-SHA256).
+// Official MCP: https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/article_3200541651.html
+//   Oracle NetSuite AI Connector Service — hosted MCP endpoint (not an open-source repo).
+//   Accessed via the MCP Standard Tools SuiteApp (installed from the SuiteApp Marketplace).
+//   Transport: streamable-HTTP (hosted by Oracle NetSuite, account-specific URL). Auth: OAuth 2.0.
+//   MCP Standard Tools SuiteApp exposes 10 tools (as of 2026-03):
+//     ns_createRecord, ns_getRecord, ns_getRecordTypeMetadata, ns_updateRecord,
+//     ns_getSubsidiaries, ns_listAllReports, ns_runReport,
+//     ns_listSavedSearches, ns_runSavedSearch,
+//     ns_runCustomSuiteQL, ns_getSuiteQLMetadata
+//   NOTE: MCP does NOT expose delete_record, list_records, or upsert_record.
+//   Our adapter covers those gaps plus run_suiteql_paginated (bulk pagination helper).
+// Our adapter covers: 9 tools. Vendor MCP covers: 11 tools.
+// Recommendation: use-both — MCP covers reports and saved searches (ns_getSubsidiaries,
+//   ns_listAllReports, ns_runReport, ns_listSavedSearches, ns_runSavedSearch) that our REST adapter
+//   does not implement. Our adapter covers delete_record, list_records, upsert_record, and
+//   run_suiteql_paginated not available in MCP. Use union for full coverage.
+// Integration: use-both
+// MCP-sourced tools (5): ns_getSubsidiaries, ns_listAllReports, ns_runReport, ns_listSavedSearches, ns_runSavedSearch
+// REST-sourced tools (9): run_suiteql, run_suiteql_paginated, get_record, list_records, create_record,
+//   update_record, delete_record, upsert_record, get_metadata
+// Combined coverage: 14 tools (MCP: 11 + REST: 9 - shared: 6)
 //
 // Base URL: https://{accountId}.suitetalk.api.netsuite.com
 // Auth: OAuth 1.0a TBA — HMAC-SHA256 signature per RFC 5849 (consumerKey, consumerSecret, tokenId, tokenSecret)

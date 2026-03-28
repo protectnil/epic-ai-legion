@@ -4,11 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03 — no official FDA MCP server exists.
+// Official MCP: None found as of 2026-03-28 — no official FDA MCP server exists.
 //   Community implementations exist (e.g. github.com/Augmented-Nature/OpenFDA-MCP-Server,
 //   github.com/BACH-AI-Tools/mcp-openfda) but are not officially published or maintained by the FDA.
-// Our adapter covers: 18 tools — drug adverse events, labeling, enforcement; device events,
-//   510k clearances, classification, enforcement; food enforcement, CAERS; animal adverse events.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP exists.
 //
 // Base URL: https://api.fda.gov
 // Auth: Optional — API key passed as api_key query parameter for higher rate limits.
@@ -16,7 +16,7 @@
 //   With a key:  240 requests/minute, 120,000/day per key.
 //   Request a free key at: https://open.fda.gov/apis/authentication/
 // Docs: https://open.fda.gov/apis/
-// Rate limits: See above. All responses are JSON. Max limit per request: 1000 records.
+// Rate limits: 240 req/min; 1,000 req/day without key; 120,000 req/day with key. Max 1,000 records per request.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

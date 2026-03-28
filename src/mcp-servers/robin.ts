@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Robin (robinpowered.com) MCP server was found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// No official Robin (robinpowered.com) MCP server was found on GitHub, npm, or the Robin developer docs.
+// Our adapter covers: 17 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no MCP server exists.
 //
 // Base URL: https://api.robinpowered.com/v1.0
 // Auth: Access token via Authorization: Access-Token {token} header
@@ -589,7 +591,7 @@ export class RobinMCPServer {
   }
 
   private async listSeatReservations(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.apiGet('/seat-reservations' + this.buildQs({
+    return this.apiGet('/reservations/seats' + this.buildQs({
       location_id: args.location_id as number,
       user_id: args.user_id as number,
       after: args.after as string,
@@ -602,8 +604,7 @@ export class RobinMCPServer {
     if (!args.seat_id || !args.user_id || !args.start_time || !args.end_time) {
       return { content: [{ type: 'text', text: 'seat_id, user_id, start_time, and end_time are required' }], isError: true };
     }
-    return this.apiPost('/seat-reservations', {
-      seat_id: args.seat_id,
+    return this.apiPost(`/seats/${encodeURIComponent(args.seat_id as string)}/reservations`, {
       user_id: args.user_id,
       start_time: args.start_time,
       end_time: args.end_time,

@@ -4,11 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/Rootly-AI-Labs/Rootly-MCP-server
-// Transport: stdio. Auth: Rootly API token. Actively maintained (2024-2025 commits).
-// Also available as Cloudflare Worker: https://github.com/Rootly-AI-Labs/Rootly-MCP-cloudflare
-// Vendor MCP covers: 25+ tools (full incident lifecycle). Our adapter covers: 18 tools.
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// Official MCP: https://github.com/Rootly-AI-Labs/Rootly-MCP-server — transport: streamable-HTTP, SSE, stdio, auth: API token
+// Vendor MCP covers: 101 tools (16 custom + 85 OpenAPI-generated, full API surface). Our adapter covers: 18 tools.
+// MCP actively maintained — last commit 2026-03-21, Apache-2.0.
+// Also available as hosted endpoint and Cloudflare Worker. Documented at https://docs.rootly.com/integrations/mcp-server
+// Recommendation: use-vendor-mcp — Vendor MCP exposes 101 tools vs our 18; strict superset of REST API.
+// NOTE: Vendor MCP (https://github.com/Rootly-AI-Labs/Rootly-MCP-server) exposes 101 tools — superset of REST API.
+// Prefer vendor MCP. This adapter retained for air-gapped deployments.
 //
 // Base URL: https://api.rootly.com
 // Auth: Bearer token — generate in Rootly Settings → API Tokens

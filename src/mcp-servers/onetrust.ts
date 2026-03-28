@@ -4,12 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official OneTrust MCP server was found on GitHub or the OneTrust developer portal.
 // This adapter covers the OneTrust REST API for privacy, consent, and compliance operations.
 //
-// Base URL: https://{your-tenant}.onetrust.com/api (tenant-specific; no shared default)
-// Auth: OAuth2 client credentials — token endpoint at {baseUrl}/access/token
+// Base URL: https://{your-tenant}.onetrust.com (tenant-specific; no shared default)
+// Auth: OAuth2 client credentials — POST {baseUrl}/v1/oauth/token
+//   (per https://developer.onetrust.com/onetrust/reference/quick-start-guide)
 // Docs: https://developer.onetrust.com/onetrust/reference/onetrust-api-reference
 // Rate limits: Not publicly documented; OneTrust recommends contacting support for limits
 
@@ -20,7 +21,7 @@ interface OneTrustConfig {
   clientId: string;
   /** OAuth2 client secret from OneTrust Global Settings */
   clientSecret: string;
-  /** Full tenant base URL, e.g. https://app.onetrust.com/api */
+  /** Full tenant base URL, e.g. https://app.onetrust.com (no trailing /api) */
   baseUrl: string;
 }
 
@@ -399,7 +400,7 @@ export class OneTrustMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/access/token`, {
+    const response = await fetch(`${this.baseUrl}/v1/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

@@ -4,11 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/panther-labs/mcp-panther — actively maintained by Panther Labs
-// Transport: stdio. Auth: Panther API token. Coverage: 40+ tools (alerts, queries, detections,
-// schema, users). Last commit: March 2026 (103+ commits).
-// Recommendation: Use the official Panther MCP for full coverage including GraphQL operations.
-// Use this adapter for air-gapped deployments or environments that cannot run Python.
+// Official MCP: https://github.com/panther-labs/mcp-panther — transport: stdio, auth: X-API-Key
+// Our adapter covers: 17 tools (REST API operations). Vendor MCP covers: 40+ tools (alerts,
+// detections, queries via GraphQL, schemas, metrics, users).
+// Recommendation: use-both — MCP exposes GraphQL-backed tools (query_data_lake, get_table_schema,
+// list_databases, list_database_tables, rule metrics, severity metrics) not available in REST API.
+// REST adapter covers saved-query CRUD, log-source management, and policy management not in MCP.
+//
+// Integration: use-both
+// MCP-sourced tools: query_data_lake, get_table_schema, list_databases, list_database_tables,
+//   get_rule_alert_metrics, get_severity_alert_metrics, get_bytes_processed_metrics
+// REST-sourced tools (this adapter): list_alerts, get_alert, update_alert_status,
+//   bulk_update_alert_status, list_detections, get_detection, enable_detection, disable_detection,
+//   list_log_sources, get_log_source, list_saved_queries, get_saved_query, list_users, get_user,
+//   list_schemas, get_schema
+// Combined coverage: 23+ tools (MCP: 40+ + REST: 17 - shared: varies)
+//
+// NOTE: The REST API base URL already includes /v1 (e.g. https://api.{tenant}.runpanther.net/v1).
+// All paths in this adapter are relative to that base — do NOT include /v1 in paths.
 //
 // Base URL: https://api.{YOUR_PANTHER_DOMAIN}.runpanther.net/v1 (SaaS)
 //           For self-hosted: https://{your-panther-host}/v1
@@ -48,12 +61,11 @@ export class PantherMCPServer {
         'list_alerts', 'get_alert', 'update_alert_status', 'bulk_update_alert_status',
         'list_detections', 'get_detection', 'enable_detection', 'disable_detection',
         'list_log_sources', 'get_log_source',
-        'query_data_lake', 'get_query_status', 'get_query_results',
         'list_saved_queries', 'get_saved_query',
         'list_users', 'get_user',
         'list_schemas', 'get_schema',
       ],
-      description: 'Cloud SIEM: triage and update alerts, manage detection rules, query the data lake with SQL, and manage log sources, users, and schemas.',
+      description: 'Cloud SIEM: triage and update alerts, manage detection rules, manage saved SQL queries, and manage log sources, users, and schemas.',
       author: 'protectnil',
     };
   }
@@ -113,7 +125,7 @@ export class PantherMCPServer {
       },
       {
         name: 'update_alert_status',
-        description: 'Update the status of a single Panther alert and optionally assign it to a user.',
+        description: 'Update the status, assignee, quality, or context tags of a single Panther alert.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -125,13 +137,13 @@ export class PantherMCPServer {
               type: 'string',
               description: 'New status: OPEN, TRIAGED, CLOSED, or RESOLVED',
             },
-            assignee_id: {
+            assignee: {
               type: 'string',
               description: 'User ID to assign the alert to (optional)',
             },
-            comment: {
+            quality: {
               type: 'string',
-              description: 'Optional comment to add with the status change',
+              description: 'Alert quality classification: NOISE, FALSE_POSITIVE, or TRUE_POSITIVE (optional)',
             },
           },
           required: ['alert_id', 'status'],
@@ -258,64 +270,6 @@ export class PantherMCPServer {
         },
       },
       {
-        name: 'query_data_lake',
-        description: 'Execute a SQL query against the Panther data lake (Snowflake SQL dialect) and return results synchronously.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            sql: {
-              type: 'string',
-              description: 'SQL query string in Snowflake SQL dialect',
-            },
-            database: {
-              type: 'string',
-              description: 'Database to query against (optional — uses account default if omitted)',
-            },
-            timeout_seconds: {
-              type: 'number',
-              description: 'Query execution timeout in seconds (default: 60)',
-            },
-          },
-          required: ['sql'],
-        },
-      },
-      {
-        name: 'get_query_status',
-        description: 'Get the execution status of an asynchronous Panther data lake query by query ID.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            query_id: {
-              type: 'string',
-              description: 'Query ID returned from a previous query_data_lake call',
-            },
-          },
-          required: ['query_id'],
-        },
-      },
-      {
-        name: 'get_query_results',
-        description: 'Get the results of a completed Panther data lake query by query ID.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            query_id: {
-              type: 'string',
-              description: 'Query ID of a completed query',
-            },
-            page_size: {
-              type: 'number',
-              description: 'Number of result rows per page (default: 100)',
-            },
-            cursor: {
-              type: 'string',
-              description: 'Pagination cursor for large result sets',
-            },
-          },
-          required: ['query_id'],
-        },
-      },
-      {
         name: 'list_saved_queries',
         description: 'List saved SQL queries (scheduled queries) in Panther with pagination.',
         inputSchema: {
@@ -434,12 +388,6 @@ export class PantherMCPServer {
           return await this.listLogSources(args);
         case 'get_log_source':
           return await this.getLogSource(args);
-        case 'query_data_lake':
-          return await this.queryDataLake(args);
-        case 'get_query_status':
-          return await this.getQueryStatus(args);
-        case 'get_query_results':
-          return await this.getQueryResults(args);
         case 'list_saved_queries':
           return await this.listSavedQueries(args);
         case 'get_saved_query':
@@ -497,24 +445,6 @@ export class PantherMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async fetchPost(path: string, body: unknown): Promise<ToolResult> {
-    const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: this.reqHeaders,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const errText = await response.text().catch(() => '');
-      return {
-        content: [{ type: 'text', text: `Panther API error (HTTP ${response.status}): ${response.statusText}${errText ? ' — ' + errText : ''}` }],
-        isError: true,
-      };
-    }
-    const data = await response.json();
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
   private async fetchPatch(path: string, body: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const response = await fetch(url, {
@@ -557,22 +487,22 @@ export class PantherMCPServer {
     if (args.rule_id) params.set('ruleId', args.rule_id as string);
     if (args.created_at_after) params.set('createdAtAfter', args.created_at_after as string);
     if (args.created_at_before) params.set('createdAtBefore', args.created_at_before as string);
-    return this.fetchGet('/v1/alerts', params);
+    return this.fetchGet('/alerts', params);
   }
 
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet(`/v1/alerts/${encodeURIComponent(args.alert_id as string)}`);
+    return this.fetchGet(`/alerts/${encodeURIComponent(args.alert_id as string)}`);
   }
 
   private async updateAlertStatus(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { status: args.status };
-    if (args.assignee_id) body.assigneeId = args.assignee_id;
-    if (args.comment) body.comment = args.comment;
-    return this.fetchPatch(`/v1/alerts/${encodeURIComponent(args.alert_id as string)}`, body);
+    if (args.assignee) body.assignee = args.assignee;
+    if (args.quality) body.quality = args.quality;
+    return this.fetchPatch(`/alerts/${encodeURIComponent(args.alert_id as string)}`, body);
   }
 
   private async bulkUpdateAlertStatus(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchPatch('/v1/alerts', {
+    return this.fetchPatch('/alerts', {
       ids: args.alert_ids,
       status: args.status,
     });
@@ -587,68 +517,50 @@ export class PantherMCPServer {
       params.set('severity', args.severity as string);
     }
     if (args.name_contains) params.set('nameContains', args.name_contains as string);
-    return this.fetchGet('/v1/detections', params);
+    return this.fetchGet('/detections', params);
   }
 
   private async getDetection(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet(`/v1/detections/${encodeURIComponent(args.detection_id as string)}`);
+    return this.fetchGet(`/detections/${encodeURIComponent(args.detection_id as string)}`);
   }
 
   private async setDetectionEnabled(detectionId: string, enabled: boolean): Promise<ToolResult> {
-    return this.fetchPatch(`/v1/detections/${encodeURIComponent(detectionId)}`, { enabled });
+    return this.fetchPatch(`/detections/${encodeURIComponent(detectionId)}`, { enabled });
   }
 
   private async listLogSources(args: Record<string, unknown>): Promise<ToolResult> {
     const params = this.buildPaginationParams(args);
-    return this.fetchGet('/v1/log-sources', params);
+    return this.fetchGet('/log-sources', params);
   }
 
   private async getLogSource(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet(`/v1/log-sources/${encodeURIComponent(args.log_source_id as string)}`);
-  }
-
-  private async queryDataLake(args: Record<string, unknown>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { sql: args.sql };
-    if (args.database) body.database = args.database;
-    if (args.timeout_seconds) body.timeoutSeconds = args.timeout_seconds;
-    return this.fetchPost('/v1/queries', body);
-  }
-
-  private async getQueryStatus(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet(`/v1/queries/${encodeURIComponent(args.query_id as string)}`);
-  }
-
-  private async getQueryResults(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.page_size) params.set('pageSize', String(args.page_size));
-    if (args.cursor) params.set('cursor', args.cursor as string);
-    return this.fetchGet(`/v1/queries/${encodeURIComponent(args.query_id as string)}/results`, params);
+    return this.fetchGet(`/log-sources/${encodeURIComponent(args.log_source_id as string)}`);
   }
 
   private async listSavedQueries(args: Record<string, unknown>): Promise<ToolResult> {
     const params = this.buildPaginationParams(args);
-    return this.fetchGet('/v1/queries/saved', params);
+    return this.fetchGet('/queries', params);
   }
 
   private async getSavedQuery(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet(`/v1/queries/saved/${encodeURIComponent(args.query_id as string)}`);
+    return this.fetchGet(`/queries/${encodeURIComponent(args.query_id as string)}`);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
     const params = this.buildPaginationParams(args);
-    return this.fetchGet('/v1/users', params);
+    return this.fetchGet('/users', params);
   }
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet(`/v1/users/${encodeURIComponent(args.user_id as string)}`);
+    return this.fetchGet(`/users/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async listSchemas(args: Record<string, unknown>): Promise<ToolResult> {
     const params = this.buildPaginationParams(args);
-    return this.fetchGet('/v1/schemas', params);
+    return this.fetchGet('/schemas', params);
   }
 
   private async getSchema(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet(`/v1/schemas/${encodeURIComponent(args.schema_name as string)}`);
+    return this.fetchGet(`/schemas/${encodeURIComponent(args.schema_name as string)}`);
   }
 }

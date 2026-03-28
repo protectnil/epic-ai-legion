@@ -4,33 +4,42 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Redox MCP server was found on GitHub or the Redox developer portal.
 //
 // Base URL: https://api.redoxengine.com
-// Auth: OAuth2 client credentials (signed JWT assertion) — POST /auth/token with private key signed JWT
-//   Access tokens expire after 5 minutes. No refresh tokens; re-authenticate on expiry.
+// Auth: OAuth2 JWT bearer assertion — POST /auth/token with:
+//   grant_type=client_credentials
+//   client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer
+//   client_assertion=<RS384-signed JWT with iss=sub=clientId, aud=https://api.redoxengine.com/auth/token>
+//   Tokens expire in 5 minutes; no refresh token issued. Re-authenticate via new JWT assertion.
+//   FHIR base URL pattern: https://api.redoxengine.com/fhir/R4/{destination-slug}/{environment-type}
+//   connectionId should be passed as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")
+// Our adapter covers: 14 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api (no vendor MCP exists as of 2026-03-28)
 // Docs: https://docs.redoxengine.com/api-reference/fhir-api-reference/
 // Rate limits: Not publicly documented; contact Redox for tenant-level quotas
 
+import { createSign, randomUUID } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface RedoxConfig {
   clientId: string;
-  clientSecret: string;
+  /** PEM-encoded RS384 private key used to sign the JWT assertion */
+  privateKey: string;
   baseUrl?: string;
 }
 
 export class RedoxMCPServer {
   private readonly clientId: string;
-  private readonly clientSecret: string;
+  private readonly privateKey: string;
   private readonly baseUrl: string;
   private bearerToken: string | null = null;
   private tokenExpiry: number = 0;
 
   constructor(config: RedoxConfig) {
     this.clientId = config.clientId;
-    this.clientSecret = config.clientSecret;
+    this.privateKey = config.privateKey;
     this.baseUrl = config.baseUrl || 'https://api.redoxengine.com';
   }
 
@@ -64,7 +73,7 @@ export class RedoxMCPServer {
           type: 'object',
           properties: {
             patientId: { type: 'string', description: 'FHIR Patient resource ID' },
-            connectionId: { type: 'string', description: 'Redox connection ID for the target EHR system' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
           },
           required: ['patientId', 'connectionId'],
         },
@@ -75,7 +84,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID for the target EHR system' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             family: { type: 'string', description: 'Patient last name (partial match supported)' },
             given: { type: 'string', description: 'Patient first name (partial match supported)' },
             birthdate: { type: 'string', description: 'Date of birth in YYYY-MM-DD format' },
@@ -91,7 +100,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID for the target EHR system' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             family: { type: 'string', description: 'Patient last name' },
             given: { type: 'string', description: 'Patient first name' },
             birthDate: { type: 'string', description: 'Date of birth in YYYY-MM-DD format' },
@@ -108,7 +117,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID for the target EHR system' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             patientId: { type: 'string', description: 'FHIR Patient resource ID' },
             status: { type: 'string', description: 'Filter by status: planned, arrived, triaged, in-progress, finished, cancelled' },
             date: { type: 'string', description: 'Filter by date range (e.g. ge2025-01-01, le2026-01-01)' },
@@ -123,7 +132,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             encounterId: { type: 'string', description: 'FHIR Encounter resource ID' },
           },
           required: ['connectionId', 'encounterId'],
@@ -135,7 +144,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             patientId: { type: 'string', description: 'FHIR Patient resource ID' },
             category: { type: 'string', description: 'Observation category: vital-signs, laboratory, social-history, imaging' },
             code: { type: 'string', description: 'LOINC code to filter specific observation type (e.g. 8302-2 for height)' },
@@ -151,7 +160,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             observationId: { type: 'string', description: 'FHIR Observation resource ID' },
           },
           required: ['connectionId', 'observationId'],
@@ -163,7 +172,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             patientId: { type: 'string', description: 'FHIR Patient resource ID' },
             clinicalStatus: { type: 'string', description: 'Filter by status: active, recurrence, relapse, inactive, remission, resolved' },
             _count: { type: 'number', description: 'Maximum number of results (default: 20)' },
@@ -177,7 +186,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             conditionId: { type: 'string', description: 'FHIR Condition resource ID' },
           },
           required: ['connectionId', 'conditionId'],
@@ -189,7 +198,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             patientId: { type: 'string', description: 'FHIR Patient resource ID' },
             status: { type: 'string', description: 'Filter by status: active, on-hold, cancelled, completed, stopped' },
             _count: { type: 'number', description: 'Maximum number of results (default: 20)' },
@@ -203,7 +212,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             medicationRequestId: { type: 'string', description: 'FHIR MedicationRequest resource ID' },
           },
           required: ['connectionId', 'medicationRequestId'],
@@ -215,7 +224,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             patientId: { type: 'string', description: 'FHIR Patient resource ID' },
             clinicalStatus: { type: 'string', description: 'Filter by status: active, inactive, resolved' },
             _count: { type: 'number', description: 'Maximum number of results (default: 20)' },
@@ -229,7 +238,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             organizationId: { type: 'string', description: 'FHIR Organization resource ID' },
           },
           required: ['connectionId', 'organizationId'],
@@ -241,7 +250,7 @@ export class RedoxMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            connectionId: { type: 'string', description: 'Redox connection ID' },
+            connectionId: { type: 'string', description: 'Redox destination path as "{destination-slug}/{environment-type}" (e.g. "redox-fhir-sandbox/Development")' },
             name: { type: 'string', description: 'Practitioner name (partial match)' },
             identifier: { type: 'string', description: 'NPI or other system identifier' },
             _count: { type: 'number', description: 'Maximum number of results (default: 20)' },
@@ -284,14 +293,36 @@ export class RedoxMCPServer {
     const now = Date.now();
     if (this.bearerToken && this.tokenExpiry > now) return this.bearerToken;
 
-    // Redox uses client_credentials with client_id/client_secret
-    const response = await fetch(`${this.baseUrl}/auth/token`, {
+    // Redox requires a JWT bearer assertion (RS384-signed) — NOT a plain client_secret.
+    // Docs: https://docs.redoxengine.com/api-reference/redox-data-model-api-reference/authenticate-an-oauth-api-key/
+    const tokenUrl = `${this.baseUrl}/auth/token`;
+    const nowSec = Math.floor(now / 1000);
+    const expSec = nowSec + 300; // 5-minute assertion window
+
+    // Build JWT header + payload
+    const header = Buffer.from(JSON.stringify({ alg: 'RS384', typ: 'JWT' })).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({
+      iss: this.clientId,
+      sub: this.clientId,
+      aud: tokenUrl,
+      iat: nowSec,
+      exp: expSec,
+      jti: randomUUID(),
+    })).toString('base64url');
+    const signingInput = `${header}.${payload}`;
+
+    const sign = createSign('RSA-SHA384');
+    sign.update(signingInput);
+    const signature = sign.sign(this.privateKey, 'base64url');
+    const assertion = `${signingInput}.${signature}`;
+
+    const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'client_credentials',
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
+        client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+        client_assertion: assertion,
       }).toString(),
     });
 

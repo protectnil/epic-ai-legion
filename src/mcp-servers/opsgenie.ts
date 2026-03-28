@@ -4,14 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Atlassian-published Opsgenie MCP server exists. Community implementations
-// (giantswarm/mcp-opsgenie, burakdirin/mcp-opsgenie) are not officially maintained.
+// Official MCP: None found as of 2026-03-28
+// No official Atlassian-published Opsgenie MCP server exists.
+// Community implementations found (NOT official, NOT endorsed):
+//   - https://github.com/giantswarm/mcp-opsgenie — transport: stdio/SSE/streamable-HTTP; ~6 tools (alerts, teams); not published by Atlassian
+//   - https://github.com/burakdirin/mcp-opsgenie — npm: mcp-opsgenie; community only
+// Neither qualifies as an official MCP server. Decision: use-rest-api.
 // Note: Atlassian ended new Opsgenie sales on 2025-06-04; end-of-support is 2027-04-05.
 // Customers may migrate to Jira Service Management (see jira-service-management.ts).
+// Our adapter covers: 25 tools (alerts, incidents, schedules, teams, users, escalations, heartbeats, services).
+// Recommendation: Use this adapter. No official MCP exists. Community MCP servers have far fewer tools.
 //
 // Base URL: https://api.opsgenie.com (EU: https://api.eu.opsgenie.com)
-// Auth: GenieKey API key in Authorization header
+// Auth: GenieKey API key — Authorization: GenieKey {apiKey}
 // Docs: https://docs.opsgenie.com/docs/api-overview
 // Rate limits: Not publicly documented; contact Atlassian support for current limits
 
@@ -832,7 +837,7 @@ export class OpsgenieMCPServer {
     if (args.description) body.description = args.description;
     if (args.priority) body.priority = args.priority;
     if (args.tags) body.tags = args.tags;
-    const response = await fetch(`${this.baseUrl}/v1/incidents`, {
+    const response = await fetch(`${this.baseUrl}/v1/incidents/create`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),

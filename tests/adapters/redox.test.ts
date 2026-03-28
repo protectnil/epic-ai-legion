@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { RedoxMCPServer } from '../../src/mcp-servers/redox.js';
 
 describe('RedoxMCPServer', () => {
-  const adapter = new RedoxMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
+  const adapter = new RedoxMCPServer({
+    clientId: 'test-id',
+    privateKey: '-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----',
+  });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

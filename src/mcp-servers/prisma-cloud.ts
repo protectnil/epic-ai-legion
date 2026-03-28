@@ -4,12 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-//   No official Palo Alto Networks / Prisma Cloud MCP server was found on GitHub or pan.dev.
-//   Third-party community servers exist but are not officially maintained.
+// Official MCP: None found as of 2026-03-28.
+//   No official Palo Alto Networks / Prisma Cloud CSPM MCP server was found on GitHub or pan.dev.
+//   NOTE: Prisma AIRS MCP Server (https://docs.paloaltonetworks.com/ai-runtime-security) is a DIFFERENT product
+//   (AI Runtime Security for AI agent security scanning) — it does NOT cover CSPM cloud posture management.
+//   Third-party community CSPM servers exist but are not officially maintained.
 //
 // Base URL: https://api.prismacloud.io (varies by tenant region — see pan.dev/prisma-cloud/api/cspm/api-urls)
-// Auth: JWT token obtained by POST /login with username/password credentials.
+// Auth: JWT token obtained by POST /login with username/password credentials (legacy auth).
+//   Darwin release: use access key ID + secret key instead of username/password (see pan.dev Getting Started).
 //   Token is passed as x-redlock-auth header. Tokens expire after ~10 minutes; refresh on 401.
 // Docs: https://pan.dev/prisma-cloud/api/cspm/
 // Rate limits: Not formally documented; recommended to implement exponential backoff on 429 responses

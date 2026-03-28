@@ -6,13 +6,14 @@
 
 // Official MCP: https://www.npmjs.com/package/@mux/mcp — transport: stdio, auth: Basic (token ID + secret)
 // Our adapter covers: 22 tools (assets, live streams, playback IDs, direct uploads, delivery usage, video data).
-// Vendor MCP covers: full API surface via @mux/mcp package built from mux-node-sdk.
+// Vendor MCP covers: full API surface (all Video + Data + System APIs, minus destructive deletes such as delete_asset and delete_live_stream). Last published: 2025-11 (v12.8.1). Maintained.
 // Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// NOTE: Vendor MCP (https://www.npmjs.com/package/@mux/mcp) exposes 10+ tools — superset of this REST adapter. Prefer vendor MCP.
 //
 // Base URL: https://api.mux.com
 // Auth: HTTP Basic — username: MUX_TOKEN_ID, password: MUX_TOKEN_SECRET
-// Docs: https://www.mux.com/docs/core/make-api-requests
-// Rate limits: Data APIs: sustained 5 req/sec with burst capacity; Video APIs: no public limit stated
+// Docs: https://www.mux.com/docs/api-reference/video/assets
+// Rate limits: GET: ~5 req/sec sustained; POST: ~1 req/sec sustained; Data APIs: sustained 5 req/sec with burst capacity
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -622,8 +623,8 @@ export class MuxMCPServer {
   private async createAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.input_url) return { content: [{ type: 'text', text: 'input_url is required' }], isError: true };
     const body: Record<string, unknown> = {
-      input: [{ url: args.input_url }],
-      playback_policy: [(args.playback_policy as string) || 'public'],
+      inputs: [{ url: args.input_url }],
+      playback_policies: [(args.playback_policy as string) || 'public'],
     };
     if (args.mp4_support) body.mp4_support = args.mp4_support;
     if (typeof args.normalize_audio === 'boolean') body.normalize_audio = args.normalize_audio;
@@ -683,7 +684,7 @@ export class MuxMCPServer {
 
   private async createLiveStream(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {
-      playback_policy: [(args.playback_policy as string) || 'public'],
+      playback_policies: [(args.playback_policy as string) || 'public'],
       latency_mode: (args.latency_mode as string) || 'low',
     };
     if (args.reconnect_window) body.reconnect_window = args.reconnect_window;

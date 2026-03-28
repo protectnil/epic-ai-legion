@@ -125,7 +125,7 @@ export class NewsAPIMCPServer {
             },
             page_size: {
               type: 'number',
-              description: 'Number of articles per page (default: 20, max: 100)',
+              description: 'Number of articles per page (default: 100, max: 100)',
             },
             page: {
               type: 'number',

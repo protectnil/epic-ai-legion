@@ -5,11 +5,27 @@
  */
 
 // Official MCP: https://github.com/okta/okta-mcp-server — transport: stdio, auth: Device Auth Grant or Private Key JWT
-// Vendor MCP covers: full Okta API — users, groups, apps, policies, factors, and more (CRUD + lifecycle).
-//   Destructive operations prompt for confirmation via MCP Elicitation API.
+// Vendor MCP covers: full Okta admin API — users, groups, apps, policies, factors, devices + CRUD + lifecycle.
+//   Uses Python SDK. README last updated Feb 24, 2026 (actively maintained). Destructive ops use MCP Elicitation.
+//   Confirmed tools: list_users, get_user, create_user, update_user, deactivate_user, delete_deactivated_user,
+//   get_user_profile_attributes, list_groups, get_group, create_group, delete_group, list_group_users,
+//   list_group_apps, add_user_to_group, remove_user_from_group, list_applications, get_application,
+//   create_application, delete_application, activate_application, deactivate_application,
+//   list_policies, get_policy, create_policy, update_policy, delete_policy,
+//   list_policy_rules, get_policy_rule, create_policy_rule, update_policy_rule,
+//   delete_policy_rule, activate_policy_rule, deactivate_policy_rule,
+//   get_system_logs (30+ tools total).
 // Our adapter covers: 18 tools (REST v1 API surface using SSWS token or Bearer — for API-token deployments).
-// Recommendation: Use vendor MCP for interactive AI agent workflows with OAuth 2.0.
-//   Use this adapter for automated server-side integrations with SSWS API tokens or Bearer access tokens.
+// Recommendation: use-both — MCP has unique tools (delete_group, create_application, delete_application,
+//   activate/deactivate_application, full policy CRUD, get_user_profile_attributes) not in our REST adapter.
+//   Our REST adapter covers list_user_factors (GET /users/{id}/factors) not in the Okta MCP.
+//   Our REST adapter is required for SSWS API-token deployments (MCP requires OAuth 2.0).
+// Integration: use-both
+// MCP-sourced tools (unique): delete_group, create_application, delete_application, activate_application,
+//   deactivate_application, full policy/policy_rule CRUD, get_user_profile_attributes, deactivate_user (separate)
+// REST-sourced tools (18): list_users, get_user, create_user, update_user, delete_user, user_lifecycle,
+//   reset_user_password, list_groups, get_group, create_group, add_user_to_group, remove_user_from_group,
+//   list_group_members, list_apps, get_app, assign_user_to_app, list_user_factors, get_system_logs
 //
 // Base URL: https://{yourOktaDomain} (caller supplies org domain, no trailing slash)
 // Auth: SSWS API token (legacy) or OAuth 2.0 Bearer token. SSWS is prepended automatically if token

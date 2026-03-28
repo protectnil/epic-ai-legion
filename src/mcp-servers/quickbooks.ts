@@ -4,8 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Intuit/QuickBooks MCP server was found on GitHub or npm.
+// Official MCP: https://github.com/intuit/quickbooks-online-mcp-server — transport: stdio, auth: OAuth2 refresh token
+// Published by intuit (Intuit's official GitHub org). Repo has only 2 commits as of 2026-03-28 — very new, low activity.
+// Vendor MCP covers: ~55 tools (Create/Delete/Get/Search/Update for Account, BillPayment, Bill, Customer, Employee,
+//   Estimate, Invoice, Item, JournalEntry, Purchase, Vendor — 11 entities × 5 ops). Does NOT meet the 6-month
+//   activity threshold (only 2 commits total); treat as use-rest-api until MCP is proven maintained.
+// Our adapter covers: 20 tools (core accounting operations).
+// Recommendation: use-rest-api — MCP server is official but has only 2 total commits with no activity history;
+//   does not meet the "actively maintained (commits within 6 months)" criterion. Reassess if MCP gains activity.
 //
 // Base URL: https://quickbooks.api.intuit.com/v3/company/{realmId}
 //   Sandbox: https://sandbox-quickbooks.api.intuit.com/v3/company/{realmId}

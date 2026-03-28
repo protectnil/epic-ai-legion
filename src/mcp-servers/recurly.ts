@@ -4,13 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03 — no official Recurly MCP server exists on GitHub or npm.
-// No official Recurly MCP server was found as of March 2026.
+// Official MCP: None found as of 2026-03-28 — no official Recurly MCP server exists on GitHub or npm.
+// Our adapter covers: 22 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP server found.
 //
 // Base URL: https://v3.recurly.com
 // Auth: HTTP Basic — API key as username, empty password: Basic base64({apiKey}:)
 // Docs: https://recurly.com/developers/api/v2021-02-25/
-// Rate limits: Not publicly documented; varies by plan. API version sent via Accept header.
+// Rate limits: Sandbox 400 req/min (all methods); Production 1,000 req/min (GET only).
+//   Rate-limit window is sliding 5 minutes. Exceeding returns HTTP 429.
+//   Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -596,7 +599,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async createAccount(args: Record<string, unknown>): Promise<ToolResult> {
@@ -619,7 +622,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async updateAccount(args: Record<string, unknown>): Promise<ToolResult> {
@@ -641,7 +644,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async closeAccount(args: Record<string, unknown>): Promise<ToolResult> {
@@ -657,7 +660,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { return { content: [{ type: 'text', text: `Account closed (HTTP ${response.status})` }], isError: false }; }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listSubscriptions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -682,7 +685,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listAccountSubscriptions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -715,7 +718,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async pauseSubscription(args: Record<string, unknown>): Promise<ToolResult> {
@@ -734,7 +737,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async resumeSubscription(args: Record<string, unknown>): Promise<ToolResult> {
@@ -751,7 +754,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listInvoices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -815,7 +818,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listCoupons(args: Record<string, unknown>): Promise<ToolResult> {
@@ -840,7 +843,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -865,7 +868,7 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listAccountBillingInfos(args: Record<string, unknown>): Promise<ToolResult> {
@@ -891,6 +894,6 @@ export class RecurlyMCPServer {
     }
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Recurly returned non-JSON response (HTTP ${response.status})`); }
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 }

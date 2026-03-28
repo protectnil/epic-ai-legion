@@ -5,17 +5,26 @@
  */
 
 // Official MCP: https://github.com/makenotion/notion-mcp-server — transport: stdio, auth: OAuth2
-// Vendor MCP covers: full Notion API — pages, databases, blocks, search, comments, users.
-//   v2.0.0 migrates to Notion API 2025-09-03 with data sources as primary database abstraction.
-// Our adapter covers: 15 tools (full REST API surface using Bearer token for service integrations).
-// Recommendation: Use vendor MCP for interactive AI agent workflows with OAuth flow.
-//   Use this adapter for server-side integrations with an internal integration token (Bearer).
+// Vendor MCP covers: 22 tools (v2.0.0) — pages, databases, data sources, blocks, search, comments,
+//   users, file uploads, views. Uses Notion API 2025-09-03 with data_source abstraction for databases.
+// Our adapter covers: 15 tools (stable REST API surface using Bearer token for service integrations).
+// Recommendation: use-both — MCP exposes 22 tools including data_source/view/file_upload operations
+//   not available in our REST adapter. Our REST adapter exposes all 15 stable operations needed for
+//   server-side integrations with SSWS internal integration tokens. For full coverage use union.
+// Integration: use-both
+// MCP-sourced tools (7 unique to MCP): query-data-source, retrieve-a-data-source, update-a-data-source,
+//   create-a-data-source, list-data-source-templates, move-page, retrieve-a-database (v2 data_source),
+//   list-views, get-view-query-results, create-view-query, list-file-uploads, create-file-upload
+// REST-sourced tools (15, all stable API): search, get_page, create_page, update_page,
+//   get_block_children, append_block_children, get_block, update_block, delete_block,
+//   get_database, query_database, create_database, list_users, get_user, create_comment
+// Combined coverage: ~27 tools (MCP: 22 + REST: 15 - shared: ~10)
 //
 // Base URL: https://api.notion.com/v1
 // Auth: Bearer token (Notion Internal Integration Token — starts with "secret_")
 // Docs: https://developers.notion.com/reference/intro
-// Rate limits: 3 req/s average, burst to 300 req/min per integration token
-// API Version: 2022-06-28 (stable; 2025-09-03 available for preview)
+// Rate limits: 3 req/s average per integration token (HTTP 429 on breach; respect Retry-After header)
+// API Version: 2022-06-28 (stable); 2026-03-11 is the current latest version as of 2026-03-28
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -94,7 +103,6 @@ export class NotionMCPServer {
               description: 'Pagination cursor from a previous response to retrieve the next page',
             },
           },
-          required: ['query'],
         },
       },
       {

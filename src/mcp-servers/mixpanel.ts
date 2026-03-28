@@ -4,16 +4,30 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official MCP server from the Mixpanel GitHub organization.
-// This adapter covers the full Mixpanel Ingestion API and Query API surface.
+// Official MCP: https://mcp.mixpanel.com (vendor-hosted) — transport: streamable-HTTP, auth: OAuth2 PKCE
+// Vendor MCP covers: 19 read/analytics tools (Run-Query, Get-Query-Schema, Get-Report, Create-Dashboard,
+//   List-Dashboards, Get-Dashboard, Get-Projects, Get-Events, Get-Property-Names, Get-Property-Values,
+//   Get-Event-Details, Get-Issues, Get-Lexicon-URL, Edit-Event, Edit-Property, Create-Tag, Rename-Tag,
+//   Delete-Tag, Dismiss-Issues, Get-User-Replays-Data). READ and ANALYTICS ONLY — no ingestion tools.
+// Our adapter covers: 15 tools (ingestion + query). Ingestion tools are not exposed by the vendor MCP.
+// Recommendation: use-both — MCP covers analytics/dashboard/lexicon; our REST adapter covers all
+//   ingestion endpoints (track_event, import_events, engage operations) that the MCP does not expose.
+// MCP-sourced tools (0 overlap with our tools): Run-Query, Get-Query-Schema, Get-Report,
+//   Create-Dashboard, List-Dashboards, Get-Dashboard, Get-Projects, Get-Events, Get-Property-Names,
+//   Get-Property-Values, Get-Event-Details, Get-Issues, Get-Lexicon-URL, Edit-Event, Edit-Property,
+//   Create-Tag, Rename-Tag, Delete-Tag, Dismiss-Issues, Get-User-Replays-Data
+// REST-sourced tools (15): track_event, import_events, set_user_profile, increment_user_property,
+//   append_user_property, union_user_property, remove_user_property, delete_user_profile,
+//   query_segmentation, query_funnel, query_retention, query_profiles, query_activity_stream,
+//   query_insights, query_jql
+// Combined coverage: 35 tools (MCP: 20 + REST: 15 — shared: 0)
 //
 // Base URL (ingestion): https://api.mixpanel.com  (EU: https://api-eu.mixpanel.com)
 // Base URL (query):     https://mixpanel.com/api/2.0
 // Auth: Ingestion events use project token in payload.
 //       Import + all Query API calls use HTTP Basic auth with service account credentials.
 // Docs: https://developer.mixpanel.com/reference/overview
-// Rate limits: Query API — 60 req/hr, max 5 concurrent. Ingestion — no documented hard limit.
+// Rate limits: Query API — 60 req/hr, max 5 concurrent. Ingestion — 2 GB/min or ~30k events/sec.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -643,12 +657,23 @@ export class MixpanelMCPServer {
   }
 
   private async queryProfiles(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string | number | undefined> = {
-      where: args.where as string | undefined,
-      session_id: args.session_id as string | undefined,
-      page: args.page as number | undefined,
-    };
-    return this.doQueryGet('engage', params);
+    // Query Profiles is POST per Mixpanel docs (developer.mixpanel.com/reference/engage-query)
+    const qs = new URLSearchParams({ project_id: this.projectId });
+    const url = `${this.analyticsBaseUrl}/engage?${qs.toString()}`;
+    const body: Record<string, unknown> = {};
+    if (args.where !== undefined) body.where = args.where;
+    if (args.session_id !== undefined) body.session_id = args.session_id;
+    if (args.page !== undefined) body.page = args.page;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: this.basicAuthHeader, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `Engage query error: HTTP ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async queryActivityStream(args: Record<string, unknown>): Promise<ToolResult> {

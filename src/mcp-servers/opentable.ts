@@ -4,13 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official OpenTable MCP server was found on GitHub. Community scrapers exist (Apify, Bright Data)
-// but do not originate from OpenTable Inc. and are not suitable for production partner integrations.
+// Official MCP: None found as of 2026-03-28 — no official OpenTable MCP server exists.
+//   Community scrapers exist (Apify, Bright Data) but do not originate from OpenTable Inc.
+//   and are not suitable for production partner integrations.
+// Our adapter covers: 15 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api — no official vendor MCP server exists.
 //
 // Base URL: https://platform.opentable.com/api/2
 // Auth: Bearer token (OAuth2 client credentials via dev.opentable.com partner program)
-// Docs: https://docs.opentable.com/
+// Docs: https://docs.opentable.com/ (partner-gated; requires approved API partner account)
+//       https://www.opentable.com/restaurant-solutions/api-partners/
 // Rate limits: Not publicly documented; partners subject to per-key throttles — contact partnersupport@opentable.com
 
 import { ToolDefinition, ToolResult } from './types.js';

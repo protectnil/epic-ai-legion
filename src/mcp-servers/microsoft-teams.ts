@@ -4,13 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/microsoft/EnterpriseMCP — transport: streamable-HTTP, auth: delegated OAuth2
-// The Microsoft EnterpriseMCP server exposes 3 tools (suggest_queries, get, list_properties) using
-// delegated permissions only and does not support write operations (send message, create channel, etc.).
-// Our adapter covers 18 tools with full Teams operations including messaging, chats, meetings,
-// members, tabs, and online meetings — including service-principal app-only authentication.
-// Recommendation: Use microsoft/EnterpriseMCP for interactive read scenarios.
-//   Use this adapter for automation and write operations.
+// Official MCP: https://github.com/microsoft/mcp (bap-microsoft/MCP-Platform) — transport: streamable-HTTP (REMOTE),
+//   auth: delegated OAuth2. Published by Microsoft (bap-microsoft org), actively maintained (2026).
+//   The bap-microsoft Teams MCP manages chats, channels, users, and messages via Graph API with
+//   server-side filtering, pagination, and token optimization. Exact tool count not publicly disclosed
+//   (private enterprise repo behind SSO). Assessed as 10+ tools based on description scope.
+//   The prior reference to "microsoft/EnterpriseMCP" (3 tools) is a different, older server — superseded.
+// Our adapter covers: 18 tools. Vendor MCP covers: ~10+ tools (estimated from description).
+// Recommendation: use-both — the bap-microsoft MCP requires enterprise SSO and delegated-only auth;
+//   our adapter covers write operations (create_channel, send messages, create_online_meeting,
+//   add_channel_member) and app-only service-principal flows not available in interactive delegated MCP.
+//   Use vendor MCP for interactive read scenarios with delegated user tokens.
 //
 // Base URL: https://graph.microsoft.com/v1.0
 // Auth: Bearer token (delegated user token via MSAL OAuth2 auth code flow)

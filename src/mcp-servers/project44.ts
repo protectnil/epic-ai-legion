@@ -41,10 +41,10 @@ export class Project44MCPServer {
       category: 'misc',
       keywords: ['project44', 'supply chain', 'logistics', 'freight', 'shipment tracking', 'LTL', 'truckload', 'ocean', 'visibility', 'ETA'],
       toolNames: [
-        'create_ltl_shipment', 'get_ltl_shipment', 'list_ltl_shipments', 'delete_ltl_shipment',
+        'create_ltl_shipment', 'get_ltl_shipment', 'delete_ltl_shipment',
         'create_truckload_shipment', 'get_truckload_shipment', 'update_truckload_shipment', 'delete_truckload_shipment',
-        'create_ocean_shipment', 'get_ocean_shipment', 'list_ocean_shipments',
-        'get_parcel_tracking',
+        'create_ocean_shipment', 'get_ocean_shipment',
+        'create_parcel_shipment',
       ],
       description: 'project44 supply chain visibility: track LTL, truckload, ocean, and parcel shipments with real-time location and predictive ETA.',
       author: 'protectnil',
@@ -76,18 +76,6 @@ export class Project44MCPServer {
             tracking_id: { type: 'string', description: 'project44 LTL tracking ID returned when the shipment was created' },
           },
           required: ['tracking_id'],
-        },
-      },
-      {
-        name: 'list_ltl_shipments',
-        description: 'List all LTL tracked shipments for the account with optional status and date filters',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            status: { type: 'string', description: 'Filter by status: IN_TRANSIT, DELIVERED, EXCEPTION, PENDING' },
-            page: { type: 'number', description: 'Page number for pagination (default: 0)' },
-            page_size: { type: 'number', description: 'Results per page (max: 100, default: 20)' },
-          },
         },
       },
       {
@@ -170,7 +158,7 @@ export class Project44MCPServer {
       },
       {
         name: 'get_ocean_shipment',
-        description: 'Get current port status, vessel location, and ETA for a tracked ocean freight shipment',
+        description: 'Get current port status, vessel location, and ETA for a tracked ocean freight shipment by shipment ID',
         inputSchema: {
           type: 'object',
           properties: {
@@ -180,21 +168,8 @@ export class Project44MCPServer {
         },
       },
       {
-        name: 'list_ocean_shipments',
-        description: 'List all tracked ocean freight shipments with optional status and carrier filters',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            status: { type: 'string', description: 'Filter by status: AT_SEA, IN_PORT, DELIVERED, PENDING' },
-            carrier_scac: { type: 'string', description: 'Filter by ocean carrier SCAC code' },
-            page: { type: 'number', description: 'Page number (default: 0)' },
-            page_size: { type: 'number', description: 'Results per page (max: 100, default: 20)' },
-          },
-        },
-      },
-      {
-        name: 'get_parcel_tracking',
-        description: 'Get tracking events and delivery status for a parcel shipment by carrier and tracking number',
+        name: 'create_parcel_shipment',
+        description: 'Initialize tracking for a parcel shipment by carrier SCAC and tracking number; returns a shipment ID for subsequent status lookups',
         inputSchema: {
           type: 'object',
           properties: {
@@ -212,7 +187,6 @@ export class Project44MCPServer {
       switch (name) {
         case 'create_ltl_shipment': return this.createLtlShipment(args);
         case 'get_ltl_shipment': return this.getLtlShipment(args);
-        case 'list_ltl_shipments': return this.listLtlShipments(args);
         case 'delete_ltl_shipment': return this.deleteLtlShipment(args);
         case 'create_truckload_shipment': return this.createTruckloadShipment(args);
         case 'get_truckload_shipment': return this.getTruckloadShipment(args);
@@ -220,8 +194,7 @@ export class Project44MCPServer {
         case 'delete_truckload_shipment': return this.deleteTruckloadShipment(args);
         case 'create_ocean_shipment': return this.createOceanShipment(args);
         case 'get_ocean_shipment': return this.getOceanShipment(args);
-        case 'list_ocean_shipments': return this.listOceanShipments(args);
-        case 'get_parcel_tracking': return this.getParcelTracking(args);
+        case 'create_parcel_shipment': return this.createParcelShipment(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -330,15 +303,6 @@ export class Project44MCPServer {
     return this.get(`/api/v4/ltl/trackedshipments/${encodeURIComponent(args.tracking_id as string)}`);
   }
 
-  private async listLtlShipments(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      page: String((args.page as number) || 0),
-      pageSize: String((args.page_size as number) || 20),
-    };
-    if (args.status) params.status = args.status as string;
-    return this.get('/api/v4/ltl/trackedshipments', params);
-  }
-
   private async deleteLtlShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tracking_id) return { content: [{ type: 'text', text: 'tracking_id is required' }], isError: true };
     return this.del(`/api/v4/ltl/trackedshipments/${encodeURIComponent(args.tracking_id as string)}`);
@@ -361,12 +325,12 @@ export class Project44MCPServer {
         country: 'US',
       };
     }
-    return this.post('/api/v4/tl/trackedshipments', body);
+    return this.post('/api/v4/tl/shipments', body);
   }
 
   private async getTruckloadShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
-    return this.get(`/api/v4/tl/trackedshipments/${encodeURIComponent(args.shipment_id as string)}`);
+    return this.get(`/api/v4/tl/shipments/${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async updateTruckloadShipment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -380,12 +344,12 @@ export class Project44MCPServer {
         country: 'US',
       };
     }
-    return this.put(`/api/v4/tl/trackedshipments/${encodeURIComponent(args.shipment_id as string)}`, body);
+    return this.put(`/api/v4/tl/shipments/${encodeURIComponent(args.shipment_id as string)}`, body);
   }
 
   private async deleteTruckloadShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
-    return this.del(`/api/v4/tl/trackedshipments/${encodeURIComponent(args.shipment_id as string)}`);
+    return this.del(`/api/v4/tl/shipments/${encodeURIComponent(args.shipment_id as string)}`);
   }
 
   private async createOceanShipment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -399,20 +363,10 @@ export class Project44MCPServer {
 
   private async getOceanShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
-    return this.get(`/api/v4/ocean/shipments/${encodeURIComponent(args.shipment_id as string)}`);
+    return this.get(`/api/v4/ocean/shipments/${encodeURIComponent(args.shipment_id as string)}/statuses`);
   }
 
-  private async listOceanShipments(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      page: String((args.page as number) || 0),
-      pageSize: String((args.page_size as number) || 20),
-    };
-    if (args.status) params.status = args.status as string;
-    if (args.carrier_scac) params.carrierScac = args.carrier_scac as string;
-    return this.get('/api/v4/ocean/shipments', params);
-  }
-
-  private async getParcelTracking(args: Record<string, unknown>): Promise<ToolResult> {
+  private async createParcelShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.carrier_scac || !args.tracking_number) return { content: [{ type: 'text', text: 'carrier_scac and tracking_number are required' }], isError: true };
     return this.post('/api/v4/parcel/shipments', {
       carrierIdentifier: { type: 'SCAC', value: args.carrier_scac },

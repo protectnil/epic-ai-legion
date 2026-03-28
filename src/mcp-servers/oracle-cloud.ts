@@ -4,11 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/oracle/mcp — transport: stdio, auth: OCI API signing key
-// The Oracle official MCP repo contains servers for Autonomous AI Database and Analytics Cloud.
-// It does NOT cover the full OCI control plane (compute, networking, storage, IAM).
-// Our adapter covers: 18 tools (compute, networking, storage, identity, monitoring).
-// Recommendation: Use the Oracle official MCP for database/analytics; use this adapter for infrastructure operations.
+// Official MCP: https://github.com/oracle/mcp — transport: stdio, auth: OCI API key (~/.oci/config)
+// Oracle publishes an official MCP repo (oracle/mcp) covering: Autonomous AI Database, Analytics Cloud,
+// and a generic OCI API MCP server (oracle.oci-api-mcp-server) via PyPI. The OCI API server covers
+// Cloud Guard, Compute, Storage, Identity, Logging, Monitoring (see oracle.com/mcp for full scope).
+// The oracle.oci-api-mcp-server tool count is not publicly enumerated in the README; scope is broad.
+// Our adapter covers: 18 tools focused on compute, networking, storage, identity, and monitoring.
+// Decision: use-both — Oracle official OCI MCP covers broader services (Cloud Guard, Logging, etc.)
+//   with native OCI SDK signing; our adapter handles infrastructure operations via bearer token.
+// Integration:
+//   MCP-sourced (prefer oracle.oci-api-mcp-server): cloud guard, logging, broader service coverage
+//   REST-sourced (this adapter): list_instances, get_instance, launch_instance, stop_instance,
+//     start_instance, terminate_instance, list_vcns, get_vcn, list_subnets, list_buckets,
+//     list_objects, get_object, list_compartments, get_compartment, list_users, get_user,
+//     list_alarms, list_metrics
 //
 // Base URL: https://{service}.{region}.oraclecloud.com (region-scoped, e.g. iaas.us-ashburn-1.oraclecloud.com)
 // Auth: OCI Signature Version 1 — RSA-SHA256 request signing using tenancy OCID, user OCID, and private key.

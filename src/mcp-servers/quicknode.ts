@@ -4,11 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official QuickNode MCP server was found. Community EVM MCP servers (e.g. github.com/JamesANZ/evm-mcp)
-// can target QuickNode endpoints but are not published by QuickNode.
+// Official MCP: https://github.com/quiknode-labs/qn-mcp — transport: stdio, auth: QUICKNODE_API_KEY env var
+// Published by quiknode-labs (QuickNode's official GitHub org). npm: @quicknode/mcp.
+// Vendor MCP covers: endpoint CRUD, chain lookup, usage analytics (by account, chain, endpoint),
+//   billing (invoices, payments), and security config (JWTs, IPs, domain masks, referrers).
+// Our adapter covers: 14 tools (endpoint CRUD, chains, metrics, logs, rate limits, tags).
+// Recommendation: use-both — MCP has unique tools (get-rpc-usage, get-billing-invoices,
+//   get-billing-payments, security config tools) not in our REST adapter. Our REST adapter has
+//   get_endpoint_logs, get_endpoint_rate_limits, update_endpoint_rate_limits, list_endpoint_tags,
+//   add_endpoint_tag not exposed by the MCP. Use MCP for usage/billing/security; REST for logs/rate-limits/tags.
 //
-// Base URL: https://api.quicknode.com (Console/Management API)
+// Base URL: https://api.quicknode.com (Admin/Console API)
 // Auth: x-api-key header with QuickNode API key (requires CONSOLE_REST permission)
 // Docs: https://www.quicknode.com/docs/admin-api
 // Rate limits: Configurable per-endpoint; 429 returned on excess
@@ -332,13 +338,13 @@ export class QuickNodeMCPServer {
   private async updateEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId) return { content: [{ type: 'text', text: 'endpointId is required' }], isError: true };
     const body: Record<string, unknown> = {};
-    if (args.name) body.name = args.name;
+    if (args.name) body.label = args.name;
     return this.patch(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}`, body);
   }
 
   private async deactivateEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.endpointId) return { content: [{ type: 'text', text: 'endpointId is required' }], isError: true };
-    return this.patch(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/status`, { status: 'inactive' });
+    return this.patch(`/v0/endpoints/${encodeURIComponent(args.endpointId as string)}/status`, { status: 'paused' });
   }
 
   private async activateEndpoint(args: Record<string, unknown>): Promise<ToolResult> {

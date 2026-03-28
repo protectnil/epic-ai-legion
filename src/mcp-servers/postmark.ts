@@ -5,8 +5,9 @@
  */
 
 // Official MCP: https://github.com/ActiveCampaign/postmark-mcp — transport: stdio, auth: Server Token env var
-// Our adapter covers: 14 tools (email, templates, bounces, suppressions, stats, servers). Vendor MCP covers: ~5 tools (send-focused).
-// Recommendation: Use this adapter for broader coverage including bounces, suppressions, and statistics.
+// Our adapter covers: 14 tools (email, templates, bounces, suppressions, stats, servers). Vendor MCP covers: 4 tools (sendEmail, sendEmailWithTemplate, listTemplates, getDeliveryStats).
+// MCP criterion check: maintained (last commit Mar 2026) ✓, official ✓, but only 4 tools (fails ≥10 criterion).
+// Recommendation: use-rest-api — vendor MCP fails the 10+ tools criterion. Our adapter covers all critical operations.
 //
 // Base URL: https://api.postmarkapp.com
 // Auth: X-Postmark-Server-Token header (per-server API token from Postmark dashboard)

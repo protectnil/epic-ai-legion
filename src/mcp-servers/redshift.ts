@@ -4,13 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/awslabs/mcp/tree/main/src/redshift-mcp-server
-// AWS Labs Python-based MCP server. Requires Python runtime + AWS SDK installation.
-// Our adapter provides the TypeScript/self-hosted path. Uses the Redshift Data API
-// (HTTP POST to regional endpoint) with caller-supplied SigV4 signed headers.
-// Transport: stdio (vendor MCP) / HTTP POST (this adapter)
-// Recommendation: Use the vendor MCP for full coverage in Python environments.
-//                 Use this adapter for TypeScript/Node environments or air-gapped deployments.
+// Official MCP: https://github.com/awslabs/mcp/tree/main/src/redshift-mcp-server — transport: stdio, auth: AWS IAM
+// AWS Labs Python-based MCP server (awslabs.redshift-mcp-server on PyPI). Actively maintained as of 2026.
+// Vendor MCP covers: 6 tools (list_clusters, list_databases, list_schemas, list_tables, list_columns, execute_query)
+// Our adapter covers: 11 tools (full Redshift Data API surface)
+// Recommendation: use-both — each side has unique tools the other lacks.
+//
+// Integration: use-both
+// MCP-sourced tools (2): [list_clusters, list_columns]
+//   list_clusters — discovers all clusters/workgroups; no Data API equivalent
+//   list_columns  — lists table columns; our adapter uses describe_table instead
+// REST-sourced tools (9): [list_databases, list_schemas, list_tables, describe_table,
+//   execute_statement, batch_execute_statement, describe_statement, get_statement_result,
+//   get_statement_result_v2, list_statements, cancel_statement]
+//   NOTE: list_databases/list_schemas/list_tables are shared (MCP + REST); REST adapter covers them.
+//   MCP execute_query maps to execute_statement + describe_statement + get_statement_result combined.
+// Combined coverage: ~13 logical operations (MCP: 6 + REST: 11 — shared: 4)
 //
 // Base URL: https://redshift-data.{region}.amazonaws.com
 // Auth: AWS Signature Version 4 (SigV4). The adapter accepts a signRequest callback
@@ -56,6 +65,7 @@ export class RedshiftMCPServer {
         'execute_statement', 'batch_execute_statement', 'describe_statement',
         'get_statement_result', 'get_statement_result_v2',
         'list_statements', 'cancel_statement',
+        'list_columns',
       ],
       description: 'AWS Redshift Data API: execute SQL, inspect schemas and tables, manage statement lifecycle on provisioned clusters and Redshift Serverless workgroups.',
       author: 'protectnil',
@@ -233,6 +243,52 @@ export class RedshiftMCPServer {
             },
           },
           required: ['Database'],
+        },
+      },
+      {
+        name: 'list_columns',
+        description: 'List all columns in a specific Redshift table including name, data type, and nullable flag',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            Database: {
+              type: 'string',
+              description: 'Name of the database containing the table.',
+            },
+            Table: {
+              type: 'string',
+              description: 'Name of the table whose columns to list.',
+            },
+            Schema: {
+              type: 'string',
+              description: 'Schema containing the table (default: public).',
+            },
+            ClusterIdentifier: {
+              type: 'string',
+              description: 'Provisioned cluster identifier.',
+            },
+            WorkgroupName: {
+              type: 'string',
+              description: 'Serverless workgroup name.',
+            },
+            SecretArn: {
+              type: 'string',
+              description: 'ARN of the Secrets Manager secret.',
+            },
+            DbUser: {
+              type: 'string',
+              description: 'Database user name for temporary credentials.',
+            },
+            MaxResults: {
+              type: 'number',
+              description: 'Maximum number of columns to return.',
+            },
+            NextToken: {
+              type: 'string',
+              description: 'Pagination token from a previous response.',
+            },
+          },
+          required: ['Database', 'Table'],
         },
       },
       {
@@ -434,6 +490,9 @@ export class RedshiftMCPServer {
         case 'list_tables':
           return await this.post('RedshiftData.ListTables', this.buildCommonBody(args, ['Database', 'SchemaPattern', 'TablePattern']));
         case 'describe_table':
+          return await this.post('RedshiftData.DescribeTable', this.buildCommonBody(args, ['Database', 'Table', 'Schema']));
+        case 'list_columns':
+          // list_columns uses DescribeTable — returns column-level metadata for a table
           return await this.post('RedshiftData.DescribeTable', this.buildCommonBody(args, ['Database', 'Table', 'Schema']));
         case 'execute_statement':
           return await this.post('RedshiftData.ExecuteStatement', this.buildStatementBody(args));

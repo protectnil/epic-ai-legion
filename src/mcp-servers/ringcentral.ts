@@ -4,14 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official RingCentral MCP server was found on GitHub. Community implementations exist but
-// are not officially maintained by RingCentral.
+// Official MCP: None found as of 2026-03-28
+// RingCentral App Connect (appconnect.labs.ringcentral.com/mcp/) is a CRM integration bridge
+// (alpha), not a RingCentral platform API MCP server — it exposes only CRM/call-log bridge tools,
+// not the full RingEX API surface. No official vendor MCP for the RingEX REST API found.
+// Our adapter covers: 20 tools. Vendor MCP covers: 0 tools (none found for RingEX API).
+// Recommendation: use-rest-api
 //
 // Base URL: https://platform.ringcentral.com/restapi/v1.0
-// Auth: OAuth2 client credentials — POST /restapi/oauth/token with Basic auth (clientId:clientSecret)
+// Auth: OAuth2 client credentials — POST https://platform.ringcentral.com/restapi/oauth/token
+//   with Basic auth header (Base64 clientId:clientSecret), body: grant_type=client_credentials
 // Docs: https://developers.ringcentral.com/api-reference
-// Rate limits: Varies by endpoint group; heavy usage APIs throttled per plan. 429 on exceeded limits.
+// Rate limits: Varies by endpoint group; plan-dependent. 429 on exceeded limits.
+// NOTE: send_fax uses multipart/form-data (not JSON) per RingCentral Fax API docs.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -768,9 +773,24 @@ export class RingCentralMCPServer {
     if (!args.to_numbers) return { content: [{ type: 'text', text: 'to_numbers is required' }], isError: true };
     const toList = (args.to_numbers as string).split(',').map(n => ({ phoneNumber: n.trim() }));
     const extId = args.extension_id as string | undefined;
-    const body: Record<string, unknown> = { to: toList };
-    if (args.cover_page_text) body.coverPageText = args.cover_page_text;
-    return this.apiPost(`${this.extPath(extId)}/fax`, body);
+    // Fax API requires multipart/form-data per RingCentral docs
+    const jsonPart: Record<string, unknown> = { to: toList };
+    if (args.cover_page_text) jsonPart.coverPageText = args.cover_page_text;
+    const formData = new FormData();
+    formData.append('json', new Blob([JSON.stringify(jsonPart)], { type: 'application/json' }), 'request.json');
+    const headers = await this.authHeaders();
+    // Remove Content-Type to let fetch set multipart boundary automatically
+    delete (headers as Record<string, string>)['Content-Type'];
+    const response = await fetch(`${this.baseUrl}${this.extPath(extId)}/fax`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async listContacts(args: Record<string, unknown>): Promise<ToolResult> {

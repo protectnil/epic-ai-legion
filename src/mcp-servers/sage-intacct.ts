@@ -4,12 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://developer.sage.com/intacct/mcps/intacct-mcp/latest/intacct-mcp-server
-// Sage ships an official Intacct MCP server (v1.0) via their Developer Portal. That server
-// requires OAuth 2.0 and Sage's hosted OAuth infrastructure (not air-gap compatible).
-// Our adapter covers: 12 tools (core finance operations). Vendor MCP covers the REST API.
-// Recommendation: Use vendor MCP for OAuth environments. Use this adapter for server-to-server
-// XML API integrations (the primary integration pattern for Sage Intacct).
+// Official MCP: https://mcp.intacct.com/mcp — transport: streamable-HTTP, auth: OAuth 2.0
+// Sage ships an official Intacct MCP server (v1.0, launched Nov 2025) via their Developer Portal.
+// Docs: https://developer.sage.com/intacct/mcps/intacct-mcp/latest/intacct-mcp-server
+// That server is built on the Sage Intacct REST API and requires Sage-hosted OAuth infrastructure
+// (not air-gap compatible). Tool count not publicly enumerated; covers the REST API surface.
+// Our adapter covers: 12 tools (core finance operations) using the XML API (legacy SOAP-over-HTTP).
+// Recommendation: use-both — vendor MCP uses REST API (OAuth environments); our adapter uses the
+// XML API (server-to-server, air-gap, existing Sender ID credentials). Each integration path
+// exposes different capabilities; the XML API is the primary pattern for ERP-level integrations.
 //
 // Endpoint: POST https://api.intacct.com/ia/xml/xmlgw.phtml (session acquisition gateway)
 // Auth flow: senderId/senderPassword + companyId/userId/userPassword → getAPISession →

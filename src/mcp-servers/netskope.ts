@@ -4,11 +4,29 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Netskope MCP server was found on GitHub or npm.
+// Official MCP: https://mcp-preview.goskope.com — transport: streamable-HTTP + SSE, auth: Bearer token
+// Vendor MCP covers: 80 tools (events search, incidents, policy/URL lists, CCI/apps, users, IPsec, DNS, JQL helpers).
+// Our adapter covers: 14 tools (event data queries, users, clients, apps, policies, alerts).
+// Recommendation: use-both — MCP has tools not in our REST adapter (URL list CRUD, CCI app info, deploy_policy,
+//   IPsec tunnel management, DNS security profile management, JQL query helpers, UBA/incident forensics,
+//   search_epdlp_events, search_clientstatus_events); our REST adapter uses /api/v2/events/data/* endpoints
+//   for direct time-range event queries which map differently from MCP JQL-based search tools.
+//   MCP is currently in PREVIEW (experimental); not recommended for production until GA (expected H1 2026).
+//   Use this REST adapter as the production integration until Netskope MCP reaches GA.
+// MCP-sourced tools (representative, 80 total): create_url_list, list_url_lists, get_url_list,
+//   update_url_list, delete_url_list, deploy_policy, get_cci_app_info, get_user_uci_impact,
+//   update_incident_status, get_dlp_incident_forensics, get_uba_user_data, get_uba_anomalies,
+//   search_audit_events, search_alert_events, search_application_events, search_incident_events,
+//   search_network_events, search_page_events, search_clientstatus_events, search_epdlp_events, and 60+ more.
+// REST-sourced tools (14): list_alerts, get_alert, list_events, list_page_events, list_network_events,
+//   list_audit_events, list_application_events, list_infrastructure_events, list_users, get_user,
+//   list_clients, list_applications, list_policies, search_events
+// MCP maintained: yes — preview announced 2025, updated through March 2026.
+// MCP official: yes — hosted by Netskope at goskope.com, announced in Netskope press releases.
 //
 // Base URL: https://<tenant-name>.goskope.com — tenant hostname required, set via baseUrl config
-// Auth: API token in Netskope-Api-Token header (generate in Settings > Administration > Administrators & Roles)
+// Auth: API token in Netskope-Api-Token header (confirmed correct for REST API v2; verified via
+//       Google Chronicle integration docs and Netskope community curl examples)
 // Docs: https://docs.netskope.com/en/rest-api-v2-overview-312207/
 //       https://docs.netskope.com/en/rest-api/
 // Rate limits: Not publicly documented for REST API v2; Next Gen API Data Protection has per-endpoint limits

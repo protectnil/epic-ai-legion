@@ -4,14 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/railwayapp/railway-mcp-server — transport: stdio, auth: API token
-// Our adapter covers: 14 tools (core operations). Vendor MCP covers the same Railway GraphQL API surface.
-// Recommendation: Use vendor MCP for stdio deployments. Use this adapter for air-gapped or HTTP deployments.
+// Official MCP: https://github.com/railwayapp/railway-mcp-server — transport: stdio, auth: Railway CLI token
+// Published by railwayapp (Railway's official GitHub org). npm: @railway/mcp-server. Actively maintained (47+ commits, March 2026).
+// Integration: use-both
+// MCP-sourced tools (11): check-railway-status, list-projects, create-project-and-link, list-services,
+//   link-service, deploy, deploy-template, create-environment, link-environment, list-variables, set-variables
+// REST-sourced tools (15): list_projects, get_project, create_project, delete_project, list_environments,
+//   create_environment, delete_environment, list_services, create_service, delete_service, list_deployments,
+//   redeploy_service, restart_service, upsert_variables, list_variables
+// Combined coverage: 26 unique tools (MCP has deploy-template, link-service, link-environment, create-project-and-link
+//   not in our REST adapter; REST adapter has get_project, delete_project, delete_environment, delete_service,
+//   list_deployments, redeploy_service, restart_service not in the MCP).
 //
 // Base URL: https://backboard.railway.com/graphql/v2  (all calls are POST to this single endpoint)
 // Auth: Bearer token — personal API token from Railway dashboard Settings → Tokens
 // Docs: https://docs.railway.com/integrations/api
-// Rate limits: 100 req/hr (Free), 1,000 req/hr (Hobby), 10,000 req/hr (Pro), custom (Enterprise)
+// Rate limits: 10 RPS / 100 RPH (Free), 10 RPS / 1,000 RPH (Hobby), 50 RPS / 10,000 RPH (Pro), custom (Enterprise)
 
 import { ToolDefinition, ToolResult } from './types.js';
 

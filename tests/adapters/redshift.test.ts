@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { RedshiftMCPServer } from '../../src/mcp-servers/redshift.js';
 
 describe('RedshiftMCPServer', () => {
-  const adapter = new RedshiftMCPServer({ region: 'us-east-1', signRequest: {} });
+  const adapter = new RedshiftMCPServer({
+    region: 'us-east-1',
+    signRequest: async (_target, _body) => ({ 'X-Amz-Date': '20260101T000000Z' }),
+  });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -4,34 +4,33 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/rocketsciencegg/rippling-mcp-server — transport: stdio, auth: OAuth2
-// Also: https://github.com/bifrost-mcp/rippling-mcp (community, 18 tools)
-// Our adapter covers: 16 tools (employees, departments, payroll, leave, groups). Vendor MCP: ~18 tools.
-// Recommendation: Use vendor MCP for maximum coverage. Use this adapter for air-gapped deployments.
+// Official MCP: None found as of 2026-03-28
+// rocketsciencegg/rippling-mcp-server is a third-party adapter (Rocket Science Group), NOT
+// published by Rippling (the vendor). bifrost-mcp/rippling-mcp is also community-built.
+// Neither qualifies as an official vendor MCP. No Rippling-published MCP server found.
+// Our adapter covers: 16 tools. Vendor MCP covers: 0 (no official vendor MCP).
+// Recommendation: use-rest-api
 //
 // Base URL: https://rest.ripplingapis.com (primary REST API)
-// Auth: OAuth2 client credentials — POST https://api.rippling.com/api/o/token/
+// Auth: Bearer token — static API token generated in Rippling > Tools > Developer > API Tokens.
+//   Tokens are long-lived (expire after 30 days of inactivity). Pass as Authorization: Bearer {token}.
+//   NOT OAuth2 client credentials — Rippling's REST API v1 uses static bearer tokens only.
 // Docs: https://developer.rippling.com/documentation/rest-api
 // Rate limits: Not publicly documented; standard 429 responses on limit exceeded
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface RipplingConfig {
-  clientId: string;
-  clientSecret: string;
+  apiToken: string;
   baseUrl?: string;
 }
 
 export class RipplingMCPServer {
-  private readonly clientId: string;
-  private readonly clientSecret: string;
+  private readonly apiToken: string;
   private readonly baseUrl: string;
-  private bearerToken: string | null = null;
-  private tokenExpiry: number = 0;
 
   constructor(config: RipplingConfig) {
-    this.clientId = config.clientId;
-    this.clientSecret = config.clientSecret;
+    this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://rest.ripplingapis.com';
   }
 
@@ -368,32 +367,9 @@ export class RipplingMCPServer {
     }
   }
 
-  private async getOrRefreshToken(): Promise<string> {
-    const now = Date.now();
-    if (this.bearerToken && this.tokenExpiry > now) {
-      return this.bearerToken;
-    }
-    const response = await fetch('https://api.rippling.com/api/o/token/', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'grant_type=client_credentials',
-    });
-    if (!response.ok) {
-      throw new Error(`OAuth2 token request failed: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json() as { access_token: string; expires_in: number };
-    this.bearerToken = data.access_token;
-    this.tokenExpiry = now + (data.expires_in - 60) * 1000;
-    return this.bearerToken;
-  }
-
-  private async authHeaders(): Promise<Record<string, string>> {
-    const token = await this.getOrRefreshToken();
+  private authHeaders(): Record<string, string> {
     return {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${this.apiToken}`,
       'Content-Type': 'application/json',
     };
   }
@@ -406,7 +382,7 @@ export class RipplingMCPServer {
   }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const headers = await this.authHeaders();
+    const headers = this.authHeaders();
     const response = await fetch(`${this.baseUrl}${path}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };

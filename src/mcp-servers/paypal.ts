@@ -5,8 +5,23 @@
  */
 
 // Official MCP: https://github.com/paypal/paypal-mcp-server — transport: stdio, auth: OAuth2 access token
-// Our adapter covers: 20 tools (core commerce operations). Vendor MCP covers: 25+ tools (full API).
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// Our adapter covers: 29 tools. Vendor MCP covers: 30 tools.
+// Recommendation: use-both — our adapter has capture_order and authorize_order not in vendor MCP;
+// vendor MCP has update_plan and update_subscription not covered by our adapter.
+//
+// Integration: use-both
+// MCP-sourced tools (route through MCP): update_plan, update_subscription
+// REST-sourced tools (this adapter): create_order, get_order, capture_order, authorize_order,
+//   list_transactions, create_invoice, get_invoice, send_invoice, send_invoice_reminder,
+//   generate_invoice_qr_code, list_invoices, cancel_invoice, get_dispute, list_disputes,
+//   accept_dispute_claim, create_refund, get_refund, create_product, list_products, get_product,
+//   update_product, create_subscription_plan, list_subscription_plans, get_subscription_plan,
+//   create_subscription, get_subscription, cancel_subscription, create_shipment_tracking,
+//   get_shipment_tracking
+// Shared (route MCP-first): create_order, get_order, create_refund, get_refund, list_disputes,
+//   get_dispute, accept_dispute_claim, create_product, list_products, update_product,
+//   create_subscription_plan, list_subscription_plans, create_subscription, cancel_subscription,
+//   list_transactions, send_invoice, create_invoice, list_invoices, get_invoice
 //
 // Base URL: https://api-m.paypal.com
 // Auth: OAuth2 client credentials — POST /v1/oauth2/token with Basic auth (clientId:clientSecret)
@@ -44,9 +59,11 @@ export class PayPalMCPServer {
       toolNames: [
         'create_order', 'get_order', 'capture_order', 'authorize_order',
         'list_transactions',
-        'create_invoice', 'get_invoice', 'send_invoice', 'list_invoices', 'cancel_invoice',
+        'create_invoice', 'get_invoice', 'send_invoice', 'send_invoice_reminder',
+        'generate_invoice_qr_code', 'list_invoices', 'cancel_invoice',
         'get_dispute', 'list_disputes', 'accept_dispute_claim',
         'create_refund', 'get_refund',
+        'create_shipment_tracking', 'get_shipment_tracking',
         'create_product', 'list_products', 'get_product', 'update_product',
         'create_subscription_plan', 'list_subscription_plans', 'get_subscription_plan',
         'create_subscription', 'get_subscription', 'cancel_subscription',
@@ -231,6 +248,54 @@ export class PayPalMCPServer {
         },
       },
       {
+        name: 'send_invoice_reminder',
+        description: 'Send a payment reminder email for a previously sent PayPal invoice to the recipient',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            invoice_id: {
+              type: 'string',
+              description: 'PayPal invoice ID to send the reminder for',
+            },
+            subject: {
+              type: 'string',
+              description: 'Optional subject line of the reminder email',
+            },
+            note: {
+              type: 'string',
+              description: 'Optional note to include in the reminder email',
+            },
+            send_to_recipient: {
+              type: 'boolean',
+              description: 'Whether to send the reminder to the invoice recipient (default: true)',
+            },
+          },
+          required: ['invoice_id'],
+        },
+      },
+      {
+        name: 'generate_invoice_qr_code',
+        description: 'Generate a QR code PNG image (Base64-encoded) for a sent PayPal invoice to enable mobile payment',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            invoice_id: {
+              type: 'string',
+              description: 'PayPal invoice ID to generate the QR code for (must be in SENT state)',
+            },
+            width: {
+              type: 'number',
+              description: 'Width of the QR code image in pixels (default: 400, max: 500)',
+            },
+            height: {
+              type: 'number',
+              description: 'Height of the QR code image in pixels (default: 400, max: 500)',
+            },
+          },
+          required: ['invoice_id'],
+        },
+      },
+      {
         name: 'list_invoices',
         description: 'List PayPal invoices with optional filtering by status, date range, and pagination',
         inputSchema: {
@@ -370,6 +435,54 @@ export class PayPalMCPServer {
             },
           },
           required: ['refund_id'],
+        },
+      },
+      {
+        name: 'create_shipment_tracking',
+        description: 'Add shipment tracking information to a PayPal transaction by posting carrier and tracking number',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            transaction_id: {
+              type: 'string',
+              description: 'PayPal transaction ID to attach tracking information to',
+            },
+            tracking_number: {
+              type: 'string',
+              description: 'Carrier-assigned shipment tracking number',
+            },
+            status: {
+              type: 'string',
+              description: 'Shipment status: SHIPPED, ON_THE_WAY, DELIVERED, CANCELLED',
+            },
+            carrier: {
+              type: 'string',
+              description: 'Carrier code (e.g. FEDEX, UPS, USPS, DHL). Use OTHER if carrier not listed.',
+            },
+            carrier_name_other: {
+              type: 'string',
+              description: 'Carrier name when carrier is set to OTHER',
+            },
+          },
+          required: ['transaction_id', 'status'],
+        },
+      },
+      {
+        name: 'get_shipment_tracking',
+        description: 'Retrieve shipment tracking details for a PayPal transaction by transaction ID and tracking number',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            transaction_id: {
+              type: 'string',
+              description: 'PayPal transaction ID',
+            },
+            tracking_number: {
+              type: 'string',
+              description: 'The shipment tracking number',
+            },
+          },
+          required: ['transaction_id', 'tracking_number'],
         },
       },
       {
@@ -618,6 +731,10 @@ export class PayPalMCPServer {
           return await this.getInvoice(args);
         case 'send_invoice':
           return await this.sendInvoice(args);
+        case 'send_invoice_reminder':
+          return await this.sendInvoiceReminder(args);
+        case 'generate_invoice_qr_code':
+          return await this.generateInvoiceQrCode(args);
         case 'list_invoices':
           return await this.listInvoices(args);
         case 'cancel_invoice':
@@ -632,6 +749,10 @@ export class PayPalMCPServer {
           return await this.createRefund(args);
         case 'get_refund':
           return await this.getRefund(args);
+        case 'create_shipment_tracking':
+          return await this.createShipmentTracking(args);
+        case 'get_shipment_tracking':
+          return await this.getShipmentTracking(args);
         case 'create_product':
           return await this.createProduct(args);
         case 'list_products':
@@ -842,6 +963,42 @@ export class PayPalMCPServer {
     return { content: [{ type: 'text', text: text || '{"status":"sent"}' }], isError: false };
   }
 
+  private async sendInvoiceReminder(args: Record<string, unknown>): Promise<ToolResult> {
+    const headers = await this.authHeaders();
+    const notification: Record<string, unknown> = { send_to_recipient: args.send_to_recipient !== false };
+    if (args.subject) notification.subject = args.subject;
+    if (args.note) notification.note = args.note;
+    const body = { notification };
+    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/remind`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const text = await response.text();
+    return { content: [{ type: 'text', text: text || '{"status":"reminder_sent"}' }], isError: false };
+  }
+
+  private async generateInvoiceQrCode(args: Record<string, unknown>): Promise<ToolResult> {
+    const headers = await this.authHeaders();
+    const body: Record<string, unknown> = {
+      width: (args.width as number) ?? 400,
+      height: (args.height as number) ?? 400,
+    };
+    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/generate-qr-code`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
   private async listInvoices(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
     const params = new URLSearchParams();
@@ -940,6 +1097,40 @@ export class PayPalMCPServer {
   private async getRefund(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
     const response = await fetch(`${this.baseUrl}/v2/payments/refunds/${encodeURIComponent(args.refund_id as string)}`, { headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  // ── Shipment Tracking ─────────────────────────────────────────────────────
+
+  private async createShipmentTracking(args: Record<string, unknown>): Promise<ToolResult> {
+    const headers = await this.authHeaders();
+    const tracker: Record<string, unknown> = {
+      transaction_id: args.transaction_id,
+      status: args.status,
+    };
+    if (args.tracking_number) tracker.tracking_number = args.tracking_number;
+    if (args.carrier) tracker.carrier = args.carrier;
+    if (args.carrier_name_other) tracker.carrier_name_other = args.carrier_name_other;
+    const response = await fetch(`${this.baseUrl}/v1/shipping/trackers-batch`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ trackers: [tracker] }),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async getShipmentTracking(args: Record<string, unknown>): Promise<ToolResult> {
+    const headers = await this.authHeaders();
+    const trackerId = `${encodeURIComponent(args.transaction_id as string)}-${encodeURIComponent(args.tracking_number as string)}`;
+    const response = await fetch(`${this.baseUrl}/v1/shipping/trackers/${trackerId}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

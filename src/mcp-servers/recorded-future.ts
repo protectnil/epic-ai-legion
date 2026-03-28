@@ -4,12 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03 — no official Recorded Future MCP server exists on GitHub or npm.
-// No official Recorded Future MCP server was found as of March 2026.
+// Official MCP: None found as of 2026-03-28 — no official Recorded Future MCP server exists on GitHub or npm.
 //
-// Base URL: https://api.recordedfuture.com/v2
-// Auth: API token header — X-RFToken: {token} on all requests
-// Docs: https://docs.recordedfuture.com  (requires active subscription)
+// Recorded Future exposes multiple distinct API surfaces. This adapter covers:
+//   Connect API v2  (base: https://api.recordedfuture.com/v2) — IOC enrichment: IP, domain, hash, URL, vulnerability, malware
+//   Alert API       (base: https://api.recordedfuture.com/alert) — triggered alerts (v2/search, v2/{id})
+//   Playbook Alert API (base: https://api.recordedfuture.com/playbook-alert) — structured priority intelligence alerts
+//   Threat Actor lookup is in the separate Threat API (https://api.recordedfuture.com/threat) — see search_threat_actors note.
+//
+// Our adapter covers: 15 tools
+// Recommendation: use-rest-api (no vendor MCP exists)
+//
+// Base URL: https://api.recordedfuture.com/v2  (Connect API — IOC enrichment)
+// Auth: API token header — X-RFToken: {token} on ALL requests across all RF API surfaces
+// Docs: https://api.recordedfuture.com/ (API index), https://docs.recordedfuture.com (subscription required)
 // Rate limits: Varies by subscription tier; not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -22,6 +30,9 @@ interface RecordedFutureConfig {
 export class RecordedFutureMCPServer {
   private readonly apiToken: string;
   private readonly baseUrl: string;
+  // Alert API and Playbook Alert API have separate base URLs from the Connect API
+  private readonly alertBaseUrl = 'https://api.recordedfuture.com/alert';
+  private readonly playbookAlertBaseUrl = 'https://api.recordedfuture.com/playbook-alert';
 
   constructor(config: RecordedFutureConfig) {
     this.apiToken = config.apiToken;
@@ -65,7 +76,7 @@ export class RecordedFutureMCPServer {
     return [
       {
         name: 'search_indicators',
-        description: 'Free-text search across all threat indicator types (IP, domain, hash, URL, CVE) in Recorded Future',
+        description: 'Free-text search for threat indicators of a specific type (IP, domain, hash, URL, CVE) in Recorded Future',
         inputSchema: {
           type: 'object',
           properties: {
@@ -75,14 +86,14 @@ export class RecordedFutureMCPServer {
             },
             indicator_type: {
               type: 'string',
-              description: 'Narrow results to one indicator type: "ip", "domain", "hash", "url", "vulnerability" (default: searches all types)',
+              description: 'Required indicator type to search: "ip", "domain", "hash", "url", or "vulnerability"',
             },
             limit: {
               type: 'number',
               description: 'Maximum number of results to return (default: 50)',
             },
           },
-          required: ['query'],
+          required: ['query', 'indicator_type'],
         },
       },
       {
@@ -385,7 +396,10 @@ export class RecordedFutureMCPServer {
   private async searchIndicators(args: Record<string, unknown>): Promise<ToolResult> {
     const query = args.query as string;
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
-    const indicatorType = (args.indicator_type as string) ?? 'ip';
+    const indicatorType = args.indicator_type as string | undefined;
+    if (!indicatorType) {
+      return { content: [{ type: 'text', text: 'indicator_type is required: "ip", "domain", "hash", "url", or "vulnerability"' }], isError: true };
+    }
     const params = new URLSearchParams({ freetext: query });
     if (args.limit) params.set('limit', String(args.limit));
     const response = await fetch(`${this.baseUrl}/${encodeURIComponent(indicatorType)}/search?${params.toString()}`, {
@@ -436,12 +450,14 @@ export class RecordedFutureMCPServer {
   }
 
   private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
+    // Alert API is at https://api.recordedfuture.com/alert — separate from Connect API v2
+    // Endpoint: GET /v2/search (search for alerts)
     const params = new URLSearchParams();
     if (args.limit) params.set('limit', String(args.limit));
     if (args.offset) params.set('offset', String(args.offset));
     if (args.triggered) params.set('triggered', args.triggered as string);
     if (args.status) params.set('status', args.status as string);
-    const response = await fetch(`${this.baseUrl}/alerts?${params.toString()}`, { headers: this.headers });
+    const response = await fetch(`${this.alertBaseUrl}/v2/search?${params.toString()}`, { headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {
@@ -451,9 +467,10 @@ export class RecordedFutureMCPServer {
   }
 
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
+    // Alert API: GET /v2/{alert_id} at https://api.recordedfuture.com/alert
     const alertId = args.alert_id as string;
     if (!alertId) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/alerts/${encodeURIComponent(alertId)}`, { headers: this.headers });
+    const response = await fetch(`${this.alertBaseUrl}/v2/${encodeURIComponent(alertId)}`, { headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {
@@ -463,14 +480,17 @@ export class RecordedFutureMCPServer {
   }
 
   private async searchThreatActors(args: Record<string, unknown>): Promise<ToolResult> {
+    // NOTE: Threat actors are NOT in Connect API v2 (https://api.recordedfuture.com/v2).
+    // The Recorded Future "Threat API" (https://api.recordedfuture.com/threat) handles threat actor search.
+    // Exact endpoint path could not be verified from public docs (subscription required).
+    // Using GET /threatactor/search as best-effort based on RF's consistent GET-for-search pattern.
+    // UNVERIFIED: path /threatactor/search on the Threat API base URL.
     const query = args.query as string;
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
-    const body: Record<string, unknown> = { freetext: query };
-    if (args.limit) body.limit = args.limit;
-    const response = await fetch(`${this.baseUrl}/threatactor/search`, {
-      method: 'POST',
+    const params = new URLSearchParams({ freetext: query });
+    if (args.limit) params.set('limit', String(args.limit));
+    const response = await fetch(`${this.baseUrl}/threatactor/search?${params.toString()}`, {
       headers: this.headers,
-      body: JSON.stringify(body),
     });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
@@ -495,12 +515,10 @@ export class RecordedFutureMCPServer {
   private async searchMalware(args: Record<string, unknown>): Promise<ToolResult> {
     const query = args.query as string;
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
-    const body: Record<string, unknown> = { freetext: query };
-    if (args.limit) body.limit = args.limit;
-    const response = await fetch(`${this.baseUrl}/malware/search`, {
-      method: 'POST',
+    const params = new URLSearchParams({ freetext: query });
+    if (args.limit) params.set('limit', String(args.limit));
+    const response = await fetch(`${this.baseUrl}/malware/search?${params.toString()}`, {
       headers: this.headers,
-      body: JSON.stringify(body),
     });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
@@ -523,12 +541,17 @@ export class RecordedFutureMCPServer {
   }
 
   private async listPlaybookAlerts(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.limit) params.set('limit', String(args.limit));
-    if (args.offset) params.set('offset', String(args.offset));
-    if (args.status) params.set('status', args.status as string);
-    if (args.category) params.set('category', args.category as string);
-    const response = await fetch(`${this.baseUrl}/playbook-alerts?${params.toString()}`, { headers: this.headers });
+    // Playbook Alert API: POST /search at https://api.recordedfuture.com/playbook-alert
+    const body: Record<string, unknown> = {};
+    if (args.limit) body.limit = args.limit;
+    if (args.offset) body.offset = args.offset;
+    if (args.status) body.status = args.status;
+    if (args.category) body.category = args.category;
+    const response = await fetch(`${this.playbookAlertBaseUrl}/search`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {
@@ -538,9 +561,10 @@ export class RecordedFutureMCPServer {
   }
 
   private async getPlaybookAlert(args: Record<string, unknown>): Promise<ToolResult> {
+    // Playbook Alert API: GET /common/{playbook_alert_id} at https://api.recordedfuture.com/playbook-alert
     const alertId = args.alert_id as string;
     if (!alertId) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/playbook-alerts/${encodeURIComponent(alertId)}`, { headers: this.headers });
+    const response = await fetch(`${this.playbookAlertBaseUrl}/common/${encodeURIComponent(alertId)}`, { headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {

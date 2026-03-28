@@ -4,13 +4,27 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://docs.getmontecarlo.com/docs/mcp-server — transport: hosted HTTPS (streamable)
-// URL: https://integrations.getmontecarlo.com/mcp/
-// The Monte Carlo MCP server is hosted-only and requires MCP-scoped credentials (different from
-// standard API keys). This adapter uses the standard GraphQL API with x-mcd-id / x-mcd-token auth,
-// which works for self-hosted deployments and programmatic API access with standard API keys.
-// Recommendation: Use the Monte Carlo hosted MCP for full tool coverage via the MCP protocol.
-//                 Use this adapter for GraphQL API access with standard API key credentials.
+// Official MCP: https://integrations.getmontecarlo.com/mcp/ — transport: streamable-HTTP (vendor-hosted), auth: MCP-scoped API key pair
+// Docs: https://docs.getmontecarlo.com/docs/mcp-server — actively maintained (public preview confirmed 2025, updated 2026-03)
+// Our adapter covers: 11 tools (tables, incidents, monitors, lineage, warehouses, metrics, SQL rule monitor, mute, field health, raw GraphQL).
+// Vendor MCP covers: 15 tools (getAlerts, updateAlert, setAlertOwner, createOrUpdateAlertComment, getQueriesForTable,
+//   getQueryData, createValidationMonitorMac, getValidationPredicates, getTable, search, getDomains,
+//   getTableLineage, testConnection, getUser, getCurrentTime).
+// NOTE: The vendor MCP requires MCP-scoped credentials (different key pair from standard API keys).
+//   This adapter uses standard x-mcd-id / x-mcd-token headers — suitable for programmatic API access.
+// Recommendation: use-both — MCP has 9 unique tools (alerts, queries, validation, search, domains,
+//   testConnection, getUser, getCurrentTime) not in this adapter. This adapter has 10 unique tools
+//   (get_incidents, get_monitors, get_warehouses, update_incident_status, get_table_metrics,
+//   create_sql_rule_monitor, mute_table, get_field_health, run_graphql_query, get_tables with full fields)
+//   not covered by the vendor MCP. Full coverage requires the union of both.
+// Integration: use-both
+// MCP-sourced tools (9): getAlerts, updateAlert, setAlertOwner, createOrUpdateAlertComment,
+//   getQueriesForTable, getQueryData, createValidationMonitorMac, getValidationPredicates,
+//   search, getDomains, testConnection, getUser, getCurrentTime
+// REST-sourced tools (11): get_tables, get_incidents, get_monitors, get_table_lineage, get_warehouses,
+//   update_incident_status, get_table_metrics, create_sql_rule_monitor, mute_table, get_field_health,
+//   run_graphql_query
+// Combined coverage: 24 tools (MCP: 15 + REST: 11 - shared: 2 [getTable≈get_tables, getTableLineage≈get_table_lineage])
 //
 // Base URL: https://api.getmontecarlo.com/graphql
 // Auth: x-mcd-id and x-mcd-token headers (create at getmontecarlo.com → Settings → API)

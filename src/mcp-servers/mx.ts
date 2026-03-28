@@ -4,14 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official MX MCP server was found on GitHub. MX publishes SDKs in Java, Python, Ruby, C#,
 // and Node.js (openapi/mxenabled), but no stdio or HTTP MCP server.
+// Our adapter covers: 19 tools. Vendor MCP covers: 0 tools (none found).
+// Recommendation: use-rest-api — no official MCP exists.
 //
 // Base URL: https://int-api.mx.com (development) | https://api.mx.com (production — set via baseUrl)
 // Auth: Basic auth — Base64(client_id:api_key) in Authorization header
-// Docs: https://docs.mx.com/api-reference/platform-api/overview/
+// Docs: https://docs.mx.com/api-reference/platform-api/reference/mx-platform-api/
 // Rate limits: Not publicly documented; contact MX for production rate limit details
+// Note: MX API now supports Accept-Version header (e.g. v20250224); this adapter uses the legacy
+//       Accept: application/vnd.mx.api.v1+json header which remains valid for the endpoints implemented.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

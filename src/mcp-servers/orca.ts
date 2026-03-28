@@ -4,13 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Orca Security MCP server was found on GitHub or the Orca developer portal.
-// This adapter covers the Orca Security REST API for cloud security posture management (CSPM).
+// Official MCP: https://pypi.org/project/orca-mcp-server/ — transport: stdio, auth: API token
+//   Published by Orca Security (maintainer: orcasecurity on PyPI). Last release: v1.0.2, May 19, 2025.
+//   MCP fails criteria: last publish >6 months ago (10+ months as of 2026-03-28), tool count
+//   appears very small (only 'discovery_search' mentioned; package is 4.4 kB). Does NOT meet
+//   the 10+ tools threshold. GitHub repo orcasecurity/orca-mcp-server is private.
+//   Recommendation: use-rest-api — vendor MCP is unmaintained and under-featured.
+// Our adapter covers: 15 tools. Vendor MCP covers: ~1-3 tools (unconfirmed, private repo).
 //
 // Base URL: https://api.orcasecurity.io (region-specific tenants may differ)
 // Auth: Bearer API token — generate in Orca dashboard: Settings > Connections > Integrations > API Tokens
-// Docs: https://docs.orcasecurity.io
+// Docs: https://docs.orcasecurity.io (requires login; API endpoint paths UNVERIFIED against live docs)
 // Rate limits: Not publicly documented; Orca Alerts API limited to 1000 alerts per query
 
 import { ToolDefinition, ToolResult } from './types.js';

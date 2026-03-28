@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Procore MCP server was found in the Procore GitHub org. Third-party community implementations exist.
 //
 // Base URL: https://api.procore.com
@@ -48,11 +48,10 @@ export class ProcoreMCPServer {
         'list_rfis', 'get_rfi', 'create_rfi',
         'list_submittals', 'get_submittal',
         'list_observations', 'create_observation',
-        'list_daily_logs',
-        'list_budget_line_items',
+        'list_daily_log_headers',
         'list_companies', 'get_company',
       ],
-      description: 'Procore construction management: manage projects, RFIs, submittals, observations, daily logs, and budget line items.',
+      description: 'Procore construction management: manage projects, RFIs, submittals, observations, and daily log headers.',
       author: 'protectnil',
     };
   }
@@ -155,22 +154,21 @@ export class ProcoreMCPServer {
       },
       {
         name: 'list_observations',
-        description: 'List observations (quality/safety issues) for a Procore project with status and type filters',
+        description: 'List observation items (quality/safety issues) across a Procore company with optional project, status, and type filters',
         inputSchema: {
           type: 'object',
           properties: {
-            project_id: { type: 'number', description: 'Procore project ID' },
+            project_id: { type: 'number', description: 'Filter by Procore project ID' },
             status: { type: 'string', description: 'Filter by status: initiated, ready_for_review, not_accepted, closed' },
             type_id: { type: 'number', description: 'Filter by observation type ID' },
             per_page: { type: 'number', description: 'Results per page (max: 100, default: 30)' },
             page: { type: 'number', description: 'Page number (default: 1)' },
           },
-          required: ['project_id'],
         },
       },
       {
         name: 'create_observation',
-        description: 'Create a new observation item in a Procore project for quality or safety tracking',
+        description: 'Create a new observation item for quality or safety tracking in a Procore project',
         inputSchema: {
           type: 'object',
           properties: {
@@ -186,28 +184,14 @@ export class ProcoreMCPServer {
         },
       },
       {
-        name: 'list_daily_logs',
-        description: 'List daily construction logs for a Procore project with date range and log type filters',
+        name: 'list_daily_log_headers',
+        description: 'List daily log headers for a Procore project with optional date range filters, returning completion and distribution status',
         inputSchema: {
           type: 'object',
           properties: {
             project_id: { type: 'number', description: 'Procore project ID' },
-            log_date: { type: 'string', description: 'Filter by specific date in YYYY-MM-DD format' },
             start_date: { type: 'string', description: 'Start of date range in YYYY-MM-DD format' },
             end_date: { type: 'string', description: 'End of date range in YYYY-MM-DD format' },
-            per_page: { type: 'number', description: 'Results per page (max: 100, default: 30)' },
-            page: { type: 'number', description: 'Page number (default: 1)' },
-          },
-          required: ['project_id'],
-        },
-      },
-      {
-        name: 'list_budget_line_items',
-        description: 'List budget line items for a Procore project showing cost codes, original budget, and adjustments',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            project_id: { type: 'number', description: 'Procore project ID' },
             per_page: { type: 'number', description: 'Results per page (max: 100, default: 30)' },
             page: { type: 'number', description: 'Page number (default: 1)' },
           },
@@ -251,8 +235,7 @@ export class ProcoreMCPServer {
         case 'get_submittal': return this.getSubmittal(args);
         case 'list_observations': return this.listObservations(args);
         case 'create_observation': return this.createObservation(args);
-        case 'list_daily_logs': return this.listDailyLogs(args);
-        case 'list_budget_line_items': return this.listBudgetLineItems(args);
+        case 'list_daily_log_headers': return this.listDailyLogHeaders(args);
         case 'list_companies': return this.listCompanies(args);
         case 'get_company': return this.getCompany(args);
         default:
@@ -373,43 +356,34 @@ export class ProcoreMCPServer {
   }
 
   private async listObservations(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
     const params: Record<string, string> = {};
+    if (args.project_id) params['filters[project_id]'] = String(args.project_id);
     if (args.status) params['filters[status]'] = args.status as string;
     if (args.type_id) params['filters[type_id]'] = String(args.type_id);
     if (args.per_page) params.per_page = String(args.per_page);
     if (args.page) params.page = String(args.page);
-    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/observations/items`, params);
+    return this.get('/rest/v1.0/observations/items', params);
   }
 
   private async createObservation(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id || !args.name) return { content: [{ type: 'text', text: 'project_id and name are required' }], isError: true };
-    const observation: Record<string, unknown> = { name: args.name };
+    const observation: Record<string, unknown> = { name: args.name, project_id: args.project_id };
     if (args.description) observation.description = args.description;
     if (args.type_id) observation.type_id = args.type_id;
     if (args.assignee_id) observation.assignee_id = args.assignee_id;
     if (args.due_date) observation.due_date = args.due_date;
     if (args.priority) observation.priority = args.priority;
-    return this.post(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/observations/items`, { observation });
+    return this.post('/rest/v1.0/observations/items', { observation });
   }
 
-  private async listDailyLogs(args: Record<string, unknown>): Promise<ToolResult> {
+  private async listDailyLogHeaders(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
     const params: Record<string, string> = {};
-    if (args.log_date) params.log_date = args.log_date as string;
     if (args.start_date) params.start_date = args.start_date as string;
     if (args.end_date) params.end_date = args.end_date as string;
     if (args.per_page) params.per_page = String(args.per_page);
     if (args.page) params.page = String(args.page);
-    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/daily_logs`, params);
-  }
-
-  private async listBudgetLineItems(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.project_id) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    const params: Record<string, string> = {};
-    if (args.per_page) params.per_page = String(args.per_page);
-    if (args.page) params.page = String(args.page);
-    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/budget_line_items`, params);
+    return this.get(`/rest/v1.0/projects/${encodeURIComponent(args.project_id as string)}/daily_log_headers/index`, params);
   }
 
   private async listCompanies(args: Record<string, unknown>): Promise<ToolResult> {

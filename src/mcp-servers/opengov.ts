@@ -4,16 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03 — no official OpenGov MCP server exists.
+// Official MCP: None found as of 2026-03-28 — no official OpenGov MCP server exists.
 //   A community Socrata/OpenGov MCP server (github.com/srobbin/opengov-mcp-server) targets
 //   public Socrata data portals (open civic data), not the OpenGov Procurement & Planning platform.
 //   That server is unrelated to the OpenGov SaaS API covered here.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://api.procurement.opengov.com/gateway
-// Auth: Basic Auth using account email as username and API key as password.
-//   Alternative: x-api-key request header (Basic Auth is recommended by OpenGov).
-//   API keys are generated in the OpenGov Developer Portal: https://developer.opengov.com/docs/app-management/api-key
+// Auth: Token header — include API key as `Token: YOUR_API_KEY`.
+//   API keys are generated in the OpenGov Control Panel / Settings (Procurement suite)
+//   or via the Developer Portal: https://developer.opengov.com/docs/app-management/api-key
 // Docs: https://developer.opengov.com/docs/quickstart
+//       https://developer.opengov.com/docs/app-management/api-key
 //       https://opengov-procurement.redoc.ly/ (full ReDoc API reference)
 // Rate limits: Not publicly documented; apply standard retry-on-429 backoff
 
@@ -21,18 +24,15 @@ import { ToolDefinition, ToolResult } from './types.js';
 
 interface OpenGovConfig {
   apiKey: string;
-  email: string;
   baseUrl?: string;
 }
 
 export class OpenGovMCPServer {
   private readonly apiKey: string;
-  private readonly email: string;
   private readonly baseUrl: string;
 
   constructor(config: OpenGovConfig) {
     this.apiKey = config.apiKey;
-    this.email = config.email;
     this.baseUrl = (config.baseUrl || 'https://api.procurement.opengov.com/gateway').replace(/\/$/, '');
   }
 
@@ -507,9 +507,8 @@ export class OpenGovMCPServer {
   }
 
   private get headers(): Record<string, string> {
-    const credentials = btoa(`${this.email}:${this.apiKey}`);
     return {
-      Authorization: `Basic ${credentials}`,
+      Token: this.apiKey,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };

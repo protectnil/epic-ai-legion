@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official IBM QRadar MCP server was found on GitHub or npm.
 //
 // Base URL: https://{your-qradar-host}/api  (on-premises — no default host)
@@ -249,25 +249,17 @@ export class QRadarMCPServer {
       {
         name: 'get_flows',
         description:
-          'Retrieve network flow records from QRadar with optional filter and pagination.',
+          'Execute an AQL query against QRadar Ariel flow storage. Async: creates the search, polls until complete (up to 2 minutes), and returns results. Use AQL SELECT from flows.',
         inputSchema: {
           type: 'object',
           properties: {
-            filter: {
+            query: {
               type: 'string',
               description:
-                'AQL filter expression for flows (e.g. sourceip="192.168.1.0/24").',
-            },
-            range: {
-              type: 'string',
-              description: 'HTTP Range header for pagination (e.g. items=0-99).',
-            },
-            fields: {
-              type: 'string',
-              description:
-                'Comma-separated fields to return (default: id,sourceip,destinationip,starttime,endtime,protocol,sourceport,destinationport,firstpackettime).',
+                'AQL query against the flows database (e.g. SELECT sourceip, destinationip, sourceport, destinationport, protocol FROM flows WHERE sourceip = \'192.168.1.1\' LAST 60 MINUTES).',
             },
           },
+          required: ['query'],
         },
       },
       {
@@ -637,16 +629,81 @@ export class QRadarMCPServer {
   }
 
   private async getFlows(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    const fields = (args.fields as string) ??
-      'id,sourceip,destinationip,starttime,endtime,protocol,sourceport,destinationport,firstpackettime';
-    params.set('fields', fields);
-    if (args.filter) params.set('filter', args.filter as string);
-    const response = await this.apiFetch(
-      `/siem/flows?${params.toString()}`,
-      { headers: this.rangeHeaders(args.range as string | undefined) },
+    const query = args.query as string;
+    if (!query) {
+      return { content: [{ type: 'text', text: 'query is required (AQL SELECT ... FROM flows ...)' }], isError: true };
+    }
+
+    // Step 1: Create async Ariel search against flows database
+    const createResponse = await this.apiFetch('/ariel/searches', {
+      method: 'POST',
+      body: JSON.stringify({ query_expression: query }),
+    });
+
+    if (!createResponse.ok) {
+      return {
+        content: [{ type: 'text', text: `QRadar flow search create error: ${createResponse.status} ${createResponse.statusText}` }],
+        isError: true,
+      };
+    }
+
+    let createData: { search_id?: string; status?: string };
+    try {
+      createData = await createResponse.json() as { search_id?: string; status?: string };
+    } catch {
+      throw new Error(`get_flows: non-JSON response on search create (HTTP ${createResponse.status})`);
+    }
+
+    const searchId = createData.search_id;
+    if (!searchId) {
+      throw new Error('QRadar did not return a search_id for flow query');
+    }
+
+    // Step 2: Poll until COMPLETED, CANCELED, or ERROR
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
+    let status = createData.status ?? 'WAIT';
+
+    while (status !== 'COMPLETED' && status !== 'CANCELED' && status !== 'ERROR') {
+      if (Date.now() > deadline) {
+        throw new Error(`QRadar flow search ${searchId} did not complete within ${POLL_TIMEOUT_MS / 1000}s`);
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+
+      const statusResponse = await this.apiFetch(`/ariel/searches/${encodeURIComponent(searchId)}`);
+      if (!statusResponse.ok) {
+        throw new Error(`QRadar flow search status error: ${statusResponse.status} ${statusResponse.statusText}`);
+      }
+      let statusData: { status?: string };
+      try {
+        statusData = await statusResponse.json() as { status?: string };
+      } catch {
+        throw new Error(`get_flows: non-JSON status poll response (HTTP ${statusResponse.status})`);
+      }
+      status = statusData.status ?? status;
+    }
+
+    if (status === 'CANCELED') {
+      throw new Error(`QRadar flow search ${searchId} was canceled`);
+    }
+    if (status === 'ERROR') {
+      throw new Error(`QRadar flow search ${searchId} completed with ERROR status`);
+    }
+
+    // Step 3: Fetch results
+    const resultsResponse = await this.apiFetch(
+      `/ariel/searches/${encodeURIComponent(searchId)}/results`,
     );
-    return this.jsonResult(response, 'get_flows');
+    if (!resultsResponse.ok) {
+      throw new Error(`QRadar flow search results error: ${resultsResponse.status} ${resultsResponse.statusText}`);
+    }
+
+    let results: unknown;
+    try {
+      results = await resultsResponse.json();
+    } catch {
+      throw new Error(`get_flows: non-JSON results response (HTTP ${resultsResponse.status})`);
+    }
+    return this.truncatedResult(results);
   }
 
   private async listLogSources(args: Record<string, unknown>): Promise<ToolResult> {

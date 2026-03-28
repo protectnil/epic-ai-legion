@@ -4,10 +4,12 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/openai/openai-mcp — transport: stdio, auth: API key
-// Our adapter covers: 14 tools (core operations). Vendor MCP is evolving; coverage varies.
-// Recommendation: Use this adapter for stable, audited coverage across chat, images, audio,
-// embeddings, files, fine-tuning, moderations, and usage reporting.
+// Official MCP: None found as of 2026-03-28
+// github.com/openai/openai-mcp does not exist (404). github.com/openai/openai-mcpkit is a blueprint
+// for building authenticated MCP servers, not a vendor MCP exposing OpenAI API tools.
+// No official OpenAI MCP server exposing their REST API as MCP tools was found.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP exists.
 //
 // Base URL: https://api.openai.com/v1
 // Auth: Bearer token (API key from platform.openai.com)
@@ -45,10 +47,10 @@ export class OpenAIMCPServer {
         'list_models', 'get_model',
         'create_chat_completion', 'create_response',
         'create_embedding',
-        'create_image', 'edit_image', 'create_image_variation',
+        'create_image', 'create_image_variation',
         'create_speech', 'create_transcription', 'create_translation',
         'create_moderation',
-        'list_files', 'upload_file', 'delete_file', 'get_file',
+        'list_files', 'delete_file',
         'list_fine_tuning_jobs', 'create_fine_tuning_job', 'get_fine_tuning_job', 'cancel_fine_tuning_job',
         'get_usage',
       ],

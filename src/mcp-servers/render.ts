@@ -4,13 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/render-oss/render-mcp-server
-// Actively maintained by Render. Transport: stdio. Auth: API key.
-// Vendor MCP covers: services, deploys, databases, logs, metrics, and Postgres query tools.
-// Our adapter covers: 25 tools (full v1 REST API surface including databases, jobs, domains, logs).
-// Recommendation: Use the vendor MCP for latest Render-native features.
-//                 Use this adapter for TypeScript/air-gapped deployments or when vendor MCP
-//                 is unavailable.
+// Official MCP: https://github.com/render-oss/render-mcp-server — transport: stdio, auth: API key
+// Actively maintained by Render (last commit Mar 18, 2026).
+// Recommendation: use-both — MCP and REST adapter each expose unique tools not covered by the other.
+//
+// Integration: use-both
+// MCP-sourced tools (4): [list_workspaces, select_workspace, get_selected_workspace,
+//   query_render_postgres (read-only SQL against hosted Postgres), get_metrics]
+// REST-sourced tools (26): [list_services, get_service, create_service, update_service,
+//   delete_service, trigger_deploy, list_deploys, get_deploy, cancel_deploy, rollback_deploy,
+//   list_env_vars, update_env_vars, list_custom_domains, add_custom_domain, remove_custom_domain,
+//   suspend_service, resume_service, scale_service, list_jobs, create_job, get_job,
+//   list_postgres, get_postgres, list_redis, get_redis, retrieve_logs]
+// Combined coverage: 30 tools (MCP: 5 + REST: 26 - shared: 1 [list_logs/retrieve_logs overlap])
 //
 // Base URL: https://api.render.com/v1
 // Auth: Bearer token — set Authorization: Bearer <API_KEY>

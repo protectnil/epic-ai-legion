@@ -4,18 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Oracle ERP Cloud (Fusion Financials / FSCM) MCP server found on GitHub.
-// The oracle/mcp repo covers Autonomous Database and Analytics Cloud — not FSCM REST APIs.
+// Official MCP: None found as of 2026-03-28
+// The oracle/mcp repo (github.com/oracle/mcp) covers Oracle Database and OCI services only —
+// not FSCM (Fusion Financials/Procurement/SCM) REST APIs. No official FSCM MCP server found.
 //
 // Base URL: https://{hostname}.fa.{dc}.oraclecloud.com/fscmRestApi/resources/11.13.18.05
 //   The hostname and datacenter (e.g. us2, uk1, eu1) are tenant-specific.
-//   Configure via baseUrl constructor option.
+//   Configure via baseUrl constructor option. Set to full path through version segment.
+//   NOTE: list_employees / get_employee use Oracle HCM Cloud (hcmRestApi), not fscmRestApi.
+//   For HCM tools, configure baseUrl to https://{hostname}.fa.{dc}.oraclecloud.com/hcmRestApi/resources/11.13.18.05
 // Auth: Basic Authentication (Base64 encoded username:password) or OAuth2 access token
 //   This adapter uses Basic Auth. For OAuth2, pre-exchange token and pass as accessToken.
-// Docs: https://docs.oracle.com/en/cloud/saas/financials/24d/farfa/
-//       https://docs.oracle.com/en/cloud/saas/supply-chain-and-manufacturing/24b/fasrp/
+// Docs: https://docs.oracle.com/en/cloud/saas/financials/25b/farfa/ (Financials/AP/AR/GL)
+//       https://docs.oracle.com/en/cloud/saas/procurement/25c/fapra/ (Procurement/Suppliers/POs)
+//       https://docs.oracle.com/en/cloud/saas/human-resources/farws/ (HCM/Workers)
 // Rate limits: Not publicly documented; governed by Oracle service limits per tenant
+// Recommendation: use-rest-api — no official FSCM MCP server exists.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -56,7 +60,7 @@ export class OracleERPCloudMCPServer {
         'list_invoices', 'get_invoice', 'create_invoice',
         'list_suppliers', 'get_supplier', 'search_suppliers',
         'list_purchase_orders', 'get_purchase_order',
-        'list_journal_entries', 'get_journal_entry', 'create_journal_entry',
+        'list_journal_batches', 'get_journal_batch', 'create_journal_batch',
         'list_ledgers', 'get_ledger',
         'list_payables', 'list_receivables',
         'list_employees', 'get_employee',
@@ -258,14 +262,14 @@ export class OracleERPCloudMCPServer {
         },
       },
       {
-        name: 'list_journal_entries',
-        description: 'List general ledger journal entries with optional ledger, period, and status filters',
+        name: 'list_journal_batches',
+        description: 'List general ledger journal batches with optional ledger, period, and status filters (Oracle GL uses journalBatches resource)',
         inputSchema: {
           type: 'object',
           properties: {
             ledger_id: {
               type: 'number',
-              description: 'Ledger identifier to scope journal entries',
+              description: 'Ledger identifier to scope journal batches',
             },
             period_name: {
               type: 'string',
@@ -273,7 +277,7 @@ export class OracleERPCloudMCPServer {
             },
             status: {
               type: 'string',
-              description: 'Filter by status: Draft, Posted, Unposted (default: all)',
+              description: 'Filter by batch status: Draft, Posted, Unposted (default: all)',
             },
             limit: {
               type: 'number',
@@ -287,22 +291,22 @@ export class OracleERPCloudMCPServer {
         },
       },
       {
-        name: 'get_journal_entry',
-        description: 'Get full details for a specific general ledger journal entry including all lines',
+        name: 'get_journal_batch',
+        description: 'Get full details for a specific general ledger journal batch including all headers and lines',
         inputSchema: {
           type: 'object',
           properties: {
-            header_id: {
+            batch_id: {
               type: 'number',
-              description: 'Journal entry header identifier',
+              description: 'Journal batch identifier (JeBatchId)',
             },
           },
-          required: ['header_id'],
+          required: ['batch_id'],
         },
       },
       {
-        name: 'create_journal_entry',
-        description: 'Create a new journal entry in the general ledger for a specified ledger and accounting period',
+        name: 'create_journal_batch',
+        description: 'Create a new journal batch in the general ledger for a specified ledger and accounting period',
         inputSchema: {
           type: 'object',
           properties: {
@@ -318,16 +322,16 @@ export class OracleERPCloudMCPServer {
               type: 'string',
               description: 'ISO currency code (e.g. USD)',
             },
-            journal_name: {
+            batch_name: {
               type: 'string',
-              description: 'Journal entry name or reference',
+              description: 'Journal batch name or reference',
             },
             description: {
               type: 'string',
-              description: 'Journal entry description',
+              description: 'Journal batch description',
             },
           },
-          required: ['ledger_id', 'period_name', 'currency_code', 'journal_name'],
+          required: ['ledger_id', 'period_name', 'currency_code', 'batch_name'],
         },
       },
       {
@@ -480,12 +484,12 @@ export class OracleERPCloudMCPServer {
           return this.listPurchaseOrders(args);
         case 'get_purchase_order':
           return this.getPurchaseOrder(args);
-        case 'list_journal_entries':
-          return this.listJournalEntries(args);
-        case 'get_journal_entry':
-          return this.getJournalEntry(args);
-        case 'create_journal_entry':
-          return this.createJournalEntry(args);
+        case 'list_journal_batches':
+          return this.listJournalBatches(args);
+        case 'get_journal_batch':
+          return this.getJournalBatch(args);
+        case 'create_journal_batch':
+          return this.createJournalBatch(args);
         case 'list_ledgers':
           return this.listLedgers(args);
         case 'get_ledger':
@@ -639,7 +643,7 @@ export class OracleERPCloudMCPServer {
     return this.apiGet(`/purchaseOrders/${encodeURIComponent(args.po_header_id as string)}`);
   }
 
-  private async listJournalEntries(args: Record<string, unknown>): Promise<ToolResult> {
+  private async listJournalBatches(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {
       limit: String((args.limit as number) ?? 50),
       offset: String((args.offset as number) ?? 0),
@@ -650,16 +654,16 @@ export class OracleERPCloudMCPServer {
     if (args.status) filters.Status = args.status as string;
     const q = this.buildQuery(filters);
     if (q) params.q = q;
-    return this.apiGet('/journalEntries', params);
+    return this.apiGet('/journalBatches', params);
   }
 
-  private async getJournalEntry(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.header_id) return { content: [{ type: 'text', text: 'header_id is required' }], isError: true };
-    return this.apiGet(`/journalEntries/${encodeURIComponent(args.header_id as string)}`);
+  private async getJournalBatch(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.batch_id) return { content: [{ type: 'text', text: 'batch_id is required' }], isError: true };
+    return this.apiGet(`/journalBatches/${encodeURIComponent(args.batch_id as string)}`);
   }
 
-  private async createJournalEntry(args: Record<string, unknown>): Promise<ToolResult> {
-    const required = ['ledger_id', 'period_name', 'currency_code', 'journal_name'];
+  private async createJournalBatch(args: Record<string, unknown>): Promise<ToolResult> {
+    const required = ['ledger_id', 'period_name', 'currency_code', 'batch_name'];
     for (const field of required) {
       if (!args[field]) return { content: [{ type: 'text', text: `${field} is required` }], isError: true };
     }
@@ -667,10 +671,10 @@ export class OracleERPCloudMCPServer {
       LedgerId: args.ledger_id,
       PeriodName: args.period_name,
       CurrencyCode: args.currency_code,
-      JournalName: args.journal_name,
+      BatchName: args.batch_name,
     };
     if (args.description) body.Description = args.description;
-    return this.apiPost('/journalEntries', body);
+    return this.apiPost('/journalBatches', body);
   }
 
   private async listLedgers(args: Record<string, unknown>): Promise<ToolResult> {

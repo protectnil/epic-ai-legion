@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/polygon-io/mcp_polygon — transport: stdio (SSE/HTTP via env), auth: API key env var
-// Our adapter covers: 15 tools (stocks, options, forex, crypto, reference data). Vendor MCP covers: 35+ tools (full API).
+// Official MCP: https://github.com/massive-com/mcp_polygon (formerly polygon-io/mcp_polygon — Polygon.io rebranded to Massive.com)
+//   transport: stdio (SSE/streamable-HTTP via MCP_TRANSPORT env var), auth: MASSIVE_API_KEY env var (POLYGON_API_KEY deprecated alias)
+//   Actively maintained — last commit Mar 2026. Exposes all Polygon.io API endpoints as MCP tools (35+).
+// Our adapter covers: 15 tools (stocks, options, forex, reference data). Vendor MCP covers: 35+ tools (full API).
 // Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments or selective tool exposure.
 //
 // Base URL: https://api.polygon.io

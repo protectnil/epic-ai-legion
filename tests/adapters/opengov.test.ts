@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { OpenGovMCPServer } from '../../src/mcp-servers/opengov.js';
 
 describe('OpenGovMCPServer', () => {
-  const adapter = new OpenGovMCPServer({ apiKey: 'test-key', email: 'test@example.com' });
+  const adapter = new OpenGovMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

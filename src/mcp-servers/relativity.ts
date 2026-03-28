@@ -539,7 +539,7 @@ export class RelativityMCPServer {
     if (!queryRequest.Condition) queryRequest.Condition = '';
     if (!queryRequest.Sorts) queryRequest.Sorts = [];
     return this.httpPost(
-      `/Relativity.Services.Objects.IObjectsModule/Object%20Manager/${encodeURIComponent(`v1/workspaces/${encodeURIComponent(args.workspaceId as string)}/objects/query`)}`,
+      '/Relativity.Services.Objects.IObjectsModule/Object%20Manager/QueryAsync',
       {
         workspaceArtifactID: args.workspaceId,
         queryRequest,

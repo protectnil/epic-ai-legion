@@ -4,10 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://www.npmjs.com/package/modern-treasury-mcp — transport: stdio, auth: Basic (org ID + API key)
+// Official MCP: https://www.npmjs.com/package/modern-treasury-mcp — transport: streamable-HTTP, auth: Basic (org ID + API key)
+// Vendor MCP is "Code Mode" — exposes only 2 tools: search_documentation and execute_code (agent writes
+//   TypeScript SDK code that runs in an isolated sandbox). It does NOT expose per-endpoint tools.
+// MCP FAILS criterion #3: fewer than 10 explicit tools (only 2). Decision: use-rest-api.
 // Our adapter covers: 20 tools (payment orders, counterparties, internal/external accounts, transactions, ledgers).
-// Vendor MCP covers: full API surface (all endpoints via dynamic or explicit tool mode).
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// Recommendation: use-rest-api — vendor MCP fails the 10+ tools criterion; Code Mode sandbox is not a
+//   direct tool integration. This REST adapter is the authoritative integration.
+//   For air-gapped or SDK-code-generation use cases, the vendor MCP package can supplement.
 //
 // Base URL: https://app.moderntreasury.com/api
 // Auth: HTTP Basic — username: Organization ID, password: API Key

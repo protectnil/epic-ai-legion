@@ -4,12 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official OpenWeatherMap MCP server was found on GitHub from OpenWeather Ltd.
+// Official MCP: None found as of 2026-03-28 — no official OpenWeatherMap MCP server exists.
+//   Community server (github.com/robertn702/mcp-openweathermap) exists but is not published
+//   by OpenWeather Ltd.; not an official vendor MCP. 11 tools, not actively maintained by vendor.
+// Our adapter covers: 11 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api — no official vendor MCP server exists.
 //
-// Base URL: https://api.openweathermap.org
+// Base URL: https://api.openweathermap.org (data endpoints)
+//           https://tile.openweathermap.org (weather map tile endpoint — different domain)
 // Auth: API key passed as `appid` query parameter on every request
 // Docs: https://openweathermap.org/api
+//       https://openweathermap.org/current  (current weather)
+//       https://openweathermap.org/forecast5  (5-day forecast)
+//       https://openweathermap.org/api/one-call-3  (One Call API 3.0)
+//       https://openweathermap.org/api/geocoding-api  (geocoding)
+//       https://openweathermap.org/api/air-pollution  (air pollution)
+//       https://openweathermap.org/api/weathermaps  (weather map tiles)
 // Rate limits: Free tier — 60 calls/min, 1,000,000 calls/month. Paid tiers higher.
 //              One Call API 3.0 billed per call beyond 1,000/day free allowance.
 
@@ -484,7 +494,8 @@ export class OpenWeatherMapMCPServer {
     if (!args.layer || args.z === undefined || args.x === undefined || args.y === undefined) {
       return { content: [{ type: 'text', text: 'layer, z, x, and y are required' }], isError: true };
     }
-    const url = `${this.baseUrl}/map/${encodeURIComponent(args.layer as string)}/${encodeURIComponent(args.z as string)}/${encodeURIComponent(args.x as string)}/${encodeURIComponent(args.y as string)}.png?appid=${this.apiKey}`;
+    // Weather map tiles use tile.openweathermap.org, not api.openweathermap.org
+    const url = `https://tile.openweathermap.org/map/${encodeURIComponent(args.layer as string)}/${encodeURIComponent(args.z as string)}/${encodeURIComponent(args.x as string)}/${encodeURIComponent(args.y as string)}.png?appid=${this.apiKey}`;
     return {
       content: [{ type: 'text', text: JSON.stringify({ tile_url: url }, null, 2) }],
       isError: false,

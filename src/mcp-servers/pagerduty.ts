@@ -4,9 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official PagerDuty-published MCP server was found on GitHub or npm.
-// Community adapters exist but are not maintained by PagerDuty.
+// Official MCP: https://github.com/PagerDuty/pagerduty-mcp-server — transport: stdio, auth: API token
+// PagerDuty ships an official MCP server (Python, open-source, Apache-2.0). Actively maintained as of
+// 2026-03 (commits within the last month). Exposes 30+ tools covering incidents, services, schedules,
+// teams, log entries, event orchestrations, incident workflows, and status pages.
+// Our adapter covers: 20 tools. Vendor MCP covers: 30+ tools.
+// Recommendation: use-both — the vendor MCP has unique tools we don't implement (log entries,
+// event orchestrations, incident workflows, status pages). Our adapter has unique tools the MCP
+// marks write-only or omits (create_incident via REST, add_incident_note, get_alert by ID,
+// list_escalation_policies, get_escalation_policy, list_oncalls). Combined coverage preferred.
+// Integration: use-both
+// MCP-sourced tools (10+): list_log_entries, get_log_entry, list_incident_workflows,
+//   get_incident_workflow, start_incident_workflow, list_status_pages, get_status_page_post,
+//   create_status_page_post, list_event_orchestrations (and more)
+// REST-sourced tools (20): list_incidents, get_incident, create_incident, acknowledge_incident,
+//   resolve_incident, update_incident, add_incident_note, list_incident_notes, list_alerts,
+//   get_alert, list_services, get_service, list_escalation_policies, get_escalation_policy,
+//   list_schedules, get_schedule, list_oncalls, list_users, get_user, list_teams
 //
 // Base URL: https://api.pagerduty.com
 // Auth: API token — Authorization: Token token={api_key}

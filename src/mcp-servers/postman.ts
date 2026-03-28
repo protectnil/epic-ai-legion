@@ -4,9 +4,9 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/postmanlabs/postman-mcp-server — transport: streamable-HTTP (hosted
-//   at mcp.postman.com), auth: OAuth2. Covers 100+ tools including full collection/environment/monitor
-//   management. Actively maintained as of 2025.
+// Official MCP: https://github.com/postmanlabs/postman-mcp-server — transport: streamable-HTTP (remote at
+//   mcp.postman.com) or stdio (local @postman/postman-mcp-server npm package), auth: Bearer API key or OAuth2.
+//   Actively maintained — latest release v2.8.4 on 2026-03-19. Full mode exposes 100+ tools.
 // Our adapter covers: 20 tools (core API operations via API key). Vendor MCP covers: 100+ tools (full API).
 // Recommendation: Use vendor MCP for full coverage with OAuth2. Use this adapter for API-key deployments,
 //   CI/CD automation, and air-gapped environments.

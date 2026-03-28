@@ -4,11 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/mondaycom/mcp — transport: hosted-only HTTPS, auth: OAuth2
-// The monday.com MCP server is actively maintained by the monday.com AI team but requires OAuth.
-// This adapter uses personal API tokens and supports self-hosted / air-gapped deployments.
-// Our adapter covers: 22 tools (core operations). Vendor MCP covers full OAuth app surface.
-// Recommendation: Use vendor MCP for OAuth app deployments; use this adapter for token-based access.
+// Official MCP: https://github.com/mondaycom/mcp — transport: stdio (npm) and streamable-HTTP (hosted), auth: API token or OAuth2
+// The monday.com MCP server (@mondaydotcomorg/monday-api-mcp) is actively maintained by the monday.com AI team.
+// npm package version 2.0.8 published 2025. Supports both local stdio (API token) and hosted HTTPS (OAuth2).
+// The MCP exposes ~36 tools covering boards, items, groups, columns, users, workspaces, documents, dashboards, forms, search.
+// This adapter uses personal API tokens and supports air-gapped deployments.
+// Our adapter covers: 22 tools. Vendor MCP covers: 36+ tools.
+// Recommendation: use-both — vendor MCP has unique tools (board_insights, get_board_activity, list_workspaces, create_dashboard,
+//   create_widget, create_form, update_form, get_form, form_questions_editor, search, get_user_context, dev sprint tools).
+//   Our REST adapter covers: archive_board, archive_item, duplicate_item, delete_group, get_column_values, get_updates,
+//   list_workspaces, create_webhook, delete_webhook, get_me — which MCP either omits or covers differently.
+// MCP-sourced tools (unique): board_insights, get_board_activity, create_dashboard, create_widget, all_widgets_schema,
+//   create_form, update_form, get_form, form_questions_editor, search, get_user_context, get_monday_dev_sprints_boards,
+//   get_sprints_metadata, get_sprint_summary, all_monday_api, get_graphql_schema, get_type_details
+// REST-sourced tools (our adapter): archive_board, archive_item, duplicate_item, delete_group, get_column_values,
+//   create_webhook, delete_webhook — not covered by vendor MCP
 //
 // Base URL: https://api.monday.com/v2
 // Auth: API token in Authorization header (no "Bearer" prefix) — personal V2 token or app token.
@@ -607,7 +617,7 @@ export class MondayMCPServer {
   private async listBoards(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) || 25;
     const page = (args.page as number) || 1;
-    const boardKindFilter = args.boardKind ? `, board_kind: ${encodeURIComponent(args.boardKind as string)}` : '';
+    const boardKindFilter = args.boardKind ? `, board_kind: ${(args.boardKind as string)}` : '';
     const query = `query {
       boards(limit: ${limit}, page: ${page}${boardKindFilter}) {
         id name description board_kind state updated_at
@@ -633,8 +643,8 @@ export class MondayMCPServer {
     const boardName = args.boardName as string;
     if (!boardName) return { content: [{ type: 'text', text: 'boardName is required' }], isError: true };
     const kind = (args.boardKind as string) || 'public';
-    const workspaceArg = args.workspaceId ? `, workspace_id: ${encodeURIComponent(args.workspaceId as string)}` : '';
-    const templateArg = args.templateId ? `, template_id: ${encodeURIComponent(args.templateId as string)}` : '';
+    const workspaceArg = args.workspaceId ? `, workspace_id: ${args.workspaceId as string}` : '';
+    const templateArg = args.templateId ? `, template_id: ${args.templateId as string}` : '';
     const query = `mutation {
       create_board(board_name: "${(boardName as string).replace(/"/g, '\\"')}", board_kind: ${kind}${workspaceArg}${templateArg}) {
         id name board_kind
@@ -654,7 +664,7 @@ export class MondayMCPServer {
     const boardId = args.boardId as string;
     if (!boardId) return { content: [{ type: 'text', text: 'boardId is required' }], isError: true };
     const limit = (args.limit as number) || 25;
-    const cursorArg = args.cursor ? `, cursor: "${encodeURIComponent(args.cursor as string)}"` : '';
+    const cursorArg = args.cursor ? `, cursor: "${(args.cursor as string).replace(/"/g, '\\"')}"` : '';
     const query = `query {
       boards(ids: [${boardId}]) {
         items_page(limit: ${limit}${cursorArg}) {
@@ -674,7 +684,7 @@ export class MondayMCPServer {
     const boardId = args.boardId as string;
     const itemName = args.itemName as string;
     if (!boardId || !itemName) return { content: [{ type: 'text', text: 'boardId and itemName are required' }], isError: true };
-    const groupArg = args.groupId ? `, group_id: "${encodeURIComponent(args.groupId as string)}"` : '';
+    const groupArg = args.groupId ? `, group_id: "${(args.groupId as string).replace(/"/g, '\\"')}"` : '';
     const colArg = args.columnValues ? `, column_values: ${JSON.stringify(args.columnValues as string)}` : '';
     const query = `mutation {
       create_item(board_id: ${boardId}, item_name: "${itemName.replace(/"/g, '\\"')}"${groupArg}${colArg}) {
@@ -742,11 +752,16 @@ export class MondayMCPServer {
     const term = args.term as string;
     if (!term) return { content: [{ type: 'text', text: 'term is required' }], isError: true };
     const limit = (args.limit as number) || 25;
+    // items_by_multiple_column_values was removed in API version 2023-10.
+    // Use items_page_by_column_values (the replacement per monday.com changelog).
     const query = `query {
-      items_by_multiple_column_values(limit: ${limit}, board_id: null, column_id: "name", column_values: ["${term.replace(/"/g, '\\"')}"]) {
-        id name updated_at
-        board { id name }
-        group { id title }
+      items_page_by_column_values(limit: ${limit}, column_id: "name", column_values: ["${term.replace(/"/g, '\\"')}"]) {
+        cursor
+        items {
+          id name updated_at
+          board { id name }
+          group { id title }
+        }
       }
     }`;
     return this.runQuery(query);
@@ -834,7 +849,7 @@ export class MondayMCPServer {
   private async getUsers(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) || 25;
     const page = (args.page as number) || 1;
-    const kindArg = args.kind ? `, kind: ${encodeURIComponent(args.kind as string)}` : '';
+    const kindArg = args.kind ? `, kind: ${args.kind as string}` : '';
     const nameArg = args.name ? `, name: "${(args.name as string).replace(/"/g, '\\"')}"` : '';
     const query = `query {
       users(limit: ${limit}, page: ${page}${kindArg}${nameArg}) {

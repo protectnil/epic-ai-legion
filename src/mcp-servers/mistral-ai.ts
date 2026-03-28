@@ -4,11 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Mistral AI MCP server exists from the mistralai GitHub organization.
-// Community servers (everaldo/mcp-mistral-ocr, bsmi021/mcp-mistral-codestral) cover
-// narrow single-feature use cases only and are not actively maintained.
-// This adapter provides the full Mistral REST API surface.
+// Official MCP: None found as of 2026-03-28
+// Mistral AI supports MCP as a client (Le Chat and their SDK can connect to MCP servers),
+// but Mistral publishes NO official MCP server of their own for external tools to call.
+// Community servers exist (everaldo/mcp-mistral-ocr, bsmi021/mcp-mistral-codestral) but
+// cover single narrow features only and are unmaintained. Decision: use-rest-api.
+// Our adapter covers: 22 tools. Vendor MCP covers: 0 tools.
+// Recommendation: REST adapter is the only viable integration for full Mistral API coverage.
 //
 // Base URL: https://api.mistral.ai/v1
 // Auth: Bearer token (API key from console.mistral.ai)
@@ -879,7 +881,9 @@ export class MistralAIMCPServer {
     if (!fileId || !model) {
       return { content: [{ type: 'text', text: 'model and file_id are required' }], isError: true };
     }
-    const body: Record<string, unknown> = { model, file: fileId };
+    // The /v1/audio/transcriptions endpoint accepts file_id (string) as a JSON-body alternative
+    // to the multipart `file` field. Using file_id allows text/JSON requests without multipart.
+    const body: Record<string, unknown> = { model, file_id: fileId };
     if (args.language) body.language = args.language;
     return this.doPost('/audio/transcriptions', body);
   }

@@ -4,14 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official SAP S/4HANA MCP server was found on GitHub or the SAP Business Technology Platform.
+// SAP has MCP servers for CAP/UI5/Fiori development tools only, not for S/4HANA business APIs.
 //
 // Base URL: https://{tenant}.s4hana.ondemand.com/sap/opu/odata/sap (tenant-specific)
 // Auth: OAuth2 client credentials via SAP BTP token endpoint
 //       POST https://{subdomain}.authentication.{region}.hana.ondemand.com/oauth/token
 // Docs: https://api.sap.com/package/SAPS4HANACloud/odata
 // Rate limits: Not publicly documented; governed by SAP S/4HANA Cloud tenant quotas
+// NOTE: API_PURCHASEORDER_PROCESS_SRV (OData V2) was deprecated in S/4HANA Cloud 2308 release.
+//       SAP recommends migrating to the V4 successor API. Decommissioning date TBD.
+//       See SAP Note 3502308 for details.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -573,8 +577,8 @@ export class SAPS4HANAMCPServer {
     const filters: string[] = [];
     if (args.supplier) filters.push(`InvoicingParty eq '${encodeURIComponent(args.supplier as string)}'`);
     if (args.company_code) filters.push(`CompanyCode eq '${encodeURIComponent(args.company_code as string)}'`);
-    if (args.posting_date_from) filters.push(`DocumentDate ge datetime'${encodeURIComponent(args.posting_date_from as string)}T00:00:00'`);
-    if (args.posting_date_to) filters.push(`DocumentDate le datetime'${encodeURIComponent(args.posting_date_to as string)}T23:59:59'`);
+    if (args.posting_date_from) filters.push(`PostingDate ge datetime'${encodeURIComponent(args.posting_date_from as string)}T00:00:00'`);
+    if (args.posting_date_to) filters.push(`PostingDate le datetime'${encodeURIComponent(args.posting_date_to as string)}T23:59:59'`);
     const params: Record<string, string | number | undefined> = {
       $top: (args.top as number) || 50,
       $skip: (args.skip as number) || 0,

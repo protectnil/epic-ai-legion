@@ -4,14 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/ramp-public/ramp_mcp — official Ramp repo, uses in-memory SQLite ETL pattern.
-// Our adapter covers: 16 tools (full production REST API). Vendor MCP is demo-env oriented with SQLite dependency.
-// Recommendation: Use this adapter for live production REST access. Use vendor MCP for read-only demo/ETL workflows.
+// Official MCP: https://github.com/ramp-public/ramp_mcp — transport: stdio, auth: OAuth2 client credentials
+// Vendor MCP covers: 17 tools (ETL/SQLite pattern: process_data, execute_query, clear_table, get_ramp_categories,
+//   get_currencies, load_transactions, load_reimbursements, load_bills, load_locations, load_departments,
+//   load_bank_accounts, load_vendors, load_vendor_bank_accounts, load_entities, load_spend_limits,
+//   load_spend_programs, load_users). Demo-env by default (RAMP_ENV=prd to use production). Single commit,
+//   maintained 2025. MCP fails use-vendor-mcp criteria: ETL/in-memory SQLite pattern, not direct REST
+//   replacement, and defaults to demo environment — not suitable for live production data access.
+// Our adapter covers: 17 tools (full production REST API).
+// Recommendation: use-rest-api. Use this adapter for live production REST access. Document vendor MCP for
+//   read-only demo/ETL analytics workflows.
 //
 // Base URL: https://api.ramp.com  (demo/sandbox: https://demo-api.ramp.com)
 // Auth: OAuth2 client credentials — POST /developer/v1/token with Basic(clientId:clientSecret) → Bearer token
 // Docs: https://docs.ramp.com/developer-api/v1
-// Rate limits: Not publicly documented. Access tokens last 10 days; implement proactive refresh.
+// Rate limits: Documented at docs.ramp.com/developer-api/v1/rate-limiting (JS-rendered page, limits not
+//   publicly disclosed in static content). Returns HTTP 429 on excess. Access tokens last 10 days.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

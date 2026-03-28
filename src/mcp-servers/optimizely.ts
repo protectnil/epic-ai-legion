@@ -4,11 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: Optimizely announced an Experimentation MCP server in closed beta (2025-08).
-// As of 2026-03 it has not shipped publicly. No stable GitHub repo or npm package available.
-// Monitor: https://www.optimizely.com/insights/blog/experimentation-mcp-server/
+// Official MCP: None found as of 2026-03-28 — closed beta only, not publicly released
+// Optimizely announced an Experimentation MCP server (announced 2025-07-31) in closed beta.
+// As of 2026-03-28 no public GitHub repo or npm package has shipped. Sign-up: optimizely.com/beta
+// Announcement: https://www.optimizely.com/insights/blog/experimentation-mcp-server/
+// Decision: use-rest-api — no official MCP available publicly.
 // Our adapter covers: 16 tools (Web Experimentation + Feature Experimentation REST API v2).
-// Recommendation: Use this adapter until the official MCP graduates from closed beta.
+// Recommendation: Use this adapter. Reassess when Optimizely MCP exits closed beta.
 //
 // Base URL: https://api.optimizely.com/v2
 // Auth: Bearer token — Personal Access Token or OAuth2 access token in Authorization header

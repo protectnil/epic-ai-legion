@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PrometheusMCPServer } from '../../src/mcp-servers/prometheus.js';
 
 describe('PrometheusMCPServer', () => {
-  const adapter = new PrometheusMCPServer({ host: 'test.example.com' });
+  const adapter = new PrometheusMCPServer({ host: 'localhost' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ProofpointMCPServer } from '../../src/mcp-servers/proofpoint.js';
 
 describe('ProofpointMCPServer', () => {
-  const adapter = new ProofpointMCPServer({ servicePrincipal: 'test-value', secret: 'test-secret' });
+  const adapter = new ProofpointMCPServer({ servicePrincipal: 'test-principal', secret: 'test-secret' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

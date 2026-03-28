@@ -4,16 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Retool-published MCP server found on GitHub. A community adapter
 // (TechnicalRhino/retool-mcp) exists but is unmaintained. Retool itself supports
 // connecting *to* external MCP servers from its Agents product, but does not publish
 // an MCP server for managing the Retool platform via MCP.
+// Our adapter covers: 15 tools. Vendor MCP covers: 0 tools (none found).
+// Recommendation: use-rest-api
 //
 // Base URL: https://api.retool.com/api/v2
 // Auth: Bearer token — generate via Retool Settings → API → Create token
-// Docs: https://docs.retool.com/reference/api/v2
-// Rate limits: Not publicly documented; Retool API is Business/Enterprise plan only
+// Docs: https://docs.retool.com/api/
+// Rate limits: 300 points per 60-second window. Apps/Folders/Users = 2pts; Groups/Resources/Spaces/Workflows = 5pts; Permissions = 10pts.
+// NOTE: Workflow triggering uses per-workflow webhook URLs (POST to /workflows/v1/{id}/startTrigger
+//   with X-Workflow-Api-Key header), NOT the /api/v2 management API. The trigger_workflow tool
+//   accepts the full webhookUrl and workflowApiKey as parameters. Pagination uses limit/next_token
+//   (cursor-based), not page/pageSize.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -61,13 +67,13 @@ export class RetoolMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
+            limit: {
               type: 'number',
-              description: 'Page number for pagination (default: 1)',
+              description: 'Maximum number of apps to return per page (1-100)',
             },
-            pageSize: {
-              type: 'number',
-              description: 'Number of apps per page (default: 25, max: 100)',
+            next_token: {
+              type: 'string',
+              description: 'Cursor token from a previous response for retrieving the next page',
             },
             folderId: {
               type: 'string',
@@ -97,13 +103,13 @@ export class RetoolMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
+            limit: {
               type: 'number',
-              description: 'Page number for pagination (default: 1)',
+              description: 'Maximum number of folders to return per page (1-100)',
             },
-            pageSize: {
-              type: 'number',
-              description: 'Number of folders per page (default: 25)',
+            next_token: {
+              type: 'string',
+              description: 'Cursor token from a previous response for retrieving the next page',
             },
           },
         },
@@ -133,13 +139,13 @@ export class RetoolMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
+            limit: {
               type: 'number',
-              description: 'Page number for pagination (default: 1)',
+              description: 'Maximum number of resources to return per page (1-100)',
             },
-            pageSize: {
-              type: 'number',
-              description: 'Number of resources per page (default: 25)',
+            next_token: {
+              type: 'string',
+              description: 'Cursor token from a previous response for retrieving the next page',
             },
           },
         },
@@ -165,26 +171,30 @@ export class RetoolMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
+            limit: {
               type: 'number',
-              description: 'Page number for pagination (default: 1)',
+              description: 'Maximum number of workflows to return per page (1-100)',
             },
-            pageSize: {
-              type: 'number',
-              description: 'Number of workflows per page (default: 25)',
+            next_token: {
+              type: 'string',
+              description: 'Cursor token from a previous response for retrieving the next page',
             },
           },
         },
       },
       {
         name: 'trigger_workflow',
-        description: 'Trigger a Retool workflow by ID with an optional JSON payload; returns the workflow run result',
+        description: 'Trigger a Retool workflow via its webhook URL with an optional JSON payload; requires the workflow webhook URL and API key (configured on the workflow itself)',
         inputSchema: {
           type: 'object',
           properties: {
-            workflowId: {
+            webhookUrl: {
               type: 'string',
-              description: 'The UUID of the Retool workflow to trigger',
+              description: 'The full webhook URL for the workflow (from the workflow\'s Triggers tab, e.g. https://api.retool.com/workflows/v1/{workflowId}/startTrigger)',
+            },
+            workflowApiKey: {
+              type: 'string',
+              description: 'The workflow-specific API key (retool_wk_... prefix) shown in the workflow Triggers tab',
             },
             payload: {
               type: 'object',
@@ -192,23 +202,35 @@ export class RetoolMCPServer {
               additionalProperties: true,
             },
           },
-          required: ['workflowId'],
+          required: ['webhookUrl', 'workflowApiKey'],
         },
       },
       // ── Users ───────────────────────────────────────────────────────────────
       {
         name: 'list_users',
-        description: 'List all users in the Retool organization with optional pagination; returns email, role, and group membership',
+        description: 'List all users in the Retool organization with optional filters and pagination; returns email, role, and group membership',
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
+            email: {
+              type: 'string',
+              description: 'Filter by email address',
             },
-            pageSize: {
+            first_name: {
+              type: 'string',
+              description: 'Filter by first name',
+            },
+            last_name: {
+              type: 'string',
+              description: 'Filter by last name',
+            },
+            limit: {
               type: 'number',
-              description: 'Number of users per page (default: 25)',
+              description: 'Maximum number of users to return per page (1-100)',
+            },
+            next_token: {
+              type: 'string',
+              description: 'Cursor token from a previous response for retrieving the next page',
             },
           },
         },
@@ -248,17 +270,17 @@ export class RetoolMCPServer {
       // ── Groups ──────────────────────────────────────────────────────────────
       {
         name: 'list_groups',
-        description: 'List all permission groups in the Retool organization with their member counts',
+        description: 'List all permission groups in the Retool organization with their member counts and access settings',
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
+            limit: {
               type: 'number',
-              description: 'Page number for pagination (default: 1)',
+              description: 'Maximum number of groups to return per page (1-100)',
             },
-            pageSize: {
-              type: 'number',
-              description: 'Number of groups per page (default: 25)',
+            next_token: {
+              type: 'string',
+              description: 'Cursor token from a previous response for retrieving the next page',
             },
           },
         },
@@ -298,13 +320,13 @@ export class RetoolMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            page: {
+            limit: {
               type: 'number',
-              description: 'Page number for pagination (default: 1)',
+              description: 'Maximum number of spaces to return per page (1-100)',
             },
-            pageSize: {
-              type: 'number',
-              description: 'Number of spaces per page (default: 25)',
+            next_token: {
+              type: 'string',
+              description: 'Cursor token from a previous response for retrieving the next page',
             },
           },
         },
@@ -393,8 +415,8 @@ export class RetoolMCPServer {
 
   private buildPageParams(args: Record<string, unknown>): URLSearchParams {
     const p = new URLSearchParams();
-    if (args.page !== undefined) p.set('page', String(args.page));
-    if (args.pageSize !== undefined) p.set('pageSize', String(args.pageSize));
+    if (args.limit !== undefined) p.set('limit', String(args.limit));
+    if (args.next_token !== undefined) p.set('next_token', args.next_token as string);
     return p;
   }
 
@@ -443,16 +465,38 @@ export class RetoolMCPServer {
   }
 
   private async triggerWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
-    const workflowId = args.workflowId as string;
-    if (!workflowId) return { content: [{ type: 'text', text: 'workflowId is required' }], isError: true };
-    return this.fetchJson(`${this.baseUrl}/workflows/${encodeURIComponent(workflowId)}/trigger`, {
+    const webhookUrl = args.webhookUrl as string;
+    const workflowApiKey = args.workflowApiKey as string;
+    if (!webhookUrl) return { content: [{ type: 'text', text: 'webhookUrl is required' }], isError: true };
+    if (!workflowApiKey) return { content: [{ type: 'text', text: 'workflowApiKey is required' }], isError: true };
+    const response = await fetch(webhookUrl, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Workflow-Api-Key': workflowApiKey,
+      },
       body: JSON.stringify(args.payload ?? {}),
     });
+    if (!response.ok) {
+      let detail: unknown;
+      try { detail = await response.json(); } catch { detail = await response.text(); }
+      return {
+        content: [{ type: 'text', text: `API error ${response.status} ${response.statusText}: ${JSON.stringify(detail)}` }],
+        isError: true,
+      };
+    }
+    const data = await response.json();
+    return {
+      content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
+      isError: false,
+    };
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
     const p = this.buildPageParams(args);
+    if (args.email) p.set('email', args.email as string);
+    if (args.first_name) p.set('first_name', args.first_name as string);
+    if (args.last_name) p.set('last_name', args.last_name as string);
     return this.fetchJson(`${this.baseUrl}/users?${p}`);
   }
 

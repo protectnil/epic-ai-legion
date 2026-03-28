@@ -4,14 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Samsara MCP server was found on GitHub. Third-party implementations
 // exist via Pipedream and viaSocket but are not maintained by Samsara.
 //
 // Base URL: https://api.samsara.com
 // Auth: Bearer token in Authorization header
 // Docs: https://developers.samsara.com/docs/rest-api-overview
-// Rate limits: 150 req/sec per token; 200 req/sec per organization; per-endpoint limits also apply
+// Rate limits: Per-endpoint limits apply (e.g. 25 req/sec for list vehicles,
+//   5 req/sec for safety score, 5 req/sec for alert configurations).
+//   Global organizational limits also apply. See docs for per-endpoint details.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -401,10 +403,35 @@ export class SamsaraMCPServer {
       },
       {
         name: 'list_alerts',
-        description: 'List safety and compliance alerts triggered in Samsara with optional type and time filters',
+        description: 'List Samsara alert configurations with optional filters for IDs and pagination',
         inputSchema: {
           type: 'object',
           properties: {
+            ids: {
+              type: 'string',
+              description: 'Comma-separated alert configuration IDs to filter by',
+            },
+            after: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum results to return',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_alert',
+        description: 'List triggered alert incidents in Samsara with optional time range and alert configuration ID filters',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            alert_configuration_id: {
+              type: 'string',
+              description: 'Filter by alert configuration ID',
+            },
             start_time: {
               type: 'string',
               description: 'Start of time range in RFC 3339 format',
@@ -418,20 +445,6 @@ export class SamsaraMCPServer {
               description: 'Pagination cursor from a previous response',
             },
           },
-        },
-      },
-      {
-        name: 'get_alert',
-        description: 'Get details for a specific Samsara alert by its alert ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            alert_id: {
-              type: 'string',
-              description: 'Alert ID to retrieve',
-            },
-          },
-          required: ['alert_id'],
         },
       },
       {
@@ -646,7 +659,8 @@ export class SamsaraMCPServer {
     if (!args.driver_id || !args.start_ms || !args.end_ms) {
       return { content: [{ type: 'text', text: 'driver_id, start_ms, and end_ms are required' }], isError: true };
     }
-    return this.apiGet(`/fleet/drivers/${encodeURIComponent(args.driver_id as string)}/safety/score?startMs=${encodeURIComponent(args.start_ms as string)}&endMs=${encodeURIComponent(args.end_ms as string)}`);
+    // Legacy API endpoint (v1): /v1/fleet/drivers/{driverId}/safety/score
+    return this.apiGet(`/v1/fleet/drivers/${encodeURIComponent(args.driver_id as string)}/safety/score?startMs=${encodeURIComponent(String(args.start_ms))}&endMs=${encodeURIComponent(String(args.end_ms))}`);
   }
 
   private async listRoutes(args: Record<string, unknown>): Promise<ToolResult> {
@@ -701,12 +715,18 @@ export class SamsaraMCPServer {
   }
 
   private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.apiGet('/fleet/alerts' + this.buildQs({ startTime: args.start_time as string, endTime: args.end_time as string, after: args.after as string }));
+    // Samsara Alerts API: GET /alerts/configurations
+    return this.apiGet('/alerts/configurations' + this.buildQs({ ids: args.ids as string, after: args.after as string, limit: args.limit as number }));
   }
 
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.alert_id) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    return this.apiGet(`/fleet/alerts/${encodeURIComponent(args.alert_id as string)}`);
+    // Samsara Alerts API: GET /alerts/incidents (triggered alert events)
+    return this.apiGet('/alerts/incidents' + this.buildQs({
+      alertConfigurationId: args.alert_configuration_id as string,
+      startTime: args.start_time as string,
+      endTime: args.end_time as string,
+      after: args.after as string,
+    }));
   }
 
   private async listTags(args: Record<string, unknown>): Promise<ToolResult> {

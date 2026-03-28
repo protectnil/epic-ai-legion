@@ -110,6 +110,10 @@ export class MergeApiMCPServer {
               type: 'string',
               description: 'The linked account ID to retrieve',
             },
+            category: {
+              type: 'string',
+              description: 'Integration category to query: hris, ats, crm, accounting, ticketing, filestorage (default: hris)',
+            },
           },
           required: ['linked_account_id'],
         },
@@ -123,6 +127,10 @@ export class MergeApiMCPServer {
             linked_account_id: {
               type: 'string',
               description: 'The linked account ID to delete',
+            },
+            category: {
+              type: 'string',
+              description: 'Integration category: hris, ats, crm, accounting, ticketing, filestorage (default: hris)',
             },
           },
           required: ['linked_account_id'],
@@ -457,6 +465,10 @@ export class MergeApiMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
+            category: {
+              type: 'string',
+              description: 'Integration category to query: hris, ats, crm, accounting, ticketing, filestorage (default: hris)',
+            },
             page_size: {
               type: 'number',
               description: 'Number of results per page (default: 25)',

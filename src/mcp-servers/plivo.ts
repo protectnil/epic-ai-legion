@@ -4,13 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Plivo MCP server was found on GitHub or Plivo's developer portal.
 //
 // Base URL: https://api.plivo.com/v1/Account/{auth_id}
 // Auth: HTTP Basic auth — Auth ID as username, Auth Token as password
-// Docs: https://www.plivo.com/docs/voice/api/overview
-// Rate limits: 429 returned on excess; limits vary by endpoint and plan tier
+// Docs: https://plivo.com/docs/account/api/overview
+// Rate limits: 300 requests per 5 seconds (per account API overview documentation)
 
 import { ToolDefinition, ToolResult } from './types.js';
 

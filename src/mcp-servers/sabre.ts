@@ -4,8 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Sabre GDS MCP server was found on GitHub or the Sabre developer hub.
+// Official MCP: https://developer.sabre.com/product-collection/mcp-server — transport: proprietary/hosted, auth: Sabre commercial credentials
+// Sabre announced its MCP server in September 2025 as a proprietary commercial offering embedded in SabreMosaic.
+// It is NOT an open npm/GitHub MCP server — access requires a Sabre commercial agreement.
+// Vendor MCP covers: flights, hotels, post-booking (tool count not publicly documented).
+// Our adapter covers: 14 tools.
+// Recommendation: use-rest-api — Sabre MCP does not meet criterion 1 (not publicly published/accessible);
+//   it is a closed commercial offering requiring a Sabre contract. Our REST adapter is the accessible integration.
 //
 // Base URL: https://api.havail.sabre.com
 // Auth: OAuth2 client credentials — POST https://api.havail.sabre.com/v2/auth/token

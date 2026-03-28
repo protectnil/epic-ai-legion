@@ -5,10 +5,12 @@
  */
 
 // Official MCP: https://github.com/salesforcecli/mcp — transport: stdio, auth: Salesforce CLI auth
-// Official Salesforce DX MCP Server, Developer Preview (launched mid-2025). Focuses on DX tooling
-// (deploy code, create scratch orgs, run tests) with 60+ tools, not runtime data CRUD.
-// Our adapter covers: 18 tools (runtime data operations). Vendor MCP covers DX/metadata workflows.
-// Recommendation: Use vendor MCP for dev/deploy workflows. Use this adapter for runtime data access.
+// Official Salesforce DX MCP Server (@salesforce/mcp), Beta as of May 2025. Exposes only 7 tools
+// (sf-list-all-orgs, sf-get-username, sf-retrieve-metadata, sf-deploy-metadata,
+//  sf-assign-permission-set, sf-query-org, sf-test-apex). Fails criterion: <10 tools.
+// Our adapter covers: 18 tools (runtime data operations). Vendor MCP covers DX/deploy tooling only.
+// Recommendation: use-rest-api — vendor MCP has only 7 tools (< 10 required) and covers DX/deploy
+// workflows only, not runtime data CRUD. Our REST adapter is the correct integration for data access.
 //
 // Base URL: https://{instance}.salesforce.com/services/data/v66.0
 // Auth: OAuth2 Bearer token — use Connected App + OAuth2 flow to obtain access_token
@@ -512,7 +514,7 @@ export class SalesforceMCPServer {
 
   private async listRecent(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) ?? 25;
-    return this.fetchJson(`${this.baseUrl}/recent?recentlyViewedItems=${limit}`);
+    return this.fetchJson(`${this.baseUrl}/recent?limit=${limit}`);
   }
 
   private async getUserInfo(): Promise<ToolResult> {

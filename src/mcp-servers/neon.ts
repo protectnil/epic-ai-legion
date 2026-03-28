@@ -4,10 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/neondatabase/mcp-server-neon — transport: stdio, auth: API token
-// Our adapter covers: 16 tools (full management API). Vendor MCP covers: project, branch, migration tools.
-// Recommendation: Use this adapter for full Neon Management API coverage including computes, roles,
-//   databases, and operations. Vendor MCP focuses on branching workflows for local/IDE use only.
+// Official MCP: https://github.com/neondatabase/mcp-server-neon — transport: streamable-HTTP (remote: mcp.neon.tech), auth: API token or OAuth2
+// Our adapter covers: 16 tools (management API). Vendor MCP covers: 22+ tools (project/branch mgmt + SQL execution + migrations + query tuning).
+// Recommendation: use-both — MCP has SQL execution tools not in REST API (run_sql, run_sql_transaction,
+//   get_database_tables, describe_table_schema, list_slow_queries, prepare_database_migration,
+//   complete_database_migration, explain_sql_statement, prepare_query_tuning, complete_query_tuning,
+//   provision_neon_auth). REST adapter has operations not in MCP (restore_branch, compute endpoint CRUD,
+//   snapshot management, API key management, VPC endpoint restrictions, JWKS URL management).
+//   FederationManager routes shared tools (list_projects, create_project, delete_project, create_branch,
+//   delete_branch, get_connection_uri) through MCP by default.
+// MCP-sourced tools (11): run_sql, run_sql_transaction, get_database_tables, describe_table_schema,
+//   list_slow_queries, prepare_database_migration, complete_database_migration, explain_sql_statement,
+//   prepare_query_tuning, complete_query_tuning, provision_neon_auth
+// REST-sourced tools (16): list_projects, get_project, create_project, delete_project, list_branches,
+//   get_branch, create_branch, delete_branch, restore_branch, list_databases, create_database,
+//   delete_database, list_roles, create_role, delete_role, get_connection_uri
+// MCP maintained: yes — active issues and commits as of March 2026 (issues #207 opened 2026-03-11)
 //
 // Base URL: https://console.neon.tech/api/v2
 // Auth: Bearer token (Neon API key)

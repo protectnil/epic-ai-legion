@@ -4,17 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: PitchBook announced an Essential MCP integration with Perplexity (2026-03-12)
-// and an OpenAI/ChatGPT connector, but no self-hosted or open-source MCP server has been published.
-// The integrations are hosted by PitchBook and available to PitchBook subscribers.
-// Our adapter covers: 14 tools (companies, deals, investors, funds, people, service providers).
-// Recommendation: PitchBook API access requires a standalone contract — contact your PitchBook rep.
+// Official MCP: None found as of 2026-03-28
+// PitchBook announced subscriber-only hosted integrations with Perplexity (2026-03-12) and OpenAI/ChatGPT,
+// but these are managed integrations hosted by PitchBook for their subscribers — no open-source MCP server,
+// no GitHub repo, no npm package, and no self-hostable endpoint has been published. Does not qualify as
+// an official MCP server under the protocol criteria. Our adapter covers: 14 tools.
+// Recommendation: use-rest-api
 //
 // Base URL: https://api.pitchbook.com
 // Auth: PB-Token API key in Authorization header (Authorization: PB-Token {API_KEY})
 // Docs: https://pitchbook.com/help/PitchBook-api
 //       https://documenter.getpostman.com/view/5190535/TzCV1iRc (v2 Postman docs)
-// Rate limits: Credit-based — each API call deducts from your allocated credits
+// Rate limits: Credit-based — each API call deducts from your allocated credits (402 returned on exhaustion)
 
 import { ToolDefinition, ToolResult } from './types.js';
 

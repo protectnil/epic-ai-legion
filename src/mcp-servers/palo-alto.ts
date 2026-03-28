@@ -4,9 +4,12 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Palo Alto Networks / Cortex XDR MCP server was found on GitHub or npm.
-// The Cortex platform has a developer portal but no published MCP server.
+// Official MCP: None found as of 2026-03-28
+// Palo Alto Networks announced a "Cortex MCP Server" (open beta, Dec 2025) for XSIAM/XDR/Cloud
+// operations but no confirmed public GitHub URL or npm package was found as of 2026-03-28.
+// The blog post (paloaltonetworks.com/blog/security-operations/introducing-the-cortex-mcp-server/)
+// describes prebuilt tools for querying issues, cases, assets, endpoints, and compliance results,
+// but the server is not yet publicly distributed. Re-evaluate once a public repo or package ships.
 //
 // Base URL: https://{fqdn}.xdr.{region}.paloaltonetworks.com — customer-specific, no default
 // Auth: Standard API key — Authorization: {api_key}, x-xdr-auth-id: {api_key_id}

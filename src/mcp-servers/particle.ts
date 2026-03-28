@@ -332,7 +332,7 @@ export class ParticleMCPServer {
       },
       {
         name: 'get_access_token_info',
-        description: 'Get information about the current access token including scopes and expiry',
+        description: 'Get the Particle account profile for the authenticated user — returns username, account type, and membership info',
         inputSchema: {
           type: 'object',
           properties: {},

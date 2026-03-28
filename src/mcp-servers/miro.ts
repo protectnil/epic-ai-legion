@@ -5,9 +5,24 @@
  */
 
 // Official MCP: https://github.com/miroapp/miro-ai — transport: streamable-HTTP (https://mcp.miro.com/), auth: OAuth2
-// Our adapter covers: 22 tools (boards, items, sticky notes, shapes, connectors, tags, members).
-// Vendor MCP covers: full REST API surface via hosted server.
-// Recommendation: Use vendor MCP for full coverage and live board context. Use this adapter for air-gapped deployments.
+// MCP maintained: YES — launched 2026-02-02, actively developed by Miro. Last checked: 2026-03-28.
+// MCP official: YES — published by Miro (miroapp GitHub org).
+// MCP tool count: 13 tools — AI-workflow-centric (context extraction, diagram generation, doc/table ops).
+//
+// Integration: use-both
+// MCP-sourced tools (13): board_list_items, context_explore, context_get, diagram_create, diagram_get_dsl,
+//   doc_create, doc_get, doc_update, image_get_url, image_get_data, table_create, table_list_rows, table_sync_rows
+// REST-sourced tools (22): list_boards, get_board, create_board, update_board, delete_board,
+//   get_board_members, share_board, get_board_items, get_item, delete_item,
+//   create_sticky_note, get_sticky_note, update_sticky_note, create_shape, get_shape, update_shape,
+//   create_connector, get_connectors, update_connector, delete_connector, create_tag, get_tags
+// Overlap: NONE — MCP tools focus on AI context/diagram/doc workflows; REST tools handle CRUD operations.
+// Combined coverage: 35 tools (MCP: 13 + REST: 22 - shared: 0).
+// The FederationManager should route all MCP tool names through the vendor MCP connection.
+//
+// Our adapter covers: 22 tools. Vendor MCP covers: 13 tools.
+// Recommendation: use-both — MCP has 13 unique AI-workflow tools not in REST; REST has 22 unique CRUD
+//   endpoints not in MCP. Full coverage requires union. Air-gapped deployments use REST adapter only.
 //
 // Base URL: https://api.miro.com/v2
 // Auth: OAuth2 Bearer token in Authorization header

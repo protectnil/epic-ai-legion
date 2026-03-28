@@ -4,13 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Proofpoint MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28 — no official Proofpoint MCP server exists on GitHub or npm.
+// Our adapter covers: 12 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api.
 //
 // Base URL: https://tap-api-v2.proofpoint.com
 // Auth: HTTP Basic — service principal (username) + secret (password)
 // Docs: https://help.proofpoint.com/Threat_Insight_Dashboard/API_Documentation
-// Rate limits: Max 1 hour of data per SIEM request; no published req/min limit
+// Rate limits: SIEM endpoints (clicks/blocked, messages/delivered, all): 1800 req/24h.
+//   clicks/permitted: 1800 req/24h (separate pool). Campaign IDs: 50 req/24h.
+//   Forensics (per threatId, no campaign): 50 req/24h. Forensics (with campaign): 1800 req/24h.
+//   People/VAP: 50 req/24h. People/top-clickers: 50 req/24h. URL decode: 1800 req/24h.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -54,6 +58,7 @@ export class ProofpointMCPServer {
         'get_threat_detail',
         'list_forensics',
         'get_vap',
+        'list_top_clickers',
         'decode_urls',
       ],
       description:
@@ -340,6 +345,29 @@ export class ProofpointMCPServer {
         },
       },
       {
+        name: 'list_top_clickers',
+        description:
+          'Retrieve top URL clickers in your organization — users most likely to click malicious links — with attack index scores for a given time window.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            window: {
+              type: 'number',
+              description: 'Number of days to include: 14, 30, or 90 (required).',
+            },
+            size: {
+              type: 'number',
+              description: 'Maximum number of top clickers to return (default: 1000).',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number for pagination (default: 1).',
+            },
+          },
+          required: ['window'],
+        },
+      },
+      {
         name: 'decode_urls',
         description:
           'Decode one or more Proofpoint-rewritten (TAP-protected) URLs back to their original target URLs.',
@@ -381,6 +409,8 @@ export class ProofpointMCPServer {
           return await this.listForensics(args);
         case 'get_vap':
           return await this.getVap(args);
+        case 'list_top_clickers':
+          return await this.listTopClickers(args);
         case 'decode_urls':
           return await this.decodeUrls(args);
         default:
@@ -532,6 +562,31 @@ export class ProofpointMCPServer {
 
     const response = await fetch(
       `${this.baseUrl}/v2/people/vap?${params.toString()}`,
+      { headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' } },
+    );
+
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `Proofpoint API error: ${response.status} ${response.statusText}` }],
+        isError: true,
+      };
+    }
+
+    return this.truncatedResult(await response.json());
+  }
+
+  private async listTopClickers(args: Record<string, unknown>): Promise<ToolResult> {
+    const window = args.window as number;
+    if (!window) {
+      return { content: [{ type: 'text', text: 'window is required (14, 30, or 90)' }], isError: true };
+    }
+
+    const params = new URLSearchParams({ window: String(window) });
+    if (args.size !== undefined) params.set('size', String(args.size));
+    if (args.page !== undefined) params.set('page', String(args.page));
+
+    const response = await fetch(
+      `${this.baseUrl}/v2/people/top-clickers?${params.toString()}`,
       { headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' } },
     );
 

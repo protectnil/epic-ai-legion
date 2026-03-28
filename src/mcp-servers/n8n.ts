@@ -4,10 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official n8n MCP server was found on GitHub. n8n exposes its own public REST API which this
-// adapter wraps. n8n also has a built-in MCP node for calling MCP servers from within n8n workflows,
-// but that is a different capability unrelated to managing the n8n instance itself.
+// adapter wraps. n8n also has a built-in MCP trigger node for making n8n workflows available as an
+// MCP server, and a community MCP (czlonkowski/n8n-mcp) for n8n node documentation — but neither
+// is an official vendor-published MCP for managing the n8n instance via its public REST API.
+// Our adapter covers: 20 tools. Vendor MCP covers: 0 tools (none found).
+// Recommendation: use-rest-api — no official MCP exists.
 //
 // Base URL: http://localhost:5678/api/v1 (self-hosted default) — override via baseUrl config
 //           For n8n Cloud: https://<your-subdomain>.app.n8n.cloud/api/v1
@@ -516,6 +519,19 @@ export class N8NMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
+  private async n8nPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
   private async n8nDelete(path: string): Promise<ToolResult> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'DELETE',
@@ -568,7 +584,7 @@ export class N8NMCPServer {
     if (args.connections) {
       try { body.connections = JSON.parse(args.connections as string); } catch { return { content: [{ type: 'text', text: 'connections must be a valid JSON string' }], isError: true }; }
     }
-    return this.n8nPatch(`/workflows/${encodeURIComponent(args.workflow_id as string)}`, body);
+    return this.n8nPut(`/workflows/${encodeURIComponent(args.workflow_id as string)}`, body);
   }
 
   private async deleteWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
@@ -622,7 +638,7 @@ export class N8NMCPServer {
 
   private async updateTag(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tag_id || !args.name) return { content: [{ type: 'text', text: 'tag_id and name are required' }], isError: true };
-    return this.n8nPatch(`/tags/${encodeURIComponent(args.tag_id as string)}`, { name: args.name });
+    return this.n8nPut(`/tags/${encodeURIComponent(args.tag_id as string)}`, { name: args.name });
   }
 
   private async deleteTag(args: Record<string, unknown>): Promise<ToolResult> {

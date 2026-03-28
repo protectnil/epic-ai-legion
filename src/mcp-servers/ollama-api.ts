@@ -4,9 +4,9 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Ollama MCP server was found on GitHub. Community wrappers exist but are
-// unmaintained. This adapter provides full REST API coverage for local Ollama deployments.
+// Official MCP: None found as of 2026-03-28
+// No official Ollama MCP server exists. Community wrappers exist (e.g. rawveg/ollama-mcp)
+// but are not published by Ollama and do not meet the official-MCP criteria.
 //
 // Base URL: http://localhost:11434 (configurable via baseUrl)
 // Auth: None — Ollama runs locally with no auth by default
@@ -36,7 +36,7 @@ export class OllamaMCPServer {
       toolNames: [
         'list_models', 'get_running_models', 'show_model', 'pull_model',
         'push_model', 'copy_model', 'delete_model', 'create_model',
-        'generate', 'chat', 'embed',
+        'generate', 'chat', 'embed', 'get_version',
       ],
       description: 'Local LLM inference via Ollama: manage models (pull, push, copy, delete, create), generate completions, chat, and create embeddings.',
       author: 'protectnil',
@@ -251,6 +251,14 @@ export class OllamaMCPServer {
           required: ['model', 'input'],
         },
       },
+      {
+        name: 'get_version',
+        description: 'Get the current version string of the running Ollama server',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
     ];
   }
 
@@ -279,6 +287,8 @@ export class OllamaMCPServer {
           return await this.chat(args);
         case 'embed':
           return await this.embed(args);
+        case 'get_version':
+          return await this.getVersion();
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -514,6 +524,21 @@ export class OllamaMCPServer {
     const text = JSON.stringify(data, null, 2);
     return {
       content: [{ type: 'text', text: text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text }],
+      isError: false,
+    };
+  }
+
+  private async getVersion(): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}/api/version`);
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
+        isError: true,
+      };
+    }
+    const data = await response.json();
+    return {
+      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
       isError: false,
     };
   }

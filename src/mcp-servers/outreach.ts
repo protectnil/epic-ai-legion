@@ -4,9 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// A CData community adapter (CDataSoftware/outreach.io-mcp-server-by-cdata) exists but is
-// not published by Outreach and has limited coverage. No official Outreach MCP server found.
+// Official MCP: https://support.outreach.io/hc/en-us/articles/46370115253403 — transport: streamable-HTTP, auth: OAuth2
+//   Vendor-hosted MCP server launched February 2026. Official (published by Outreach).
+//   Actively maintained. Tool count: ~10 tools (fetch_kaia_meetings, emails_search,
+//   sequence_search_by_name, prospect_get_by_id, prospect_search_by_name,
+//   prospect_search_by_ext_id, account_get_by_id, account_search_by_name,
+//   account_search_by_ext_id, opportunity_get_by_id).
+//   MCP tools are read/lookup-only. Our REST adapter adds write operations the MCP lacks.
+// Integration: use-both
+//   MCP-sourced tools (10): fetch_kaia_meetings, emails_search, sequence_search_by_name,
+//     prospect_get_by_id, prospect_search_by_name, prospect_search_by_ext_id,
+//     account_get_by_id, account_search_by_name, account_search_by_ext_id, opportunity_get_by_id
+//   REST-sourced tools (23): list_prospects, get_prospect, create_prospect, update_prospect,
+//     list_accounts, get_account, create_account, list_sequences, get_sequence,
+//     list_sequence_states, create_sequence_state, list_opportunities, get_opportunity,
+//     create_opportunity, list_mailings, get_mailing, list_calls, get_call,
+//     list_tasks, get_task, create_task, list_users, get_user
+//   Combined coverage: 33 tools (MCP: 10 + REST: 23; shared: 0 — MCP tools use different
+//   naming convention than REST adapter tools)
+// Our adapter covers: 23 tools. Vendor MCP covers: 10 tools.
 //
 // Base URL: https://api.outreach.io/api/v2
 // Auth: OAuth2 Bearer token (access tokens valid 2 hours; refresh tokens valid 14 days)
@@ -17,7 +33,6 @@
 // Rate limits: Not publicly documented; Outreach applies per-token rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
-import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface OutreachConfig {
   accessToken: string;
@@ -33,7 +48,7 @@ export class OutreachMCPServer {
     this.baseUrl = config.baseUrl || 'https://api.outreach.io/api/v2';
   }
 
-  static catalog(): AdapterCatalogEntry {
+  static catalog() {
     return {
       name: 'outreach',
       displayName: 'Outreach',

@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Salesloft-published MCP server exists. CData ships a read-only third-party
 // adapter (github.com/CDataSoftware/salesloft-mcp-server-by-cdata) via JDBC — not official.
 // This adapter provides full read/write coverage of the Salesloft API v2.
@@ -789,7 +789,7 @@ export class SalesloftMCPServer {
       person_id: 'filter[person_id]',
       cadence_id: 'filter[cadence_id]',
     });
-    return this.fetchJson(`${this.baseUrl}/calls?${p}`);
+    return this.fetchJson(`${this.baseUrl}/activities/calls?${p}`);
   }
 
   private async listEmailActivities(args: Record<string, unknown>): Promise<ToolResult> {

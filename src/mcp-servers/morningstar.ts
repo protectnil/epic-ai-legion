@@ -4,11 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/Morningstar/morningstar-mcp-server — transport: stdio + remote (https://mcp.morningstar.com/mcp)
+// Official MCP: https://github.com/Morningstar/morningstar-mcp-server — ARCHIVED 2025-09-16 (read-only, no new commits)
+//   Note: Development moved outside that repo per the repo notice. A newer Morningstar MCP Server is referenced at
+//   https://developer.morningstar.com/direct-web-services/documentation/direct-web-services/morningstar-mcp-server/
+//   and at https://www.morningstar.com/business/products/direct-ai-solutions (vendor-hosted, OAuth2 auth).
+//   The newer hosted MCP server has no public GitHub repo and tool count is unverified. The archived repo exposed
+//   only 2 tools (Morningstar Datapoint Tool, Morningstar Articles Tool) — fails criteria 3 (<10 tools).
 // Our adapter covers: 16 tools (securities, portfolio analysis, fund holdings, screening, research).
-// Vendor MCP covers: 3 core tools (datapoint, articles, fund holdings) via Direct Web Services.
-// Recommendation: Use vendor MCP for editorial research and AI-powered queries via Claude/ChatGPT.
-//                 Use this adapter for broader API surface (portfolio X-Ray, screening, batch datapoints).
+// Vendor MCP covers: 2 tools verified (archived repo) — newer hosted MCP tool count unverified.
+// Recommendation: use-rest-api — the only verifiable MCP (GitHub archived repo) fails criteria 2 (abandoned
+//   2025-09-16, >6 months ago) and criteria 3 (<10 tools). The newer hosted MCP has no public tool inventory.
+//   This REST adapter is the authoritative integration with full 16-tool coverage.
 //
 // Base URL: https://www.us-api.morningstar.com (Americas); https://emea-api.morningstar.com (EMEA)
 // Auth: OAuth2 username/password — POST /token/oauth returns a Bearer token valid 60 minutes

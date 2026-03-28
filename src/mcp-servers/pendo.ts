@@ -5,10 +5,18 @@
  */
 
 // Official MCP: https://app.pendo.io/mcp/v0/shttp — transport: Streamable HTTP (with SSE fallback), auth: OAuth
-// The official Pendo MCP server is in open beta as of 2026-03. Hosted by Pendo.
-// Our adapter covers: 15 tools (visitors, accounts, features, pages, guides, analytics).
-// Recommendation: Use the official Pendo MCP for OAuth-based AI assistant integrations.
-//                 Use this adapter for server-to-server integrations using integration key auth.
+// The official Pendo MCP server is in open beta as of 2026-03. Hosted by Pendo. Requires admin enablement per org.
+// Vendor MCP covers: 11 tools (all read-only analytics queries). Our adapter covers: 15 tools (CRUD + aggregation).
+// Integration: use-both
+// MCP-sourced tools (7): activityQuery, visitorQuery, visitorMetadataSchema, accountQuery, accountMetadataSchema,
+//   guideMetrics, searchEntities, sessionReplayList, get_feedback_items, get_feedback_insights, generate_feedback_topics
+//   (MCP tools are read-only analytics; unique to MCP: sessionReplayList, get_feedback_items, get_feedback_insights, generate_feedback_topics)
+// REST-sourced tools (15): list_visitors, get_visitor, search_visitors, list_accounts, get_account, search_accounts,
+//   list_pages, get_page, get_page_analytics, list_features, get_feature, get_feature_analytics,
+//   list_guides, get_guide, run_aggregation
+// Combined coverage: MCP for OAuth analytics queries; REST adapter for server-to-server CRUD and aggregation.
+// Recommendation: use-both — each side has unique capabilities. MCP has session replay and feedback tools not in REST API.
+//                 REST adapter has structural CRUD (pages, features, guides config) and aggregation not in MCP.
 //
 // Base URL: https://app.pendo.io
 // Auth: x-pendo-integration-key header (static integration key from Pendo Settings → Integrations)

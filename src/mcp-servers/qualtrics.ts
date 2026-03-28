@@ -4,10 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Qualtrics MCP server from Qualtrics/SAP was found. Community implementation exists at
-// https://github.com/yrvelez/qualtrics-mcp-server (53 tools, community-maintained, not official).
-// Recommendation: Use this adapter for a curated, supported set of core tools. Evaluate the community MCP for full coverage.
+// Official MCP: https://api.qualtrics.com (vendor-hosted, per-API MCP servers) — transport: streamable-HTTP, auth: X-API-TOKEN
+// Qualtrics officially provides an MCP server for every JSON-based API endpoint documented on api.qualtrics.com.
+// Each API group (Surveys, Distributions, Contacts, etc.) has its own MCP server exposing tools 1:1 with API endpoints.
+// The full API reference has 30+ endpoint groups (Surveys, Distributions, Contacts, Directories, Mailing Lists,
+// Mailing List Contacts, Survey Responses, Import/Export, Users, Organizations, Tickets, Groups, etc.).
+// Community MCP: https://github.com/yrvelez/qualtrics-mcp-server (53 tools, stdio, community-maintained, not official).
+// Our adapter covers: 16 tools. Vendor official MCP covers: all JSON API endpoints (50+ tools estimated).
+// Recommendation: use-vendor-mcp — the official Qualtrics MCP covers the full API surface, which is a strict superset
+// of this adapter's 16 tools. Use this adapter for air-gapped deployments only.
 //
 // Base URL: https://{datacenter_id}.qualtrics.com/API/v3 (datacenter ID is account-specific, e.g. iad1, ca1, fra1)
 // Auth: X-API-TOKEN header with the Qualtrics API token

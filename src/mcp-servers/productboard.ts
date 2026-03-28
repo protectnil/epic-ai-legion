@@ -596,7 +596,7 @@ export class ProductboardMCPServer {
   private async listFeatureObjectives(args: Record<string, unknown>): Promise<ToolResult> {
     const featureId = args.featureId as string;
     if (!featureId) return { content: [{ type: 'text', text: 'featureId is required' }], isError: true };
-    return this.doFetch(`${this.baseUrl}/feature-objective-links?feature.id=${encodeURIComponent(featureId)}`);
+    return this.doFetch(`${this.baseUrl}/features/${encodeURIComponent(featureId)}/links/objectives`);
   }
 
   private async linkFeatureToInitiative(args: Record<string, unknown>): Promise<ToolResult> {
@@ -605,9 +605,8 @@ export class ProductboardMCPServer {
     if (!featureId || !initiativeId) {
       return { content: [{ type: 'text', text: 'featureId and initiativeId are required' }], isError: true };
     }
-    return this.doFetch(`${this.baseUrl}/feature-initiative-links`, {
+    return this.doFetch(`${this.baseUrl}/features/${encodeURIComponent(featureId)}/links/initiatives/${encodeURIComponent(initiativeId)}`, {
       method: 'POST',
-      body: JSON.stringify({ data: { feature: { id: featureId }, initiative: { id: initiativeId } } }),
     });
   }
 }

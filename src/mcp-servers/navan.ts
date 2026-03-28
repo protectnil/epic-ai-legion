@@ -4,14 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Navan MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28
+// No official Navan MCP server was found on GitHub, npmjs.com, or the Navan developer portal.
+// mcpbundles.com lists 1 community-built tool (list_bookings) — NOT an official Navan MCP server.
 //
 // Base URL: https://api.navan.com (US) — override via baseUrl for EU region (https://app-fra.navan.com)
-// Auth: OAuth2 client credentials — POST /reauthenticate with client_id + client_secret in body
-//       Returns a bearer token. Re-authenticate before expiry using the /reauthenticate endpoint.
+// Auth: OAuth2 client credentials — POST /reauthenticate with client_id + client_secret in JSON body.
+//       Returns a bearer token. Token endpoints confirmed: POST /reauthenticate (refresh/obtain token).
+//       Verified: client_id + client_secret sent as JSON body (not Basic auth header).
 // Docs: https://app.navan.com/app/helpcenter/articles/travel/admin/other-integrations/navan-tmc-api-integration-documentation
-// Rate limits: Not publicly documented; contact Navan for production rate limit details
+//       Note: Official API docs require admin-level account access to view. Endpoints partially verified
+//       via Supergood proxy docs and Stitchflow API guide (confirmed: /get_users, /get_user_trips, /get_admin_trips).
+//       Endpoints /expenses, /transactions, /policies, /departments are unverified — not in any public source.
+// Rate limits: Not publicly documented; implement exponential backoff on 429 responses.
 // Note: Expense API requires Navan to enable Public API on your account. Contact Navan support.
 
 import { ToolDefinition, ToolResult } from './types.js';

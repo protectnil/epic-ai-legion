@@ -4,13 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/pulumi/mcp-server — hosted at mcp.ai.pulumi.com
-// Transport: streamable-HTTP. Auth: OAuth2 (hosted) or API token (self-hosted).
-// The vendor MCP exposes Pulumi IaC operations (preview, up, destroy, refresh) via
-// the hosted runtime. Use vendor MCP for full IaC execution.
-// This adapter covers: 15 tools (Pulumi Cloud REST API — stacks, deployments, webhooks,
-//   audit logs, org management). Use this adapter for direct API token access, self-hosted
-//   Pulumi Cloud, or air-gapped environments.
+// Official MCP: https://www.npmjs.com/package/@pulumi/mcp-server (npm: @pulumi/mcp-server v0.2.0)
+//   Also hosted at mcp.ai.pulumi.com. Transport: stdio (local) + streamable-HTTP (hosted).
+//   Auth: OAuth2 (hosted) or PULUMI_ACCESS_TOKEN env var (local).
+//   Vendor MCP exposes 8 tools: get-stacks, resource-search, get-policy-violations, get-users,
+//   neo-bridge, neo-get-tasks, neo-continue-task, neo-reset-conversation.
+//   Fails criteria: only 8 tools (threshold is 10+). Decision: use-rest-api.
+// Our adapter covers: 16 tools (Pulumi Cloud REST API — stacks, deployments, webhooks,
+//   audit logs, org management). Vendor MCP covers: 8 tools (IaC execution + simple queries).
+// Recommendation: use-rest-api. Vendor MCP has fewer tools than our adapter and focuses on
+//   Neo IaC execution (not REST stack/deployment management). Use this adapter for direct API
+//   token access, programmatic stack management, self-hosted Pulumi Cloud, or air-gapped environments.
 //
 // Base URL: https://api.pulumi.com
 // Auth: Authorization: token {accessToken}  (NOT "Bearer")

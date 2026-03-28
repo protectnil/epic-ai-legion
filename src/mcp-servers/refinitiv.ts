@@ -4,8 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Refinitiv/LSEG MCP server was found on GitHub or the LSEG Developer Community.
+// Official MCP: LSEG operates a managed/hosted MCP server (not a public open-source repo with enumerable tools).
+//   LSEG announced their managed MCP server for Microsoft Copilot Studio in Oct 2025 (press.lseg.com).
+//   No public GitHub repo or npm package with a documented tool list was found as of 2026-03-28.
+//   The managed MCP is available to LSEG enterprise customers via Microsoft Copilot Studio integration only —
+//   it is NOT independently deployable, does not meet criteria 1 (public repo) or 3 (tool count verifiable).
+// Our adapter covers: 11 tools. Vendor MCP covers: unknown (not publicly enumerable).
+// Recommendation: use-rest-api — no independently deployable official MCP with a verifiable tool list found.
 //
 // Base URL: https://api.refinitiv.com
 // Auth: OAuth2 client credentials (v2) — POST https://api.refinitiv.com/auth/oauth2/v2/token
@@ -177,12 +182,11 @@ export class RefinitivMCPServer {
       },
       {
         name: 'get_ownership',
-        description: 'Get institutional and insider ownership data for a company by RIC code',
+        description: 'Get consolidated institutional investor ownership data for a company via RIC code, including top holders',
         inputSchema: {
           type: 'object',
           properties: {
             universe: { type: 'string', description: 'RIC code for the company (e.g. AAPL.O)' },
-            ownerType: { type: 'string', description: 'Ownership type: Institution, Insider, Fund, Strategic (default: Institution)' },
             limit: { type: 'number', description: 'Maximum number of owners to return (max: 100, default: 25)' },
           },
           required: ['universe'],
@@ -313,13 +317,10 @@ export class RefinitivMCPServer {
 
   private async getEsgScores(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.universe) return { content: [{ type: 'text', text: 'universe is required' }], isError: true };
-    const params: Record<string, string> = {
-      universe: args.universe as string,
-      fields: 'TR.TRESGScore,TR.EnvironmentPillarScore,TR.SocialPillarScore,TR.GovernancePillarScore',
-    };
+    const params: Record<string, string> = { universe: args.universe as string };
     if (args.start) params.start = args.start as string;
     if (args.end) params.end = args.end as string;
-    return this.get('/data/fundamental-and-reference/v1/esg-scores', params);
+    return this.get('/data/environmental-social-governance/v1/views/scores', params);
   }
 
   private async getEsgFull(args: Record<string, unknown>): Promise<ToolResult> {
@@ -327,7 +328,7 @@ export class RefinitivMCPServer {
     const params: Record<string, string> = { universe: args.universe as string };
     if (args.start) params.start = args.start as string;
     if (args.end) params.end = args.end as string;
-    return this.get('/data/fundamental-and-reference/v1/esg-full', params);
+    return this.get('/data/environmental-social-governance/v1/views/scores-full', params);
   }
 
   private async searchNews(args: Record<string, unknown>): Promise<ToolResult> {
@@ -359,12 +360,10 @@ export class RefinitivMCPServer {
 
   private async getOwnership(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.universe) return { content: [{ type: 'text', text: 'universe is required' }], isError: true };
-    const params: Record<string, string> = {
-      universe: args.universe as string,
-      ownerType: (args.ownerType as string) || 'Institution',
-    };
+    const params: Record<string, string> = { universe: args.universe as string };
     if (args.limit) params.limit = String(args.limit);
-    return this.get('/data/ownership/v1', params);
+    // Verified endpoint: /data/ownership/v1/views/consolidated/investors (LSEG Developer docs)
+    return this.get('/data/ownership/v1/views/consolidated/investors', params);
   }
 
   private async getFundamentalSummary(args: Record<string, unknown>): Promise<ToolResult> {

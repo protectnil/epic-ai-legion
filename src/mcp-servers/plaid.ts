@@ -4,10 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/plaid/ai-coding-toolkit — transport: stdio, auth: Plaid credentials
-// Plaid's official MCP server focuses on sandbox/development tooling and Plaid Dashboard analytics.
-// Our adapter covers: 18 tools (production data APIs). Vendor MCP covers: sandbox/dev utilities only.
-// Recommendation: Use vendor MCP for sandbox dev workflows. Use this adapter for production data access.
+// Official MCP: https://github.com/plaid/ai-coding-toolkit — transport: stdio, auth: Plaid sandbox credentials
+//   Also: Plaid Dashboard MCP at https://plaid.com/docs/resources/mcp/ — transport: streamable-HTTP, auth: OAuth2 client_credentials (scope: mcp:dashboard)
+//   The ai-coding-toolkit MCP covers sandbox/dev tooling (mock data generation, doc search) — not production data APIs.
+//   The Dashboard MCP covers integration health and Plaid Dashboard analytics — not production financial data.
+//   Neither MCP overlaps with the production data operations this adapter covers.
+// Our adapter covers: 18 tools (production data APIs). Vendor MCP covers: dev/dashboard utilities (different scope).
+// Recommendation: use-rest-api for production financial data. Vendor MCPs are complementary dev tools, not a replacement.
 //
 // Base URL: https://production.plaid.com (or https://sandbox.plaid.com for testing)
 // Auth: All requests POST with client_id + secret in request body; access_token per Item
@@ -395,7 +398,7 @@ export class PlaidMCPServer {
       },
       {
         name: 'get_income_verification',
-        description: 'Retrieve income verification data including paystubs and employer info for the Item',
+        description: 'Retrieve payroll income verification data including paystubs, W-2s, and employer info via /credit/payroll_income/get',
         inputSchema: {
           type: 'object',
           properties: {
@@ -663,7 +666,7 @@ export class PlaidMCPServer {
   // ── Income & Statements ───────────────────────────────────────────────────
 
   private async getIncomeVerification(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.postPlaid('/income/verification/paystubs/get', this.baseBody(args));
+    return this.postPlaid('/credit/payroll_income/get', this.baseBody(args));
   }
 
   private async getStatements(args: Record<string, unknown>): Promise<ToolResult> {

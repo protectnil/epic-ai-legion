@@ -4,9 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-//   No official Prometheus-vendor MCP server was found on GitHub or prometheus.io.
-//   Community implementations exist but are not maintained by the Prometheus project.
+// Official MCP: None found as of 2026-03-28 — no official Prometheus project MCP server exists.
+//   Community implementation exists (https://github.com/pab1it0/prometheus-mcp-server, MIT,
+//   v1.6.0 released 2026-03-07, 6 tools: execute_query, execute_range_query, list_metrics,
+//   get_metric_metadata, get_targets, health_check) but is NOT published by the Prometheus project.
+//   Fails criteria: not official. Decision: use-rest-api.
+// Our adapter covers: 16 tools. Community MCP covers: 6 tools (strict subset of our coverage).
+// Recommendation: use-rest-api — this adapter provides significantly richer coverage.
 //
 // Base URL: http://{host}:9090/api/v1 (configurable — no fixed SaaS URL, self-hosted)
 // Auth: Optional Bearer token or Basic auth depending on deployment; many instances use no auth.

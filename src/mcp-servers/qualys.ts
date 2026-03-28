@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Qualys MCP server was found on GitHub or npm.
 //
 // Base URL: Varies by region — NO default provided. Choose your platform URL:

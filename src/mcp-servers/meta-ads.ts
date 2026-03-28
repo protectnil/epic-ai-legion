@@ -4,14 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// Several community MCP servers exist (e.g. github.com/pipeboard-co/meta-ads-mcp) but no official Meta-authored MCP server.
+// Official MCP: None found as of 2026-03-28
+// No official Meta-authored MCP server found. Community server github.com/pipeboard-co/meta-ads-mcp exists
+// but is not official (explicitly disclaimed by maintainer). github.com/brijr/meta-ads-mcp is also community-only.
 // Our adapter covers: 22 tools (ad accounts, campaigns, ad sets, ads, creatives, audiences, insights).
 //
-// Base URL: https://graph.facebook.com/v22.0
-// Auth: User access token or system user token passed as "access_token" query parameter
-//       Note: Meta requires v22.0+ as of September 2025; older versions rejected.
+// Base URL: https://graph.facebook.com/v22.0 (configurable; current latest is v24.0, released Oct 2025)
+//           v22.0 is the minimum supported version as of September 2025; v24.0 is recommended for new integrations.
+// Auth: User access token or system user token passed as "access_token" query parameter (OAuth 2.0)
 // Docs: https://developers.facebook.com/docs/marketing-api/
+//       https://developers.facebook.com/docs/marketing-api/reference/
 // Rate limits: Rolling 1-hour window per token; formula: calls/hr = 60 + 400 * active_ads - 0.001 * errors
 
 import { ToolDefinition, ToolResult } from './types.js';

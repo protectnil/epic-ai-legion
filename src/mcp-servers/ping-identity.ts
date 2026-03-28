@@ -5,8 +5,18 @@
  */
 
 // Official MCP: https://github.com/pingidentity/pingone-mcp-server — transport: stdio, auth: OAuth2 PKCE / Device Code Flow
-// Our adapter covers: 18 tools (core identity management). Vendor MCP covers: full API surface.
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// Published by pingidentity org (official). Actively maintained (v0.0.2, 2025-11). Read-only by default.
+// Our adapter covers: 20 tools (core identity management). Vendor MCP covers: environment, user, population, group mgmt.
+// Recommendation: use-both — vendor MCP exposes environment listing and MFA device tools not in our REST adapter;
+//                 our adapter adds create/update/delete write operations and risk evaluations not in vendor MCP (read-only by default).
+// MCP-sourced tools: list_configured_environments, list_pingone_environments, get_pingone_environment,
+//   list_pingone_environment_resources, get_pingone_environment_activity, list_pingone_users, get_pingone_user,
+//   get_pingone_user_sessions, list_pingone_user_mfa_devices, get_pingone_user_mfa_device,
+//   list_pingone_populations, get_pingone_population, list_pingone_groups, get_pingone_group,
+//   list_pingone_users_in_group, list_pingone_users_in_multiple_groups, get_pingone_user_group_memberships
+// REST-sourced tools (write + risk): create_user, update_user, delete_user, create_group, add_user_to_group,
+//   remove_user_from_group, list_applications, get_application, list_sign_on_policies, get_sign_on_policy,
+//   create_risk_evaluation, update_risk_evaluation, list_sessions, delete_session
 //
 // Base URL: https://api.pingone.com/v1/environments/{environmentId}
 // Auth: Bearer token (OAuth2 client credentials or worker app token)
@@ -398,20 +408,16 @@ export class PingIdentityMCPServer {
       },
       {
         name: 'list_sessions',
-        description: 'List active sessions for the PingOne environment, optionally filtered by user ID',
+        description: 'List all active sessions for a specific PingOne user by user ID',
         inputSchema: {
           type: 'object',
           properties: {
             user_id: {
               type: 'string',
-              description: 'Filter sessions belonging to this user UUID',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum sessions to return (default: 100)',
+              description: 'PingOne user UUID whose sessions to list',
             },
           },
-          required: [],
+          required: ['user_id'],
         },
       },
       {
@@ -680,15 +686,10 @@ export class PingIdentityMCPServer {
   // ── Sessions ──────────────────────────────────────────────────────────────
 
   private async listSessions(args: Record<string, unknown>): Promise<ToolResult> {
-    const limit = args.limit ?? 100;
-    if (args.user_id) {
-      const params = new URLSearchParams();
-      params.set('limit', String(limit));
-      return this.fetchJson(this.envPath(`users/${encodeURIComponent(args.user_id as string)}/sessions?${params}`));
+    if (!args.user_id) {
+      return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
     }
-    const params = new URLSearchParams();
-    params.set('limit', String(limit));
-    return this.fetchJson(this.envPath(`sessions?${params}`));
+    return this.fetchJson(this.envPath(`users/${encodeURIComponent(args.user_id as string)}/sessions`));
   }
 
   private async deleteSession(args: Record<string, unknown>): Promise<ToolResult> {

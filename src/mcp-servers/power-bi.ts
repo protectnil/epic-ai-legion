@@ -4,12 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/microsoft/powerbi-modeling-mcp — transport: stdio, local desktop only.
-//   Covers semantic modeling (DAX, measures, relationships) via Tabular Object Model. Does NOT expose
-//   the cloud REST API. No vendor MCP covers the cloud REST API as of 2026-03.
+// Official MCP (Modeling): https://github.com/microsoft/powerbi-modeling-mcp — transport: stdio, local desktop only.
+//   Covers semantic modeling (DAX, measures, relationships) via Tabular Object Model. Tools: connection_operations,
+//   database_operations, transaction_operations, model_operations, table_operations, column_operations,
+//   measure_operations, relationship_operations, hierarchy_operations, partition_operations, perspective_operations,
+//   role_operations, table_permission_operations. ~13 operation-group tools. Semantic modeling ONLY.
+// Official MCP (Remote): https://api.powerbi.com/v1.0/myorg/mcp (docs: https://learn.microsoft.com/en-us/power-bi/developer/mcp/)
+//   — transport: streamable-HTTP, auth: Azure AD Bearer token. Tools: get_semantic_model_schema, run_dax_query.
+//   Covers only natural-language DAX queries against cloud semantic models. Preview as of 2026-03.
 // Our adapter covers: 18 tools (cloud REST API — reports, datasets, workspaces, dashboards, dataflows,
-//   pipelines, refresh operations). Vendor MCP covers: semantic modeling only (no cloud operations).
-// Recommendation: Use this adapter for all Power BI cloud automation. Use vendor MCP for DAX/modeling.
+//   pipelines, refresh operations, capacity, apps). Neither vendor MCP covers cloud REST operations.
+// Integration: use-both
+//   REST-sourced tools (18): list_workspaces, list_reports, get_report, clone_report, list_datasets, get_dataset,
+//     refresh_dataset, get_refresh_history, get_dataset_tables, list_dashboards, list_dashboard_tiles,
+//     list_dataflows, refresh_dataflow, list_pipelines, get_pipeline, deploy_pipeline_stage, get_capacity, list_apps
+//   Modeling MCP-sourced tools (~13 groups): semantic model design, DAX measures, tables, columns, relationships
+//   Remote MCP-sourced tools (2): get_semantic_model_schema, run_dax_query (natural-language data queries)
+// Recommendation: use-both — our REST adapter handles all cloud management operations (zero overlap with vendor MCPs).
+//   Use Modeling MCP for semantic model design. Use Remote MCP for conversational DAX queries.
 //
 // Base URL: https://api.powerbi.com/v1.0/myorg
 // Auth: Azure AD / Microsoft Entra Bearer token — obtain via OAuth2 client credentials flow:

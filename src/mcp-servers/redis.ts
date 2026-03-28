@@ -4,16 +4,33 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Upstash MCP server was found on GitHub as of March 2026.
-// This adapter targets the Upstash Redis REST API, which wraps native Redis
-// commands in HTTP POST requests with a JSON array body.
+// Official MCP: https://github.com/upstash/mcp-server — transport: stdio + streamable-HTTP, auth: Upstash email + API key
+// Maintained: yes — latest release v0.2.1, Dec 15, 2025 (within 6 months of 2026-03-28).
+// Our adapter covers: 35 tools (Redis data commands via REST API). Vendor MCP covers: 15 tools (Upstash account management).
+// Recommendation: use-both — the vendor MCP and this REST adapter have NON-OVERLAPPING tools.
+//   MCP-sourced tools (15): redis_database_create_backup, redis_database_create_new, redis_database_delete,
+//     redis_database_delete_backup, redis_database_get_details, redis_database_list_backups,
+//     redis_database_list_databases, redis_database_reset_password, redis_database_restore_backup,
+//     redis_database_run_multiple_redis_commands, redis_database_run_single_redis_command,
+//     redis_database_set_daily_backup, redis_database_update_regions,
+//     redis_database_get_usage_last_5_days, redis_database_get_stats
+//   REST-sourced tools (35): get_key, set_key, delete_keys, exists_keys, expire_key, persist_key,
+//     ttl_key, type_key, scan_keys, incr_key, decr_key, mget_keys, mset_keys, append_key,
+//     hget_field, hset_fields, hdel_fields, hgetall, hkeys, hvals, hexists, lpush, rpush,
+//     lpop, rpop, lrange, llen, lindex, sadd, srem, smembers, sismember, scard,
+//     zadd, zrange, zrank, zscore, zrem, zcard, zcount, pipeline
+//   Combined coverage: 50 tools (MCP: 15 + REST: 35 - shared: 0)
+//   The MCP manages Upstash account infrastructure (databases, backups, regions).
+//   This adapter executes Redis data-plane commands (GET, SET, HGET, ZADD, etc.) via the REST API.
+//   FederationManager routes MCP-sourced tools through the Upstash MCP connection;
+//   REST-sourced tools route through this adapter.
 //
 // Base URL: https://{your-upstash-endpoint} (full URL from Upstash console)
 // Auth: Bearer token — set Authorization: Bearer <UPSTASH_REDIS_REST_TOKEN>
 // Docs: https://upstash.com/docs/redis/features/restapi
 // Rate limits: Varies by plan. Free tier: 10,000 req/day. Pro: higher limits.
 // Pipeline: POST /pipeline accepts array-of-arrays for multi-command batching.
+// Transactions: POST /multi-exec for atomic multi-command execution.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

@@ -4,14 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/plaid/ai-coding-toolkit — transport: stdio, auth: Plaid credentials
-// Plaid's official MCP focuses on sandbox/dev tooling. This adapter covers the Investments product APIs.
-// Recommendation: Use this adapter for production investment account data access.
+// Official MCP: https://api.dashboard.plaid.com/mcp — transport: streamable-HTTP, auth: OAuth2 (scope: mcp:dashboard)
+// Plaid's Dashboard MCP server (released May 2025) focuses on integration health, diagnostics, and API usage monitoring.
+// It does NOT expose Investments product endpoints (holdings, transactions, refresh). This REST adapter covers
+// the Investments product API and is the authoritative integration for production investment data access.
+// Recommendation: use-rest-api for Investments product data. The Dashboard MCP covers separate developer tooling.
 //
 // Base URL: https://production.plaid.com (or https://sandbox.plaid.com for testing)
 // Auth: All requests POST with client_id + secret in request body; access_token per Item
 // Docs: https://plaid.com/docs/api/products/investments/
-// Rate limits: Varies by product; contact Plaid for production rate limits
+// Rate limits: Not publicly documented for Investments product; contact Plaid for production rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -84,19 +86,8 @@ export class PlaidInvestmentsMCPServer {
         },
       },
       {
-        name: 'refresh_holdings',
-        description: 'Trigger an on-demand refresh of investment holdings data for an Item',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            access_token: { type: 'string', description: 'Plaid access token for the Item' },
-          },
-          required: ['access_token'],
-        },
-      },
-      {
-        name: 'refresh_transactions',
-        description: 'Trigger an on-demand refresh of investment transactions data for an Item',
+        name: 'refresh_investments',
+        description: 'Trigger an on-demand refresh of all investment data (holdings and transactions) for an Item via /investments/refresh',
         inputSchema: {
           type: 'object',
           properties: {
@@ -127,10 +118,8 @@ export class PlaidInvestmentsMCPServer {
           return await this.getHoldings(args);
         case 'get_transactions':
           return await this.getTransactions(args);
-        case 'refresh_holdings':
-          return await this.refreshHoldings(args);
-        case 'refresh_transactions':
-          return await this.refreshTransactions(args);
+        case 'refresh_investments':
+          return await this.refreshInvestments(args);
         case 'get_accounts':
           return await this.getAccounts(args);
         default:
@@ -161,12 +150,8 @@ export class PlaidInvestmentsMCPServer {
     return this.post('/investments/transactions/get', body);
   }
 
-  private async refreshHoldings(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.post('/investments/holdings/refresh', { access_token: args.access_token });
-  }
-
-  private async refreshTransactions(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.post('/investments/transactions/refresh', { access_token: args.access_token });
+  private async refreshInvestments(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.post('/investments/refresh', { access_token: args.access_token });
   }
 
   private async getAccounts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -182,7 +167,7 @@ export class PlaidInvestmentsMCPServer {
       version: '1.0.0',
       category: 'finance' as const,
       keywords: ['plaid', 'investments', 'holdings', 'securities', 'portfolio', 'brokerage', 'stocks', 'dividends'],
-      toolNames: ['get_holdings', 'get_transactions', 'refresh_holdings', 'refresh_transactions', 'get_accounts'],
+      toolNames: ['get_holdings', 'get_transactions', 'refresh_investments', 'get_accounts'],
       description: 'Plaid Investments: retrieve holdings, investment transactions, and account data from brokerage and retirement accounts.',
       author: 'protectnil' as const,
     };

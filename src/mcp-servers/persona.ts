@@ -4,16 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official MCP server from Persona (withpersona.com) found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// No official MCP server from Persona (withpersona.com) found on GitHub or npm.
 // The github.com/withpersona org does not publish an MCP server.
+// Community forks exist (e.g. anton-pt/persona-mcp) but they manage AI personas in Notion, not Persona identity verification.
 //
-// Base URL: https://withpersona.com/api/v1
+// Base URL: https://api.withpersona.com/api/v1
 // Auth: Bearer token — use production key (persona_production_...) or sandbox key (persona_sandbox_...)
 //   Pass as: Authorization: Bearer <api_key>
 //   Also include: Persona-Version header (API version date, e.g. 2023-01-05)
 // Docs: https://docs.withpersona.com/api-introduction
-// Rate limits: Not publicly documented; contact Persona support for enterprise rate limits
+// Rate limits: Not publicly documented; Persona returns HTTP 429 on limit breach
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -31,7 +32,7 @@ export class PersonaMCPServer {
   constructor(config: PersonaConfig) {
     this.apiKey = config.apiKey;
     this.apiVersion = config.apiVersion || '2023-01-05';
-    this.baseUrl = config.baseUrl || 'https://withpersona.com/api/v1';
+    this.baseUrl = config.baseUrl || 'https://api.withpersona.com/api/v1';
   }
 
   static catalog() {

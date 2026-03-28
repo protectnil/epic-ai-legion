@@ -4,11 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/OctopusDeploy/mcp-server — transport: stdio, auth: API key + server URL env vars
+// Official MCP: https://github.com/OctopusDeploy/mcp-server — transport: stdio, auth: API key (X-Octopus-ApiKey)
+// Vendor MCP covers: 15+ tools across toolsets: core, projects, deployments, releases, tasks, tenants,
+//   kubernetes, machines, certificates, accounts. Actively maintained — README updated Feb 16, 2026.
+//   Write-enabled tools (create_release, deploy_release) require --no-read-only flag.
+//   Unique MCP tools include get_deployment_from_url, get_task_from_url, get_task_details,
+//   get_tenant_variables, get_missing_tenant_variables (not in our REST adapter).
 // Our adapter covers: 18 tools (release orchestration, deployments, projects, environments, spaces, runbooks).
-// Vendor MCP covers: 15+ tools (read-only by default; write ops available). Actively maintained as of 2025.
-// Recommendation: Use vendor MCP for interactive AI assistant workflows. Use this adapter for air-gapped or
-//   self-hosted deployments where npx is unavailable, or when write operations need federation-level auditing.
+// Recommendation: use-both — MCP has unique URL-parsing and task/tenant variable tools not in our REST
+//   adapter. Our REST adapter covers runbooks (run_runbook, list_runbooks) and deployment process which
+//   are not in the MCP's core toolsets. Air-gapped/self-hosted deployments use this adapter only.
+// Integration: use-both
+// MCP-sourced tools (unique): get_deployment_from_url, get_task_from_url, get_task_details,
+//   get_tenant_variables, get_missing_tenant_variables, list_releases_for_project (MCP name)
+// REST-sourced tools (18): list_spaces, list_projects, get_project, list_environments, get_environment,
+//   list_releases, get_release, create_release, list_deployments, get_deployment, create_deployment,
+//   list_runbooks, run_runbook, list_tenants, get_tenant, list_deployment_targets,
+//   get_deployment_target, get_deployment_process
 //
 // Base URL: https://{your-instance}.octopus.app (cloud) or https://{your-server} (self-hosted)
 //   All space-scoped endpoints use /api/{spaceId}/... — default space uses /api/Spaces-1/...

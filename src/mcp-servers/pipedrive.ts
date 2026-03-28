@@ -4,12 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Pipedrive-published MCP server found on GitHub. Multiple community implementations exist
 // (WillDent/pipedrive-mcp-server, Wirasm/pipedrive-mcp, iamsamuelfraga/mcp-pipedrive) but none are
 // published by Pipedrive Inc. itself.
+// Our adapter covers: 28 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api
 //
-// Base URL: https://api.pipedrive.com/v2
+// Base URL: https://api.pipedrive.com/v2 (v2 for all supported endpoints; v1 used for Notes which are not yet in v2)
 // Auth: API token via x-api-token header (from Settings → Personal preferences → API)
 // Docs: https://developers.pipedrive.com/docs/api/v1
 // Rate limits: 80 req/2s per API token; 100 req/10s for public endpoints
@@ -763,7 +765,16 @@ export class PipedriveMCPServer {
     if (args.lead_id) params.set('lead_id', args.lead_id as string);
     params.set('limit', String(args.limit ?? 100));
     if (args.cursor) params.set('cursor', args.cursor as string);
-    return this.get('notes', params);
+    // Notes API is v1 only — not yet migrated to v2
+    const v1Base = this.baseUrl.replace('/v2', '/v1');
+    const qs = params.toString();
+    const url = `${v1Base}/notes${qs ? `?${qs}` : ''}`;
+    const response = await fetch(url, { method: 'GET', headers: this.headers() });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async createNote(args: Record<string, unknown>): Promise<ToolResult> {
@@ -772,7 +783,18 @@ export class PipedriveMCPServer {
     if (args.person_id !== undefined) body.person_id = args.person_id;
     if (args.org_id !== undefined) body.org_id = args.org_id;
     if (args.lead_id) body.lead_id = args.lead_id;
-    return this.post('notes', body);
+    // Notes API is v1 only — not yet migrated to v2
+    const v1Base = this.baseUrl.replace('/v2', '/v1');
+    const response = await fetch(`${v1Base}/notes`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   // ── Pipelines & Stages ────────────────────────────────────────────────────
@@ -803,14 +825,7 @@ export class PipedriveMCPServer {
     if (args.item_types) params.set('item_types', args.item_types as string);
     params.set('limit', String(args.limit ?? 100));
     if (typeof args.exact_match === 'boolean') params.set('exact_match', String(args.exact_match));
-    // itemSearch is a v1 endpoint, adjust base for this call
-    const v1Base = this.baseUrl.replace('/v2', '/v1');
-    const url = `${v1Base}/itemSearch?${params}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers() });
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
-    }
-    const data = await response.json();
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+    // itemSearch promoted to v2 stable on 2025-03-13 (GET /api/v2/itemSearch)
+    return this.get('itemSearch', params);
   }
 }

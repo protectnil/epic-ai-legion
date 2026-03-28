@@ -4,13 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/deepfates/mcp-replicate — transport: stdio, auth: API token
-// Our adapter covers: 14 tools (predictions, models, collections, hardware, deployments, webhooks).
-// Vendor MCP covers: ~8 tools (community, not official Replicate). Our adapter has broader coverage.
-// Recommendation: Use this adapter for full production coverage.
+// Official MCP: https://mcp.replicate.com (hosted SSE) + npm:replicate-mcp (stdio) — published by
+//   Replicate Inc. Transport: SSE (remote) or stdio (local). Auth: Bearer API token.
+//   Actively maintained; covers ALL Replicate HTTP API operations (predictions, models, trainings,
+//   deployments, collections, hardware, account, webhooks, search) — 20+ operations.
+//   NOTE: https://github.com/deepfates/mcp-replicate is a community repo, explicitly abandoned
+//   ("NOT IN ACTIVE DEVELOPMENT — the company now offers an official MCP server").
+// Our adapter covers: 14 tools (subset of official MCP). Official MCP is a strict superset.
+// Recommendation: use-vendor-mcp — official MCP covers everything our adapter does plus trainings,
+//   search, update/delete deployment, account, webhooks, and model management operations.
+//   Retain this REST adapter as air-gapped fallback only.
 //
 // Base URL: https://api.replicate.com/v1
-// Auth: Bearer token (token always starts with r8_) in Authorization header
+// Auth: Bearer token (token starts with r8_) in Authorization header
 // Docs: https://replicate.com/docs/reference/http
 // Rate limits: 600 req/min for create prediction; 3000 req/min for all other endpoints
 

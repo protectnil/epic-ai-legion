@@ -748,7 +748,7 @@ export class MimecastMCPServer {
     const payload: Record<string, unknown> = { pageSize: args.limit || 100 };
     if (args.from) payload.from = args.from;
     if (args.to) payload.to = args.to;
-    const data = await this.request('/api/gateway/get-message-release-logs', payload);
+    const data = await this.request('/api/gateway/get-held-release-logs', payload);
     return this.result(data);
   }
 

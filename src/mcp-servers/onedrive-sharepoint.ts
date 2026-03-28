@@ -4,14 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: The Microsoft SharePoint and OneDrive combined MCP server was deprecated on 2026-03-13.
-//   Microsoft now publishes separate Microsoft SharePoint MCP Server and Microsoft OneDrive MCP Server
-//   via the Agent 365 tooling gateway — see https://github.com/microsoft/mcp for the current catalog.
-//   Those servers require the Agent 365 gateway and are scoped to delegated (user) auth only.
-// Our adapter covers: 20 tools (drives, files, folders, sites, search, permissions, sharing, lists).
-//   Built on Microsoft Graph API v1.0 with OAuth2 client credentials (application permissions).
-// Recommendation: Use this adapter for service-principal / daemon access where no user context exists,
-//   or for air-gapped deployments. Use the official MCP servers for user-delegated interactive flows.
+// Official MCP: Microsoft publishes separate OneDrive and SharePoint MCP servers via the Agent 365
+//   gateway (https://github.com/microsoft/mcp / bap-microsoft/MCP-Platform). Transport: Remote/HTTPS.
+//   Auth: Delegated (user) only. The combined ODSPRemoteServer was deprecated 2026-03-13.
+//   MCP TOOL COUNT: Not publicly enumerated; tools include createFolder, getFolderChildren,
+//   readSmallBinaryFile, createSmallTextFile, shareFileOrFolder, findSite, listSubsites,
+//   listDocumentLibrariesInSite, getDefaultDocumentLibraryInSite, and others.
+//   Criterion FAILED: Requires Agent 365 gateway (not stdio/streamable-HTTP), delegated auth only
+//   (no client_credentials / application permissions).
+// Our adapter covers: 20 tools. Built on Microsoft Graph API v1.0 with OAuth2 client credentials.
+// Recommendation: use-rest-api — the official MCP servers require delegated (user) auth via Agent 365
+//   gateway and cannot be used for service-principal / daemon access. This adapter covers that gap.
 //
 // Base URL: https://graph.microsoft.com/v1.0
 // Auth: OAuth2 client credentials — POST https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token

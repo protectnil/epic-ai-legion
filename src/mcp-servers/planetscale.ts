@@ -4,13 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/planetscale/mcp-server — transport: HTTP (hosted/OAuth), auth: OAuth2
-// Our adapter covers: 14 tools (org, database, branch, deploy request, password, service token ops).
-// Vendor MCP covers: hosted service with full OpenAPI surface (schema query, Insights, etc.).
-// Recommendation: Use vendor MCP for interactive schema exploration. Use this adapter for air-gapped/CI deployments.
+// Official MCP: https://mcp.pscale.dev/mcp/planetscale — transport: streamable-HTTP, auth: OAuth2
+// MCP launched: January 29, 2026. Actively maintained. 16 tools.
+// Our adapter covers: 14 tools. Vendor MCP covers: 16 tools.
+// Recommendation: use-both — MCP and REST have non-overlapping tools requiring the union for full coverage.
 //
-// Base URL: https://api.planetscale.com
-// Auth: Service token — Authorization header with "{service_token_id}:{service_token}" (no scheme)
+// Integration: use-both
+// MCP-sourced tools (9): planetscale_list_organizations, planetscale_list_databases, planetscale_list_branches,
+//   planetscale_get_organization, planetscale_get_database, planetscale_get_branch, planetscale_get_branch_schema,
+//   planetscale_execute_read_query, planetscale_execute_write_query, planetscale_get_insights,
+//   planetscale_list_regions_for_organization, planetscale_list_cluster_size_skus, planetscale_list_invoices,
+//   planetscale_get_invoice_line_items, planetscale_search_documentation, planetscale_list_schema_recommendations
+// REST-sourced tools (5, not in MCP): list_deploy_requests, create_deploy_request, list_passwords, create_password,
+//   create_database, delete_database, create_branch, delete_branch
+// Combined coverage: 22 unique operations (MCP: 16 + REST unique: 6; shared org/db/branch list/get operations
+//   routed through MCP by FederationManager)
+//
+// Base URL: https://api.planetscale.com/v1
+// Auth: Service token — Authorization header with "{service_token_id}:{service_token}" (no scheme prefix)
 // Docs: https://planetscale.com/docs/api/reference/getting-started-with-planetscale-api
 // Rate limits: 600 req/min
 
