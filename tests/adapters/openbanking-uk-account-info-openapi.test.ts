@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { OpenBankingUkAccountInfoOpenapiMCPServer } from '../../src/mcp-servers/openbanking-uk-account-info-openapi.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('OpenBankingUkAccountInfoOpenapiMCPServer', () => {
+  const adapter = new OpenBankingUkAccountInfoOpenapiMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

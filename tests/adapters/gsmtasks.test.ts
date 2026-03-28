@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { GSMTasksMCPServer } from '../../src/mcp-servers/gsmtasks.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('GSMTasksMCPServer', () => {
+  const adapter = new GSMTasksMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

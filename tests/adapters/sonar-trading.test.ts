@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { SonarTradingMCPServer } from '../../src/mcp-servers/sonar-trading.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('SonarTradingMCPServer', () => {
+  const adapter = new SonarTradingMCPServer();
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

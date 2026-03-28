@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { Ip2LocationGeolocationMCPServer } from '../../src/mcp-servers/ip2location-geolocation.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('Ip2LocationGeolocationMCPServer', () => {
+  const adapter = new Ip2LocationGeolocationMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

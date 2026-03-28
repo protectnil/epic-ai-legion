@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { FlickrMCPServer } from '../../src/mcp-servers/flickr.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('FlickrMCPServer', () => {
+  const adapter = new FlickrMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

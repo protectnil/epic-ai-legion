@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { FlatMCPServer } from '../../src/mcp-servers/flat.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('FlatMCPServer', () => {
+  const adapter = new FlatMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

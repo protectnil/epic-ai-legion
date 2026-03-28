@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { FecMCPServer } from '../../src/mcp-servers/fec.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('FecMCPServer', () => {
+  const adapter = new FecMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

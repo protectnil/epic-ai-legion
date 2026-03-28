@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { GSAMCPServer } from '../../src/mcp-servers/gsa.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('GSAMCPServer', () => {
+  const adapter = new GSAMCPServer();
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

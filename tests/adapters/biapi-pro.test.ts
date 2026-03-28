@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { BiapiProMCPServer } from '../../src/mcp-servers/biapi-pro.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('BiapiProMCPServer', () => {
+  const adapter = new BiapiProMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

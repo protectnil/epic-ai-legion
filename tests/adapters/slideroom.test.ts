@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { SlideRoomMCPServer } from '../../src/mcp-servers/slideroom.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('SlideRoomMCPServer', () => {
+  const adapter = new SlideRoomMCPServer({ apiKey: 'test-api-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

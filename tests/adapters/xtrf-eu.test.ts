@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { XtrfEuMCPServer } from '../../src/mcp-servers/xtrf-eu.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('XtrfEuMCPServer', () => {
+  const adapter = new XtrfEuMCPServer({ accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

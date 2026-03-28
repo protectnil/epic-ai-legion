@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { AtoAuMCPServer } from '../../src/mcp-servers/ato-au.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('AtoAuMCPServer', () => {
+  const adapter = new AtoAuMCPServer({ apiKey: 'test-key', sandbox: true });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

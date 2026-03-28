@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { SliceboxMCPServer } from '../../src/mcp-servers/slicebox.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('SliceboxMCPServer', () => {
+  const adapter = new SliceboxMCPServer({ username: 'test-user', password: 'test-pass' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

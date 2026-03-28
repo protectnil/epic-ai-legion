@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { SpectroCoinMCPServer } from '../../src/mcp-servers/spectrocoin.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('SpectroCoinMCPServer', () => {
+  const adapter = new SpectroCoinMCPServer({ merchantId: 'test-merchant', apiId: 'test-api-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

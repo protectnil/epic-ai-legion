@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { YodleeMCPServer } from '../../src/mcp-servers/yodlee.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('YodleeMCPServer', () => {
+  const adapter = new YodleeMCPServer({ accessToken: 'test-token', loginName: 'testuser' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

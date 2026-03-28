@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { AtlassianJiraMCPServer } from '../../src/mcp-servers/atlassian-jira.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('AtlassianJiraMCPServer', () => {
+  const adapter = new AtlassianJiraMCPServer({
+    email: 'test@example.com',
+    apiToken: 'test-token',
+    domain: 'test.atlassian.net',
+  });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

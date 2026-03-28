@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { YouneedabudgetMCPServer } from '../../src/mcp-servers/youneedabudget.js';
+import { MesheryMCPServer } from '../../src/mcp-servers/meshery.js';
 
-describe('YouneedabudgetMCPServer', () => {
-  const adapter = new YouneedabudgetMCPServer({ accessToken: 'test-token' });
+describe('MesheryMCPServer', () => {
+  const adapter = new MesheryMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();
