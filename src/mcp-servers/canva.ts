@@ -4,11 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://www.canva.dev/docs/connect/mcp-server/ — transport: stdio, auth: OAuth2
-//   and https://www.canva.dev/docs/apps/mcp-server/ (Apps SDK dev MCP)
-// Our adapter covers: 18 tools (designs, assets, folders, brand templates, exports, autofill, comments, users).
-// Vendor MCP covers: developer tooling (docs + code completion) — different scope, not API management.
-// Recommendation: Use this adapter for Connect API automation. Use vendor MCP for Canva app development assistance.
+// Official MCP: https://www.canva.com/help/mcp-canva-usage/ — transport: streamable-HTTP, auth: OAuth2
+//   Hosted on canva.com (AI Connector). Official, vendor-maintained, last updated 2026-01-29.
+//   Exposes 4 tools: create_design, export_design, get_design, list_designs.
+//   Criteria check: official=yes, maintained=yes, tools=4 (FAILS ≥10 threshold), transport=streamable-HTTP.
+//   Decision: use-rest-api — MCP fails the 10+ tools criterion (only 4 tools).
+// Also: https://www.canva.dev/docs/apps/mcp-server/ (Dev MCP) — developer tooling only, not API management.
+// Our adapter covers: 17 tools (designs, folders, assets metadata, brand templates, exports, autofill, users). Vendor MCP covers: 4 tools (strict subset of our adapter).
+// Recommendation: use-rest-api — vendor MCP only has 4 tools. Our REST adapter provides fuller coverage.
 //
 // Base URL: https://api.canva.com/rest/v1
 // Auth: OAuth2 Authorization Code with PKCE — Bearer access token in Authorization header
@@ -50,13 +53,13 @@ export class CanvaMCPServer {
       toolNames: [
         'list_designs', 'get_design', 'create_design',
         'list_folders', 'get_folder', 'create_folder', 'move_to_folder',
-        'list_assets', 'get_asset', 'update_asset', 'delete_asset',
+        'get_asset', 'update_asset', 'delete_asset',
         'list_brand_templates', 'get_brand_template',
         'create_export_job', 'get_export_job',
         'create_autofill_job', 'get_autofill_job',
         'get_user_profile',
       ],
-      description: 'Canva Connect API: manage designs, folders, assets, brand templates, exports, autofill personalization, and user profiles.',
+      description: 'Canva Connect API: manage designs, folders, asset metadata, brand templates, exports, autofill personalization, and user profiles.',
       author: 'protectnil',
     };
   }
@@ -195,23 +198,6 @@ export class CanvaMCPServer {
         },
       },
       {
-        name: 'list_assets',
-        description: 'List assets (images, videos, audio) in a Canva folder with optional pagination',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            folder_id: {
-              type: 'string',
-              description: 'Folder ID to list assets from; use "root" for the upload folder (default: root)',
-            },
-            continuation: {
-              type: 'string',
-              description: 'Pagination continuation token from a previous response',
-            },
-          },
-        },
-      },
-      {
         name: 'get_asset',
         description: 'Get metadata and download URL for a specific Canva asset by its asset ID',
         inputSchema: {
@@ -306,20 +292,20 @@ export class CanvaMCPServer {
               type: 'string',
               description: 'Canva design ID to export',
             },
-            format: {
+            format_type: {
               type: 'string',
-              description: 'Export format: pdf, png, jpg, gif, pptx, mp4',
+              description: 'Export format type: pdf, png, jpg, gif, pptx, mp4',
             },
             export_quality: {
               type: 'string',
-              description: 'Export quality for jpg/png: regular or pro (default: regular)',
+              description: 'Export quality: regular or pro (default: regular). Applies to pdf, jpg, png.',
             },
             pages: {
               type: 'array',
-              description: 'Array of page numbers to export (1-based). Omit to export all pages.',
+              description: 'Array of 1-based page numbers to export. Omit to export all pages.',
             },
           },
-          required: ['design_id', 'format'],
+          required: ['design_id', 'format_type'],
         },
       },
       {
@@ -400,8 +386,6 @@ export class CanvaMCPServer {
           return this.createFolder(args);
         case 'move_to_folder':
           return this.moveToFolder(args);
-        case 'list_assets':
-          return this.listAssets(args);
         case 'get_asset':
           return this.getAsset(args);
         case 'update_asset':
@@ -546,14 +530,7 @@ export class CanvaMCPServer {
 
   private async moveToFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.folder_id || !args.item_id) return { content: [{ type: 'text', text: 'folder_id and item_id are required' }], isError: true };
-    return this.canvaPost(`/folders/${encodeURIComponent(args.folder_id as string)}/items/move`, { item_id: args.item_id });
-  }
-
-  private async listAssets(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {};
-    if (args.continuation) params.continuation = args.continuation as string;
-    const folderId = (args.folder_id as string) ?? 'root';
-    return this.canvaGet(`/assets/${folderId}/items`, params);
+    return this.canvaPost('/folders/move', { to_folder_id: args.folder_id, item_id: args.item_id });
   }
 
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
@@ -588,13 +565,14 @@ export class CanvaMCPServer {
   }
 
   private async createExportJob(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.design_id || !args.format) return { content: [{ type: 'text', text: 'design_id and format are required' }], isError: true };
+    if (!args.design_id || !args.format_type) return { content: [{ type: 'text', text: 'design_id and format_type are required' }], isError: true };
+    const format: Record<string, unknown> = { type: args.format_type };
+    if (args.export_quality) format.export_quality = args.export_quality;
+    if (Array.isArray(args.pages)) format.pages = args.pages;
     const body: Record<string, unknown> = {
       design_id: args.design_id,
-      format: args.format,
+      format,
     };
-    if (args.export_quality) body.export_quality = args.export_quality;
-    if (Array.isArray(args.pages)) body.pages = args.pages;
     return this.canvaPost('/exports', body);
   }
 

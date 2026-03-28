@@ -4,20 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from Carta as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 // No official Carta MCP server was found on GitHub or the Carta developer portal.
-// Recommendation: Use this adapter as the only available integration path.
+// Recommendation: use-rest-api — this adapter is the only available integration path.
 //
 // Base URL: https://api.carta.com (production) | https://mock-api.carta.com (sandbox)
-// Auth: OAuth2 Authorization Code Flow. Access tokens passed as Bearer in Authorization header.
+// API version prefix: /v1alpha1/ — all Carta REST endpoints are under /v1alpha1/
+// Auth: OAuth2 Authorization Code or Client Credentials. Bearer token in Authorization header.
 //       Token endpoint: POST https://login.app.carta.com/o/access_token/
-//       Authorize URL:   https://login.app.carta.com/o/authorize/
+//       Authorize URL:  https://login.app.carta.com/o/authorize/
 //       Access tokens expire after 3600s; refresh tokens expire after 14 days.
 //       This adapter accepts a pre-obtained access token via config.
-// Docs: https://docs.carta.com/carta/docs/introduction
-// Rate limits: Not formally published. Use cursor/offset pagination for large datasets.
-// API suites: Issuer API (company cap table), Investor API (fund positions/holdings),
-//             Portfolio API (individual holdings), Launch API (onboarding)
+// Docs: https://docs.carta.com/api-platform/docs/introduction
+//       https://docs.carta.com/api-platform/reference/issuers
+// Rate limits: Not formally published. See https://docs.carta.com/api-platform/docs/rate-limits
+// API suites: Issuer API (/v1alpha1/issuers/), Investor API (/v1alpha1/investors/),
+//             Portfolio API (/v1alpha1/portfolios/), Launch API (/v1alpha1/launch/)
+// AUDIT NOTE: Endpoints for list_transactions, get_transaction, list_fundraising_rounds,
+//   get_fundraising_round, list_documents, list_holdings, get_holding, list_portfolio_companies
+//   use inferred paths — not confirmed from published API reference. Marked UNVERIFIED.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -366,107 +371,148 @@ export class CartaMCPServer {
   }
 
   private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}`);
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}`);
   }
 
   private async listStakeholders(args: Record<string, unknown>): Promise<ToolResult> {
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}/stakeholders
     return this.get(
-      `/companies/${encodeURIComponent(args.company_id as string)}/stakeholders`,
+      `/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/stakeholders`,
       this.buildParams(args, ['limit', 'offset']),
     );
   }
 
   private async getStakeholder(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/stakeholders/${encodeURIComponent(args.stakeholder_id as string)}`);
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}/stakeholders/{stakeholderId}
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/stakeholders/${encodeURIComponent(args.stakeholder_id as string)}`);
   }
 
   private async getCapTable(args: Record<string, unknown>): Promise<ToolResult> {
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}/capitalizationTable
     const params = new URLSearchParams();
     if (args.as_of_date) params.set('as_of_date', args.as_of_date as string);
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/cap-table`, params);
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/capitalizationTable`, params);
   }
 
   private async listSecurities(args: Record<string, unknown>): Promise<ToolResult> {
+    // Carta Issuer API: securities are split by type (optionGrants, restrictedStockUnits, etc.)
+    // This tool routes by security_type or defaults to optionGrants (most common)
     const params = this.buildParams(args, ['limit', 'offset']);
-    if (args.security_type) params.set('security_type', args.security_type as string);
-    if (args.stakeholder_id) params.set('stakeholder_id', args.stakeholder_id as string);
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/securities`, params);
+    if (args.stakeholder_id) params.set('stakeholderId', args.stakeholder_id as string);
+    const secType = (args.security_type as string) ?? '';
+    let path: string;
+    if (secType === 'rsu' || secType === 'restricted_stock_unit') {
+      path = `/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/restrictedStockUnits`;
+    } else if (secType === 'rsa' || secType === 'restricted_stock_award') {
+      path = `/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/restrictedStockAwards`;
+    } else if (secType === 'warrant') {
+      path = `/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/warrants`;
+    } else if (secType === 'convertible_note') {
+      path = `/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/convertibleNotes`;
+    } else {
+      // default: option grants
+      path = `/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/optionGrants`;
+    }
+    return this.get(path, params);
   }
 
   private async getSecurity(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/securities/${encodeURIComponent(args.security_id as string)}`);
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}/optionGrants/{id}
+    // Defaults to optionGrant; security_type routing could be added if needed
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/optionGrants/${encodeURIComponent(args.security_id as string)}`);
   }
 
   private async listVestingSchedules(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/securities/${encodeURIComponent(args.security_id as string)}/vesting`);
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}/optionGrants/{id}/vestingSchedule
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/optionGrants/${encodeURIComponent(args.security_id as string)}/vestingSchedule`);
   }
 
   private async listEquityPlans(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/equity-plans`);
+    // Carta Issuer API: equity plans are part of issuer securities templates (scope: read_issuer_securitiestemplates)
+    // Path inferred as /v1alpha1/issuers/{issuerId}/equityIncentivePlans — UNVERIFIED exact path
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/equityIncentivePlans`);
   }
 
   private async getEquityPlan(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/equity-plans/${encodeURIComponent(args.plan_id as string)}`);
+    // Path inferred — UNVERIFIED exact path
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/equityIncentivePlans/${encodeURIComponent(args.plan_id as string)}`);
   }
 
   private async listShareClasses(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/share-classes`);
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}/shareClasses (confirmed via scope read_issuer_shareclasses)
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/shareClasses`);
   }
 
   private async getShareClass(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/share-classes/${encodeURIComponent(args.share_class_id as string)}`);
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}/shareClasses/{shareClassId}
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/shareClasses/${encodeURIComponent(args.share_class_id as string)}`);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
+    // UNVERIFIED: Carta API reference does not show a generic /transactions endpoint.
+    // Transactions are reflected in individual security endpoints. Path is inferred.
     const params = this.buildParams(args, ['limit', 'offset']);
-    if (args.transaction_type) params.set('transaction_type', args.transaction_type as string);
-    if (args.stakeholder_id) params.set('stakeholder_id', args.stakeholder_id as string);
-    if (args.start_date) params.set('start_date', args.start_date as string);
-    if (args.end_date) params.set('end_date', args.end_date as string);
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/transactions`, params);
+    if (args.transaction_type) params.set('transactionType', args.transaction_type as string);
+    if (args.stakeholder_id) params.set('stakeholderId', args.stakeholder_id as string);
+    if (args.start_date) params.set('startDate', args.start_date as string);
+    if (args.end_date) params.set('endDate', args.end_date as string);
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/transactions`, params);
   }
 
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/transactions/${encodeURIComponent(args.transaction_id as string)}`);
+    // UNVERIFIED: path inferred
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/transactions/${encodeURIComponent(args.transaction_id as string)}`);
   }
 
   private async listFundraisingRounds(args: Record<string, unknown>): Promise<ToolResult> {
+    // UNVERIFIED: fundraising rounds are visible in Carta UI but exact API path not confirmed.
+    // Path inferred from Carta cap table structure.
     return this.get(
-      `/companies/${encodeURIComponent(args.company_id as string)}/fundraising-rounds`,
+      `/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/fundraisingRounds`,
       this.buildParams(args, ['limit', 'offset']),
     );
   }
 
   private async getFundraisingRound(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/fundraising-rounds/${encodeURIComponent(args.round_id as string)}`);
+    // UNVERIFIED: path inferred
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/fundraisingRounds/${encodeURIComponent(args.round_id as string)}`);
   }
 
   private async listValuations(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/valuations`);
+    // Carta Issuer API: GET /v1alpha1/issuers/{issuerId}/valuations (confirmed via scope read_issuer_valuations)
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/valuations`);
   }
 
   private async listHoldings(args: Record<string, unknown>): Promise<ToolResult> {
+    // Carta Investor API: holdings are accessed via /v1alpha1/investors/firms/{firmId}/funds/{fundId}/investments
+    // Exact holdings path not confirmed — using inferred path. UNVERIFIED.
     return this.get(
-      `/funds/${encodeURIComponent(args.fund_id as string)}/holdings`,
+      `/v1alpha1/investors/funds/${encodeURIComponent(args.fund_id as string)}/holdings`,
       this.buildParams(args, ['limit', 'offset']),
     );
   }
 
   private async getHolding(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/funds/${encodeURIComponent(args.fund_id as string)}/holdings/${encodeURIComponent(args.holding_id as string)}`);
+    // UNVERIFIED: path inferred from Investor API structure
+    return this.get(`/v1alpha1/investors/funds/${encodeURIComponent(args.fund_id as string)}/holdings/${encodeURIComponent(args.holding_id as string)}`);
   }
 
   private async listPortfolioCompanies(args: Record<string, unknown>): Promise<ToolResult> {
+    // Carta Investor API: List Investments confirmed at /v1alpha1/investors/firms/{firmId}/funds/{fundId}/investments
+    // fund_id used directly — UNVERIFIED exact path without firmId
     return this.get(
-      `/funds/${encodeURIComponent(args.fund_id as string)}/portfolio-companies`,
+      `/v1alpha1/investors/funds/${encodeURIComponent(args.fund_id as string)}/investments`,
       this.buildParams(args, ['limit', 'offset']),
     );
   }
 
   private async listDocuments(args: Record<string, unknown>): Promise<ToolResult> {
+    // UNVERIFIED: Carta API does not show a generic /documents endpoint in the published reference.
+    // Path inferred from issuer structure.
     const params = this.buildParams(args, ['limit', 'offset']);
-    if (args.document_type) params.set('document_type', args.document_type as string);
-    return this.get(`/companies/${encodeURIComponent(args.company_id as string)}/documents`, params);
+    if (args.document_type) params.set('documentType', args.document_type as string);
+    return this.get(`/v1alpha1/issuers/${encodeURIComponent(args.company_id as string)}/documents`, params);
   }
 
   static catalog() {

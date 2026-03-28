@@ -4,14 +4,33 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/contentful/contentful-mcp-server — transport: stdio
-// Contentful publishes an official MCP server for the Management API (latest: mcp-server@1.7.6,
-// Dec 2025). It is actively maintained by Contentful engineers.
-// Our adapter covers: 20 tools (spaces, environments, entries, assets, content types, locales).
-//   Adapter targets the Content Management API (CMA) — read + write operations.
-// Vendor MCP covers: Management API surface via stdio. Recommend vendor MCP for local dev.
-// Recommendation: Use vendor MCP for stdio-transport (Claude Desktop, etc.).
-//                 Use this adapter for air-gapped or programmatic REST management.
+// Official MCP: https://github.com/contentful/contentful-mcp-server — transport: stdio + remote HTTP (OAuth)
+//   Published by Contentful (contentful org). Actively maintained; npm @contentful/mcp-server.
+//   Also available as a remote MCP server at https://mcp.contentful.com (OAuth, HTTP transport).
+//   Vendor MCP exposes 43 tools: get_initial_context, list_content_types, get_content_type,
+//     create_content_type, update_content_type, publish_content_type, unpublish_content_type,
+//     delete_content_type, search_entries, get_entry, create_entry, update_entry, publish_entry,
+//     unpublish_entry, delete_entry, upload_asset, list_assets, get_asset, update_asset,
+//     publish_asset, unpublish_asset, delete_asset, list_spaces, get_space, list_environments,
+//     create_environment, delete_environment, list_locales, get_locale, create_locale, update_locale,
+//     delete_locale, list_tags, create_tag, create_ai_action, invoke_ai_action,
+//     get_ai_action_invocation, get_ai_action, list_ai_actions, update_ai_action,
+//     publish_ai_action, unpublish_ai_action, get_environment
+//
+// Integration: use-both
+//   MCP-sourced tools (unique to MCP, not in our adapter): get_initial_context,
+//     create_content_type, update_content_type, publish_content_type, unpublish_content_type,
+//     delete_content_type, search_entries, upload_asset, update_asset, list_locales, get_locale,
+//     create_locale, update_locale, delete_locale, list_tags, create_tag, create_ai_action,
+//     invoke_ai_action, get_ai_action_invocation, get_ai_action, list_ai_actions, update_ai_action,
+//     publish_ai_action, unpublish_ai_action
+//   REST-adapter-only tools (not covered by vendor MCP): get_environment
+//   Shared (both cover, MCP takes priority): list_spaces, get_space, list_environments,
+//     create_environment, delete_environment, list_content_types, get_content_type,
+//     list_entries, get_entry, create_entry, update_entry, delete_entry, publish_entry,
+//     unpublish_entry, list_assets, get_asset, delete_asset, publish_asset, unpublish_asset
+//
+// Our adapter covers: 20 tools. Vendor MCP covers: 43 tools. Combined coverage: ~44 unique tools.
 //
 // Base URL: https://api.contentful.com
 // Auth: Bearer personal access token (PAT) or OAuth token in Authorization header

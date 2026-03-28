@@ -4,17 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from Brex as of 2026-03.
+// Official MCP: None found as of 2026-03-28
 // Community server: https://github.com/crazyrabbitLTC/mcp-brex-server — third-party, read-only,
-// covers only card expenses. Does not expose transactions, payments, team, budgets, or accounts.
+// covers only card expenses/budgets/transactions. Does not expose team, payments, cards (write), or accounts.
+// Community MCP fails criterion 4 of the protocol (no official vendor publication) → use-rest-api.
 // Recommendation: Use this adapter for full API coverage including write operations.
 //
-// Base URL: https://platform.brexapis.com
+// Base URL: https://api.brex.com (canonical as of 2026-01-01; platform.brexapis.com still resolves)
 // Auth: Bearer token (user token or OAuth2 access token) in Authorization header.
 //       Token scopes control which APIs are accessible.
 // Docs: https://developer.brex.com/
 // Rate limits: Not formally published; use cursor-based pagination for large datasets.
-// APIs: Transactions, Expenses, Budgets, Cards, Accounts (Cash), Team (Users/Depts/Locations), Payments (Vendors/Transfers)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -29,7 +29,7 @@ export class BrexMCPServer {
 
   constructor(config: BrexConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl || 'https://platform.brexapis.com';
+    this.baseUrl = config.baseUrl || 'https://api.brex.com';
   }
 
   get tools(): ToolDefinition[] {
@@ -50,25 +50,16 @@ export class BrexMCPServer {
       },
       {
         name: 'list_cash_transactions',
-        description: 'List cash account transactions with optional filters for account ID and date range',
+        description: 'List all transactions for a specific Brex cash account by account ID with optional date and pagination filters',
         inputSchema: {
           type: 'object',
           properties: {
+            account_id: { type: 'string', description: 'The cash account ID to list transactions for (use list_cash_accounts to find account IDs)' },
             cursor: { type: 'string', description: 'Pagination cursor from a previous response' },
             limit: { type: 'number', description: 'Maximum number of transactions to return (default: 100)' },
             posted_at_start: { type: 'string', description: 'Filter transactions posted at or after this ISO 8601 datetime' },
           },
-        },
-      },
-      {
-        name: 'get_cash_transaction',
-        description: 'Get a single cash account transaction by its ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', description: 'The cash transaction ID' },
-          },
-          required: ['id'],
+          required: ['account_id'],
         },
       },
       // Accounts
@@ -456,6 +447,34 @@ export class BrexMCPServer {
           required: ['company_name'],
         },
       },
+      {
+        name: 'update_vendor',
+        description: 'Update an existing payment vendor name, email, phone, or bank account details by vendor ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            vendor_id: { type: 'string', description: 'The vendor ID to update' },
+            company_name: { type: 'string', description: 'Updated vendor company name' },
+            email: { type: 'string', description: 'Updated vendor contact email' },
+            phone: { type: 'string', description: 'Updated vendor contact phone' },
+            payment_type: { type: 'string', description: 'Updated payment type: ACH or WIRE' },
+            account_number: { type: 'string', description: 'Updated bank account number' },
+            routing_number: { type: 'string', description: 'Updated bank routing number (ABA)' },
+          },
+          required: ['vendor_id'],
+        },
+      },
+      {
+        name: 'delete_vendor',
+        description: 'Permanently delete a payment vendor by vendor ID — this action cannot be undone',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            vendor_id: { type: 'string', description: 'The vendor ID to delete' },
+          },
+          required: ['vendor_id'],
+        },
+      },
     ];
   }
 
@@ -464,7 +483,6 @@ export class BrexMCPServer {
       switch (name) {
         case 'list_card_transactions': return this.listCardTransactions(args);
         case 'list_cash_transactions': return this.listCashTransactions(args);
-        case 'get_cash_transaction': return this.getCashTransaction(args);
         case 'list_cash_accounts': return this.listCashAccounts();
         case 'get_primary_card_account': return this.getPrimaryCardAccount();
         case 'list_expenses': return this.listExpenses(args);
@@ -496,6 +514,8 @@ export class BrexMCPServer {
         case 'list_vendors': return this.listVendors(args);
         case 'get_vendor': return this.getVendor(args);
         case 'create_vendor': return this.createVendor(args);
+        case 'update_vendor': return this.updateVendor(args);
+        case 'delete_vendor': return this.deleteVendor(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -555,23 +575,20 @@ export class BrexMCPServer {
   }
 
   private async listCashTransactions(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
     const params = new URLSearchParams();
     if (args.cursor) params.set('cursor', args.cursor as string);
     if (args.limit) params.set('limit', String(args.limit));
     if (args.posted_at_start) params.set('posted_at_start', args.posted_at_start as string);
-    return this.get('/v2/transactions/cash/primary', params);
-  }
-
-  private async getCashTransaction(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/v2/transactions/cash/${encodeURIComponent(args.id as string)}`);
+    return this.get(`/v2/transactions/cash/${encodeURIComponent(args.account_id as string)}`, params);
   }
 
   private async listCashAccounts(): Promise<ToolResult> {
-    return this.get('/v1/accounts/cash');
+    return this.get('/v2/accounts/cash');
   }
 
   private async getPrimaryCardAccount(): Promise<ToolResult> {
-    return this.get('/v1/accounts/card/primary');
+    return this.get('/v2/accounts/card/primary');
   }
 
   private async listExpenses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -581,13 +598,13 @@ export class BrexMCPServer {
     if (args.user_id) params.set('user_id', args.user_id as string);
     if (args.parent_expense_id) params.set('parent_expense_id', args.parent_expense_id as string);
     if (args.expand) params.set('expand[]', args.expand as string);
-    return this.get('/v1/expenses/card', params);
+    return this.get('/v1/expenses', params);
   }
 
   private async getExpense(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.expand) params.set('expand[]', args.expand as string);
-    return this.get(`/v1/expenses/card/${encodeURIComponent(args.expense_id as string)}`, params);
+    return this.get(`/v1/expenses/${encodeURIComponent(args.expense_id as string)}`, params);
   }
 
   private async updateExpense(args: Record<string, unknown>): Promise<ToolResult> {
@@ -601,11 +618,11 @@ export class BrexMCPServer {
     const params = new URLSearchParams();
     if (args.cursor) params.set('cursor', args.cursor as string);
     if (args.limit) params.set('limit', String(args.limit));
-    return this.get('/v1/budgets', params);
+    return this.get('/v2/budgets', params);
   }
 
   private async getBudget(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/v1/budgets/${encodeURIComponent(args.id as string)}`);
+    return this.get(`/v2/budgets/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createBudget(args: Record<string, unknown>): Promise<ToolResult> {
@@ -620,7 +637,7 @@ export class BrexMCPServer {
       body.limit = { amount: { amount: args.limit_amount, currency: (args.limit_currency as string) ?? 'USD' }, budget_limit_type: args.limit_type ?? 'HARD' };
     }
     if (args.period_type) body.period_type = args.period_type;
-    return this.post('/v1/budgets', body);
+    return this.post('/v2/budgets', body);
   }
 
   private async updateBudget(args: Record<string, unknown>): Promise<ToolResult> {
@@ -632,11 +649,11 @@ export class BrexMCPServer {
     if (args.limit_amount !== undefined) {
       body.limit = { amount: { amount: args.limit_amount, currency: (args.limit_currency as string) ?? 'USD' } };
     }
-    return this.put(`/v1/budgets/${encodeURIComponent(args.id as string)}`, body);
+    return this.put(`/v2/budgets/${encodeURIComponent(args.id as string)}`, body);
   }
 
   private async archiveBudget(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.post(`/v1/budgets/${encodeURIComponent(args.id as string)}/archive`, {});
+    return this.post(`/v2/budgets/${encodeURIComponent(args.id as string)}/archive`, {});
   }
 
   private async listCards(args: Record<string, unknown>): Promise<ToolResult> {
@@ -644,11 +661,11 @@ export class BrexMCPServer {
     if (args.cursor) params.set('cursor', args.cursor as string);
     if (args.limit) params.set('limit', String(args.limit));
     if (args.user_id) params.set('user_id', args.user_id as string);
-    return this.get('/v1/cards', params);
+    return this.get('/v2/cards', params);
   }
 
   private async getCard(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.get(`/v1/cards/${encodeURIComponent(args.id as string)}`);
+    return this.get(`/v2/cards/${encodeURIComponent(args.id as string)}`);
   }
 
   private async createCard(args: Record<string, unknown>): Promise<ToolResult> {
@@ -664,7 +681,7 @@ export class BrexMCPServer {
         limit_type: (args.limit_duration as string) ?? 'MONTHLY',
       };
     }
-    return this.post('/v1/cards', body);
+    return this.post('/v2/cards', body);
   }
 
   private async updateCard(args: Record<string, unknown>): Promise<ToolResult> {
@@ -673,23 +690,23 @@ export class BrexMCPServer {
     if (args.limit_amount !== undefined) {
       body.limit = { amount: { amount: args.limit_amount, currency: (args.limit_currency as string) ?? 'USD' } };
     }
-    return this.put(`/v1/cards/${encodeURIComponent(args.id as string)}`, body);
+    return this.put(`/v2/cards/${encodeURIComponent(args.id as string)}`, body);
   }
 
   private async lockCard(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {};
     if (args.reason) body.reason = args.reason;
-    return this.post(`/v1/cards/${encodeURIComponent(args.id as string)}/lock`, body);
+    return this.post(`/v2/cards/${encodeURIComponent(args.id as string)}/lock`, body);
   }
 
   private async unlockCard(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.post(`/v1/cards/${encodeURIComponent(args.id as string)}/unlock`, {});
+    return this.post(`/v2/cards/${encodeURIComponent(args.id as string)}/unlock`, {});
   }
 
   private async terminateCard(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {};
     if (args.reason) body.reason = args.reason;
-    return this.post(`/v1/cards/${encodeURIComponent(args.id as string)}/terminate`, body);
+    return this.post(`/v2/cards/${encodeURIComponent(args.id as string)}/terminate`, body);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -782,6 +799,28 @@ export class BrexMCPServer {
     return this.post('/v1/vendors', body);
   }
 
+  private async updateVendor(args: Record<string, unknown>): Promise<ToolResult> {
+    const body: Record<string, unknown> = {};
+    if (args.company_name) body.company_name = args.company_name;
+    if (args.email) body.email = args.email;
+    if (args.phone) body.phone = args.phone;
+    if (args.payment_type && args.account_number && args.routing_number) {
+      body.payment_accounts = [{ payment_type: args.payment_type, account_number: args.account_number, routing_number: args.routing_number }];
+    }
+    return this.put(`/v1/vendors/${encodeURIComponent(args.vendor_id as string)}`, body);
+  }
+
+  private async deleteVendor(args: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}/v1/vendors/${encodeURIComponent(args.vendor_id as string)}`, {
+      method: 'DELETE',
+      headers: this.headers(),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    return { content: [{ type: 'text', text: JSON.stringify({ deleted: true }) }], isError: false };
+  }
+
   static catalog() {
     return {
       name: 'brex',
@@ -789,7 +828,7 @@ export class BrexMCPServer {
       version: '1.0.0',
       category: 'finance' as const,
       keywords: ['brex', 'corporate card', 'expense', 'transaction', 'budget', 'spend limit', 'finance', 'payment', 'vendor', 'ach', 'wire', 'user', 'department', 'fintech'],
-      toolNames: ['list_card_transactions', 'list_cash_transactions', 'get_cash_transaction', 'list_cash_accounts', 'get_primary_card_account', 'list_expenses', 'get_expense', 'update_expense', 'list_budgets', 'get_budget', 'create_budget', 'update_budget', 'archive_budget', 'list_cards', 'get_card', 'create_card', 'update_card', 'lock_card', 'unlock_card', 'terminate_card', 'list_users', 'get_user', 'invite_user', 'update_user', 'get_me', 'list_departments', 'get_department', 'create_department', 'list_locations', 'get_location', 'create_location', 'list_vendors', 'get_vendor', 'create_vendor'],
+      toolNames: ['list_card_transactions', 'list_cash_transactions', 'list_cash_accounts', 'get_primary_card_account', 'list_expenses', 'get_expense', 'update_expense', 'list_budgets', 'get_budget', 'create_budget', 'update_budget', 'archive_budget', 'list_cards', 'get_card', 'create_card', 'update_card', 'lock_card', 'unlock_card', 'terminate_card', 'list_users', 'get_user', 'invite_user', 'update_user', 'get_me', 'list_departments', 'get_department', 'create_department', 'list_locations', 'get_location', 'create_location', 'list_vendors', 'get_vendor', 'create_vendor', 'update_vendor', 'delete_vendor'],
       description: 'Brex corporate cards and spend management: transactions, expenses, budgets, cards, users, departments, locations, and payment vendors.',
       author: 'protectnil' as const,
     };

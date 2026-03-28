@@ -4,14 +4,27 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/amplitude/mcp-server-guide — beta, 13 tools, transport unspecified
-// The Amplitude MCP server (guide repo only; implementation is hosted/closed-source) exposes 13 tools
-// covering core analytics queries, content management, and user insights. It requires Amplitude
-// organization access and is described as "under active development" with minimal commit history (3 commits).
-// Our adapter covers the full public REST API surface including event ingestion, segmentation, funnels,
-// retention, cohorts, user activity, taxonomy, and user privacy — none of which are covered by the vendor MCP.
-// Recommendation: Use vendor MCP for high-level Amplitude AI queries. Use this adapter for direct
-// REST API access, air-gapped deployments, or operations not exposed by the vendor MCP.
+// Official MCP: https://mcp.amplitude.com/mcp — transport: streamable-HTTP, auth: Amplitude API key
+//   Vendor MCP: 13 tools (hosted/closed-source, beta as of 2026-03-28). Guide repo: github.com/amplitude/mcp-server-guide
+//   Vendor MCP tools (13): search, query_chart, query_experiment, query_dataset, query_metric,
+//   get_charts, get_dashboard, get_notebook, get_experiments, get_flags, get_session_replays,
+//   get_event_properties, get_context
+//   Our adapter tools (17): track_events, identify_users, get_active_users, get_event_segmentation,
+//   get_funnel, get_retention, get_user_activity, get_user_search, list_cohorts, get_cohort,
+//   list_event_types, get_event_type, list_user_properties, list_event_properties,
+//   export_events, delete_user_data, get_deletion_job
+//   Overlap: ZERO shared tools — vendor MCP covers AI-powered analytics queries;
+//   our adapter covers direct REST API (ingestion, segmentation, funnels, retention, cohorts,
+//   taxonomy, user privacy) — none of which are in the vendor MCP.
+// Integration: use-both — MCP has 13 unique tools not in our adapter (AI queries, dashboards,
+//   experiments, flags, session replays); our adapter has 17 unique tools not in the MCP
+//   (event ingestion, segmentation, funnels, retention, cohorts, taxonomy, user privacy).
+//   Full coverage requires union. FederationManager routes shared tools through MCP (none shared here).
+// MCP-sourced tools (13): search, query_chart, query_experiment, query_dataset, query_metric,
+//   get_charts, get_dashboard, get_notebook, get_experiments, get_flags, get_session_replays,
+//   get_event_properties, get_context
+// REST-sourced tools (17): [all tools in this adapter]
+// Combined coverage: 30 tools (MCP: 13 + REST: 17 - shared: 0)
 //
 // Base URL (ingestion, US):  https://api2.amplitude.com/2/httpapi
 // Base URL (ingestion, EU):  https://api.eu.amplitude.com/2/httpapi

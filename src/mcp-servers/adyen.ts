@@ -51,6 +51,7 @@ export class AdyenMCPServer {
     this.merchantAccount = config.merchantAccount;
     this.baseUrl = config.baseUrl || 'https://checkout-test.adyen.com/v71';
     this.disputesUrl = config.disputesUrl || 'https://ca-test.adyen.com/ca/services/DisputeService/v30';
+    // managementUrl is accepted in config for forward compatibility; Management API tools to be added
   }
 
   get tools(): ToolDefinition[] {

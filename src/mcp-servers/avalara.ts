@@ -4,10 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/CDataSoftware/avalara-avatax-mcp-server-by-cdata
-// CData read-only JDBC bridge, NOT Avalara-official, requires a CData license.
-// No official Avalara-published MCP server was found as of 2026-03.
-// This adapter targets the full AvaTax REST v2 API surface directly.
+// Official MCP: https://github.com/avadev/mcp — transport: streamable-HTTP (type: "http"),
+//   auth: OAuth 2.1. Endpoint: https://mcp.avalara.com/avatax. Published by Avalara (avadev org),
+//   last commit 2025-11-21, actively maintained. Covers: calculate_tax, get_transaction,
+//   get_transactions, get_nexus_definitions, get_nexus, create_nexus, get_companies, and more.
+//   Tool count not fully verifiable from public docs (page truncates); confirmed 7+ tools.
+// Also noted: https://github.com/CDataSoftware/avalara-avatax-mcp-server-by-cdata —
+//   CData read-only JDBC bridge, NOT Avalara-official, requires a CData license.
+// Our adapter covers 24 tools (full AvaTax REST v2 surface). Vendor MCP covers write/read
+//   operations but tool count is smaller than our REST coverage.
+// Recommendation: use-both — Avalara's official MCP handles core tax calculation and nexus
+//   reads via OAuth 2.1 (streamable-HTTP). Our REST adapter covers void, adjust, address
+//   resolution, items, locations, certificates, customers, and tax rate lookups not confirmed
+//   in the MCP. Use MCP for OAuth-authenticated workflows; REST adapter for air-gapped or
+//   full-API-surface deployments.
 //
 // Base URL:
 //   Production: https://rest.avatax.com

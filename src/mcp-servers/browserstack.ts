@@ -5,13 +5,27 @@
  */
 
 // Official MCP: https://github.com/browserstack/mcp-server — transport: stdio, auth: Basic (username + access key)
-// Our adapter covers: 18 tools (Automate builds/sessions, App Automate, workers, account). Vendor MCP covers: testing workflow tools.
-// Recommendation: Use vendor MCP for AI-assisted test creation and debugging. Use this adapter for CI/CD pipeline data and session reporting.
+// Vendor MCP (@browserstack/mcp-server v1.2.13, published 2026-03-27) covers: 20 tools — test management, AI agents,
+//   live/browser sessions, accessibility scans, app automate runs. All MCP tools are workflow-oriented (AI test creation,
+//   debugging, live device sessions). MCP does NOT expose REST API CRUD for builds/sessions/plan/browsers/workers.
+//
+// Integration: use-both
+// MCP-sourced tools (20): createProjectOrFolder, createTestCase, listTestCases, createTestRun, listTestRuns,
+//   updateTestRun, runBrowserLiveSession, runAppLiveSession, takeAppScreenshot, runAppTestsOnBrowserStack,
+//   accessibilityExpert, startAccessibilityScan, fetchSelfHealedSelectors, createLCASteps,
+//   (+ remaining tools per vendor docs up to 20 total)
+// REST-sourced tools (17): list_automate_builds, get_automate_build, delete_automate_build,
+//   list_automate_sessions, get_automate_session, update_automate_session, delete_automate_session,
+//   get_automate_plan, get_automate_browsers, get_automate_workers,
+//   list_app_automate_builds, get_app_automate_build, delete_app_automate_build,
+//   list_app_automate_sessions, get_app_automate_session, update_app_automate_session, get_account_plan
+// Combined coverage: 37 tools (MCP: 20 + REST: 17, zero shared — fully non-overlapping domains)
 //
 // Base URL: https://api.browserstack.com (Automate), https://api-cloud.browserstack.com (App Automate)
 // Auth: HTTP Basic Auth — username and access key (from BrowserStack account settings)
 // Docs: https://www.browserstack.com/docs/automate/api-reference/selenium/introduction
-// Rate limits: User Management APIs — 5 req burst then 15 req/min. Automate APIs — not officially documented; best practice: 60 req/min.
+// Rate limits: App Automate APIs — 90 req/second per user; App/Test suite uploads — 5 req/min per user.
+//   Automate APIs — not explicitly documented; apply same 90 req/s guidance.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -53,9 +67,9 @@ export class BrowserStackMCPServer {
         'get_automate_workers',
         'list_app_automate_builds', 'get_app_automate_build', 'delete_app_automate_build',
         'list_app_automate_sessions', 'get_app_automate_session', 'update_app_automate_session',
-        'get_account_usage', 'get_account_plan',
+        'get_account_plan',
       ],
-      description: 'BrowserStack cross-browser testing cloud: manage Automate builds and sessions, App Automate mobile builds, parallel worker usage, and account plan details.',
+      description: 'BrowserStack cross-browser testing cloud: manage Automate builds and sessions, App Automate mobile builds, parallel worker usage, and account plan/usage details.',
       author: 'protectnil',
     };
   }
@@ -336,16 +350,8 @@ export class BrowserStackMCPServer {
         },
       },
       {
-        name: 'get_account_usage',
-        description: 'Get current account-level Automate usage statistics including parallel tests running and queued',
-        inputSchema: {
-          type: 'object',
-          properties: {},
-        },
-      },
-      {
         name: 'get_account_plan',
-        description: 'Get BrowserStack account plan details including parallel limit, included minutes, and remaining credits',
+        description: 'Get BrowserStack Automate plan details including plan name, max parallel sessions, currently running parallel sessions, and queued sessions',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -389,8 +395,6 @@ export class BrowserStackMCPServer {
           return this.getAppAutomateSession(args);
         case 'update_app_automate_session':
           return this.updateAppAutomateSession(args);
-        case 'get_account_usage':
-          return this.getAccountUsage();
         case 'get_account_plan':
           return this.getAccountPlan();
         default:
@@ -559,10 +563,6 @@ export class BrowserStackMCPServer {
     if (args.status) body.status = args.status;
     if (args.reason) body.reason = args.reason;
     return this.bsPut(`${this.appAutomateBaseUrl}/app-automate/sessions/${encodeURIComponent(args.session_id as string)}.json`, body);
-  }
-
-  private async getAccountUsage(): Promise<ToolResult> {
-    return this.bsGet(`${this.automateBaseUrl}/automate/builds.json?limit=1`);
   }
 
   private async getAccountPlan(): Promise<ToolResult> {

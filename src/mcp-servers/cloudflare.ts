@@ -5,17 +5,42 @@
  */
 
 // Official MCP: https://github.com/cloudflare/mcp-server-cloudflare — transport: streamable-HTTP
-//   (remote, hosted on workers.cloudflare.com), auth: OAuth2 with Cloudflare account.
-//   Contains multiple specialized sub-servers: workers-bindings, browser-rendering,
-//   workers-observability, logpush, docs-vectorize.
-//   Also: https://github.com/cloudflare/mcp — "Code Mode" token-efficient MCP covering
-//   2,500+ endpoints in ~1,000 tokens via dynamic tool generation.
-// Our adapter covers: 22 tools (core DNS, zones, workers, KV namespaces, pages, firewall,
-//   cache purge operations). Use this adapter for API-token-based access without OAuth,
-//   air-gapped deployments, or scripted/CI integrations.
+//   and SSE (deprecated). Auth: OAuth2 with Cloudflare account. Published by Cloudflare (official).
+//   Actively maintained: 3,600+ stars, 349 commits. Last commit 2025/2026.
+//   Contains multiple specialized sub-servers:
+//     - Cloudflare API MCP (cloudflare.com/api/mcp): 2 tools (search, execute) via "Codemode" —
+//       covers 2,500+ endpoints in ~1,000 tokens via dynamic Worker sandbox execution.
+//     - Workers Bindings: build Workers apps with storage, AI, compute primitives.
+//     - Workers Builds: insights and management for Cloudflare Workers Builds.
+//     - Observability (workers-observability): debug logs and analytics.
+//     - Radar: global Internet traffic insights, URL scans.
+//     - Container: sandbox development environments.
+//     - Browser Rendering: fetch pages, convert to markdown, take screenshots.
+//     - Logpush: summaries for Logpush job health.
+//   MCP vendor tool count: 2 (Codemode API MCP) + additional per sub-server (not individually counted).
+// Our adapter covers: 22 tools (explicit named tools for core DNS, zones, workers, KV, pages,
+//   firewall/IP-access-rules, cache purge). Use for API-token auth without OAuth, air-gapped
+//   deployments, scripted/CI integrations, or where explicit named tools are preferred over
+//   the Codemode search+execute interface.
+// Recommendation: use-both
+//   MCP provides: dynamic coverage of all 2,500+ Cloudflare API endpoints via search()/execute()
+//     Codemode, plus specialized sub-servers for observability, browser rendering, bindings.
+//   REST adapter provides: explicit named tools that the SLM can select by name without
+//     requiring Codemode generation. Better for deterministic tool routing in orchestration.
+//
+// Integration: use-both
+// MCP-sourced tools (2 Codemode + sub-server tools): search, execute (Cloudflare API MCP);
+//   plus workers-bindings, workers-builds, observability, radar, container, browser-rendering,
+//   logpush sub-server tools (tool counts vary by sub-server).
+// REST-sourced tools (22): list_zones, get_zone, purge_cache, list_dns_records, get_dns_record,
+//   create_dns_record, update_dns_record, delete_dns_record, list_workers, get_worker,
+//   delete_worker, list_kv_namespaces, list_kv_keys, get_kv_value, put_kv_value, delete_kv_value,
+//   list_pages_projects, get_pages_project, list_firewall_rules, create_firewall_rule,
+//   update_firewall_rule, delete_firewall_rule
 //
 // Base URL: https://api.cloudflare.com/client/v4
 // Auth: Bearer token — Authorization: Bearer {API_TOKEN}
+//   Source: https://developers.cloudflare.com/api/
 // Docs: https://developers.cloudflare.com/api/
 // Rate limits: 1,200 requests per 5 minutes per API token (some endpoints have tighter limits).
 

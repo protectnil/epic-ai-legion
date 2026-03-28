@@ -4,12 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/akuity/argocd-mcp (mirrored at argoproj-labs/mcp-for-argocd)
-// Maintained by Akuity (creators of Argo Project). Transport: stdio + streamable-HTTP.
-// Auth: Bearer token. Actively maintained as of 2025. 10+ tools covering applications,
-// repositories, clusters, and projects.
-// Recommendation: Use official MCP for interactive/IDE use cases. Use this adapter for
-// air-gapped deployments or service-to-service M2M access-token workflows.
+// Official MCP: https://github.com/argoproj-labs/mcp-for-argocd (originally by Akuity) — transport: stdio + streamable-HTTP, auth: Bearer token
+// Our adapter covers: 23 tools. Vendor MCP covers: 13 tools (list_clusters, list_applications,
+//   get_application, create_application, update_application, delete_application, sync_application,
+//   get_application_resource_tree, get_application_managed_resources, get_application_workload_logs,
+//   get_resource_events, get_resource_actions, run_resource_action).
+// MCP actively maintained — last commit 2026-03-25. Meets all 4 protocol criteria.
+// Our adapter adds: list_repositories, get_repository, list_repository_apps, list_projects,
+//   get_project, create_project, delete_project, get_cluster, get_server_version, get_settings.
+// Recommendation: use-both — MCP and REST have non-overlapping tools. MCP handles app management;
+//   REST adapter adds repository, project, cluster detail, and server settings operations.
 //
 // Base URL: https://{argocd-server}/api/v1  (self-hosted; no SaaS base URL)
 // Auth: Bearer token — generate via `argocd account generate-token` or via the session API
@@ -678,7 +682,9 @@ export class ArgoCDMCPServer {
   }
 
   private async getServerVersion(): Promise<ToolResult> {
-    return this.fetchJSON(`${this.baseUrl}/version`);
+    // ArgoCD version endpoint is at /api/version (not /api/v1/version)
+    const versionUrl = this.baseUrl.replace(/\/api\/v1$/, '/api') + '/version';
+    return this.fetchJSON(versionUrl);
   }
 
   private async getServerSettings(): Promise<ToolResult> {

@@ -4,12 +4,28 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/Arize-ai/phoenix — transport: npx (stdio), auth: API key
+// Official MCP: https://github.com/Arize-ai/phoenix (npm: @arizeai/phoenix-mcp) — transport: stdio, auth: API key
 // The phoenix-mcp package lives at js/packages/phoenix-mcp in the Arize-ai/phoenix monorepo.
-// It requires a running Phoenix instance (cloud or self-hosted) and is actively maintained.
-// Our adapter covers: 15 tools (full REST API surface). Vendor MCP covers: core tools via npx.
-// Recommendation: Use vendor MCP for interactive/IDE use cases. Use this adapter for
-// air-gapped deployments, self-hosted Phoenix, or service-to-service access.
+// It is actively maintained (last commit 2026-03-26, version 1.1.0). Exposes 21 tools.
+// Our adapter covers: 15 tools (REST surface: projects, spans, datasets, experiments, prompts).
+// Vendor MCP covers: 21 tools (adds: list-sessions, get-session, list-traces, list-annotation-configs,
+//   get-spans, get-span-annotations, upsert-prompt, get-prompt-by-identifier, get-latest-prompt,
+//   get-prompt-version, add-dataset-examples, list-experiments-for-dataset, get-experiment-by-id,
+//   list-traces, get-trace, phoenix-support — MCP tool names use kebab-case).
+// Integration: use-both
+// MCP-sourced tools (6 unique to MCP): list-sessions, get-session, list-annotation-configs,
+//   add-dataset-examples, phoenix-support, get-span-annotations
+// REST-sourced tools (15, covering projects/spans/datasets/experiments/prompts):
+//   list_projects, get_project, create_project, delete_project, list_spans, get_span, get_trace,
+//   list_datasets, get_dataset, get_dataset_examples, delete_dataset, list_experiments,
+//   get_experiment, list_prompts, get_prompt
+// Shared (overlap — MCP also covers these operations, but our REST adapter provides them too):
+//   list-projects/list_projects, get-project/get_project, get-spans/list_spans,
+//   list-datasets/list_datasets, get-dataset/get_dataset, get-dataset-examples/get_dataset_examples,
+//   list-experiments-for-dataset/list_experiments, get-experiment-by-id/get_experiment,
+//   list-prompts/list_prompts, get-prompt/get_prompt, list-traces/get_trace
+// NOTE: create_project, delete_project, delete_dataset are REST-only (not in vendor MCP).
+//       The FederationManager routes shared tools through MCP by default.
 //
 // Base URL: https://app.phoenix.arize.com (Phoenix Cloud); override with self-hosted URL
 // Auth: Bearer API key — set in Authorization header

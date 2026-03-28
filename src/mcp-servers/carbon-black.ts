@@ -4,19 +4,28 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from VMware/Broadcom Carbon Black as of 2026-03.
-// No official Carbon Black Cloud MCP server found on GitHub. The carbonblack GitHub org
-// contains only SDKs (Python) and archived CLI tools, not MCP servers.
-// Recommendation: Use this adapter as the only available integration path.
+// Official MCP: None found as of 2026-03-28.
+// No official Carbon Black Cloud MCP server published by VMware/Broadcom on GitHub or npm.
+// The carbonblack GitHub org contains only SDKs (Python cbapi) and archived CLI tools, not MCP servers.
+// Recommendation: use-rest-api — this adapter is the only integration path.
 //
 // Base URL: https://defense.conferdeploy.net (varies by region — configurable via baseUrl)
-// Auth: X-Auth-Token header using "API_KEY/CONNECTOR_ID" format.
+// Auth: X-Auth-Token header using "API_KEY/CONNECTOR_ID" format (apiKey/connectorId concatenated).
 //       API Key and Connector ID are generated in the Carbon Black Cloud console under
-//       Settings > API Access. Different permission levels (READ, WRITE, EXECUTE) exist.
+//       Settings > API Access > Add API Key. Different Access Level types required per API.
 // Docs: https://developer.carbonblack.com/reference/carbon-black-cloud/
-// Rate limits: Not formally published. Async search jobs (processes, events) use job/poll pattern.
-// API service paths: /api/alerts/v7/, /appservices/v6/, /api/investigate/v2/,
-//                   /policyservice/v1/, /vulnerability/assessment/api/v1/
+//       https://developer.carbonblack.com/reference/carbon-black-cloud/authentication/
+// Rate limits: Not formally documented. Async search jobs (processes, enriched events) use submit/poll pattern.
+// API service paths (verified):
+//   Alerts v7:              /api/alerts/v7/orgs/{org_key}/
+//   Devices v6:             /appservices/v6/orgs/{org_key}/devices/
+//   Live Response v6:       /appservices/v6/orgs/{org_key}/liveresponse/
+//   Policy v1:              /policyservice/v1/orgs/{org_key}/policies/
+//   Process Search v2:      /api/investigate/v2/orgs/{org_key}/processes/search_jobs
+//   Enriched Events v2:     /api/investigate/v2/orgs/{org_key}/enriched_events/search_jobs
+//   Reputation Overrides v6:/appservices/v6/orgs/{org_key}/reputations/overrides
+//   Watchlist v3:           /threathunter/watchlistmgr/v3/orgs/{org_key}/watchlists
+//   Vulnerability v1:       /vulnerability/assessment/api/v1/orgs/{org_key}/
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -280,27 +289,27 @@ export class CarbonBlackMCPServer {
       // Vulnerabilities
       {
         name: 'list_device_vulnerabilities',
-        description: 'List vulnerabilities detected on a specific device with CVE details and severity',
+        description: 'Search vulnerabilities detected on a specific device with optional severity filter and pagination',
         inputSchema: {
           type: 'object',
           properties: {
-            device_id: { type: 'number', description: 'Device ID to list vulnerabilities for' },
-            rows: { type: 'number', description: 'Number of results (default: 20, max: 200)' },
+            device_id: { type: 'number', description: 'Device ID to search vulnerabilities for' },
+            rows: { type: 'number', description: 'Number of results (default: 20)' },
             start: { type: 'number', description: 'Starting row for pagination (default: 0)' },
-            severity: { type: 'string', description: 'Filter by CVSS severity: CRITICAL, HIGH, MEDIUM, LOW' },
+            severity: { type: 'string', description: 'Filter by CVSS severity value: CRITICAL, HIGH, MEDIUM, LOW' },
           },
           required: ['device_id'],
         },
       },
       {
         name: 'list_org_vulnerabilities',
-        description: 'List vulnerability summary across the entire organization grouped by CVE',
+        description: 'Search vulnerabilities across all devices in the organization with optional severity filter and pagination',
         inputSchema: {
           type: 'object',
           properties: {
-            rows: { type: 'number', description: 'Number of CVE results (default: 20, max: 200)' },
+            rows: { type: 'number', description: 'Number of results (default: 20)' },
             start: { type: 'number', description: 'Starting row for pagination (default: 0)' },
-            severity: { type: 'string', description: 'Filter by CVSS severity: CRITICAL, HIGH, MEDIUM, LOW' },
+            severity: { type: 'string', description: 'Filter by CVSS severity value: CRITICAL, HIGH, MEDIUM, LOW' },
           },
         },
       },
@@ -640,19 +649,21 @@ export class CarbonBlackMCPServer {
   }
 
   private async listDeviceVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    params.set('rows', String((args.rows as number) ?? 20));
-    params.set('start', String((args.start as number) ?? 0));
-    if (args.severity) params.set('severity', args.severity as string);
-    return this.get(`/vulnerability/assessment/api/v1/orgs/${this.org()}/devices/${encodeURIComponent(args.device_id as string)}/vulnerabilities?${params}`);
+    const body: Record<string, unknown> = {
+      rows: (args.rows as number) ?? 20,
+      start: (args.start as number) ?? 0,
+    };
+    if (args.severity) body['criteria'] = { property: { value: args.severity, operator: 'EQUALS' } };
+    return this.post(`/vulnerability/assessment/api/v1/orgs/${this.org()}/devices/${encodeURIComponent(args.device_id as string)}/vulnerabilities/_search`, body);
   }
 
   private async listOrgVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    params.set('rows', String((args.rows as number) ?? 20));
-    params.set('start', String((args.start as number) ?? 0));
-    if (args.severity) params.set('severity', args.severity as string);
-    return this.get(`/vulnerability/assessment/api/v1/orgs/${this.org()}/vulnerabilities?${params}`);
+    const body: Record<string, unknown> = {
+      rows: (args.rows as number) ?? 20,
+      start: (args.start as number) ?? 0,
+    };
+    if (args.severity) body['criteria'] = { property: { value: args.severity, operator: 'EQUALS' } };
+    return this.post(`/vulnerability/assessment/api/v1/orgs/${this.org()}/devices/vulnerabilities/_search`, body);
   }
 
   private async startLiveResponse(args: Record<string, unknown>): Promise<ToolResult> {

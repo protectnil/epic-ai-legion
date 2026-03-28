@@ -4,12 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/uscensusbureau/us-census-bureau-data-api-mcp — transport: stdio, auth: API key
-// Our adapter covers: 14 tools (ACS 1-year, ACS 5-year, Decennial Census, Population Estimates,
-//   business patterns, geography lookup, variable discovery, dataset catalog).
-// Vendor MCP (uscensusbureau) covers: official Census data queries — overlapping scope.
-// Recommendation: Use vendor MCP for development. Use this adapter for air-gapped deployments or
-//   when you need custom tool composition alongside other Epic AI adapters.
+// Official MCP: https://github.com/uscensusbureau/us-census-bureau-data-api-mcp — transport: stdio, auth: API key (env var CENSUS_API_KEY)
+// Our adapter covers: 14 tools. Vendor MCP covers: 5 tools (list-datasets, fetch-dataset-geography,
+//   fetch-aggregate-data, resolve-geography-fips, search-data-tables). Last release: v0.1.2-beta Mar 6 2026.
+// Recommendation: use-rest-api — vendor MCP fails the 10+ tools criterion (only 5 tools). Our adapter
+//   provides broader coverage: dataset-specific query tools, convenience geo tools, variable search, and
+//   business patterns. The vendor MCP's fetch-aggregate-data is equivalent to our get_acs5_data/get_acs1_data/
+//   get_decennial_data tools. Use vendor MCP as optional supplement for air-gapped or stdio setups only.
 //
 // Base URL: https://api.census.gov/data
 // Auth: API key as query parameter: ?key=<api_key>

@@ -4,11 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 // No official Argo Workflows MCP server from the argoproj organization.
-//   github.com/jakkaj/mcp-argo-server — community, Go, minimal coverage, last commit 2024.
+//   github.com/jakkaj/mcp-argo-server — community, Go, 3 tools only, last commit 2024. Fails criteria.
+//   github.com/kushthedude/argo-workflows-mcp — community, TypeScript, last commit 2025-08-07.
+//     Auto-generates tools from OpenAPI but is NOT an official argoproj/argoproj-labs release.
 //   github.com/argoproj-labs/mcp-for-argocd — Argo CD only (GitOps), not Argo Workflows.
-// This adapter provides complete workflow lifecycle management via the Argo Server REST API.
+// Our adapter covers: 19 tools. No qualifying official MCP server exists.
+// Recommendation: use-rest-api — no official Argo Workflows MCP server qualifies.
 //
 // Base URL: User-configurable. Argo Server default port: 2746 (e.g. https://argo.example.com or https://localhost:2746).
 // Auth: Bearer token. Obtain via: `argo auth token` CLI or a Kubernetes ServiceAccount token.

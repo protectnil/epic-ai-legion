@@ -4,10 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Appsmith MCP server was found on GitHub or the Appsmith developer portal.
 // Appsmith's own product includes an MCP endpoint (mcp.appsmith.com) for connecting external
 // tools TO Appsmith-built apps, which is unrelated to managing the Appsmith platform itself.
+//
+// NOTE: Appsmith's official public API docs (docs.appsmith.com/getting-started/setup/instance-management/api-reference)
+// only document 2 monitoring endpoints: GET /api/v1/health and GET /api/v1/app-performance.
+// The workspace, application, datasource, and user management endpoints used by this adapter
+// are internal APIs derived from Appsmith's open-source codebase — they are not publicly documented
+// and may change without notice. All 19 management tools are UNVERIFIED against official docs.
 //
 // Base URL: https://{your-appsmith-host} (self-hosted) or https://app.appsmith.com (cloud)
 // Auth: API key passed as the "x-appsmith-token" header (generated in Profile → API Keys)

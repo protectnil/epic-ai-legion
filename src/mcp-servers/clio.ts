@@ -4,16 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-//   No official Clio-published MCP server was found on GitHub. Community projects such as
-//   github.com/protomated/legal-context-ce bridge Clio documents to Claude Desktop but are
-//   not general-purpose REST API adapters and are not maintained by Clio Inc.
+// Official MCP: None found as of 2026-03-28.
+//   No official Clio Inc.-published MCP server exists. The Pipedream Connect static endpoint
+//   (mcp.pipedream.net/v2) exposes Clio via a third-party proxy — it is NOT published by
+//   Clio Inc. and does not qualify as an official vendor MCP. Community project
+//   github.com/protomated/legal-context-ce (npm @protomated/legal-context, last published
+//   2025-08) bridges Clio documents to Claude Desktop but is unmaintained and not general-purpose.
+//
+// Our adapter covers: 23 tools. Vendor MCP: None.
+// Recommendation: use-rest-api — no qualifying official MCP exists.
 //
 // Base URL: https://app.clio.com/api/v4 (US/default)
 //   Regional variants: eu.app.clio.com, ca.app.clio.com, au.app.clio.com
 // Auth: OAuth2 Authorization Code flow — pass the resulting access_token as Bearer token.
 // Docs: https://docs.developers.clio.com/clio-manage/api-reference/
-// Rate limits: 10,000 requests per hour per OAuth token (per Clio developer docs).
+// Rate limits: 50 requests per minute (default, peak hours) per access token. Returns HTTP 429
+//   with Retry-After header. Off-peak limits are higher. See:
+//   https://docs.developers.clio.com/api-docs/clio-manage/rate-limits/
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -394,19 +401,21 @@ export class ClioMCPServer {
       },
       {
         name: 'create_calendar_entry',
-        description: 'Create a new calendar event in Clio with summary, start/end time, matter, and attendees.',
+        description: 'Create a new calendar event in Clio with summary, start/end time, calendar owner, and optional matter.',
         inputSchema: {
           type: 'object',
           properties: {
             summary: { type: 'string', description: 'Event title or summary.' },
             start_at: { type: 'string', description: 'Event start time in ISO 8601 format.' },
             end_at: { type: 'string', description: 'Event end time in ISO 8601 format.' },
-            matter_id: { type: 'number', description: 'Matter ID to associate the event with (optional).' },
+            calendar_owner_id: { type: 'number', description: 'Calendar ID of the owner (from GET /api/v4/calendars). Required — use the Calendar ID, NOT the User ID.' },
+            calendar_owner_type: { type: 'string', description: 'Calendar owner type: User or Contact (default: User).' },
+            matter_id: { type: 'number', description: 'Matter ID to associate the event with (optional — link via PATCH after creation if initial POST returns 404).' },
             location: { type: 'string', description: 'Event location (optional).' },
             description: { type: 'string', description: 'Event description or notes (optional).' },
             all_day: { type: 'boolean', description: 'Whether this is an all-day event (default: false).' },
           },
-          required: ['summary', 'start_at', 'end_at'],
+          required: ['summary', 'start_at', 'end_at', 'calendar_owner_id'],
         },
       },
       {
@@ -710,14 +719,18 @@ export class ClioMCPServer {
   }
 
   private async createCalendarEntry(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.summary || !args.start_at || !args.end_at) {
-      return { content: [{ type: 'text', text: 'summary, start_at, and end_at are required' }], isError: true };
+    if (!args.summary || !args.start_at || !args.end_at || !args.calendar_owner_id) {
+      return { content: [{ type: 'text', text: 'summary, start_at, end_at, and calendar_owner_id are required' }], isError: true };
     }
 
     const entryData: Record<string, unknown> = {
       summary: args.summary,
       start_at: args.start_at,
       end_at: args.end_at,
+      calendar_owner: {
+        id: args.calendar_owner_id,
+        type: (args.calendar_owner_type as string) || 'User',
+      },
     };
     if (args.matter_id) entryData.matter = { id: args.matter_id };
     if (args.location) entryData.location = args.location;

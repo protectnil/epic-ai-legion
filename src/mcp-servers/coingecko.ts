@@ -4,13 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://docs.coingecko.com/reference/mcp-server — transport: streamable-HTTP
-// CoinGecko launched an official hosted MCP server (beta) at https://mcp.api.coingecko.com/mcp
-// (public, no key) and https://mcp.pro-api.coingecko.com/mcp (Pro, BYOK).
+// Official MCP: https://mcp.api.coingecko.com/mcp (public) | https://mcp.pro-api.coingecko.com/mcp (Pro BYOK)
+//   — transport: streamable-HTTP, auth: x-cg-pro-api-key header (Pro) or none (public)
+//   — Docs: https://docs.coingecko.com/reference/mcp-server — official, actively maintained (last updated 2025-09)
 // Our adapter covers: 16 tools (prices, markets, coins, trending, exchanges, NFTs, search).
-// Vendor MCP covers: Full API surface via hosted endpoint. Transport: streamable-HTTP.
-// Recommendation: Use vendor MCP for hosted/zero-config deployments.
-//                 Use this adapter for air-gapped or programmatic REST usage.
+// Vendor MCP covers: Full API surface including onchain DEX, trending pools, megafilter, and Pro-exclusive tools (40+ tools estimated).
+// Recommendation: use-rest-api for air-gapped or programmatic REST usage.
+//   Vendor MCP meets all four protocol criteria (official, maintained, 10+ tools, streamable-HTTP).
+//   However, vendor MCP is in Beta and our REST adapter provides stable, air-gapped fallback.
+//   Decision: use-rest-api (vendor MCP is a strict superset of our adapter — prefer vendor MCP for
+//   hosted deployments, keep this adapter as air-gapped fallback per protocol section "When to build a REST API wrapper").
 //
 // Base URL: https://pro-api.coingecko.com/api/v3 (Pro key)
 //           https://api.coingecko.com/api/v3 (Demo/public, lower rate limits)
@@ -118,11 +121,11 @@ export class CoinGeckoMCPServer {
             },
             localization: {
               type: 'boolean',
-              description: 'Include localized language data (default: false)',
+              description: 'Include localized language data (default: false; API default is true but this adapter defaults to false to reduce response size)',
             },
             tickers: {
               type: 'boolean',
-              description: 'Include exchange ticker data (default: false)',
+              description: 'Include exchange ticker data (default: false; API default is true but this adapter defaults to false to reduce response size)',
             },
             market_data: {
               type: 'boolean',
@@ -130,11 +133,11 @@ export class CoinGeckoMCPServer {
             },
             community_data: {
               type: 'boolean',
-              description: 'Include community statistics (default: false)',
+              description: 'Include community statistics (default: false; API default is true but this adapter defaults to false to reduce response size)',
             },
             developer_data: {
               type: 'boolean',
-              description: 'Include developer/GitHub statistics (default: false)',
+              description: 'Include developer/GitHub statistics (default: false; API default is true but this adapter defaults to false to reduce response size)',
             },
           },
           required: ['id'],

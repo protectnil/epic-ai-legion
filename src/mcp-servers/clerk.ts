@@ -4,13 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://clerk.com/docs/guides/ai/mcp/clerk-mcp-server — transport: streamable-HTTP
-// Clerk launched an official MCP server (Jan 2026) at https://mcp.clerk.com/mcp providing docs and
-// SDK snippets for AI coding assistants. It covers documentation/code-gen tooling, NOT user/org
-// management operations. Our adapter targets the Backend API (BAPI) management surface.
-// Our adapter covers: 18 tools (user & org management operations via BAPI).
-// Vendor MCP covers: Documentation & SDK snippets for developers, not management operations.
-// Recommendation: Use vendor MCP for coding assistance. Use this adapter for user/org management.
+// Official MCP (docs/coding assistant): https://mcp.clerk.com/mcp — transport: streamable-HTTP,
+//   auth: none (public), tool count: unknown (documentation & SDK snippet tooling only, NOT
+//   user/org management operations). Not suitable for management automation.
+// Official MCP (management): https://github.com/clerk/javascript/tree/main/packages/agent-toolkit
+//   — @clerk/agent-toolkit -p local-mcp — transport: stdio, auth: CLERK_SECRET_KEY env var.
+//   Actively maintained (last commit Dec 2025). Covers: users, organizations, invitations (~10 tools).
+//   Tool count < 10 confirmed from README (categories: users, organizations, invitations only).
+//   Fails criterion 3 (exposes fewer than 10 management tools vs. our 18).
+// Our adapter covers: 18 tools (full user & org management surface via BAPI).
+// Recommendation: use-rest-api — agent-toolkit MCP fails the 10-tool threshold (criterion 3).
+//   Our adapter covers the full BAPI management surface with broader tool count.
 //
 // Base URL: https://api.clerk.com
 // Auth: Bearer secret key (sk_live_* or sk_test_*) in Authorization header

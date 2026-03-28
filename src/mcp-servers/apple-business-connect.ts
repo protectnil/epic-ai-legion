@@ -4,17 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 //   No Apple-published MCP server for Business Connect was found on GitHub or Apple's
 //   developer documentation. Apple's Business Connect API is a partner-access service
 //   (approved agency partners only — Reputation, Rio SEO, SOCi, Uberall, Yext listed).
 //   Direct API access requires working with an Apple representative.
+// Our adapter covers: 14 tools. Vendor MCP: N/A.
+// Recommendation: use-rest-api — no official MCP server exists.
 //
-// Base URL: https://businessconnect.apple.com/api/v1
+// Base URL: https://businessconnect.apple.com/api/v1 (UNVERIFIED — partner-gated, not publicly documented)
 // Auth: OAuth2 client credentials — POST https://account.apple.com/auth/oauth2/token
-//   Client assertion type: urn:ietf:params:oauth:client-assertion-type:jwt-bearer
-//   Scope: business.api
-//   Client ID and Client Secret from Service Account in Business Connect admin portal.
+//   Token request uses: grant_type=client_credentials, client_id, client_secret, scope=business.api
+//   NOTE: Apple Business Manager API uses JWT client_assertion (urn:ietf:params:oauth:client-assertion-type:jwt-bearer)
+//   but Apple Business Connect Service Accounts issue a Client Secret directly. Auth mechanism is UNVERIFIED
+//   against the gated ABC API docs. If JWT assertion is required, this adapter's token request must be updated
+//   to build and sign a JWT instead of sending client_secret as a form field.
+//   60-second early token refresh is implemented.
 // Docs: https://businessconnect.apple.com/docs/api/v1.0/ (requires partner authentication)
 //   Public FAQ: https://businessconnect.apple.com/docs/api/v1.0/faq
 // Rate limits: Not publicly documented. Partner-tier access required.

@@ -4,12 +4,28 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/Azure/azure-mcp (now moved to https://github.com/microsoft/mcp)
-// Transport: stdio. The official Azure MCP server covers a broad set of Azure services including
-// Blob Storage, but is a large general-purpose server requiring the Azure CLI toolchain.
-// Our adapter covers: 14 tools (container and blob CRUD + metadata). Vendor MCP covers: 50+ Azure services.
-// Recommendation: Use official Azure MCP for broad Azure surface. Use this adapter for
-// air-gapped deployments or when scoped Blob-only access is required.
+// Official MCP: https://github.com/microsoft/mcp (Azure MCP Server — formerly github.com/Azure/azure-mcp)
+// Transport: stdio, auth: Entra ID (DefaultAzureCredential). Actively maintained as of 2026-03.
+// Azure MCP covers ~8 storage tools: azmcp_storage_account_list, azmcp_storage_account_get,
+//   azmcp_storage_blob_container_list, azmcp_storage_blob_container_get,
+//   azmcp_storage_blob_container_create, azmcp_storage_blob_list, azmcp_storage_blob_get,
+//   azmcp_storage_blob_upload — read/get/list/create/upload only. No delete, no metadata write,
+//   no copy, no snapshot, no blob tags operations.
+// Our adapter covers: 14 tools (container and blob CRUD + metadata + copy + snapshot + tags).
+// Recommendation: use-both — Azure MCP covers 8 read/create tools; our REST adapter adds
+//   delete_container, set_container_metadata, delete_blob, set_blob_metadata, copy_blob,
+//   snapshot_blob, list_blob_tags which the MCP does not expose. Use Azure MCP for reads;
+//   use this adapter for write/delete/metadata/copy/snapshot operations.
+//
+// Integration: use-both
+// MCP-sourced tools (8): azmcp_storage_account_list, azmcp_storage_account_get,
+//   azmcp_storage_blob_container_list, azmcp_storage_blob_container_get,
+//   azmcp_storage_blob_container_create, azmcp_storage_blob_list, azmcp_storage_blob_get,
+//   azmcp_storage_blob_upload
+// REST-sourced tools (14): list_containers, create_container, delete_container,
+//   get_container_properties, set_container_metadata, list_blobs, put_blob, get_blob,
+//   delete_blob, get_blob_properties, set_blob_metadata, copy_blob, snapshot_blob, list_blob_tags
+// Combined coverage: Azure MCP read/create + REST delete/metadata/copy/snapshot/tags
 //
 // Base URL: https://{accountName}.blob.core.windows.net
 // Auth: OAuth 2.0 Bearer token (Microsoft Entra ID / Azure AD). Requires tenantId, clientId,

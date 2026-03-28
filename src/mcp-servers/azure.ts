@@ -377,7 +377,7 @@ export class AzureMCPServer {
   // ── Resource Groups ───────────────────────────────────────────────────────
 
   private async listResourceGroups(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
+    const sub = encodeURIComponent(this.subId(args));
     let url = `${BASE}/subscriptions/${sub}/resourcegroups?api-version=${RM_API}`;
     if (args.filter) url += `&$filter=${encodeURIComponent(String(args.filter))}`;
     if (args.top) url += `&$top=${encodeURIComponent(args.top as string)}`;
@@ -385,8 +385,8 @@ export class AzureMCPServer {
   }
 
   private async createResourceGroup(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
     const url = `${BASE}/subscriptions/${sub}/resourcegroups/${rg}?api-version=${RM_API}`;
     const body: Record<string, unknown> = { location: String(args.location) };
     if (args.tags) body.tags = args.tags;
@@ -394,8 +394,8 @@ export class AzureMCPServer {
   }
 
   private async deleteResourceGroup(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
     const url = `${BASE}/subscriptions/${sub}/resourcegroups/${rg}?api-version=${RM_API}`;
     const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
@@ -409,8 +409,8 @@ export class AzureMCPServer {
   // ── Resources ─────────────────────────────────────────────────────────────
 
   private async listResources(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
     let url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/resources?api-version=${RM_API}`;
     if (args.filter) url += `&$filter=${encodeURIComponent(String(args.filter))}`;
     if (args.top) url += `&$top=${encodeURIComponent(args.top as string)}`;
@@ -439,24 +439,24 @@ export class AzureMCPServer {
   // ── Virtual Machines ──────────────────────────────────────────────────────
 
   private async listVirtualMachines(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
     return this.fetchJSON(`${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Compute/virtualMachines?api-version=${COMPUTE_API}`);
   }
 
   private async getVirtualMachine(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
-    const vmName = String(args.vmName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
+    const vmName = encodeURIComponent(String(args.vmName));
     let url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Compute/virtualMachines/${vmName}?api-version=${COMPUTE_API}`;
     if (args.expand) url += `&$expand=${encodeURIComponent(String(args.expand))}`;
     return this.fetchJSON(url);
   }
 
   private async startVirtualMachine(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
-    const vmName = String(args.vmName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
+    const vmName = encodeURIComponent(String(args.vmName));
     const url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Compute/virtualMachines/${vmName}/start?api-version=${COMPUTE_API}`;
     const response = await fetch(url, { method: 'POST', headers: this.headers(), body: '{}' });
     if (!response.ok) {
@@ -464,13 +464,13 @@ export class AzureMCPServer {
       try { data = await response.json(); } catch { data = await response.text(); }
       return { content: [{ type: 'text', text: truncate(JSON.stringify(data, null, 2)) }], isError: true };
     }
-    return { content: [{ type: 'text', text: `Start operation accepted for ${vmName} (HTTP ${response.status}).` }], isError: false };
+    return { content: [{ type: 'text', text: `Start operation accepted for ${String(args.vmName)} (HTTP ${response.status}).` }], isError: false };
   }
 
   private async stopVirtualMachine(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
-    const vmName = String(args.vmName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
+    const vmName = encodeURIComponent(String(args.vmName));
     const url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Compute/virtualMachines/${vmName}/deallocate?api-version=${COMPUTE_API}`;
     const response = await fetch(url, { method: 'POST', headers: this.headers(), body: '{}' });
     if (!response.ok) {
@@ -478,15 +478,15 @@ export class AzureMCPServer {
       try { data = await response.json(); } catch { data = await response.text(); }
       return { content: [{ type: 'text', text: truncate(JSON.stringify(data, null, 2)) }], isError: true };
     }
-    return { content: [{ type: 'text', text: `Deallocate (stop) operation accepted for ${vmName} (HTTP ${response.status}).` }], isError: false };
+    return { content: [{ type: 'text', text: `Deallocate (stop) operation accepted for ${String(args.vmName)} (HTTP ${response.status}).` }], isError: false };
   }
 
   // ── Storage ───────────────────────────────────────────────────────────────
 
   private async listStorageAccounts(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
+    const sub = encodeURIComponent(this.subId(args));
     if (args.resourceGroupName) {
-      const rg = String(args.resourceGroupName);
+      const rg = encodeURIComponent(String(args.resourceGroupName));
       return this.fetchJSON(`${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Storage/storageAccounts?api-version=${STORAGE_API}`);
     }
     return this.fetchJSON(`${BASE}/subscriptions/${sub}/providers/Microsoft.Storage/storageAccounts?api-version=${STORAGE_API}`);
@@ -495,9 +495,9 @@ export class AzureMCPServer {
   // ── Networking ────────────────────────────────────────────────────────────
 
   private async listVirtualNetworks(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
+    const sub = encodeURIComponent(this.subId(args));
     if (args.resourceGroupName) {
-      const rg = String(args.resourceGroupName);
+      const rg = encodeURIComponent(String(args.resourceGroupName));
       return this.fetchJSON(`${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Network/virtualNetworks?api-version=${NETWORK_API}`);
     }
     return this.fetchJSON(`${BASE}/subscriptions/${sub}/providers/Microsoft.Network/virtualNetworks?api-version=${NETWORK_API}`);
@@ -506,8 +506,8 @@ export class AzureMCPServer {
   // ── Deployments ───────────────────────────────────────────────────────────
 
   private async listDeployments(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
     let url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Resources/deployments?api-version=${RM_API}`;
     if (args.filter) url += `&$filter=${encodeURIComponent(String(args.filter))}`;
     if (args.top) url += `&$top=${encodeURIComponent(args.top as string)}`;
@@ -515,16 +515,16 @@ export class AzureMCPServer {
   }
 
   private async getDeployment(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
-    const dep = String(args.deploymentName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
+    const dep = encodeURIComponent(String(args.deploymentName));
     return this.fetchJSON(`${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Resources/deployments/${dep}?api-version=${RM_API}`);
   }
 
   private async validateDeployment(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
-    const rg = String(args.resourceGroupName);
-    const dep = String(args.deploymentName);
+    const sub = encodeURIComponent(this.subId(args));
+    const rg = encodeURIComponent(String(args.resourceGroupName));
+    const dep = encodeURIComponent(String(args.deploymentName));
     const url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Resources/deployments/${dep}/validate?api-version=${RM_API}`;
     const body: Record<string, unknown> = {
       properties: {
@@ -539,10 +539,10 @@ export class AzureMCPServer {
   // ── Policy ────────────────────────────────────────────────────────────────
 
   private async listPolicyAssignments(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
+    const sub = encodeURIComponent(this.subId(args));
     let url: string;
     if (args.resourceGroupName) {
-      const rg = String(args.resourceGroupName);
+      const rg = encodeURIComponent(String(args.resourceGroupName));
       url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Authorization/policyAssignments?api-version=${POLICY_API}`;
     } else {
       url = `${BASE}/subscriptions/${sub}/providers/Microsoft.Authorization/policyAssignments?api-version=${POLICY_API}`;
@@ -554,10 +554,10 @@ export class AzureMCPServer {
   // ── Role Assignments ──────────────────────────────────────────────────────
 
   private async listRoleAssignments(args: Record<string, unknown>): Promise<ToolResult> {
-    const sub = this.subId(args);
+    const sub = encodeURIComponent(this.subId(args));
     let url: string;
     if (args.resourceGroupName) {
-      const rg = String(args.resourceGroupName);
+      const rg = encodeURIComponent(String(args.resourceGroupName));
       url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Authorization/roleAssignments?api-version=${AUTHZ_API}`;
     } else {
       url = `${BASE}/subscriptions/${sub}/providers/Microsoft.Authorization/roleAssignments?api-version=${AUTHZ_API}`;

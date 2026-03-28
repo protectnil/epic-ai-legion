@@ -4,19 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official BeyondTrust MCP server was found on GitHub. BeyondTrust's GitHub org
-// (github.com/beyondtrust) contains Go client libraries and Terraform integrations but no MCP server.
-// Recommendation: Use this REST wrapper for all deployments.
+// Official MCP: None found as of 2026-03-28 — BeyondTrust has private "preview" MCP servers for
+//   Remote Support and Password Safe (community.beyondtrust.com, authenticated users only), but
+//   no publicly available MCP server on GitHub or npmjs.com. The preview requires BeyondTrust
+//   account login and is not open to the public; it does not meet the "official published" criterion.
+//   transport: N/A, auth: N/A
+// Our adapter covers: 17 tools. Vendor MCP covers: unknown (preview, not accessible).
+// Recommendation: use-rest-api — no public MCP server available. Use this REST wrapper.
 //
-// Base URL: https://{host}/BeyondTrust/api/public/v3  (on-premises)
-//           https://{cloud-instance}/BeyondTrust/api/public/v3  (cloud)
+// Base URL: https://{host}/BeyondTrust/api/public/v3  (on-premises or cloud)
 // Auth: PS-Auth header — API key + RunAs username + password (in square brackets).
 //       Format: PS-Auth key={apiKey}; runas={username}; pwd=[{password}];
 //       Authenticate with POST /Auth/SignAppIn; the response sets an ASP.NET_SessionId cookie
 //       that must be passed on all subsequent requests. Always call POST /Auth/Signout when done.
-// Docs: https://docs.beyondtrust.com/bips/v24.3/docs/password-safe-api
-//       https://docs.beyondtrust.com/bips/v24.3/docs/api
+// Docs: https://docs.beyondtrust.com/bips/docs/welcome-to-password-safe
+//       https://docs.beyondtrust.com/bips/reference
+//       https://docs.beyondtrust.com/bips/v24.3/docs/password-safe-api
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -521,7 +524,7 @@ export class BeyondTrustMCPServer {
 
   private async rotateCredential(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/ManagedAccounts/${encodeURIComponent(args.account_id as string)}/Credentials/Test`, {
+    const response = await fetch(`${this.baseUrl}/ManagedAccounts/${encodeURIComponent(args.account_id as string)}/Credentials/Change`, {
       method: 'POST',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(null),

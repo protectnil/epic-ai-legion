@@ -4,15 +4,31 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/sooperset/mcp-atlassian — transport: stdio, auth: Basic (email + API token)
-//   Community-maintained, covers Confluence + Jira, actively maintained.
-//   Our adapter covers: 16 tools (pages, blogposts, spaces, labels, attachments, comments, versions, search).
-//   Vendor MCP covers: broader tool set with full Atlassian ecosystem.
-// Recommendation: Use vendor MCP for full Atlassian coverage. Use this adapter for air-gapped deployments.
+// Official MCP: https://github.com/sooperset/mcp-atlassian — transport: stdio + streamable-HTTP, auth: Basic (email + API token)
+//   Community-maintained (sooperset), NOT an official Atlassian product. 72 tools total (Confluence + Jira combined).
+//   Actively maintained as of 2026-03 (recent commits confirmed on GitHub).
+//   Confluence-specific tools: confluence_get_page, confluence_search, confluence_create_page, confluence_update_page,
+//     confluence_add_comment, confluence_get_space_pages, confluence_get_spaces, confluence_get_page_children,
+//     confluence_get_page_ancestors, confluence_get_labels, confluence_add_label, confluence_upload_attachment,
+//     confluence_download_attachment, confluence_get_page_attachments, confluence_get_comments, confluence_delete_page.
+//   Also: Atlassian Rovo MCP Server (official, cloud-hosted) at https://mcp.atlassian.com — OAuth 2.1, supports
+//     Confluence + Jira + Compass. Confluence tools include: createConfluencePage, getConfluencePage,
+//     updateConfluencePage, createConfluenceFooterComment, createConfluenceInlineComment,
+//     getConfluencePageFooterComments, getConfluencePageInlineComments, getConfluencePageDescendants,
+//     getConfluenceSpaces, getPagesInConfluenceSpace, searchConfluenceUsingCql.
+//   Our adapter covers: 16 tools (REST only). MCP (sooperset): ~16 Confluence tools. Rovo MCP: 11 Confluence tools.
+// Recommendation: use-rest-api — MCP (sooperset) is community-maintained (not official vendor), Rovo MCP has
+//   fewer Confluence tools than our adapter. Our adapter provides full air-gapped REST coverage.
+//   NOTE: Both MCP options documented above for operator awareness.
 //
-// Base URL: https://{instance}.atlassian.net/wiki/api/v2
+// Base URL: https://{instance}.atlassian.net/wiki/api/v2 (v2 for most endpoints)
+//   EXCEPTION: search uses v1 at https://{instance}.atlassian.net/wiki/rest/api/search?cql=
+//   EXCEPTION: label writes use v1 at https://{instance}.atlassian.net/wiki/rest/api/content/{id}/label
+//   Reason: Confluence REST API v2 has no write endpoints for labels and no search endpoint (v2 label API is read-only).
 // Auth: Basic auth — base64(email:api_token) in Authorization header
 // Docs: https://developer.atlassian.com/cloud/confluence/rest/v2/intro/
+//       https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content-labels/ (label writes)
+//       https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-search/ (search)
 // Rate limits: Standard Atlassian Cloud rate limiting applies; no hard limit documented publicly
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -26,13 +42,17 @@ interface ConfluenceConfig {
 
 export class ConfluenceMCPServer {
   private readonly baseUrl: string;
+  private readonly baseUrlV1: string;
   private readonly authHeader: string;
 
   constructor(config: ConfluenceConfig) {
     // Support explicit baseUrl override for Data Center or custom domains
-    this.baseUrl = config.baseUrl
-      ? config.baseUrl.replace(/\/$/, '')
-      : `https://${config.instance}.atlassian.net/wiki/api/v2`;
+    const rootBase = config.baseUrl
+      ? config.baseUrl.replace(/\/$/, '').replace(/\/wiki\/api\/v2$/, '').replace(/\/wiki\/rest\/api$/, '')
+      : `https://${config.instance}.atlassian.net`;
+    this.baseUrl = `${rootBase}/wiki/api/v2`;
+    // v1 is required for search (no v2 search endpoint) and label writes (v2 label API is read-only)
+    this.baseUrlV1 = `${rootBase}/wiki/rest/api`;
     this.authHeader = `Basic ${Buffer.from(`${config.email}:${config.apiToken}`).toString('base64')}`;
   }
 
@@ -288,13 +308,13 @@ export class ConfluenceMCPServer {
       },
       {
         name: 'search_content',
-        description: 'Search Confluence content using CQL (Confluence Query Language) with optional pagination.',
+        description: 'Search Confluence content using CQL (Confluence Query Language) via the v1 search API with optional pagination.',
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'CQL query string (e.g. "type=page AND space=ENG AND title~\\"deploy\\"", or "text~\\"error handling\\"")',
+              description: 'CQL query string passed as the cql= parameter (e.g. "type=page AND space=ENG AND title~\\"deploy\\"", or "text~\\"error handling\\"")',
             },
             limit: {
               type: 'number',
@@ -618,9 +638,11 @@ export class ConfluenceMCPServer {
     if (!args.query) {
       return { content: [{ type: 'text', text: 'query is required' }], isError: true };
     }
-    const params = new URLSearchParams({ query: String(args.query), limit: String(args.limit ?? 25) });
+    // Confluence REST API v2 has NO search endpoint. Search is v1-only at /wiki/rest/api/search.
+    // The query parameter is 'cql' (Confluence Query Language), not 'query'.
+    const params = new URLSearchParams({ cql: String(args.query), limit: String(args.limit ?? 25) });
     if (args.cursor) params.set('cursor', String(args.cursor));
-    return this.fetchJson(`${this.baseUrl}/search?${params}`, { method: 'GET', headers: this.headers });
+    return this.fetchJson(`${this.baseUrlV1}/search?${params}`, { method: 'GET', headers: this.headers });
   }
 
   private async getPageLabels(args: Record<string, unknown>): Promise<ToolResult> {
@@ -639,8 +661,10 @@ export class ConfluenceMCPServer {
     if (!pageId || !labels || labels.length === 0) {
       return { content: [{ type: 'text', text: 'page_id and labels are required' }], isError: true };
     }
+    // Confluence REST API v2 has NO POST endpoint for labels — the v2 label API is read-only.
+    // Must use v1: POST /wiki/rest/api/content/{id}/label
     const body = labels.map((name) => ({ name, prefix: 'global' }));
-    return this.fetchJson(`${this.baseUrl}/pages/${encodeURIComponent(pageId)}/labels`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
+    return this.fetchJson(`${this.baseUrlV1}/content/${encodeURIComponent(pageId)}/label`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
   }
 
   private async deletePageLabel(args: Record<string, unknown>): Promise<ToolResult> {
@@ -649,8 +673,10 @@ export class ConfluenceMCPServer {
     if (!pageId || !label) {
       return { content: [{ type: 'text', text: 'page_id and label are required' }], isError: true };
     }
+    // Confluence REST API v2 has NO DELETE endpoint for labels — the v2 label API is read-only.
+    // Must use v1: DELETE /wiki/rest/api/content/{id}/label/{label}
     const response = await fetch(
-      `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/labels/${encodeURIComponent(label)}`,
+      `${this.baseUrlV1}/content/${encodeURIComponent(pageId)}/label/${encodeURIComponent(label)}`,
       { method: 'DELETE', headers: this.headers },
     );
     if (!response.ok) {

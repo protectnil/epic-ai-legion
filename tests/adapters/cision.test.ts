@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CisionMCPServer } from '../../src/mcp-servers/cision.js';
 
 describe('CisionMCPServer', () => {
-  const adapter = new CisionMCPServer({ username: 'test-name', password: 'test-pass' });
+  const adapter = new CisionMCPServer({ apiToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

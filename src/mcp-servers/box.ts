@@ -4,18 +4,26 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/box-community/mcp-server-box — transport: stdio, auth: OAuth2
-//   Also: https://github.com/box/mcp-server-box-remote — remote/streamable-HTTP variant
-//   Both are actively maintained (released March 2025, updates tracked in GitHub MCP registry).
-//   Vendor MCP covers: file read, search, Box AI Q&A, Box AI extraction.
-// Our adapter covers: 22 tools (files, folders, search, users, groups, metadata, shared links,
-//   comments, tasks, collaboration, trash, webhooks). Broader CRUD coverage than the vendor MCP.
-// Recommendation: Use vendor MCP for Box AI features. Use this adapter for full CRUD coverage
-//   or air-gapped deployments.
+// Official MCP: https://developer.box.com/guides/box-mcp — remote (Box-hosted, streamable-HTTP)
+//   and self-hosted (open-source, stdio) variants. Both actively maintained (2025, Box official).
+//   Remote MCP covers 28 tools (file/folder read+write, search, Box AI, Hubs, Doc Gen).
+//   Self-hosted MCP covers additional tools (shared links, users by email/name, DocGen templates).
+// Our adapter covers: 23 tools (CRUD for files, folders, search, shared links, comments,
+//   tasks, collaborations, users, trash). Broader CRUD coverage than vendor MCP.
+//
+// Integration: use-both
+// MCP-sourced tools (6 unique to MCP): [ai_qa_single_file, ai_qa_multi_file, ai_qa_hub,
+//   ai_extract_freeform, ai_extract_structured, ai_extract_structured_from_fields_enhanced]
+// REST-sourced tools (23, this adapter): [get_file, upload_file, copy_file, delete_file,
+//   get_file_versions, get_folder, list_folder_items, create_folder, copy_folder, delete_folder,
+//   search_content, get_shared_link, create_shared_link, list_file_comments, create_comment,
+//   list_file_tasks, create_task, list_collaborations, add_collaboration, get_user, list_users,
+//   list_trash_items, restore_trashed_item]
+// Combined coverage: 29 tools (REST: 23 + MCP AI: 6 unique)
 //
 // Base URL: https://api.box.com/2.0
-// Auth: OAuth2 — POST https://api.box.com/oauth2/token (client_credentials or refresh_token)
-//       Also supports JWT app authentication; this adapter uses client_credentials flow.
+// Auth: OAuth2 client credentials — POST https://api.box.com/oauth2/token
+//       (grant_type=client_credentials, box_subject_type=enterprise)
 // Docs: https://developer.box.com/reference
 // Rate limits: ~1,000 API calls/min per OAuth2 token; burst limits vary by endpoint tier
 
@@ -88,7 +96,7 @@ export class BoxMCPServer {
       },
       {
         name: 'upload_file',
-        description: 'Upload a new file to Box by URL reference — provides a file URL and destination folder ID for server-side pull ingestion',
+        description: 'Upload a new file to Box — NOTE: Box upload requires multipart/form-data; prefer the vendor MCP upload_file tool for actual file uploads. This REST path is limited.',
         inputSchema: {
           type: 'object',
           properties: {

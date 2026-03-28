@@ -4,11 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/DMontgomery40/mcp-canvas-lms — transport: stdio, auth: API token
-//   Also: https://github.com/r-huijts/canvas-mcp (54 tools, actively maintained)
+// Official MCP: None found as of 2026-03-28. Instructure does not publish an official MCP server.
+// Community MCP servers exist but are NOT official (not published by Instructure/Canvas):
+//   https://github.com/DMontgomery40/mcp-canvas-lms — v2.3.0, 54 tools, transport: stdio + streamable-HTTP,
+//     last commit 2026-03-23, actively maintained. Community-authored, not vendor-official.
+//   https://github.com/r-huijts/canvas-mcp — separate community project.
+// Per protocol, "Official MCP" requires the vendor (Instructure) to publish it. Neither qualifies.
 // Our adapter covers: 20 tools (courses, assignments, submissions, enrollments, modules, announcements, users, grades).
-// Vendor MCP (DMontgomery40) covers: 54 tools (full API surface).
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped or controlled deployments.
+// Recommendation: use-rest-api — no official vendor MCP. Community MCPs documented above for reference.
 //
 // Base URL: https://{your-institution}.instructure.com/api/v1
 //           (Canvas is self-hosted per institution; there is no single shared base URL)

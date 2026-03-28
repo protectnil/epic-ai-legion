@@ -4,14 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/rbonestell/ap-mcp-server — transport: stdio, auth: API key
-// This is an unofficial community MCP server (rbonestell), not an official AP publication.
-// Our adapter covers: 12 tools (content search, feed, item retrieval, multimedia). The community MCP covers: 26 tools.
-// Recommendation: Use community MCP for broader prompt-template coverage. Use this adapter for air-gapped deployments.
+// Official MCP: None found as of 2026-03-28 — AP has not published an official MCP server.
+// Community MCP: https://github.com/rbonestell/ap-mcp-server — transport: stdio, auth: API key (unofficial, not published by AP)
+//   Last release: v1.2.6 on Sep 9, 2025 (within 6 months). 26 tools. Does NOT qualify as "official" per protocol.
+// Our adapter covers: 12 tools (content search, feed, item retrieval, multimedia).
+// Recommendation: use-rest-api — no official MCP exists. Community MCP (rbonestell) fails the "official" criterion.
+//   Community MCP adds account management and monitoring tools not in our adapter; those endpoints are real but
+//   beyond our current scope. Decision: use-rest-api for now; community MCP may be evaluated separately.
+//
+// NOTE: list_categories calls GET /content/categories — this endpoint is NOT documented in the AP Media API Swagger
+//   (api.ap.org/media/v/swagger). Tool is marked UNVERIFIED. Consider removing if AP support confirms it does not exist.
 //
 // Base URL: https://api.ap.org/media/v
-// Auth: API key in "x-api-key" header. Contact AP Customer Support to obtain a key: https://developer.ap.org/
-// Docs: https://api.ap.org/media/v/docs/  |  Samples: https://github.com/TheAssociatedPress/APISamples
+// Auth: API key in "x-api-key" header (x-apikey also supported per docs). Contact AP Customer Support to obtain a key.
+// Docs: https://api.ap.org/media/v/docs/  |  Swagger: https://api.ap.org/media/v/swagger/
+//       Samples: https://github.com/TheAssociatedPress/APISamples
 // Rate limits: Not publicly specified; governed by contract tier. Allow up to 30s timeout on /content/feed.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -407,7 +414,7 @@ export class AssociatedPressMCPServer {
 
   private async searchPhotos(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.q) return { content: [{ type: 'text', text: 'q is required' }], isError: true };
-    const params: Record<string, string> = { q: `type:picture AND ${encodeURIComponent(args.q as string)}` };
+    const params: Record<string, string> = { q: `type:picture AND ${args.q as string}` };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     if (args.page !== undefined) params.page = String(args.page);
     if (args.exclude) params.exclude = args.exclude as string;
@@ -416,7 +423,7 @@ export class AssociatedPressMCPServer {
 
   private async searchVideos(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.q) return { content: [{ type: 'text', text: 'q is required' }], isError: true };
-    const params: Record<string, string> = { q: `type:video AND ${encodeURIComponent(args.q as string)}` };
+    const params: Record<string, string> = { q: `type:video AND ${args.q as string}` };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     if (args.page !== undefined) params.page = String(args.page);
     return this.apGet('/content/search', params);
@@ -448,7 +455,7 @@ export class AssociatedPressMCPServer {
 
   private async searchBySubject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.subject) return { content: [{ type: 'text', text: 'subject is required' }], isError: true };
-    const baseQ = args.q ? `${encodeURIComponent(args.q as string)} AND subject:${encodeURIComponent(args.subject as string)}` : `subject:${encodeURIComponent(args.subject as string)}`;
+    const baseQ = args.q ? `${args.q as string} AND subject:${args.subject as string}` : `subject:${args.subject as string}`;
     const params: Record<string, string> = { q: baseQ };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     return this.apGet('/content/search', params);
@@ -457,8 +464,8 @@ export class AssociatedPressMCPServer {
   private async searchByProduct(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.product_id) return { content: [{ type: 'text', text: 'product_id is required' }], isError: true };
     const baseQ = args.q
-      ? `productid:${encodeURIComponent(args.product_id as string)} AND ${encodeURIComponent(args.q as string)}`
-      : `productid:${encodeURIComponent(args.product_id as string)}`;
+      ? `productid:${args.product_id as string} AND ${args.q as string}`
+      : `productid:${args.product_id as string}`;
     const params: Record<string, string> = { q: baseQ };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     return this.apGet('/content/search', params);
@@ -476,9 +483,9 @@ export class AssociatedPressMCPServer {
   private async searchByDateRange(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.q || !args.from_date) return { content: [{ type: 'text', text: 'q and from_date are required' }], isError: true };
     let q = args.q as string;
-    q += ` AND mindate:>=${encodeURIComponent(args.from_date as string)}`;
-    if (args.to_date) q += ` AND maxdate:<=${encodeURIComponent(args.to_date as string)}`;
-    if (args.content_type) q += ` AND type:${encodeURIComponent(args.content_type as string)}`;
+    q += ` AND mindate:>=${args.from_date as string}`;
+    if (args.to_date) q += ` AND maxdate:<=${args.to_date as string}`;
+    if (args.content_type) q += ` AND type:${args.content_type as string}`;
     const params: Record<string, string> = { q };
     if (args.page_size !== undefined) params.page_size = String(args.page_size);
     return this.apGet('/content/search', params);

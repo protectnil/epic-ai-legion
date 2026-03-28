@@ -4,9 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/chargebee/agentkit (modelcontextprotocol dir) — DEPRECATED.
-// The official package (@chargebee/mcp) is deprecated and will no longer receive updates.
-// Our adapter provides a complete, maintained integration against Chargebee REST API v2.
+// Official MCP: https://www.chargebee.com/docs/billing/2.0/ai-in-chargebee/chargebee-mcp — transport: streamable-HTTP, auth: Bearer API key
+// The deprecated npm package (@chargebee/mcp v0.0.8) exposed only 2 tools: chargebee_documentation_search,
+// chargebee_code_planner — knowledge-base lookups only, no CRUD operations. It is no longer supported.
+// The NEW official Chargebee MCP Agent Server (2025) exposes 3 agents: Knowledge Base Agent (public, docs only),
+// Data Lookup Agent (read-only: customer/subscription/invoice retrieval, requires API key), and
+// Onboarding Agent (test-site setup only). The MCP agents do NOT expose write operations.
+// Our adapter covers: 18 tools (full CRUD). Chargebee MCP covers: read-only lookup agents (tool count not published).
+// Recommendation: use-rest-api — MCP agents fail criterion #3 (documented tool count < 10 for CRUD operations)
+// and do not cover create/update/cancel/pause operations that our adapter provides.
 //
 // Base URL: https://{site}.chargebee.com/api/v2
 // Auth: HTTP Basic — API key as username, empty password (Base64 encoded)
@@ -762,9 +768,9 @@ export class ChargebeeMCPServer {
       displayName: 'Chargebee',
       version: '1.0.0',
       category: 'commerce' as const,
-      keywords: ['chargebee'],
+      keywords: ['chargebee', 'subscription', 'billing', 'invoice', 'customer', 'payment', 'plan', 'coupon', 'cancel', 'trial', 'recurring', 'saas', 'revenue', 'transaction', 'product catalog'],
       toolNames: ['list_subscriptions', 'get_subscription', 'create_subscription', 'update_subscription', 'cancel_subscription', 'pause_subscription', 'list_customers', 'get_customer', 'create_customer', 'update_customer', 'list_invoices', 'get_invoice', 'list_transactions', 'get_transaction', 'list_payment_sources', 'list_plans', 'list_items', 'list_coupons'],
-      description: 'Chargebee adapter for the Epic AI Intelligence Platform',
+      description: 'Chargebee subscription billing: manage subscriptions, customers, invoices, transactions, payment sources, plans, items, and coupons via REST API v2.',
       author: 'protectnil' as const,
     };
   }

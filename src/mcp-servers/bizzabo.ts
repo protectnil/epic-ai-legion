@@ -4,19 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Bizzabo MCP server was found on GitHub or the Bizzabo developer portal.
+// Official MCP: None found as of 2026-03-28 — No official Bizzabo MCP server exists.
 // The Bizzabo GitHub organization (https://github.com/bizzabo) contains no MCP server.
-// This adapter provides full REST API coverage for B2B event management operations.
+// Our adapter covers: 15 tools. Vendor MCP covers: 0 tools (N/A — no official MCP).
+// Recommendation: use-rest-api — this REST adapter is the primary integration.
 //
 // Base URL: https://api.bizzabo.com/v1
-// Auth: Bearer token (API key) — obtain from Bizzabo account → Integrations → API tab.
-//       Also supports OAuth 2.0 client credentials (Client ID + Client Secret + Account ID)
-//       for programmatic access. This adapter uses Bearer token by default; set
-//       clientId + clientSecret to enable OAuth2 auto-refresh.
+// Auth: OAuth 2.0 client credentials flow. Requires Client ID, Client Secret, and Account ID.
+//       Token endpoint: https://auth.bizzabo.com/oauth2/token (JSON body, not form-encoded).
+//       audience field required in token request. Token valid 24 hours. Bearer prefix on requests.
+//       Also supports direct Bearer token (static API key) from Integrations → API tab.
 // Docs: https://bizzabo.stoplight.io/docs/bizzabo-partner-apis
-//       https://bizzabo.api-docs.io/
-// Rate limits: Not publicly documented. Bizzabo uses page-based pagination (size param).
+// Rate limits: Not publicly documented. Page-based pagination with size parameter (max 200/page).
 //              Contact Bizzabo support for enterprise rate limit allocations.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -497,17 +496,18 @@ export class BizzaboMCPServer {
     }
 
     const tokenUrl = 'https://auth.bizzabo.com/oauth2/token';
-    const body = new URLSearchParams({
+    const bodyObj: Record<string, unknown> = {
       grant_type: 'client_credentials',
       client_id: this.clientId,
       client_secret: this.clientSecret,
-      ...(this.accountId ? { account_id: this.accountId } : {}),
-    });
+      audience: 'https://api.bizzabo.com',
+    };
+    if (this.accountId) bodyObj['account_id'] = Number(this.accountId);
 
     const response = await fetch(tokenUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyObj),
     });
 
     if (!response.ok) {

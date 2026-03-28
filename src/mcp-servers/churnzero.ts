@@ -4,9 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official ChurnZero MCP server was found on GitHub. Community wrappers exist (.NET, Ruby)
-// but none implement the MCP protocol.
+// Official MCP: None found as of 2026-03-28
+// No official ChurnZero MCP server was found on GitHub or npmjs.com.
+//
+// IMPORTANT — Two ChurnZero API surfaces exist:
+//   1. REST/OData API (https://{instance}.us1app.churnzero.net/public/v1)
+//      Auth: HTTP Basic (email:apiKey, base64-encoded). READ-ONLY — only GET endpoints documented.
+//      Entities: Account, Contact, Event, EventType, Segment, SegmentColumnSet, Task,
+//                TaskPriority, TaskStatus, UserAccount, Survey, Journey, JourneyMilestone,
+//                JourneyMilestoneAchievement, JourneyMilestoneTask, JourneyInstance, JourneyProgress
+//   2. Tracking/Write API (https://{instance}.us1app.churnzero.net/i)
+//      Auth: appKey query parameter. Supports setAttribute (upsert), trackEvent, incrementAttribute,
+//      deleteContact, deleteAccount. All operations use GET requests with query parameters.
+//
+// This adapter uses the OData REST API for reads and attempts REST-style POST/PATCH for writes.
+// Write endpoints (create_account, update_account, create_contact, track_event, create_task)
+// are NOT documented in the official OData API — the OData surface is read-only.
+// The write operations may work against undocumented endpoints or require migration to the /i API.
 //
 // Base URL: https://{instance}.us1app.churnzero.net/public/v1
 // Auth: HTTP Basic — base64(email:apiKey). API keys managed at Admin > API Keys.

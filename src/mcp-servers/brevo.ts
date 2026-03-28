@@ -4,14 +4,34 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/houtini-ai/brevo-mcp — transport: stdio, auth: API key
-//   Also documented at: https://developers.brevo.com/docs/mcp-protocol
-//   Remote endpoint: https://mcp.brevo.com/v1/brevo/mcp
-//   Maintained: active as of early 2026. Covers ~10 tools (contacts, campaigns, email send).
-// Our adapter covers: 24 tools (contacts, lists, email campaigns, transactional email,
-//   SMS campaigns, templates, senders, account, statistics). Broader coverage than vendor MCP.
-// Recommendation: Use vendor MCP for minimal-footprint deployments. Use this adapter for
-//   full CRUD coverage, air-gapped environments, or when SMS/template management is needed.
+// Official MCP: https://mcp.brevo.com/v1/brevo/mcp — transport: streamable-HTTP, auth: Bearer MCP token
+//   Documented at: https://developers.brevo.com/docs/mcp-protocol (sendinblue.readme.io/docs/mcp-protocol)
+//   Also: https://help.brevo.com/hc/en-us/articles/27978590646802
+//   Maintained: active as of 2026-03-28. Vendor-official (published by Brevo directly).
+//   Covers: 27 service modules including contacts, lists, email campaigns, transactional email,
+//     templates, SMS campaigns, senders, campaign analytics — PLUS CRM (deals, companies, tasks,
+//     pipelines, notes), WhatsApp campaigns/management, segments, folders, groups, domains,
+//     attributes, contact import/export, account management. MCP meets all 4 criteria.
+// Our adapter covers: 24 tools. Vendor MCP covers: 27 modules (full API surface + CRM/WhatsApp).
+// Recommendation: use-both — MCP adds CRM (deals, companies, tasks, pipelines, notes),
+//   WhatsApp campaigns, segments, folders, groups, domains, attributes, contact-import/export,
+//   and account management that this adapter does not implement. Our adapter implements SMS
+//   campaigns and detailed transactional email tooling that are confirmed present in the MCP
+//   but with equivalent coverage; REST adapter retained for air-gapped deployments.
+//
+// Integration: use-both
+// MCP-sourced tools (unique to MCP): deals, companies, tasks, pipelines, notes, whatsapp_campaigns,
+//   whatsapp_management, segments, folders, groups, domains, attributes, contact_import_export,
+//   account_management (14 modules not covered by this REST adapter)
+// REST-sourced tools (24): list_contacts, get_contact, create_contact, update_contact,
+//   delete_contact, list_contact_lists, get_contact_list, create_contact_list,
+//   add_contacts_to_list, list_email_campaigns, get_email_campaign, create_email_campaign,
+//   send_email_campaign, list_transactional_templates, get_template, create_template,
+//   send_transactional_email, list_sms_campaigns, create_sms_campaign, get_account,
+//   list_senders, create_sender, get_email_statistics, get_contact_statistics
+// Combined coverage: 24 REST tools + 14 MCP-unique modules = 38 total operations
+// Note: houtini-ai/brevo-mcp (https://github.com/houtini-ai/brevo-mcp) is a community server
+//   (not official). The official MCP server is vendor-hosted at mcp.brevo.com.
 //
 // Base URL: https://api.brevo.com/v3
 // Auth: API key passed in the api-key request header (not Authorization: Bearer)

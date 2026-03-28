@@ -4,18 +4,27 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/CDataSoftware/sap-concur-mcp-server-by-cdata
-//   This is a CData read-only JDBC bridge, NOT an official SAP adapter. Requires a CData license.
-//   Our adapter covers the native SAP Concur REST API directly.
-// Recommendation: Use this adapter for full API coverage. The CData bridge is read-only and
-//   requires additional licensing.
+// Official MCP: https://github.com/CDataSoftware/sap-concur-mcp-server-by-cdata — transport: stdio, auth: CData JDBC license
+//   This is a CData read-only JDBC bridge, NOT an official SAP/Concur MCP server. Requires a paid CData license.
+//   It exposes data as SQL-relational tables, not as REST operations. 0 useful action tools (read-only JDBC bridge).
+//   No official SAP Concur MCP server exists as of 2026-03-28.
+// Our adapter covers: 15 tools. Vendor MCP covers: 0 action tools (read-only JDBC, not comparable).
+// Recommendation: use-rest-api — CData MCP fails criteria: not official SAP, read-only, requires external licensing.
+//   Our REST adapter is the authoritative SAP Concur integration.
 //
 // Base URL: https://{datacenter}.api.concursolutions.com (geolocation-based)
-//   Default: https://us.api.concursolutions.com — EU/AP customers must supply their region URL.
+//   Default: https://us.api.concursolutions.com — EU customers: https://eu.api.concursolutions.com
+//   AP/US-GOV customers: https://usg.api.concursolutions.com
 // Auth: OAuth2 Bearer token — obtain via POST /oauth2/v0/token (client credentials or refresh token)
 //   Returns: { access_token, token_type: "Bearer", expires_in, refresh_token }
 // Docs: https://developer.concur.com/api-reference/
+//       Expense Reports v4: https://developer.concur.com/api-reference/expense/expense-report/v4.reports.html
+//       Workflows v4: https://developer.concur.com/api-reference/expense/expense-report/v4.workflows.html
+//       Expenses v4: https://developer.concur.com/api-reference/expense/expense-report/v4.expenses.html
+//       Identity v4: https://developer.concur.com/api-reference/profile/v4.identity.html
 // Rate limits: Not publicly documented; standard SAP throttling applies per OAuth2 token
+// NOTE: get_user_profile uses /profile/v1/me (legacy). Current API is Identity v4 at
+//   /profile/identity/v4/Users. The v1 endpoint may still function for backward compatibility.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

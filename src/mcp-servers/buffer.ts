@@ -4,12 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Buffer MCP server was found on GitHub. Community implementations exist (tn819/buffer-mcp,
-// ahernan2/buffer-mcp) but are not maintained by Buffer Inc. and cover only subsets of the API.
+// Official MCP: None found as of 2026-03-28.
+// No official Buffer MCP server was found on GitHub, npm, or Buffer's developer docs.
+// Community implementations exist (tn819/buffer-mcp, ahernan2/buffer-mcp) but are not published by
+// Buffer Inc., are unmaintained, and cover only subsets of the API. Decision: use-rest-api.
 //
 // Base URL: https://api.bufferapp.com/1
-// Auth: OAuth2 Bearer token (access_token in Authorization header or query string)
+// Auth: OAuth2 Bearer token (access_token passed as Authorization: Bearer header)
 // Docs: https://buffer.com/developers/api
 // Rate limits: 60 authenticated requests per user per minute (HTTP 429 on excess)
 
@@ -173,6 +174,10 @@ export class BufferMCPServer {
               type: 'boolean',
               description: 'If true, return timestamps in UTC',
             },
+            filter: {
+              type: 'string',
+              description: 'Filter updates: "all" returns everything; "default" excludes replies not posted via Buffer (default: "default")',
+            },
           },
           required: ['profile_id'],
         },
@@ -282,6 +287,10 @@ export class BufferMCPServer {
             offset: {
               type: 'number',
               description: 'Position offset (0-based) to start reordering from (default: 0)',
+            },
+            utc: {
+              type: 'boolean',
+              description: 'If true, return rescheduled timestamps in UTC (default: false)',
             },
           },
           required: ['profile_id', 'order'],
@@ -501,6 +510,7 @@ export class BufferMCPServer {
     if (args.count) params.count = String(args.count);
     if (args.since) params.since = String(args.since);
     if (typeof args.utc === 'boolean') params.utc = args.utc ? 'true' : 'false';
+    if (args.filter) params.filter = args.filter as string;
     return this.bufferGet(`/profiles/${encodeURIComponent(args.profile_id as string)}/updates/sent`, params);
   }
 
@@ -541,6 +551,7 @@ export class BufferMCPServer {
     const ids = (args.order as string).split(',').map(s => s.trim());
     ids.forEach((id, i) => { body[`order[${i}]`] = id; });
     if (args.offset) body.offset = String(args.offset);
+    if (typeof args.utc === 'boolean') body.utc = args.utc ? 'true' : 'false';
     return this.bufferPost(`/profiles/${encodeURIComponent(args.profile_id as string)}/updates/reorder`, body);
   }
 

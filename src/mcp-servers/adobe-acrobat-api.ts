@@ -11,7 +11,7 @@
 //   not PDF Services (create, extract, OCR, compress, merge, split, protect).
 //
 // Base URL: https://pdf-services.adobe.io
-// Auth: OAuth2 Client Credentials — POST https://pdf-services.adobe.io/token
+// Auth: OAuth2 Client Credentials — POST https://ims-na1.adobelogin.com/ims/token/v3
 //   Headers: x-api-key: <client_id> (required on every API call in addition to Bearer token)
 // Docs: https://developer.adobe.com/document-services/docs/overview/pdf-services-api/
 // OpenAPI spec: https://developer.adobe.com/document-services/docs/apis/
@@ -80,7 +80,7 @@ export class AdobeAcrobatAPIMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/token`, {
+    const response = await fetch('https://ims-na1.adobelogin.com/ims/token/v3', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -88,6 +88,8 @@ export class AdobeAcrobatAPIMCPServer {
       body: new URLSearchParams({
         client_id: this.clientId,
         client_secret: this.clientSecret,
+        grant_type: 'client_credentials',
+        scope: 'openid,AdobeID,DCAPI',
       }).toString(),
     });
 

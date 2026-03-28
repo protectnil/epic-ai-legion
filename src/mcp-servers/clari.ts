@@ -4,15 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// Community repo avadh/clari-mcp-server exists but has 0 stars and is unmaintained.
-// No official Clari MCP server was found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// No official Clari MCP server was found on GitHub or npm. Community repo avadh/clari-mcp-server
+// has 0 stars and is unmaintained.
 //
-// Base URL: https://api.clari.com/v4  (Clari platform — forecasting, pipeline)
+// Base URL: https://api.clari.com/v4  (Clari platform — forecasting, export, audit, admin)
 // Copilot URL: https://api.copilot.clari.com  (Clari Copilot — call intelligence)
-// Auth: API key in 'apikey' request header (both Clari platform and Copilot APIs)
+// Auth (Platform API): API key in 'apikey' request header
+// Auth (Copilot API): 'X-Api-Key' + 'X-Api-Password' request headers (separate credentials)
 // Docs: https://developer.clari.com/documentation/external_spec
-// Rate limits: Not publicly documented. Contact Clari support for enterprise limits.
+//       https://community.clari.com/product-q-a-6/how-to-use-copilot-apis-2258
+// Rate limits (Copilot): 10 req/sec burst, 100,000 req/week quota. Platform: not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -22,17 +24,25 @@ interface ClariConfig {
   baseUrl?: string;
   /** Base URL for the Clari Copilot (call intelligence). Defaults to https://api.copilot.clari.com */
   copilotBaseUrl?: string;
+  /**
+   * API password for the Clari Copilot API.
+   * The Copilot API requires two headers: X-Api-Key (apiKey above) and X-Api-Password (this field).
+   * The Platform API (forecasting) only requires the apiKey in the 'apikey' header.
+   */
+  copilotApiPassword?: string;
 }
 
 export class ClariMCPServer {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly copilotBaseUrl: string;
+  private readonly copilotApiPassword: string;
 
   constructor(config: ClariConfig) {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.clari.com/v4';
     this.copilotBaseUrl = config.copilotBaseUrl || 'https://api.copilot.clari.com';
+    this.copilotApiPassword = config.copilotApiPassword || '';
   }
 
   get tools(): ToolDefinition[] {
@@ -43,9 +53,9 @@ export class ClariMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            forecastName: {
+            forecastId: {
               type: 'string',
-              description: 'Name of the Clari forecast to export (used in the URL path)',
+              description: 'ID of the Clari Forecast Tab to export. Found in the URL when viewing a Forecast Tab in the Clari app (e.g. "abc123").',
             },
             timePeriod: {
               type: 'string',
@@ -69,7 +79,7 @@ export class ClariMCPServer {
               description: 'Output format: json | csv (default: json)',
             },
           },
-          required: ['forecastName', 'timePeriod'],
+          required: ['forecastId', 'timePeriod'],
         },
       },
       {
@@ -252,7 +262,11 @@ export class ClariMCPServer {
   }
 
   private get copilotHeaders(): Record<string, string> {
-    return { apikey: this.apiKey, 'Content-Type': 'application/json' };
+    return {
+      'X-Api-Key': this.apiKey,
+      'X-Api-Password': this.copilotApiPassword,
+      'Content-Type': 'application/json',
+    };
   }
 
   private truncate(text: string): string {
@@ -294,10 +308,10 @@ export class ClariMCPServer {
   }
 
   private async exportForecast(args: Record<string, unknown>): Promise<ToolResult> {
-    const forecastName = args.forecastName as string;
+    const forecastId = args.forecastId as string;
     const timePeriod = args.timePeriod as string;
-    if (!forecastName || !timePeriod) {
-      return { content: [{ type: 'text', text: 'forecastName and timePeriod are required' }], isError: true };
+    if (!forecastId || !timePeriod) {
+      return { content: [{ type: 'text', text: 'forecastId and timePeriod are required' }], isError: true };
     }
     const body: Record<string, unknown> = { timePeriod };
     if (args.typesToExport) body.typesToExport = args.typesToExport;
@@ -305,7 +319,7 @@ export class ClariMCPServer {
     if (typeof args.includeHistorical === 'boolean') body.includeHistorical = args.includeHistorical;
     if (args.exportFormat) body.exportFormat = args.exportFormat;
 
-    const response = await fetch(`${this.baseUrl}/export/forecast/${encodeURIComponent(forecastName)}`, {
+    const response = await fetch(`${this.baseUrl}/export/forecast/${encodeURIComponent(forecastId)}`, {
       method: 'POST',
       headers: this.platformHeaders,
       body: JSON.stringify(body),
@@ -460,7 +474,7 @@ export class ClariMCPServer {
       displayName: 'Clari',
       version: '1.0.0',
       category: 'crm' as const,
-      keywords: ['clari'],
+      keywords: ['clari', 'forecast', 'revenue', 'pipeline', 'sales', 'copilot', 'call recording', 'transcript', 'deal', 'quota', 'revenue intelligence', 'win rate'],
       toolNames: ['export_forecast', 'get_export_job', 'list_export_jobs', 'list_calls', 'get_call_details', 'search_calls', 'get_call_topics', 'get_call_scorecards', 'create_call'],
       description: 'Clari adapter for the Epic AI Intelligence Platform',
       author: 'protectnil' as const,

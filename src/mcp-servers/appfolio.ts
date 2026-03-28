@@ -4,18 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 //   Community implementation: https://github.com/CryptoCultCurt/appfolio-mcp-server
-//   (npm: @fluegeldao/appfolio-mcp-server) — reporting only, minimal tool set, community maintained.
-//   Not recommended for production: limited coverage, no official support.
-// Our adapter covers: 15 tools (property reports, owner/tenant ledgers, maintenance, leases,
-//   rent roll, vacancies, work orders, bank deposits, transactions, contacts).
-//   Broader coverage than the community MCP.
+//   (npm: @fluegeldao/appfolio-mcp-server) — last commit Jan 12, 2026, community maintained,
+//   reporting only, minimal tool set. Not recommended for production: limited coverage, no official support.
+// Our adapter covers: 15 tools. Community MCP tool count: unknown (not official, no tool list in README).
+// Recommendation: use-rest-api — no official MCP server exists. Community MCP not suitable for production.
 //
 // Base URL: https://{vhost}.appfolio.com/api/v2/reports
-// Auth: HTTP Basic Auth — Client ID and Client Secret from AppFolio General Settings → Manage API Settings → Reports API Credentials.
-//   Credentials embedded in URL: https://{clientId}:{clientSecret}@{vhost}.appfolio.com/...
-// Docs: https://www.appfolio.com/stack/partners/api
+// Auth: HTTP Basic Auth — Authorization: Basic base64(clientId:clientSecret).
+//   Client ID and Client Secret from AppFolio General Settings → Manage API Settings → Reports API Credentials.
+// Docs: https://www.appfolio.com/stack/partners/api (partner login required for Reports API docs)
 // Rate limits: All report endpoints rate-limited equally. Avoid bursting — stagger requests.
 //   HTTP 429 returned when exceeded. next_page_url links are not rate-limited.
 

@@ -4,9 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/CheckPointSW/mcp-servers — actively maintained (last commit March 2026).
-// Monorepo with 8+ servers: management, management-logs, threat-prevention, https-inspection,
-// harmony-sase, spark-management, cpinfo-analysis, argos-erm. Supports stdio transport.
+// Official MCP: https://github.com/CheckPointSW/mcp-servers — actively maintained (last commit Mar 24, 2026).
+// Monorepo with 14+ packages across 10+ MCP servers: management (@chkp/quantum-management-mcp),
+// management-logs, threat-prevention, https-inspection, harmony-sase, reputation-service,
+// documentation-tool, spark-management, cpinfo-analysis, argos-erm, policy-insights, gaia,
+// gw-cli, threat-emulation. Supports stdio transport. Auth: API key or username/password.
+// Vendor MCP covers: 10+ tools in management server alone (policy, rules, objects, topology).
+// Our adapter covers: 15 tools (REST fallback for air-gapped deployments).
 // Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments
 // or environments that cannot run the Node.js-based vendor MCP server.
 //
@@ -551,7 +555,7 @@ export class CheckPointMCPServer {
   private async listThreatLogs(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { limit: (args.limit as number) || 100 };
     if (args.filter) body.filter = args.filter;
-    return this.checkpointPost('show-threat-logs', body);
+    return this.checkpointPost('show-logs', body);
   }
 
   private async logoutTool(): Promise<ToolResult> {

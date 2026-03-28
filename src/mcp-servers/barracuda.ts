@@ -4,18 +4,39 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Barracuda Networks MCP server was found on GitHub. Barracuda's GitHub org
-// (github.com/barracudanetworks) contains cloud reference architectures but no MCP server.
-// Recommendation: Use this REST wrapper for all deployments.
+// Official MCP: None found as of 2026-03-28
+// No official Barracuda Networks MCP server was found on GitHub or npmjs.com.
+// Recommendation: use-rest-api — use this REST wrapper for all deployments.
 //
-// Base URL: https://{host}/api/v1  (on-premises appliance or cloud instance hostname)
-// Auth: Session token obtained via POST /api/v1/api_login with email + password credentials.
-//       Token is passed in subsequent requests as the "auth-api" header. Tokens expire; on 401
-//       the adapter automatically re-authenticates and retries once.
-// Docs: https://campus.barracuda.com/product/emailgatewaydefense/doc/96023063/api-overview/
-//       https://campus.barracuda.com/product/emailsecuritygateway/doc/76284988/barracuda-email-security-gateway-api-guide/
-// Rate limits: Not publicly documented; Barracuda enforces per-appliance limits
+// IMPORTANT — TWO DISTINCT BARRACUDA EMAIL PRODUCTS WITH DIFFERENT APIs:
+//
+// 1. Barracuda Email Gateway Defense (EGD) — cloud SaaS product.
+//    REST API (beta/preview). Base URL: https://api.egress.barracuda.com (US) or https://api.egress.barracudanetworks.com (UK).
+//    Auth: OAuth2 client credentials (Client ID + Client Secret via Barracuda Token Service).
+//          Token endpoint returns Bearer JWT valid for 1 hour.
+//          Header: Authorization: Bearer {access_token}
+//    Documented endpoints (as of 2026-03): list_accounts, get_account, list_domains, get_domain, get_statistics — ONLY.
+//    Docs: https://documentation.campus.barracuda.com/wiki/display/EGD/API+Overview
+//
+// 2. Barracuda Email Security Gateway (ESG) — on-premises appliance.
+//    API uses XML-RPC over HTTP (NOT REST/JSON). Base URL: https://{host}/cgi-mod/api.cgi
+//    Auth: Password query parameter in URL (?password={APIPassword}), set in BASIC > Administration.
+//    This is NOT a REST JSON API — it is an XML-RPC config variable get/set API.
+//    Docs: https://documentation.campus.barracuda.com/wiki/spaces/BSFv51/pages/6684743/Barracuda+Email+Security+Gateway+API+Guide
+//
+// NOTE: This adapter implements a hypothetical REST JSON API surface (threats, quarantine, policies,
+//   messages, sender policies, domains, stats) that does NOT exist in either documented Barracuda
+//   email product. EGD REST API only exposes accounts/domains/statistics. ESG uses XML-RPC.
+//   All tool endpoints below are UNVERIFIED against any published Barracuda REST API.
+//   The adapter structure, auth pattern, and tool implementations are based on the EGD model
+//   (session-token auth via POST /api_login with "auth-api" header) which also does not match
+//   either product's documented auth (EGD uses OAuth2 Bearer; ESG uses XML-RPC password param).
+//
+// Base URL: https://{host}/api/v1  (no published Barracuda product uses this exact URL pattern)
+// Auth: Session token via POST /api/v1/api_login — UNVERIFIED (EGD uses OAuth2, ESG uses XML-RPC)
+// Docs: https://documentation.campus.barracuda.com/wiki/display/EGD/API+Overview
+//       https://documentation.campus.barracuda.com/wiki/spaces/BSFv51/pages/6684743/Barracuda+Email+Security+Gateway+API+Guide
+// Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
 

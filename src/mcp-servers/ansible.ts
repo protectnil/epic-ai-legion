@@ -4,14 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/ansible/aap-mcp-server — transport: HTTP, auth: AAP token
+// Official MCP: https://github.com/ansible/aap-mcp-server — transport: streamable-HTTP (/mcp endpoint), auth: Bearer AAP token
 // The ansible/aap-mcp-server generates tools from AAP OpenAPI specifications dynamically.
 // Tool count varies by AAP version and user permissions; it covers EDA, Controller, Gateway,
-// and Galaxy surfaces. It requires a running AAP instance and is actively maintained by Ansible.
+// and Galaxy surfaces. Actively maintained by Ansible (last commit: 2026-03-26). 10+ tools.
+// MCP meets all 4 criteria — official, maintained, 10+ tools, streamable-HTTP — and is a
+// superset of our REST adapter. Decision: use-vendor-mcp for full AAP surface coverage.
 // Our adapter provides a curated REST wrapper for the core Controller API operations — suitable
 // for air-gapped deployments or environments where the vendor MCP server cannot be installed.
-// Recommendation: Use vendor MCP for full AAP surface coverage. Use this adapter for air-gapped
-// deployments or when a fixed curated toolset is preferred.
 //
 // Base URL: https://{your-controller-host}/api/v2 (controller hostname required in config)
 // Auth: Bearer token (create in AAP UI under User Tokens or via /api/v2/tokens/)

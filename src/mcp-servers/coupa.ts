@@ -4,16 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03 (Composio provides a third-party Coupa MCP wrapper,
-// but Coupa Software does not publish an official MCP server on GitHub.)
-// No official Coupa MCP server was found. The Composio wrapper is not maintained by Coupa.
+// Official MCP: None found as of 2026-03-28 — Composio provides a third-party Coupa MCP wrapper
+// but Coupa Software does not publish an official MCP server on GitHub or npm.
+// The Composio wrapper is not maintained by Coupa and does not qualify as an official MCP server.
+// Our adapter covers: 21 tools. Vendor MCP: N/A.
+// Recommendation: use-rest-api — no official Coupa MCP server exists.
 //
-// Base URL: https://{instance}.coupahost.com  (customer instances use coupahost.com)
-//           https://{instance}.coupacloud.com  (partner/demo instances use coupacloud.com)
-// Auth: OAuth2 client credentials — token endpoint: https://{instance}/oauth2/token
-//       Scopes available at: https://{instance}/oauth2/scopes
+// Base URL: https://{instance}.coupahost.com  (customer instances)
+//           https://{instance}.coupacloud.com  (partner/demo instances)
+// Auth: OAuth2 client credentials — token endpoint: POST https://{instance}/oauth2/token
+//       Body params: grant_type=client_credentials, client_id, client_secret (form-encoded)
+//       Access tokens valid 24 hours; Coupa recommends renewal every 20 hours.
+//       Alternatively supported: X-COUPA-API-KEY header (legacy API key auth)
 // Docs: https://compass.coupa.com/en-us/products/product-documentation/integration-technical-documentation/the-coupa-core-api
-// Rate limits: Not publicly documented; access tokens expire after 24 hours (recommended renewal: every 20 hours)
+// Rate limits: Not publicly documented by Coupa
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -723,14 +727,18 @@ export class CoupaMCPServer {
 
   private async approveInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.invoice_id) return { content: [{ type: 'text', text: 'invoice_id is required' }], isError: true };
-    const body: Record<string, unknown> = { status: 'approved' };
-    if (args.comment) body.approval_comment = args.comment;
-    return this.coupaPut(`/invoices/${encodeURIComponent(args.invoice_id as number)}`, body);
+    // Coupa docs: bypass_approvals is the API action to approve an invoice programmatically
+    // PUT /api/invoices/:id/bypass_approvals — allows a 3rd-party system to get an invoice approved quickly
+    const body: Record<string, unknown> = {};
+    if (args.comment) body.note = args.comment;
+    return this.coupaPut(`/invoices/${encodeURIComponent(args.invoice_id as number)}/bypass_approvals`, body);
   }
 
   private async rejectInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.invoice_id || !args.reason) return { content: [{ type: 'text', text: 'invoice_id and reason are required' }], isError: true };
-    return this.coupaPut(`/invoices/${encodeURIComponent(args.invoice_id as number)}`, { status: 'rejected', rejection_reason: args.reason });
+    // Coupa docs: void action rejects/voids an approved or pending invoice
+    // PUT /api/invoices/:id/void — voids an approved or pending receipt invoice
+    return this.coupaPut(`/invoices/${encodeURIComponent(args.invoice_id as number)}/void`, { reason: args.reason });
   }
 
   private async listRequisitions(args: Record<string, unknown>): Promise<ToolResult> {

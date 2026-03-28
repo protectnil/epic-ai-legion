@@ -4,14 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/ClickHouse/mcp-clickhouse — transport: stdio and HTTP,
-//   auth: CLICKHOUSE_USER / CLICKHOUSE_PASSWORD env vars, actively maintained by ClickHouse Inc.
-//   Vendor MCP covers: ~3 tools (run_query, list_databases, list_tables) — read-only by default,
-//   write access requires CLICKHOUSE_ALLOW_WRITE_ACCESS=true env var.
+// Official MCP: https://github.com/ClickHouse/mcp-clickhouse — transport: stdio, HTTP, SSE,
+//   auth: CLICKHOUSE_USER / CLICKHOUSE_PASSWORD env vars, published by ClickHouse Inc.
+//   Actively maintained (last commit Mar 2026, v0.2.0 released Jan 2026).
+//   Vendor MCP tool names: run_select_query, list_databases, list_tables — 3 tools total.
+//   Fails criterion 3 (only 3 tools, threshold is 10+).
 // Our adapter covers: 14 tools (full read + system introspection surface).
-// Recommendation: Use vendor MCP for simple query use cases. Use this adapter for air-gapped
-//   deployments, richer system introspection, or when you need the full tool surface without
-//   running an additional process.
+// Recommendation: use-rest-api — vendor MCP fails criterion 3 (3 tools < 10 threshold).
+//   Our adapter is a strict superset: run_query + 11 system-introspection tools not in vendor MCP.
 //
 // Base URL: http://{host}:8123 (plain HTTP) or https://{host}:8443 (TLS)
 // Auth: X-ClickHouse-User / X-ClickHouse-Key request headers
@@ -516,12 +516,15 @@ export class ClickHouseMCPServer {
     const limit = (args.limit as number) ?? 100;
     const minutesBack = (args.minutes_back as number) ?? 60;
     const conditions: string[] = [
-      `type = 'QueryFinish' OR type = 'ExceptionWhileProcessing'`,
       `event_time >= now() - INTERVAL ${minutesBack} MINUTE`,
     ];
+    if (args.status) {
+      conditions.push(`type = '${(args.status as string).replace(/'/g, "\\'")}'`);
+    } else {
+      conditions.push(`(type = 'QueryFinish' OR type = 'ExceptionWhileProcessing')`);
+    }
     if (args.database) conditions.push(`databases[1] = '${(args.database as string).replace(/'/g, "\\'")}'`);
     if (args.user) conditions.push(`user = '${(args.user as string).replace(/'/g, "\\'")}'`);
-    if (args.status) conditions.push(`type = '${(args.status as string).replace(/'/g, "\\'")}'`);
 
     const query = `
       SELECT

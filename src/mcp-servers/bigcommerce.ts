@@ -1002,7 +1002,18 @@ export class BigCommerceMCPServer {
     };
     if (args.phone) customer['phone'] = args.phone;
     if (args.company) customer['company'] = args.company;
-    return this.bcPost('/v3/customers', { customers: [customer] } as unknown as Record<string, unknown>);
+    // v3 POST /customers expects a bare JSON array body, not an object wrapper
+    const response = await fetch(`${this.baseUrl}/v3/customers`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify([customer]),
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      return { content: [{ type: 'text', text: `API error ${response.status} ${response.statusText}: ${errText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async updateCustomer(args: Record<string, unknown>): Promise<ToolResult> {

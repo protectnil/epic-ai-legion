@@ -5,14 +5,16 @@
  */
 
 // Official MCP: None from Apple. Multiple community implementations exist:
-//   https://github.com/JoshuaRileyDev/app-store-connect-mcp-server (JS, ~10 tools, last updated 2025)
+//   https://github.com/JoshuaRileyDev/app-store-connect-mcp-server — transport: stdio,
+//   auth: JWT (same as our adapter); 30+ tools including analytics, localizations, screenshots,
+//   sales/finance reports, Xcode schemes; last updated Feb 2026.
 //   https://github.com/TrialAndErrorAI/appstore-connect-mcp (TS, analytics + sales focus, Aug 2025)
 //   https://github.com/gjeltep/app-store-connect-mcp (models from Apple's official OpenAPI spec)
-//   None meet all four criteria for vendor MCP adoption (no official Apple source, coverage varies).
+//   None meet all four criteria for vendor MCP adoption (no official Apple source).
 // Our adapter covers: 20 tools (apps, builds, TestFlight, users, devices, bundle IDs, review).
-//   Broader coverage than any individual community MCP.
-// Recommendation: Use this adapter. Evaluate gjeltep/app-store-connect-mcp if full OpenAPI
-//   surface coverage is needed in the future.
+//   JoshuaRileyDev MCP covers 30+ tools including analytics and localization not in our adapter.
+// Recommendation: use-rest-api — no official Apple MCP exists. Monitor JoshuaRileyDev server
+//   for potential use-both evaluation if analytics/localization tools are needed in the future.
 //
 // Base URL: https://api.appstoreconnect.apple.com
 // Auth: JWT (ES256) — signed with App Store Connect API private key.

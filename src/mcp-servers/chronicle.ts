@@ -4,21 +4,40 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/google/mcp-security — actively maintained (Google, 2025-2026).
+// Official MCP: https://github.com/google/mcp-security — actively maintained by Google (2025-2026).
 // Sub-servers: secops (Chronicle SIEM), soar, gti (threat intel), scc (Cloud Security Command Center).
 // Also available as a hosted remote MCP at https://chronicle.us.rep.googleapis.com/mcp.
-// Transport: stdio (local Python) and hosted HTTP remote. Supports OAuth2 and service accounts.
-// Recommendation: Use google/mcp-security for full Chronicle + SOAR + GTI coverage.
-//                 Use this adapter for Bearer-token / service-account air-gapped deployments.
+// Transport: stdio (local Python via uvx/uv) and hosted streamable-HTTP remote.
+// Vendor MCP tool count: 20+ tools confirmed (search_security_events, get_security_alerts,
+//   lookup_entity, list_security_rules, search_security_rules, create_retrohunt, get_retrohunt,
+//   search_rule_alerts, ingest_raw_log, ingest_udm_events, list_feeds, get_feed, list_watchlists,
+//   get_watchlist, list_investigations, create_reference_list, get_reference_list,
+//   update_reference_list, list_curated_rules, get_curated_rule, get_curated_rule_by_name, + more).
+// Our adapter covers: 14 tools (Backstory API — previous-generation REST API).
+// Recommendation: use-both — vendor MCP (secops sub-server) meets all four criteria and covers
+//   curated rules, raw log ingestion, feeds, watchlists, reference lists, and investigations not in
+//   the Backstory REST API. Our REST adapter covers direct Backstory API access for air-gapped
+//   deployments and write operations (create_rule, enable_rule, disable_rule, ingest_udm_events).
+// Integration: use-both
+// MCP-sourced tools (recommended): search_security_events, get_security_alerts, lookup_entity,
+//   list_security_rules, create_retrohunt, get_retrohunt, search_rule_alerts, ingest_raw_log,
+//   list_feeds, list_watchlists, list_investigations, list_curated_rules, get_curated_rule
+// REST-sourced tools (this adapter): udm_search, get_event, list_alerts, list_rules, get_rule,
+//   create_rule, enable_rule, disable_rule, list_detections, search_iocs, list_ioc_details,
+//   list_assets, search_entities, ingest_udm_events
 //
-// Base URL: https://backstory.googleapis.com (US multi-region, default)
+// Base URL: https://backstory.googleapis.com (US multi-region, default — Backstory/legacy API)
 //           https://europe-backstory.googleapis.com  (EU)
 //           https://asia-southeast1-backstory.googleapis.com  (APAC)
+// NOTE: Google recommends migrating to the new Chronicle API at
+//       https://{region}-chronicle.googleapis.com for new integrations.
 // Auth: OAuth 2.0 Bearer token (gcloud auth print-access-token or service account key exchange)
 //       Scope required: https://www.googleapis.com/auth/chronicle-backstory
-// Docs: https://cloud.google.com/chronicle/docs/reference/rest
-//       https://cloud.google.com/chronicle/docs/reference/detection-engine-api
-// Rate limits: Not publicly documented; standard Google Cloud API quotas apply
+// Docs: https://cloud.google.com/chronicle/docs/reference/search-api (Backstory Search API)
+//       https://cloud.google.com/chronicle/docs/reference/detection-engine-api (Detection Engine)
+//       https://cloud.google.com/chronicle/docs/reference/ingestion-api (Ingestion API)
+// Rate limits: udmSearch: 360 QPH; GetLog/GetEvent: 60 QPS; ListAlerts/ListEvents/ListIocs: 1 QPS;
+//              ListAssets: 5 QPS (Backstory API limits)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -494,7 +513,18 @@ export class ChronicleMCPServer {
     const iocValue = args.ioc_value as string;
     if (!iocValue) return { content: [{ type: 'text', text: 'ioc_value is required' }], isError: true };
     const params = new URLSearchParams();
-    params.set('artifactIndicator.domainName', iocValue);
+    // Detect IoC type: IPv4/IPv6 → destinationIpAddress, MD5/SHA256 hash → fileHash, else domain
+    if (/^[\d.:]+$/.test(iocValue)) {
+      params.set('artifactIndicator.destinationIpAddress', iocValue);
+    } else if (/^[0-9a-fA-F]{32,64}$/.test(iocValue)) {
+      params.set('artifactIndicator.hashSha256', iocValue.length === 64 ? iocValue : '');
+      if (iocValue.length === 32) {
+        params.delete('artifactIndicator.hashSha256');
+        params.set('artifactIndicator.hashMd5', iocValue);
+      }
+    } else {
+      params.set('artifactIndicator.domainName', iocValue);
+    }
     if (args.start_time) params.set('startTime', args.start_time as string);
     if (args.end_time) params.set('endTime', args.end_time as string);
     if (args.page_size) params.set('pageSize', String(args.page_size));
@@ -504,7 +534,16 @@ export class ChronicleMCPServer {
   private async listIocDetails(args: Record<string, unknown>): Promise<ToolResult> {
     const artifact = args.artifact_indicator as string;
     if (!artifact) return { content: [{ type: 'text', text: 'artifact_indicator is required' }], isError: true };
-    return this.chronicleGet(`/v2/ioc/details?artifact.domainName=${encodeURIComponent(artifact)}`);
+    // Detect artifact type: IPv4/IPv6 → destinationIpAddress, hash → hashSha256/hashMd5, else domain
+    let paramKey = 'artifact.domainName';
+    if (/^[\d.:]+$/.test(artifact)) {
+      paramKey = 'artifact.destinationIpAddress';
+    } else if (/^[0-9a-fA-F]{64}$/.test(artifact)) {
+      paramKey = 'artifact.hashSha256';
+    } else if (/^[0-9a-fA-F]{32}$/.test(artifact)) {
+      paramKey = 'artifact.hashMd5';
+    }
+    return this.chronicleGet(`/v2/ioc/details?${paramKey}=${encodeURIComponent(artifact)}`);
   }
 
   private async listAssets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -534,7 +573,7 @@ export class ChronicleMCPServer {
     if (!events || !Array.isArray(events) || events.length === 0) {
       return { content: [{ type: 'text', text: 'events must be a non-empty array' }], isError: true };
     }
-    return this.chroniclePost('/v2/unstructuredlogentries', { events });
+    return this.chroniclePost('/v2/udmevents', { events });
   }
 
   static catalog() {

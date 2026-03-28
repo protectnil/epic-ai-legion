@@ -4,18 +4,40 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://mcp.close.com/mcp — hosted-only remote MCP server, transport: streamable-HTTP,
-//   auth: OAuth 2.0 Dynamic Client Registration (DCR). Requires browser-based OAuth flow.
-//   Also: github.com/ShiftEngineering/mcp-close-server — community adapter using API key auth (stdio).
-// Our adapter covers: 18 tools (full CRUD surface for leads, contacts, opportunities, activities, tasks).
-// Recommendation: Use the official hosted MCP (mcp.close.com) for full API coverage with OAuth.
-//   Use this adapter for API-key-based access, air-gapped deployments, or scripted integrations.
+// Official MCP: https://mcp.close.com/mcp — transport: streamable-HTTP, auth: OAuth 2.0 (DCR).
+//   Published by Close.com (official). Actively maintained. 57 tools (as of 2026-01-26).
+//   Covers all read/write/destructive scopes: leads, contacts, opportunities, activities,
+//   templates, smart views, pipelines, aggregations, scheduling links, and more.
+//   Also: github.com/ShiftEngineering/mcp-close-server — community adapter (stdio, API key, 3 tools).
+//   Community adapter is NOT official — only 3 tools, small repo (3 stars). Not a substitute.
+// Our adapter covers: 19 tools (API-key-based CRUD for leads, contacts, opportunities, activities, tasks).
+// Recommendation: use-both
+//   MCP (mcp.close.com) adds: activity_search, aggregation, close_product_knowledge_search,
+//     fetch_sms_template, find_email_templates, find_lead_smart_views, find_lead_statuses,
+//     find_opportunities, find_pipelines_and_opportunity_statuses, find_scheduling_links,
+//     fetch_contact, fetch_email_template, fetch_lead, fetch_lead_smart_view, fetch_lead_status,
+//     fetch_opportunity, fetch_opportunity_status, fetch_pipeline_and_opportunity_statuses,
+//     and 38+ additional read/write/destructive tools not available via REST adapter.
+//   REST adapter adds: API-key-based access without OAuth browser flow, air-gapped deployments,
+//     scripted/CI integrations. Our tools: search_leads, get_lead, create_lead, update_lead,
+//     delete_lead, list_contacts, get_contact, create_contact, update_contact, delete_contact,
+//     list_opportunities, get_opportunity, create_opportunity, update_opportunity, delete_opportunity,
+//     list_activities, list_tasks, create_task, update_task.
+//
+// Integration: use-both
+// MCP-sourced tools (57): all tools from mcp.close.com (OAuth required)
+// REST-sourced tools (19): search_leads, get_lead, create_lead, update_lead, delete_lead,
+//   list_contacts, get_contact, create_contact, update_contact, delete_contact,
+//   list_opportunities, get_opportunity, create_opportunity, update_opportunity, delete_opportunity,
+//   list_activities, list_tasks, create_task, update_task
+// Combined coverage: use MCP for full 57-tool coverage; use REST for API-key/air-gapped scenarios.
 //
 // Base URL: https://api.close.com/api/v1
 // Auth: HTTP Basic — API key as username, empty string as password.
 //   Header: Authorization: Basic base64(api_key:)
+//   Source: https://developer.close.com/topics/authentication/
 // Docs: https://developer.close.com/
-// Rate limits: Not publicly documented; recommended to stay under 60 req/min per API key.
+// Rate limits: Per-endpoint-group limits at organization level. Not fully publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

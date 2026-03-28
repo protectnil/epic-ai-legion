@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Canada Post MCP server was found on GitHub or the MCP registry.
 // This adapter covers: 12 tools (rating, tracking, shipment, manifest, pickup, address validation).
 // Recommendation: Use this adapter for all Canada Post integrations.
@@ -441,7 +441,7 @@ export class CanadaPostMCPServer {
 
   private async getRates(args: Record<string, unknown>): Promise<ToolResult> {
     const originPostal = (args.origin_postal_code as string)?.replace(/\s/g, '') ?? '';
-    
+    const destCountry = ((args.destination_country as string) ?? 'CA').toUpperCase();
     const destPostal = ((args.destination_postal_code as string) ?? '').replace(/\s/g, '');
     const weight = (args.weight_kg as number) ?? 1;
     const length = (args.length_cm as number) ?? 0;
@@ -454,6 +454,15 @@ export class CanadaPostMCPServer {
       ? `<dimensions><length>${length}</length><width>${width}</width><height>${height}</height></dimensions>`
       : '';
 
+    let destinationXml: string;
+    if (destCountry === 'CA') {
+      destinationXml = `<destination><domestic><postal-code>${destPostal}</postal-code></domestic></destination>`;
+    } else if (destCountry === 'US') {
+      destinationXml = `<destination><united-states><zip-code>${destPostal}</zip-code></united-states></destination>`;
+    } else {
+      destinationXml = `<destination><international><country-code>${destCountry}</country-code></international></destination>`;
+    }
+
     const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
 <mailing-scenario xmlns="http://www.canadapost.ca/ws/ship/rate-v4">
   <customer-number>${this.customerNumber}</customer-number>
@@ -462,9 +471,7 @@ export class CanadaPostMCPServer {
     ${dimensionsXml}
   </parcel-characteristics>
   <origin-postal-code>${originPostal}</origin-postal-code>
-  <destination>
-    <domestic><postal-code>${destPostal}</postal-code></domestic>
-  </destination>
+  ${destinationXml}
 </mailing-scenario>`;
 
     return this.cpPost(
@@ -478,9 +485,9 @@ export class CanadaPostMCPServer {
   private async getServiceInfo(args: Record<string, unknown>): Promise<ToolResult> {
     const serviceCode = args.service_code as string;
     if (!serviceCode) return { content: [{ type: 'text', text: 'service_code is required' }], isError: true };
-    
+    const destCountry = (args.destination_country as string) ?? 'CA';
     return this.cpGet(
-      `/rs/ship/service/${serviceCode}?country=${'CA'}`,
+      `/rs/ship/service/${encodeURIComponent(serviceCode)}?country=${encodeURIComponent(destCountry)}`,
       'application/vnd.cpc.ship.rate-v4+xml',
     );
   }

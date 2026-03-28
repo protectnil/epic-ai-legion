@@ -4,11 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // cohere-ai/north-mcp-python-sdk is an authentication framework for building MCP servers
 // using Cohere's North platform — it is NOT a Cohere API adapter covering Command/Embed/Rerank.
 // cohere-ai/mcp-atlassian is an Atlassian connector, not a Cohere API server.
 // No official Cohere MCP server covering core inference endpoints exists.
+// Our adapter covers: 17 tools. Vendor MCP covers: 0 tools (no official MCP server).
+// Recommendation: use-rest-api — no official MCP server found.
+//
+// NOTE: v1/classify and v1/connectors are marked DEPRECATED in Cohere docs as of 2026.
+// They still function but are no longer recommended for new integrations.
+// v2/audio/transcriptions exists in the API but is not implemented in this adapter.
 //
 // Base URL: https://api.cohere.com
 // Auth: Bearer token — Authorization: Bearer <API_KEY>
@@ -169,9 +175,9 @@ export class CohereMCPServer {
               type: 'boolean',
               description: 'Whether to include original document text in the response (default: false)',
             },
-            max_chunks_per_doc: {
+            max_tokens_per_doc: {
               type: 'number',
-              description: 'Maximum number of chunks to produce from a single document for long-document support',
+              description: 'Maximum number of tokens per document before truncation (default: 4096). Use for long-document reranking.',
             },
           },
           required: ['model', 'query', 'documents'],
@@ -179,7 +185,7 @@ export class CohereMCPServer {
       },
       {
         name: 'classify',
-        description: 'Classify texts into categories using few-shot examples with a Cohere model. Returns predicted label and confidence score per input.',
+        description: 'DEPRECATED by Cohere. Classify texts into categories using few-shot examples with a Cohere model. Returns predicted label and confidence score per input.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -395,7 +401,7 @@ export class CohereMCPServer {
       },
       {
         name: 'list_connectors',
-        description: 'List all connectors configured in the Cohere account for grounding chat responses with external data sources.',
+        description: 'DEPRECATED by Cohere. List all connectors configured in the Cohere account for grounding chat responses with external data sources.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -412,7 +418,7 @@ export class CohereMCPServer {
       },
       {
         name: 'get_connector',
-        description: 'Get full configuration details for a specific Cohere connector by ID.',
+        description: 'DEPRECATED by Cohere. Get full configuration details for a specific Cohere connector by ID.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -555,7 +561,7 @@ export class CohereMCPServer {
     const body: Record<string, unknown> = { model, query, documents };
     if (args.top_n) body.top_n = args.top_n;
     if (typeof args.return_documents === 'boolean') body.return_documents = args.return_documents;
-    if (args.max_chunks_per_doc) body.max_chunks_per_doc = args.max_chunks_per_doc;
+    if (args.max_tokens_per_doc) body.max_tokens_per_doc = args.max_tokens_per_doc;
     return this.fetchJson(`${this.baseUrl}/v2/rerank`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
   }
 
@@ -567,7 +573,7 @@ export class CohereMCPServer {
     }
     const body: Record<string, unknown> = { inputs, examples };
     if (args.model) body.model = args.model;
-    // classify remains on v1 — v2/classify is not yet generally available
+    // v1/classify is deprecated by Cohere; no v2/classify endpoint exists. Kept for backward compatibility.
     return this.fetchJson(`${this.baseUrl}/v1/classify`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
   }
 

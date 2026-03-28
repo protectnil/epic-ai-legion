@@ -4,13 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Blackbaud MCP server exists. CData offers a read-only third-party MCP server
-// (https://github.com/CDataSoftware/blackbaud-fe-nxt-mcp-server-by-cdata) for Blackbaud
-// Financial Edge NXT using JDBC — limited coverage, requires CData licensing.
-// Pipedream provides a generic Blackbaud connector through its managed infrastructure.
+// Official MCP: None found as of 2026-03-28 — No official Blackbaud MCP server exists.
+// CData offers a read-only third-party MCP server for Blackbaud Financial Edge NXT via JDBC
+// (https://cdn.cdata.com/help/JZK/mcp) — not official vendor, requires CData licensing,
+// limited read-only coverage. Composio offers a managed connector but not a vendor MCP.
 // Neither qualifies under the protocol's "official vendor MCP" criteria.
-// This adapter provides full coverage of the Blackbaud SKY API (Raiser's Edge NXT).
+// Our adapter covers: 20 tools. Vendor MCP covers: 0 tools (N/A — no official MCP).
+// Recommendation: use-rest-api — this REST adapter is the primary integration.
 //
 // Base URL: https://api.sky.blackbaud.com
 // Auth: OAuth 2.0 Authorization Code flow. Requires:
@@ -22,9 +22,8 @@
 // Docs: https://developer.blackbaud.com/skyapi
 //       https://developer.blackbaud.com/skyapi/docs/basics/
 //       https://developer.blackbaud.com/skyapi/docs/authorization
-// Rate limits: Requests return HTTP 429 (throttle) or 403 (daily quota exhausted).
-//              Daily quota: 50,000–100,000 calls/day depending on subscription tier.
-//              Retry-After header provided on 429 responses.
+// Rate limits: 10 calls/second. Daily quota: 1,000 (Free), 25,000 (Standard), 100,000 (High volume),
+//              250,000 (Max volume) calls/24-hr period. HTTP 429 on rate limit; Retry-After header provided.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -846,12 +845,12 @@ export class BlackbaudMCPServer {
     };
     if (args.offset) params['offset'] = String(args.offset);
     if (typeof args.include_inactive === 'boolean') params['include_inactive'] = String(args.include_inactive);
-    return this.bbGet('/gift/v1/funds', params);
+    return this.bbGet('/fundraising/v1/funds', params);
   }
 
   private async getFund(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.fund_id) return { content: [{ type: 'text', text: 'fund_id is required' }], isError: true };
-    return this.bbGet(`/gift/v1/funds/${encodeURIComponent(args.fund_id as string)}`);
+    return this.bbGet(`/fundraising/v1/funds/${encodeURIComponent(args.fund_id as string)}`);
   }
 
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -860,12 +859,12 @@ export class BlackbaudMCPServer {
     };
     if (args.offset) params['offset'] = String(args.offset);
     if (typeof args.include_inactive === 'boolean') params['include_inactive'] = String(args.include_inactive);
-    return this.bbGet('/gift/v1/campaigns', params);
+    return this.bbGet('/fundraising/v1/campaigns', params);
   }
 
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.campaign_id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    return this.bbGet(`/gift/v1/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
+    return this.bbGet(`/fundraising/v1/campaigns/${encodeURIComponent(args.campaign_id as string)}`);
   }
 
   private async listAppeals(args: Record<string, unknown>): Promise<ToolResult> {
@@ -874,20 +873,29 @@ export class BlackbaudMCPServer {
     };
     if (args.offset) params['offset'] = String(args.offset);
     if (typeof args.include_inactive === 'boolean') params['include_inactive'] = String(args.include_inactive);
-    return this.bbGet('/gift/v1/appeals', params);
+    return this.bbGet('/fundraising/v1/appeals', params);
   }
 
   private async getAppeal(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.appeal_id) return { content: [{ type: 'text', text: 'appeal_id is required' }], isError: true };
-    return this.bbGet(`/gift/v1/appeals/${encodeURIComponent(args.appeal_id as string)}`);
+    return this.bbGet(`/fundraising/v1/appeals/${encodeURIComponent(args.appeal_id as string)}`);
   }
 
   private async listGiftTypes(): Promise<ToolResult> {
-    return this.bbGet('/gift/v1/giftcategories');
+    // Gift types in SKY API v1 are a static enum — no dedicated list endpoint exists.
+    // Return the known valid values as documented in the SKY API Gift entity schema.
+    const giftTypes = [
+      'Donation', 'Pledge', 'PledgePayment', 'RecurringGift', 'RecurringGiftPayment',
+      'GiftInKind', 'StockGiftAndProperty', 'Other', 'PlannedGift',
+    ];
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ gift_types: giftTypes }, null, 2) }],
+      isError: false,
+    };
   }
 
   private async getConstituentGivingSummary(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.constituent_id) return { content: [{ type: 'text', text: 'constituent_id is required' }], isError: true };
-    return this.bbGet(`/constituent/v1/constituents/${encodeURIComponent(args.constituent_id as string)}/givingsummary/latestgifts`);
+    return this.bbGet(`/constituent/v1/constituents/${encodeURIComponent(args.constituent_id as string)}/givingsummary/latest`);
   }
 }

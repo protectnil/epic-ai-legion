@@ -4,10 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official BILL (Bill.com) MCP server was found on GitHub as of March 2026. Search results
-// returned only unrelated projects (Billingo, Bilibili, etc.). BILL does not publish an MCP server.
-// Recommendation: Use this REST wrapper for all deployments.
+// Official MCP: None found as of 2026-03-28
+// No official BILL (Bill.com) MCP server was found on GitHub, npm, or BILL developer docs as of
+// 2026-03-28. Community servers found (christian-sidak/billcom — 0 stars, released 2026-03-15,
+// community-only classification on PulseMCP) are not official. BILL does not publish an MCP server.
+// Recommendation: use-rest-api — Use this REST wrapper for all deployments.
 //
 // Base URL: https://gateway.bill.com/connect/v3  (production)
 //           https://gateway.stage.bill.com/connect/v3  (sandbox)
@@ -16,7 +17,7 @@
 //       Sessions expire after 35 minutes of inactivity — this adapter re-authenticates before each call.
 // Docs: https://developer.bill.com/docs/home
 //       https://developer.bill.com/reference/api-reference-overview
-// Rate limits: Not publicly documented; BILL enforces per-org rate limits
+// Rate limits: 18,000 API calls per developer key per hour (confirmed from developer docs)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -133,7 +134,7 @@ export class BillComMCPServer {
       },
       {
         name: 'update_vendor',
-        description: 'Update fields on an existing vendor record in BILL by vendor ID.',
+        description: 'Partially update fields on an existing vendor record in BILL by vendor ID using PATCH.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -197,7 +198,7 @@ export class BillComMCPServer {
       },
       {
         name: 'update_bill',
-        description: 'Update fields on an existing bill in BILL — change due date, description, or line items before payment.',
+        description: 'Partially update fields on an existing bill in BILL using PATCH — change due date, description, or line items before payment.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -211,27 +212,29 @@ export class BillComMCPServer {
       },
       {
         name: 'pay_bill',
-        description: 'Pay a single bill by creating a payment from a chart of accounts (bank account) with a specified amount and process date.',
+        description: 'Pay a single bill by creating a v3 payment using a funding account (bank account or wallet) with specified amount and optional process date.',
         inputSchema: {
           type: 'object',
           properties: {
-            billId: { type: 'string', description: 'Bill ID to pay' },
-            amount: { type: 'number', description: 'Amount to pay (can be partial)' },
-            chartOfAccountId: { type: 'string', description: 'Chart of account ID for the paying bank account' },
+            billId: { type: 'string', description: 'Bill ID to pay (begins with 00n)' },
+            vendorId: { type: 'string', description: 'Vendor ID to pay (begins with 009)' },
+            amount: { type: 'number', description: 'Amount to pay in dollars (can be partial)' },
+            fundingAccountType: { type: 'string', description: 'Funding account type: BANK_ACCOUNT, CARD_ACCOUNT, or WALLET' },
+            fundingAccountId: { type: 'string', description: 'BILL-generated ID of the funding account (not required for WALLET type)' },
             processDate: { type: 'string', description: 'Requested payment processing date (YYYY-MM-DD, optional — defaults to next available date)' },
           },
-          required: ['billId', 'amount', 'chartOfAccountId'],
+          required: ['billId', 'amount', 'fundingAccountType'],
         },
       },
       {
         name: 'pay_bills_bulk',
-        description: 'Pay multiple bills in a single BILL API request. Each payment specifies a billId, amount, chartOfAccountId, and optional processDate.',
+        description: 'Pay multiple bills in a single BILL v3 API request. Each payment specifies vendorId, billId, amount, fundingAccount, and optional processDate.',
         inputSchema: {
           type: 'object',
           properties: {
             payments: {
               type: 'array',
-              description: 'Array of payment objects, each with billId, amount, chartOfAccountId, and optional processDate',
+              description: 'Array of payment objects, each with billId, vendorId, amount, fundingAccount {type, id}, and optional processDate',
             },
           },
           required: ['payments'],
@@ -417,9 +420,15 @@ export class BillComMCPServer {
   }
 
   private async listVendors(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { max: args.max || 100, start: args.start || 0 };
-    if (args.filter) body.filter = args.filter;
-    const response = await fetch(`${this.baseUrl}/vendors/list`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const params = new URLSearchParams();
+    params.set('max', String(args.max || 100));
+    params.set('start', String(args.start || 0));
+    if (args.filter && typeof args.filter === 'object') {
+      for (const [k, v] of Object.entries(args.filter as Record<string, unknown>)) {
+        params.set(k, String(v));
+      }
+    }
+    const response = await fetch(`${this.baseUrl}/vendors?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list vendors (HTTP ${response.status}): ${err}` }], isError: true };
@@ -461,7 +470,7 @@ export class BillComMCPServer {
       if (args[field] !== undefined) updates[field] = args[field];
     }
     const response = await fetch(`${this.baseUrl}/vendors/${encodeURIComponent(String(args.vendorId))}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers,
       body: JSON.stringify(updates),
     });
@@ -474,9 +483,15 @@ export class BillComMCPServer {
   }
 
   private async listBills(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { max: args.max || 100, start: args.start || 0 };
-    if (args.filter) body.filter = args.filter;
-    const response = await fetch(`${this.baseUrl}/bills/list`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const params = new URLSearchParams();
+    params.set('max', String(args.max || 100));
+    params.set('start', String(args.start || 0));
+    if (args.filter && typeof args.filter === 'object') {
+      for (const [k, v] of Object.entries(args.filter as Record<string, unknown>)) {
+        params.set(k, String(v));
+      }
+    }
+    const response = await fetch(`${this.baseUrl}/bills?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list bills (HTTP ${response.status}): ${err}` }], isError: true };
@@ -525,7 +540,7 @@ export class BillComMCPServer {
     if (args.description !== undefined) updates.description = args.description;
     if (args.billLineItems !== undefined) updates.billLineItems = args.billLineItems;
     const response = await fetch(`${this.baseUrl}/bills/${encodeURIComponent(String(args.billId))}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers,
       body: JSON.stringify(updates),
     });
@@ -538,14 +553,17 @@ export class BillComMCPServer {
   }
 
   private async payBill(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    if (!args.billId || args.amount === undefined || !args.chartOfAccountId) {
-      return { content: [{ type: 'text', text: 'billId, amount, and chartOfAccountId are required' }], isError: true };
+    if (!args.billId || args.amount === undefined || !args.fundingAccountType) {
+      return { content: [{ type: 'text', text: 'billId, amount, and fundingAccountType are required' }], isError: true };
     }
+    const fundingAccount: Record<string, unknown> = { type: args.fundingAccountType };
+    if (args.fundingAccountId) fundingAccount.id = args.fundingAccountId;
     const payment: Record<string, unknown> = {
       billId: args.billId,
       amount: args.amount,
-      chartOfAccountId: args.chartOfAccountId,
+      fundingAccount,
     };
+    if (args.vendorId) payment.vendorId = args.vendorId;
     if (args.processDate) payment.processDate = args.processDate;
     const response = await fetch(`${this.baseUrl}/payments`, { method: 'POST', headers, body: JSON.stringify(payment) });
     if (!response.ok) {
@@ -572,9 +590,15 @@ export class BillComMCPServer {
   }
 
   private async listPayments(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { max: args.max || 100, start: args.start || 0 };
-    if (args.filter) body.filter = args.filter;
-    const response = await fetch(`${this.baseUrl}/payments/list`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const params = new URLSearchParams();
+    params.set('max', String(args.max || 100));
+    params.set('start', String(args.start || 0));
+    if (args.filter && typeof args.filter === 'object') {
+      for (const [k, v] of Object.entries(args.filter as Record<string, unknown>)) {
+        params.set(k, String(v));
+      }
+    }
+    const response = await fetch(`${this.baseUrl}/payments?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list payments (HTTP ${response.status}): ${err}` }], isError: true };
@@ -595,9 +619,15 @@ export class BillComMCPServer {
   }
 
   private async listCustomers(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { max: args.max || 100, start: args.start || 0 };
-    if (args.filter) body.filter = args.filter;
-    const response = await fetch(`${this.baseUrl}/customers/list`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const params = new URLSearchParams();
+    params.set('max', String(args.max || 100));
+    params.set('start', String(args.start || 0));
+    if (args.filter && typeof args.filter === 'object') {
+      for (const [k, v] of Object.entries(args.filter as Record<string, unknown>)) {
+        params.set(k, String(v));
+      }
+    }
+    const response = await fetch(`${this.baseUrl}/customers?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list customers (HTTP ${response.status}): ${err}` }], isError: true };
@@ -633,9 +663,15 @@ export class BillComMCPServer {
   }
 
   private async listInvoices(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { max: args.max || 100, start: args.start || 0 };
-    if (args.filter) body.filter = args.filter;
-    const response = await fetch(`${this.baseUrl}/invoices/list`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const params = new URLSearchParams();
+    params.set('max', String(args.max || 100));
+    params.set('start', String(args.start || 0));
+    if (args.filter && typeof args.filter === 'object') {
+      for (const [k, v] of Object.entries(args.filter as Record<string, unknown>)) {
+        params.set(k, String(v));
+      }
+    }
+    const response = await fetch(`${this.baseUrl}/invoices?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list invoices (HTTP ${response.status}): ${err}` }], isError: true };
@@ -678,9 +714,15 @@ export class BillComMCPServer {
   }
 
   private async listChartOfAccounts(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { max: args.max || 100, start: args.start || 0 };
-    if (args.filter) body.filter = args.filter;
-    const response = await fetch(`${this.baseUrl}/chartofaccounts/list`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const params = new URLSearchParams();
+    params.set('max', String(args.max || 100));
+    params.set('start', String(args.start || 0));
+    if (args.filter && typeof args.filter === 'object') {
+      for (const [k, v] of Object.entries(args.filter as Record<string, unknown>)) {
+        params.set(k, String(v));
+      }
+    }
+    const response = await fetch(`${this.baseUrl}/classifications/chart-of-accounts?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list chart of accounts (HTTP ${response.status}): ${err}` }], isError: true };
@@ -690,8 +732,10 @@ export class BillComMCPServer {
   }
 
   private async listDepartments(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { max: args.max || 100, start: args.start || 0 };
-    const response = await fetch(`${this.baseUrl}/departments/list`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const params = new URLSearchParams();
+    params.set('max', String(args.max || 100));
+    params.set('start', String(args.start || 0));
+    const response = await fetch(`${this.baseUrl}/classifications/departments?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list departments (HTTP ${response.status}): ${err}` }], isError: true };

@@ -4,16 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 // No official Anthropic MCP server targeting the Claude REST API was found on GitHub.
 // github.com/anthropics/claude-ai-mcp is a communication/bug-reporting hub, not a tool server.
 // Community implementations exist but none have official Anthropic backing or 10+ tools.
+// Our adapter covers: 14 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://api.anthropic.com/v1
-// Auth: x-api-key header (API key from console.anthropic.com)
+// Auth: x-api-key header (API key from console.anthropic.com) + anthropic-version: 2023-06-01
 // Docs: https://docs.anthropic.com/en/api/overview
 // Rate limits: Varies by tier. Tier 1: 50 req/min. Tier 4: 4,000 req/min. See console for your tier.
 // Beta features (Files API): requires anthropic-beta: files-api-2025-04-14 header
+// Not covered (out of scope): Skills API (beta, POST/GET /v1/skills), Admin API (enterprise only),
+//   Completions API (legacy), file content download (GET /v1/files/{id}/content)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -251,6 +255,20 @@ export class AnthropicMCPServer {
         },
       },
       {
+        name: 'get_message_batch_results',
+        description: 'Stream the results of an ended message batch as JSONL. Returns each request result with custom_id and outcome. Poll get_message_batch until processing_status is "ended" before calling this.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            batch_id: {
+              type: 'string',
+              description: 'ID of the ended message batch to retrieve results for (e.g. msgbatch_...)',
+            },
+          },
+          required: ['batch_id'],
+        },
+      },
+      {
         name: 'upload_file',
         description: 'Upload a file to Anthropic secure storage for reuse across API calls. Returns a file_id. Requires Files API beta. Supports PDF, plain text, and image files up to 500MB.',
         inputSchema: {
@@ -345,6 +363,8 @@ export class AnthropicMCPServer {
           return await this.cancelMessageBatch(args);
         case 'delete_message_batch':
           return await this.deleteMessageBatch(args);
+        case 'get_message_batch_results':
+          return await this.getMessageBatchResults(args);
         case 'upload_file':
           return await this.uploadFile(args);
         case 'list_files':
@@ -525,7 +545,7 @@ export class AnthropicMCPServer {
   }
 
   private async getMessageBatch(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/messages/batches/${String(args.batch_id)}`, {
+    const response = await fetch(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}`, {
       headers: this.headers,
     });
 
@@ -544,7 +564,7 @@ export class AnthropicMCPServer {
   }
 
   private async cancelMessageBatch(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/messages/batches/${String(args.batch_id)}/cancel`, {
+    const response = await fetch(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}/cancel`, {
       method: 'POST',
       headers: this.headers,
     });
@@ -564,7 +584,7 @@ export class AnthropicMCPServer {
   }
 
   private async deleteMessageBatch(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/messages/batches/${String(args.batch_id)}`, {
+    const response = await fetch(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -579,6 +599,25 @@ export class AnthropicMCPServer {
     const data = await response.json().catch(() => ({ deleted: true }));
     return {
       content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      isError: false,
+    };
+  }
+
+  private async getMessageBatchResults(args: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}/results`, {
+      headers: this.headers,
+    });
+
+    if (!response.ok) {
+      return {
+        content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }],
+        isError: true,
+      };
+    }
+
+    const text = await response.text();
+    return {
+      content: [{ type: 'text', text: this.truncate(text) }],
       isError: false,
     };
   }
@@ -663,7 +702,7 @@ export class AnthropicMCPServer {
   }
 
   private async getFileMetadata(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/files/${String(args.file_id)}`, {
+    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(String(args.file_id))}`, {
       headers: this.filesHeaders,
     });
 
@@ -682,7 +721,7 @@ export class AnthropicMCPServer {
   }
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/files/${String(args.file_id)}`, {
+    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(String(args.file_id))}`, {
       method: 'DELETE',
       headers: this.filesHeaders,
     });
@@ -711,7 +750,7 @@ export class AnthropicMCPServer {
       toolNames: [
         'create_message', 'list_models', 'get_model', 'count_tokens',
         'create_message_batch', 'list_message_batches', 'get_message_batch',
-        'cancel_message_batch', 'delete_message_batch',
+        'get_message_batch_results', 'cancel_message_batch', 'delete_message_batch',
         'upload_file', 'list_files', 'get_file_metadata', 'delete_file',
       ],
       description: 'Interact with the Anthropic Claude API: send messages, list models, count tokens, manage message batches, and manage uploaded files.',

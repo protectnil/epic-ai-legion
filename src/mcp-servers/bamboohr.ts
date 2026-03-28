@@ -4,11 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
+// No official BambooHR MCP server was found on GitHub, npmjs.com, or BambooHR's developer portal.
 // Community servers exist (encoreshao/bamboohr-mcp, evrimalacan/mcp-bamboohr, zuharz/bamboo-mcp-unofficial,
 // a-isakov/bamboohr-mcp) but none are vendor-official, actively maintained with 10+ tools, or on a
-// published transport. All are community-authored, low-star, and insufficient for production use.
-// Recommendation: Use this REST wrapper for all deployments.
+// published transport. All are community-authored, low-star, and insufficient for production use per
+// the four MCP criteria. Our adapter covers: 26 tools.
+// Recommendation: use-rest-api — use this REST wrapper for all deployments.
 //
 // Base URL: https://api.bamboohr.com/api/gateway.php/{companyDomain}/v1
 // Auth: HTTP Basic — API key as username, any non-empty string as password (e.g. "x")

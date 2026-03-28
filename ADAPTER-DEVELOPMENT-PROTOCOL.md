@@ -41,7 +41,15 @@ Build a REST wrapper when ANY of these are true:
 
 ### When to ship both
 
-Never ship both for the same vendor in the same deployment. The adapter catalog lists one entry per vendor. If a vendor MCP server exists, note it in the file header so future contributors can evaluate migration. The FederationManager connects one integration per vendor, never both simultaneously.
+When the vendor's MCP server and REST API have **non-overlapping tools** — each exposes operations the other doesn't — ship both to achieve full coverage. The adapter catalog lists one entry per vendor with `type: 'both'`. The FederationManager routes each tool call to the appropriate transport:
+
+- Tools that exist in the vendor MCP are routed through the MCP connection
+- Tools that only exist in the REST API are routed through our REST adapter
+- For tools that exist in both (shared), the MCP connection takes priority
+
+The REST adapter file header must document which tools come from each source. This is NOT the same as running two competing integrations — it is a single logical adapter with unified tool routing across two transports.
+
+If the vendor's MCP and API are strict supersets/subsets of each other (one covers everything the other does), use only the richer one — do not ship both.
 
 ### Documentation requirement
 

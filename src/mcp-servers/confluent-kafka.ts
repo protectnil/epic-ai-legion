@@ -4,19 +4,42 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/confluentinc/mcp-confluent — transport: stdio, auth: API key
-//   Officially maintained by Confluent. Covers 24 tools for topics, connectors, Flink, and Schema Registry.
-//   Our adapter covers: 20 tools (environments, clusters, topics, connectors, schema registry, consumer groups, ACLs).
-//   Vendor MCP covers: topics, connectors, Flink SQL, Schema Registry, catalog tags.
-// Recommendation: Use vendor MCP for Flink SQL and catalog tag operations. Use this adapter for
-//   air-gapped deployments or environments where the Node.js mcp-confluent runtime is not available.
+// Official MCP: https://github.com/confluentinc/mcp-confluent — transport: stdio/SSE/HTTP, auth: API key
+//   Officially maintained by Confluent (confluentinc org). Latest release: v1.1.0 (Mar 2026). Actively maintained.
+//   Vendor MCP exposes 39 tools: list-topics, create-topics, delete-topics, produce-message, consume-messages,
+//     list-flink-statements, create-flink-statement, read-flink-statement, delete-flink-statements,
+//     get-flink-statement-exceptions, list-flink-catalogs, list-flink-databases, list-flink-tables,
+//     describe-flink-table, get-flink-table-info, check-flink-statement-health, detect-flink-statement-issues,
+//     get-flink-statement-profile, list-connectors, read-connector, create-connector, delete-connector,
+//     search-topics-by-tag, search-topics-by-name, create-topic-tags, delete-tag, remove-tag-from-entity,
+//     add-tags-to-topic, list-tags, alter-topic-config, list-clusters, list-environments, read-environment,
+//     list-schemas, delete-schema, get-topic-config, create-tableflow-topic, list-tableflow-topics,
+//     create-tableflow-catalog-integration
+//
+// Integration: use-both
+//   MCP-sourced tools (unique to MCP, not in our adapter): produce-message, consume-messages,
+//     list-flink-statements, create-flink-statement, read-flink-statement, delete-flink-statements,
+//     get-flink-statement-exceptions, list-flink-catalogs, list-flink-databases, list-flink-tables,
+//     describe-flink-table, get-flink-table-info, check-flink-statement-health, detect-flink-statement-issues,
+//     get-flink-statement-profile, search-topics-by-tag, search-topics-by-name, create-topic-tags, delete-tag,
+//     remove-tag-from-entity, add-tags-to-topic, list-tags, alter-topic-config, delete-schema,
+//     create-tableflow-topic, list-tableflow-topics, create-tableflow-catalog-integration
+//   REST-adapter-only tools (not covered by vendor MCP): list_consumer_groups, get_consumer_group,
+//     pause_connector, resume_connector, register_schema, delete_subject, list_subjects, get_schema
+//   Shared (both cover, MCP takes priority): list_environments/list-environments, list_kafka_clusters/list-clusters,
+//     get_kafka_cluster/read-environment, list_topics/list-topics, create_topic/create-topics,
+//     delete_topic/delete-topics, get_topic_config/get-topic-config, list_connectors/list-connectors,
+//     get_connector/read-connector, create_connector/create-connector, delete_connector/delete-connector,
+//     list_schemas/list-schemas
+//
+// Our adapter covers: 20 tools. Vendor MCP covers: 39 tools. Combined coverage: ~48 unique tools.
 //
 // Base URL: https://api.confluent.cloud (control plane)
 //   Kafka REST Proxy: per-cluster endpoint from Confluent Cloud Console → Cluster Settings
 // Auth: HTTP Basic auth — base64(apiKey:apiSecret)
 //   Control plane uses Cloud-level API key. Kafka REST Proxy uses cluster-scoped API key.
 // Docs: https://docs.confluent.io/cloud/current/api.html
-// Rate limits: Standard Confluent Cloud throttling per API key; no hard limit publicly documented
+// Rate limits: Metrics API: 300 req/min per IP global limit. Control plane: not publicly documented per-key.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

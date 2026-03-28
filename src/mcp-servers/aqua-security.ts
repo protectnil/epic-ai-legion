@@ -4,10 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/aquasecurity/trivy-mcp — transport: stdio/HTTP/SSE, auth: none (wraps local CLI)
-// The official trivy-mcp wraps the Trivy open-source CLI scanner. It is NOT a Aqua SaaS platform API client.
-// It has no tools for image management, runtime containers, assurance policies, or risk dashboards.
-// Recommendation: Use trivy-mcp for local/CI scanning. Use this adapter for the Aqua SaaS platform API.
+// Official MCP: https://github.com/aquasecurity/trivy-mcp — transport: stdio + streamable-HTTP, auth: none (wraps local CLI)
+// The official trivy-mcp wraps the Trivy open-source CLI scanner. It is actively maintained (last commit Dec 17, 2025).
+// trivy-mcp exposes 6 tools for LOCAL/CI scanning only: scan_filesystem, scan_image, scan_repository,
+// findings_list, findings_get, trivy_version. It has NO tools for SaaS platform management.
+// This REST adapter covers 13 SaaS platform tools (images, containers, policies, registries, functions, risk).
+// Zero overlap between trivy-mcp tools and this adapter's tools — each side is entirely non-overlapping.
+//
+// Integration: use-both
+// MCP-sourced tools (6): scan_filesystem, scan_image, scan_repository, findings_list, findings_get, trivy_version
+// REST-sourced tools (13): list_images, get_image, get_image_vulnerabilities, get_image_sensitive_data,
+//   search_vulnerabilities, list_running_containers, list_image_assurance_policies,
+//   get_image_assurance_policy, list_runtime_policies, get_risk_explorer,
+//   list_registries, get_registry, list_functions
+// Combined coverage: 19 tools (MCP: 6 + REST: 13 — shared: 0)
 //
 // Base URL: https://api.cloudsploit.com (US default)
 //   EU-1: https://eu-1.api.cloudsploit.com

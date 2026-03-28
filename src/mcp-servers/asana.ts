@@ -4,10 +4,26 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Asana-published MCP server was found on GitHub. Community implementations
-// exist (roychri/mcp-server-asana, adlio/asanamcp) but are not Asana-official and have
-// limited tool coverage. This adapter provides full REST API coverage.
+// Official MCP: https://developers.asana.com/docs/mcp-server (vendor-hosted V2) — transport: streamable-HTTP, auth: OAuth2
+// Asana publishes an official MCP V2 server (generally available as of 2026-02, V1 deprecated 2026-05-11).
+// It is actively maintained. Exposes 15 tools (as of 2026-03-28). Does NOT expose stories/comments.
+// Our adapter covers: 28 tools (full REST surface including delete, subtasks, sections, stories).
+// Vendor MCP V2 tools (15): search_objects, search_tasks, get_status_overview, get_task, get_tasks,
+//   create_task, update_task, create_project, get_project, get_projects, get_portfolio, get_portfolios,
+//   get_items_for_portfolio, get_user, get_workspace_users
+// Integration: use-both
+// MCP-sourced tools (5 unique to MCP, not in our REST adapter):
+//   search_objects, get_status_overview, get_tasks, get_projects, get_portfolios
+// REST-sourced tools (18 unique to REST, not in vendor MCP):
+//   list_workspaces, delete_task, add_task_to_project, list_task_subtasks, create_subtask,
+//   list_projects, delete_project, update_project, list_sections, create_section,
+//   move_task_to_section, list_teams, list_team_members, list_portfolios, list_portfolio_items,
+//   list_tags, list_task_stories, create_task_story
+// Shared (in both MCP and REST): search_tasks/search_tasks, get_task/get_task, create_task/create_task,
+//   update_task/update_task, create_project/create_project, get_project/get_project,
+//   get_portfolio/get_portfolio, get_items_for_portfolio/list_portfolio_items, get_user/get_user,
+//   get_workspace_users/list_workspace_users
+// NOTE: Stories/comments are NOT in MCP V2. Our list_task_stories and create_task_story are REST-only.
 //
 // Base URL: https://app.asana.com/api/1.0
 // Auth: Bearer token — Personal Access Token (PAT) from Asana My Profile Settings

@@ -4,14 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Bloomerang MCP server was found on GitHub or npm. Community list entries
-// (e.g., PipedreamHQ/awesome-mcp-servers) reference Bloomerang by name but link to no
-// published repository. Build this REST wrapper for all deployments.
+// Official MCP: None found as of 2026-03-28
+// No official Bloomerang MCP server was found on GitHub, npm, or any vendor-published source.
+// Build this REST wrapper for all deployments.
 //
-// Base URL: https://api.bloomerang.com/v2
-// Auth: Bearer token (private API key generated in Bloomerang Admin → User Settings)
-//       OR OAuth2 client credentials (POST /oauth/token, Basic clientId:clientSecret)
+// Base URL: https://api.bloomerang.co/v2
+// Auth: Private API key → X-API-KEY header (generated in Bloomerang Admin → User Settings).
+//       OAuth2 access token (after POST https://crm.bloomerang.co/oauth/token) → Authorization: Bearer <token>
 // Docs: https://bloomerang.com/api/rest-api/
 // Rate limits: Not publicly documented; treat conservatively (~60 req/min)
 
@@ -37,7 +36,7 @@ export class BloomerangMCPServer {
     this.apiToken = config.apiToken ?? null;
     this.clientId = config.clientId ?? null;
     this.clientSecret = config.clientSecret ?? null;
-    this.baseUrl = config.baseUrl ?? 'https://api.bloomerang.com/v2';
+    this.baseUrl = config.baseUrl ?? 'https://api.bloomerang.co/v2';
   }
 
   static catalog() {
@@ -462,18 +461,23 @@ export class BloomerangMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private async getOrRefreshToken(): Promise<string> {
-    // Private key path — no refresh needed
-    if (this.apiToken) return this.apiToken;
+  // Returns { header, value } — private key uses X-API-KEY; OAuth2 uses Authorization: Bearer
+  private async getAuthHeaders(): Promise<Record<string, string>> {
+    if (this.apiToken) {
+      // Private API key: sent as X-API-KEY header (not Bearer)
+      return { 'X-API-KEY': this.apiToken };
+    }
 
     // OAuth2 path
     if (!this.clientId || !this.clientSecret) {
       throw new Error('Bloomerang: provide apiToken or clientId+clientSecret in config');
     }
     const now = Date.now();
-    if (this.bearerToken && this.tokenExpiry > now) return this.bearerToken;
+    if (this.bearerToken && this.tokenExpiry > now) {
+      return { 'Authorization': `Bearer ${this.bearerToken}` };
+    }
 
-    const response = await fetch(`${this.baseUrl}/oauth/token`, {
+    const response = await fetch('https://crm.bloomerang.co/oauth/token', {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -485,14 +489,14 @@ export class BloomerangMCPServer {
     const data = await response.json() as { access_token: string; expires_in: number };
     this.bearerToken = data.access_token;
     this.tokenExpiry = now + (data.expires_in - 60) * 1000;
-    return this.bearerToken;
+    return { 'Authorization': `Bearer ${this.bearerToken}` };
   }
 
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
-    const token = await this.getOrRefreshToken();
+    const authHeaders = await this.getAuthHeaders();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
     const response = await fetch(`${this.baseUrl}${path}${qs}`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
@@ -502,10 +506,10 @@ export class BloomerangMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const token = await this.getOrRefreshToken();
+    const authHeaders = await this.getAuthHeaders();
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -516,10 +520,10 @@ export class BloomerangMCPServer {
   }
 
   private async put(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const token = await this.getOrRefreshToken();
+    const authHeaders = await this.getAuthHeaders();
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -571,7 +575,7 @@ export class BloomerangMCPServer {
       skip: String((args.skip as number) ?? 0),
       take: String((args.take as number) ?? 50),
     };
-    return this.get('/constituent/search', params);
+    return this.get('/constituents/search', params);
   }
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {

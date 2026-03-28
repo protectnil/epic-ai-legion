@@ -4,15 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/trycourier/courier-mcp — transport: stdio, auth: API key
-// Our adapter covers: 18 tools (send, messages, profiles, lists, brands, templates, bulk, automations).
-// Vendor MCP covers: core send operations.
-// Recommendation: Use this adapter for broader API coverage. Use vendor MCP for minimal footprint deployments.
+// Official MCP: https://github.com/trycourier/courier-mcp — transport: streamable-HTTP, auth: API key header
+// Published by trycourier (official Courier org, verified github.com/trycourier). Last updated: 2026-03-18.
+// Our adapter covers: 18 tools. Vendor MCP covers: 60 tools (full API surface).
+// Recommendation: use-vendor-mcp — the official Courier MCP is actively maintained (updated 2026-03-18),
+//   exposes 60 tools covering the full API (strict superset of our 18 tools), and supports streamable-HTTP.
+//   All 18 of our tools map to equivalent MCP tools; MCP adds 42 more (audiences, automations, bulk,
+//   tenants, users/preferences, translations, inbound, audit events, auth tokens, brand create/delete).
+//   Keep this REST adapter for air-gapped deployments that cannot reach the hosted MCP endpoint.
+// NOTE: Vendor MCP (https://github.com/trycourier/courier-mcp) exposes 60 tools — superset of REST API.
+//   Prefer vendor MCP for full coverage. Use this adapter for air-gapped deployments.
 //
 // Base URL: https://api.courier.com
 // Auth: Bearer token (Authorization: Bearer {API_KEY}) — API key from Courier dashboard
 // Docs: https://www.courier.com/docs/reference/
-// Rate limits: Not publicly specified; use exponential backoff on 429 responses
+// Rate limits: Lists POST /subscriptions: 20 req/min; PUT /lists: 20 req/min;
+//              Brands PUT: 200 req/min; Events PUT: 20 req/min. Other endpoints: not specified.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

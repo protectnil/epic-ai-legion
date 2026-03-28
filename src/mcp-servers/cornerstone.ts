@@ -4,10 +4,12 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Cornerstone OnDemand MCP server was found on GitHub or the Cornerstone developer portal.
+// Official MCP: None found as of 2026-03-28
+// No official Cornerstone OnDemand MCP server was found on GitHub, npmjs.com, or the Cornerstone developer portal.
 //
-// Base URL: https://{corpname}.csod.com/services/api/v1  (corpname is your Cornerstone portal subdomain)
+// Base URL: https://{corpname}.csod.com  (paths vary by API family — see implementations below)
+//   User/Employee API: /services/api/x/users/v1/employees/
+//   Learning/Transcript API: /services/api/v1/learning/ and /services/api/v1/transcripts/
 // Auth: OAuth2 client credentials — token endpoint: https://{corpname}.csod.com/services/api/oauth2/token
 // Docs: https://csod.dev
 // Rate limits: 417 req/min, 25,000 req/hr, 600,000 req/day (Foundational APIs); varies by endpoint
@@ -18,7 +20,7 @@ interface CornerstoneConfig {
   clientId: string;
   clientSecret: string;
   corpname: string;           // subdomain, e.g. "acme" for acme.csod.com
-  baseUrl?: string;           // optional override; defaults to https://{corpname}.csod.com/services/api/v1
+  baseUrl?: string;           // optional override; defaults to https://{corpname}.csod.com
 }
 
 export class CornerstoneMCPServer {
@@ -33,7 +35,7 @@ export class CornerstoneMCPServer {
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.corpname = config.corpname;
-    this.baseUrl = config.baseUrl || `https://${config.corpname}.csod.com/services/api/v1`;
+    this.baseUrl = config.baseUrl || `https://${config.corpname}.csod.com`;
   }
 
   static catalog() {
@@ -544,21 +546,34 @@ export class CornerstoneMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
+  private async csodPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PATCH',
+      headers: await this.headers(),
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
   // --- Tool implementations ---
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.csodGet(`/users/${encodeURIComponent(args.user_id as string)}`);
+    return this.csodGet(`/services/api/x/users/v1/employees/${encodeURIComponent(args.user_id as string)}`);
   }
 
   private async searchUsers(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {
-      page: String((args.page as number) ?? 1),
+      pagenumber: String((args.page as number) ?? 1),
       pageSize: String((args.page_size as number) ?? 50),
     };
-    if (args.query) params.q = args.query as string;
-    if (args.status) params.status = args.status as string;
-    return this.csodGet('/users', params);
+    if (args.query) params.lastname = args.query as string;
+    if (args.status) params.includeInactive = args.status === 'Inactive' ? 'true' : 'false';
+    return this.csodGet('/services/api/x/users/v1/employees', params);
   }
 
   private async listLearningObjects(args: Record<string, unknown>): Promise<ToolResult> {
@@ -569,12 +584,12 @@ export class CornerstoneMCPServer {
     if (args.lo_type) params.loType = args.lo_type as string;
     if (args.status) params.status = args.status as string;
     if (args.keyword) params.keyword = args.keyword as string;
-    return this.csodGet('/learning/lo', params);
+    return this.csodGet('/services/api/v1/learning/lo', params);
   }
 
   private async getLearningObject(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.lo_id) return { content: [{ type: 'text', text: 'lo_id is required' }], isError: true };
-    return this.csodGet(`/learning/lo/${encodeURIComponent(args.lo_id as string)}`);
+    return this.csodGet(`/services/api/v1/learning/lo/${encodeURIComponent(args.lo_id as string)}`);
   }
 
   private async getUserTranscript(args: Record<string, unknown>): Promise<ToolResult> {
@@ -584,8 +599,9 @@ export class CornerstoneMCPServer {
       pageSize: String((args.page_size as number) ?? 50),
     };
     if (args.status) params.status = args.status as string;
-    if (args.lo_type) params.loType = args.lo_type as string;
-    return this.csodGet(`/users/${encodeURIComponent(args.user_id as string)}/transcript`, params);
+    if (args.lo_type) params.trainingType = args.lo_type as string;
+    params.externalId = args.user_id as string;
+    return this.csodGet('/services/api/v1/transcripts/overview', params);
   }
 
   private async assignTraining(args: Record<string, unknown>): Promise<ToolResult> {
@@ -596,7 +612,7 @@ export class CornerstoneMCPServer {
     };
     if (args.due_date) body.dueDate = args.due_date;
     if (typeof args.send_notification === 'boolean') body.sendNotification = args.send_notification;
-    return this.csodPost('/transcripts/assign', body);
+    return this.csodPost('/services/api/v1/transcripts/assign', body);
   }
 
   private async completeTraining(args: Record<string, unknown>): Promise<ToolResult> {
@@ -604,12 +620,12 @@ export class CornerstoneMCPServer {
     const body: Record<string, unknown> = { userId: args.user_id, loId: args.lo_id };
     if (args.completion_date) body.completionDate = args.completion_date;
     if (args.score !== undefined) body.score = args.score;
-    return this.csodPost('/transcripts/complete', body);
+    return this.csodPatch('/services/api/v1/transcripts/complete', body);
   }
 
   private async updateTranscriptProgress(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id || !args.lo_id) return { content: [{ type: 'text', text: 'user_id and lo_id are required' }], isError: true };
-    return this.csodPost('/transcripts/progress', { userId: args.user_id, loId: args.lo_id });
+    return this.csodPatch('/services/api/v1/transcripts/progress', { userId: args.user_id, loId: args.lo_id });
   }
 
   private async listSessions(args: Record<string, unknown>): Promise<ToolResult> {
@@ -620,12 +636,12 @@ export class CornerstoneMCPServer {
     };
     if (args.start_date_from) params.startDateFrom = args.start_date_from as string;
     if (args.start_date_to) params.startDateTo = args.start_date_to as string;
-    return this.csodGet(`/learning/lo/${encodeURIComponent(args.event_lo_id as string)}/sessions`, params);
+    return this.csodGet(`/services/api/v1/learning/lo/${encodeURIComponent(args.event_lo_id as string)}/sessions`, params);
   }
 
   private async getSession(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    return this.csodGet(`/learning/sessions/${encodeURIComponent(args.session_id as string)}`);
+    return this.csodGet(`/services/api/v1/learning/sessions/${encodeURIComponent(args.session_id as string)}`);
   }
 
   private async createSession(args: Record<string, unknown>): Promise<ToolResult> {
@@ -640,7 +656,7 @@ export class CornerstoneMCPServer {
     if (args.location) body.location = args.location;
     if (args.max_seats) body.maxSeats = args.max_seats;
     if (args.instructor_user_id) body.instructorUserId = args.instructor_user_id;
-    return this.csodPost('/learning/sessions', body);
+    return this.csodPost('/services/api/v1/learning/sessions', body);
   }
 
   private async listCurricula(args: Record<string, unknown>): Promise<ToolResult> {
@@ -651,12 +667,12 @@ export class CornerstoneMCPServer {
     };
     if (args.keyword) params.keyword = args.keyword as string;
     if (args.status) params.status = args.status as string;
-    return this.csodGet('/learning/lo', params);
+    return this.csodGet('/services/api/v1/learning/lo', params);
   }
 
   private async getCurriculum(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.curriculum_id) return { content: [{ type: 'text', text: 'curriculum_id is required' }], isError: true };
-    return this.csodGet(`/learning/lo/${encodeURIComponent(args.curriculum_id as string)}`);
+    return this.csodGet(`/services/api/v1/learning/lo/${encodeURIComponent(args.curriculum_id as string)}`);
   }
 
   private async searchTranscript(args: Record<string, unknown>): Promise<ToolResult> {
@@ -664,24 +680,25 @@ export class CornerstoneMCPServer {
       page: String((args.page as number) ?? 1),
       pageSize: String((args.page_size as number) ?? 50),
     };
-    if (args.lo_id) params.loId = args.lo_id as string;
+    if (args.lo_id) params.learningObjectId = args.lo_id as string;
     if (args.status) params.status = args.status as string;
     if (args.completed_from) params.completedFrom = args.completed_from as string;
     if (args.completed_to) params.completedTo = args.completed_to as string;
-    return this.csodGet('/transcripts', params);
+    return this.csodGet('/services/api/v1/transcripts/overview', params);
   }
 
   private async listGroups(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {
-      page: String((args.page as number) ?? 1),
+      pagenumber: String((args.page as number) ?? 1),
       pageSize: String((args.page_size as number) ?? 50),
     };
-    if (args.keyword) params.keyword = args.keyword as string;
-    return this.csodGet('/groups', params);
+    if (args.keyword) params.lastname = args.keyword as string;
+    return this.csodGet('/services/api/x/users/v1/employees/groups', params);
   }
 
   private async getGroup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.group_id) return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
-    return this.csodGet(`/groups/${encodeURIComponent(args.group_id as string)}`);
+    const params: Record<string, string> = { id: args.group_id as string };
+    return this.csodGet('/services/api/x/users/v1/employees/groups', params);
   }
 }

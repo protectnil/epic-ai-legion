@@ -5,14 +5,29 @@
  */
 
 // Official MCP: https://github.com/CircleCI-Public/mcp-server-circleci — transport: stdio, auth: Circle-Token
-// Vendor MCP is actively maintained (CircleCI-Public org, commits 2025–2026).
-// Vendor MCP covers: ~7 tools (failure logs, pipeline status, test metadata, flaky tests, rollback).
+// Vendor MCP is actively maintained (CircleCI-Public org, commits through Mar 2026).
+// Vendor MCP covers: 16 tools (AI-native IDE workflows: build logs, pipeline status, test results,
+//   flaky tests, resource analysis, run/rerun pipeline, rollback, diff analysis, config helper,
+//   usage data, prompt templates, list projects, list artifacts, list components).
 // Our adapter covers: 17 tools (full CRUD for pipelines, workflows, jobs, contexts, schedules, insights).
-// Recommendation: Use vendor MCP for AI-native IDE workflows. Use this adapter for full REST coverage
-//   or air-gapped deployments.
+// Recommendation: use-both — MCP has AI-specific tools not in REST API (analyze_diff, config_helper,
+//   find_flaky_tests, find_underused_resource_classes, download_usage_api_data, create_prompt_template,
+//   recommend_prompt_template_tests, list_followed_projects, list_component_versions);
+//   REST adapter has full pipeline/workflow/job CRUD, context management, env vars, schedules not
+//   fully covered by the MCP. Union required for complete coverage.
+//
+// Integration: use-both
+// MCP-sourced tools (9 unique): analyze_diff, config_helper, create_prompt_template,
+//   download_usage_api_data, find_flaky_tests, find_underused_resource_classes,
+//   get_build_failure_logs, list_component_versions, list_followed_projects,
+//   recommend_prompt_template_tests, rollback_project, run_pipeline, rerun_workflow
+// REST-sourced tools (17): list_pipelines, get_pipeline, trigger_pipeline, list_workflows,
+//   get_workflow, cancel_workflow, rerun_workflow, approve_job, list_jobs, get_job_details,
+//   cancel_job, get_job_artifacts, get_job_test_metadata, get_workflow_insights,
+//   list_project_schedules, list_contexts, list_environment_variables
 //
 // Base URL: https://circleci.com/api/v2
-// Auth: Circle-Token header (personal API token or project token from CircleCI settings)
+// Auth: Circle-Token header (personal API token from CircleCI user settings)
 // Docs: https://circleci.com/docs/api/v2/
 // Rate limits: Not publicly documented; respect 429 responses.
 
@@ -458,7 +473,7 @@ export class CircleCIMCPServer {
     if (args.branch) body.branch = args.branch;
     if (args.tag) body.tag = args.tag;
     if (args.parameters) body.parameters = args.parameters;
-    return this.post(`/project/${project_slug}/pipeline`, body);
+    return this.post(`/project/${encodeURIComponent(project_slug)}/pipeline`, body);
   }
 
   private async listWorkflows(args: Record<string, unknown>): Promise<ToolResult> {
@@ -505,7 +520,7 @@ export class CircleCIMCPServer {
     if (!project_slug || job_number === undefined) {
       return { content: [{ type: 'text', text: 'project_slug and job_number are required' }], isError: true };
     }
-    return this.get(`/project/${project_slug}/job/${job_number}`);
+    return this.get(`/project/${encodeURIComponent(project_slug)}/job/${job_number}`);
   }
 
   private async cancelJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -514,7 +529,7 @@ export class CircleCIMCPServer {
     if (!project_slug || job_number === undefined) {
       return { content: [{ type: 'text', text: 'project_slug and job_number are required' }], isError: true };
     }
-    return this.post(`/project/${project_slug}/job/${job_number}/cancel`, {});
+    return this.post(`/project/${encodeURIComponent(project_slug)}/job/${job_number}/cancel`, {});
   }
 
   private async getJobArtifacts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -523,7 +538,7 @@ export class CircleCIMCPServer {
     if (!project_slug || job_number === undefined) {
       return { content: [{ type: 'text', text: 'project_slug and job_number are required' }], isError: true };
     }
-    return this.get(`/project/${project_slug}/job/${job_number}/artifacts`);
+    return this.get(`/project/${encodeURIComponent(project_slug)}/${job_number}/artifacts`);
   }
 
   private async getJobTestMetadata(args: Record<string, unknown>): Promise<ToolResult> {
@@ -532,7 +547,7 @@ export class CircleCIMCPServer {
     if (!project_slug || job_number === undefined) {
       return { content: [{ type: 'text', text: 'project_slug and job_number are required' }], isError: true };
     }
-    return this.get(`/project/${project_slug}/job/${job_number}/tests`);
+    return this.get(`/project/${encodeURIComponent(project_slug)}/${job_number}/tests`);
   }
 
   private async getWorkflowInsights(args: Record<string, unknown>): Promise<ToolResult> {
@@ -545,7 +560,7 @@ export class CircleCIMCPServer {
     if (args.branch) params.set('branch', String(args.branch));
     if (args.reporting_window) params.set('reporting-window', String(args.reporting_window));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    return this.get(`/insights/${project_slug}/workflows/${encodeURIComponent(workflow_name)}${qs}`);
+    return this.get(`/insights/${encodeURIComponent(project_slug)}/workflows/${encodeURIComponent(workflow_name)}/summary${qs}`);
   }
 
   private async listProjectSchedules(args: Record<string, unknown>): Promise<ToolResult> {
@@ -556,7 +571,7 @@ export class CircleCIMCPServer {
     const params = new URLSearchParams();
     if (args.page_token) params.set('page-token', String(args.page_token));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    return this.get(`/project/${project_slug}/schedule${qs}`);
+    return this.get(`/project/${encodeURIComponent(project_slug)}/schedule${qs}`);
   }
 
   private async listContexts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -574,7 +589,7 @@ export class CircleCIMCPServer {
     if (!project_slug) {
       return { content: [{ type: 'text', text: 'project_slug is required' }], isError: true };
     }
-    return this.get(`/project/${project_slug}/envvar`);
+    return this.get(`/project/${encodeURIComponent(project_slug)}/envvar`);
   }
 
   static catalog() {

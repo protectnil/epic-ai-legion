@@ -4,18 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None publicly released as of 2026-03
-// Athenahealth previewed an MCP server at HIMSS 2026 (patient-consent model for AI agents),
-// but no public GitHub repository or npm package has been released. Two community adapters exist:
-//   - https://github.com/ophydami/Athenahealth-MCP  (community)
-//   - https://github.com/ibbykhazanchi/athenahealth-mcp  (community)
-// Neither is an official Athenahealth publication. Our adapter is a verified REST wrapper.
+// Official MCP: None publicly released as of 2026-03-28.
+// Athenahealth announced/piloted an MCP server (athenaOne platform APIs, HIMSS 2026) but has not released
+// a public GitHub repo or npm package as of this date. Two community adapters exist:
+//   - https://github.com/ophydami/Athenahealth-MCP  (community, not official)
+//   - https://github.com/ibbykhazanchi/athenahealth-mcp  (community, not official, ~4 tools)
+// Neither qualifies under the official MCP criteria. Our adapter is a verified REST wrapper.
+// Our adapter covers: 19 tools. Vendor MCP covers: N/A (not released).
+// Recommendation: use-rest-api — no official MCP exists.
 //
 // Base URL (production): https://api.platform.athenahealth.com/v1/{practiceid}
 // Base URL (preview):    https://api.preview.platform.athenahealth.com/v1/{practiceid}
 // Auth: OAuth2 client credentials — token endpoint: https://api.platform.athenahealth.com/oauth2/v1/token
 //   Token request uses Basic auth (base64 clientId:clientSecret) + grant_type=client_credentials
 // Docs: https://docs.athenahealth.com/api/guides/overview
+//       https://dev-portal-prod.developer.athena.io/api/guides/products-needed-api
 // Rate limits: Not publicly specified; governed by partner tier. Use exponential backoff on 429.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -567,7 +570,7 @@ export class AthenaHealthMCPServer {
     if (!args.patient_id) return { content: [{ type: 'text', text: 'patient_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.department_id) params.departmentid = args.department_id as string;
-    return this.apiGet(`/chart/configuration`, params);
+    return this.apiGet(`/patients/${encodeURIComponent(args.patient_id as string)}/chart/summary`, params);
   }
 
   private async listProblems(args: Record<string, unknown>): Promise<ToolResult> {

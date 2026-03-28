@@ -4,18 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official AWS Textract-specific MCP server was found. The awslabs/mcp repository
-// (https://github.com/awslabs/mcp) contains general AWS tooling but no Textract server.
-// This adapter provides REST wrapper coverage via AWS SigV4-signed HTTPS requests.
+// (https://github.com/awslabs/mcp) contains 66 specialized servers but none for Textract.
+// The awslabs/document-loader-mcp-server parses local files via pdfplumber/markitdown —
+// it does NOT call Textract APIs. This adapter is the only REST wrapper for Textract.
+// Recommendation: use-rest-api — no viable MCP alternative exists.
 //
 // Base URL: https://textract.{region}.amazonaws.com (default region: us-east-1)
 // Auth: AWS Signature Version 4 (HMAC-SHA256). Requires accessKeyId, secretAccessKey, region.
 //       Optionally sessionToken for temporary credentials.
 // Docs: https://docs.aws.amazon.com/textract/latest/dg/API_Reference.html
-// Rate limits: Synchronous operations (DetectDocumentText, AnalyzeDocument, AnalyzeExpense,
-//              AnalyzeID): 1 TPS soft limit per account (region-specific). Async operations
-//              (Start*): 2 TPS. Hard limits vary; request increases via AWS Support.
+// Rate limits (us-east-1 defaults, soft limits — request increases via Service Quotas console):
+//   Sync: DetectDocumentText 25 TPS, AnalyzeDocument 10 TPS, AnalyzeExpense 5 TPS, AnalyzeID 5 TPS
+//   Async Start*: StartDocumentTextDetection 15 TPS, StartDocumentAnalysis 10 TPS,
+//                 StartExpenseAnalysis 5 TPS, StartLendingAnalysis 5 TPS
+//   Async Get*: GetDocumentTextDetection 25 TPS, GetDocumentAnalysis 10 TPS,
+//               GetExpenseAnalysis 5 TPS, GetLendingAnalysis 25 TPS
 // X-Amz-Target header format: Textract.{OperationName}
 // Service name for SigV4: textract
 
@@ -67,10 +72,19 @@ export class AWSTextractMCPServer {
         'get_document_analysis',
         'start_expense_analysis',
         'get_expense_analysis',
+        'start_lending_analysis',
+        'get_lending_analysis',
+        'get_lending_analysis_summary',
         'list_adapters',
         'get_adapter',
+        'create_adapter',
+        'update_adapter',
+        'delete_adapter',
+        'list_adapter_versions',
+        'get_adapter_version',
+        'delete_adapter_version',
       ],
-      description: 'AWS Textract document OCR and extraction: detect text, analyze forms and tables, extract expense data from invoices and receipts, parse identity documents, and run asynchronous document jobs.',
+      description: 'AWS Textract document OCR and extraction: detect text, analyze forms, tables, expenses, identity documents, and lending packages; run async jobs; manage custom adapters and adapter versions.',
       author: 'protectnil',
     };
   }
@@ -331,6 +345,76 @@ export class AWSTextractMCPServer {
         },
       },
       {
+        name: 'start_lending_analysis',
+        description: 'Start an async Textract Analyze Lending job for mortgage/loan documents stored in S3, classifying pages and extracting fields. Returns a JobId.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            s3_bucket: {
+              type: 'string',
+              description: 'S3 bucket containing the lending document (PDF, JPEG, or PNG).',
+            },
+            s3_key: {
+              type: 'string',
+              description: 'S3 object key of the lending document.',
+            },
+            client_request_token: {
+              type: 'string',
+              description: 'Idempotency token to avoid duplicate jobs on retry.',
+            },
+            job_tag: {
+              type: 'string',
+              description: 'Tag for the job, returned in SNS notifications.',
+            },
+            notification_channel_role_arn: {
+              type: 'string',
+              description: 'IAM role ARN for SNS notifications on job completion.',
+            },
+            notification_channel_sns_topic_arn: {
+              type: 'string',
+              description: 'SNS topic ARN to notify when the job completes.',
+            },
+          },
+          required: ['s3_bucket', 's3_key'],
+        },
+      },
+      {
+        name: 'get_lending_analysis',
+        description: 'Get per-page results from a completed async Analyze Lending job by JobId, including classified page types and extracted field data. Paginate with NextToken.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            job_id: {
+              type: 'string',
+              description: 'Job identifier returned by start_lending_analysis.',
+            },
+            max_results: {
+              type: 'number',
+              description: 'Maximum number of results per call (default: 30, max: 30).',
+            },
+            next_token: {
+              type: 'string',
+              description: 'Pagination token from a previous get_lending_analysis response.',
+            },
+          },
+          required: ['job_id'],
+        },
+      },
+      {
+        name: 'get_lending_analysis_summary',
+        description: 'Get a high-level summary of a completed async Analyze Lending job by JobId, including document-level classifications and aggregate field extractions.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            job_id: {
+              type: 'string',
+              description: 'Job identifier returned by start_lending_analysis.',
+            },
+          },
+          required: ['job_id'],
+        },
+      },
+      {
         name: 'list_adapters',
         description: 'List Textract adapters (custom models) available in the account, with optional filter by adapter name and pagination.',
         inputSchema: {
@@ -365,6 +449,130 @@ export class AWSTextractMCPServer {
           required: ['adapter_id'],
         },
       },
+      {
+        name: 'create_adapter',
+        description: 'Create a new Textract custom adapter fine-tuned for QUERIES feature type on user-provided documents. Returns an AdapterId.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            adapter_name: {
+              type: 'string',
+              description: 'Name for the new adapter (1-128 chars, alphanumeric, hyphens, underscores).',
+            },
+            description: {
+              type: 'string',
+              description: 'Optional description for the adapter.',
+            },
+            auto_update: {
+              type: 'string',
+              description: 'Whether Textract automatically updates the adapter: ENABLED or DISABLED (default: DISABLED).',
+            },
+            client_request_token: {
+              type: 'string',
+              description: 'Idempotency token to avoid creating duplicate adapters on retry.',
+            },
+          },
+          required: ['adapter_name'],
+        },
+      },
+      {
+        name: 'update_adapter',
+        description: 'Update the name, description, or auto-update setting of an existing Textract custom adapter.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            adapter_id: {
+              type: 'string',
+              description: 'Unique identifier of the Textract adapter to update.',
+            },
+            description: {
+              type: 'string',
+              description: 'New description for the adapter.',
+            },
+            adapter_name: {
+              type: 'string',
+              description: 'New name for the adapter.',
+            },
+            auto_update: {
+              type: 'string',
+              description: 'New auto-update setting: ENABLED or DISABLED.',
+            },
+          },
+          required: ['adapter_id'],
+        },
+      },
+      {
+        name: 'delete_adapter',
+        description: 'Permanently delete a Textract custom adapter and all its versions by adapter ID.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            adapter_id: {
+              type: 'string',
+              description: 'Unique identifier of the Textract adapter to delete.',
+            },
+          },
+          required: ['adapter_id'],
+        },
+      },
+      {
+        name: 'list_adapter_versions',
+        description: 'List versions of a specific Textract adapter, with optional status filter and pagination.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            adapter_id: {
+              type: 'string',
+              description: 'Unique identifier of the Textract adapter whose versions to list.',
+            },
+            max_results: {
+              type: 'number',
+              description: 'Maximum number of adapter versions to return (default: 100).',
+            },
+            next_token: {
+              type: 'string',
+              description: 'Pagination token from a previous list_adapter_versions response.',
+            },
+          },
+          required: ['adapter_id'],
+        },
+      },
+      {
+        name: 'get_adapter_version',
+        description: 'Get configuration and evaluation metrics for a specific Textract adapter version by adapter ID and version string.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            adapter_id: {
+              type: 'string',
+              description: 'Unique identifier of the Textract adapter.',
+            },
+            adapter_version: {
+              type: 'string',
+              description: 'Version string of the adapter version to retrieve.',
+            },
+          },
+          required: ['adapter_id', 'adapter_version'],
+        },
+      },
+      {
+        name: 'delete_adapter_version',
+        description: 'Permanently delete a specific version of a Textract custom adapter.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            adapter_id: {
+              type: 'string',
+              description: 'Unique identifier of the Textract adapter.',
+            },
+            adapter_version: {
+              type: 'string',
+              description: 'Version string of the adapter version to delete.',
+            },
+          },
+          required: ['adapter_id', 'adapter_version'],
+        },
+      },
     ];
   }
 
@@ -391,10 +599,28 @@ export class AWSTextractMCPServer {
           return this.startExpenseAnalysis(args);
         case 'get_expense_analysis':
           return this.getExpenseAnalysis(args);
+        case 'start_lending_analysis':
+          return this.startLendingAnalysis(args);
+        case 'get_lending_analysis':
+          return this.getLendingAnalysis(args);
+        case 'get_lending_analysis_summary':
+          return this.getLendingAnalysisSummary(args);
         case 'list_adapters':
           return this.listAdapters(args);
         case 'get_adapter':
           return this.getAdapter(args);
+        case 'create_adapter':
+          return this.createAdapter(args);
+        case 'update_adapter':
+          return this.updateAdapter(args);
+        case 'delete_adapter':
+          return this.deleteAdapter(args);
+        case 'list_adapter_versions':
+          return this.listAdapterVersions(args);
+        case 'get_adapter_version':
+          return this.getAdapterVersion(args);
+        case 'delete_adapter_version':
+          return this.deleteAdapterVersion(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -658,5 +884,94 @@ export class AWSTextractMCPServer {
       return { content: [{ type: 'text', text: 'adapter_id is required' }], isError: true };
     }
     return this.textractPost('GetAdapter', { AdapterId: args.adapter_id });
+  }
+
+  private async startLendingAnalysis(args: Record<string, unknown>): Promise<ToolResult> {
+    const payload: Record<string, unknown> = this.buildS3Object(args);
+    if (args.client_request_token) payload['ClientRequestToken'] = args.client_request_token;
+    if (args.job_tag) payload['JobTag'] = args.job_tag;
+    if (args.notification_channel_role_arn && args.notification_channel_sns_topic_arn) {
+      payload['NotificationChannel'] = {
+        RoleArn: args.notification_channel_role_arn,
+        SNSTopicArn: args.notification_channel_sns_topic_arn,
+      };
+    }
+    return this.textractPost('StartLendingAnalysis', payload);
+  }
+
+  private async getLendingAnalysis(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.job_id) {
+      return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
+    }
+    const payload: Record<string, unknown> = { JobId: args.job_id };
+    if (args.max_results) payload['MaxResults'] = args.max_results;
+    if (args.next_token) payload['NextToken'] = args.next_token;
+    return this.textractPost('GetLendingAnalysis', payload);
+  }
+
+  private async getLendingAnalysisSummary(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.job_id) {
+      return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
+    }
+    return this.textractPost('GetLendingAnalysisSummary', { JobId: args.job_id });
+  }
+
+  private async createAdapter(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.adapter_name) {
+      return { content: [{ type: 'text', text: 'adapter_name is required' }], isError: true };
+    }
+    const payload: Record<string, unknown> = { AdapterName: args.adapter_name };
+    if (args.description) payload['Description'] = args.description;
+    if (args.auto_update) payload['AutoUpdate'] = args.auto_update;
+    if (args.client_request_token) payload['ClientRequestToken'] = args.client_request_token;
+    return this.textractPost('CreateAdapter', payload);
+  }
+
+  private async updateAdapter(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.adapter_id) {
+      return { content: [{ type: 'text', text: 'adapter_id is required' }], isError: true };
+    }
+    const payload: Record<string, unknown> = { AdapterId: args.adapter_id };
+    if (args.description) payload['Description'] = args.description;
+    if (args.adapter_name) payload['AdapterName'] = args.adapter_name;
+    if (args.auto_update) payload['AutoUpdate'] = args.auto_update;
+    return this.textractPost('UpdateAdapter', payload);
+  }
+
+  private async deleteAdapter(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.adapter_id) {
+      return { content: [{ type: 'text', text: 'adapter_id is required' }], isError: true };
+    }
+    return this.textractPost('DeleteAdapter', { AdapterId: args.adapter_id });
+  }
+
+  private async listAdapterVersions(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.adapter_id) {
+      return { content: [{ type: 'text', text: 'adapter_id is required' }], isError: true };
+    }
+    const payload: Record<string, unknown> = { AdapterId: args.adapter_id };
+    if (args.max_results) payload['MaxResults'] = args.max_results;
+    if (args.next_token) payload['NextToken'] = args.next_token;
+    return this.textractPost('ListAdapterVersions', payload);
+  }
+
+  private async getAdapterVersion(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.adapter_id || !args.adapter_version) {
+      return { content: [{ type: 'text', text: 'adapter_id and adapter_version are required' }], isError: true };
+    }
+    return this.textractPost('GetAdapterVersion', {
+      AdapterId: args.adapter_id,
+      AdapterVersion: args.adapter_version,
+    });
+  }
+
+  private async deleteAdapterVersion(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.adapter_id || !args.adapter_version) {
+      return { content: [{ type: 'text', text: 'adapter_id and adapter_version are required' }], isError: true };
+    }
+    return this.textractPost('DeleteAdapterVersion', {
+      AdapterId: args.adapter_id,
+      AdapterVersion: args.adapter_version,
+    });
   }
 }

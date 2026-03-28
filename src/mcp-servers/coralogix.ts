@@ -4,9 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Coralogix MCP server was found on GitHub or in Coralogix documentation.
-// The Coralogix Terraform provider and Coralogix Operator cover IaC use cases but are not MCP servers.
+// Official MCP: https://coralogix.com/docs/user-guides/mcp-server/overview/ — transport: streamable-HTTP, auth: Bearer API key
+// Vendor MCP launched July 2025. Covers: get_logs, get_traces, metrics__instant_query, metrics__range_query,
+//   metrics__label_names, metrics__label_values, rum__* (RUM tools), read_dataprime_intro_docs, get_schemas (~9+ tools).
+//   MCP is query/observability data-plane only — no alert management, dashboard management, enrichments, SLOs, or webhooks.
+// Our adapter covers: 18 tools (management plane). Vendor MCP covers: ~9 tools (query/data plane).
+// Recommendation: use-both — MCP and REST API have non-overlapping tool sets requiring both for full coverage.
+//   MCP-sourced tools: get_logs, get_traces, metrics queries, RUM queries, read_dataprime_intro_docs, get_schemas.
+//   REST-sourced tools (this adapter): query_logs, search_archive, list_alerts, get_alert, create_alert, update_alert,
+//     delete_alert, enable_alert, disable_alert, list_dashboards, get_dashboard, list_enrichments, get_enrichment,
+//     create_enrichment, delete_enrichment, list_slos, get_slo, list_webhooks.
+//   Combined coverage: 18 REST tools + ~9 MCP tools = ~27 tools total (no functional overlap).
 //
 // Base URL: region-dependent (see REGION_BASE_URLS below)
 //   Download the OpenAPI spec: https://api.coralogix.com/mgmt/openapi/latest/openapi.yaml

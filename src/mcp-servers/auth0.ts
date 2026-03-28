@@ -4,11 +4,30 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/auth0/auth0-mcp-server — 20+ tools, actively maintained.
-// Transport: stdio. Auth: OAuth2 device authorization flow (interactive; stores token in keychain).
-// Recommendation: Use official MCP for developer/IDE use cases (interactive login).
-// Use this adapter for service-to-service (M2M) access-token workflows — CI/CD, automation,
-// and backend services where device auth is not available.
+// Official MCP: https://github.com/auth0/auth0-mcp-server — transport: stdio, auth: OAuth2 device authorization flow
+//   (interactive browser login; stores token in keychain). Published by auth0 (Okta). Actively maintained (Mar 2026).
+//   MCP covers ~18 tools: Applications (list/get/create/update/delete), Resource Servers (list/get/create),
+//   Actions (list/get/create/update/deploy), Logs (list/get), Forms (list/get/create/update/publish),
+//   Application Grants (create). Does NOT cover: users, roles, connections, organizations, grants (revoke).
+// Our adapter covers: 29 tools (user mgmt, roles, connections, organizations, logs, clients, grants).
+// Vendor MCP covers: ~18 tools.
+//
+// Integration: use-both
+// MCP-sourced tools (use vendor MCP for these — not in our adapter):
+//   auth0_list_resource_servers, auth0_get_resource_server, auth0_create_resource_server,
+//   auth0_list_actions, auth0_get_action, auth0_create_action, auth0_update_action, auth0_deploy_action,
+//   auth0_list_forms, auth0_get_form, auth0_create_form, auth0_update_form, auth0_publish_form,
+//   auth0_create_application_grant, auth0_create_application, auth0_update_application, auth0_delete_application
+// REST-sourced tools (our adapter — not covered by vendor MCP):
+//   list_users, get_user, create_user, update_user, delete_user, get_user_roles, get_user_permissions,
+//   get_user_logs, send_verification_email, list_roles, get_role, create_role, delete_role,
+//   assign_roles_to_user, remove_roles_from_user, get_role_permissions, list_clients, get_client,
+//   list_connections, get_connection, list_organizations, get_organization, list_organization_members,
+//   add_organization_members, remove_organization_members, list_logs, get_log, list_grants, delete_grant
+// Shared (both MCP and REST cover — FederationManager routes through MCP):
+//   list_clients/get_client ↔ auth0_list_applications/auth0_get_application,
+//   list_logs/get_log ↔ auth0_list_logs/auth0_get_log
+// Combined coverage: 29 REST + 17 MCP-only = ~46 unique operations
 //
 // Base URL: https://{domain}/api/v2  (domain = your Auth0 tenant, e.g. tenant.auth0.com)
 // Auth: OAuth2 M2M Bearer token — POST /oauth/token with grant_type=client_credentials,

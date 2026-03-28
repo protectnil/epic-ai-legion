@@ -4,10 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from Atlassian/Bitbucket as of 2026-03.
-// Community servers found: MatanYemini/bitbucket-mcp, aashari/mcp-server-atlassian-bitbucket,
-// jhonymiler/Bitbucket-MCP-Cloud — all third-party, none official, tool counts vary (6-15).
-// Recommendation: Use this adapter for air-gapped or production deployments.
+// Official MCP: None found as of 2026-03-28. Atlassian does not publish an official Bitbucket MCP server.
+// Community servers found: MatanYemini/bitbucket-mcp, aashari/mcp-server-atlassian-bitbucket (6 generic
+// HTTP tools in v2.0, not semantic), jhonymiler/Bitbucket-MCP-Cloud — all third-party, none meet the
+// official + 10-tool + maintained criteria. Recommendation: use-rest-api — Use this adapter.
 //
 // Base URL: https://api.bitbucket.org/2.0
 // Auth: HTTP Basic — username + app password (app passwords deprecated June 2026;

@@ -4,17 +4,40 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-//   No official ClickUp Inc.-published MCP server exists on GitHub. Community servers exist
-//   (e.g. github.com/taazkareem/clickup-mcp-server, github.com/nsxdavid/clickup-mcp-server)
-//   but none are published or maintained by ClickUp Inc.
+// Official MCP: https://app.clickup.com/mcp — transport: streamable-HTTP, auth: OAuth 2.1 PKCE
+//   Published by ClickUp Inc. (vendor-official). Public beta as of 2026-03. Actively maintained.
+//   Confirmed tools (from developer.clickup.com/docs/mcp-tools):
+//     Search: Search Workspace, Search tasks by task type, Search tasks by tag
+//     Task management: Create Task, Get Task, Update Task, Delete Task, Set Custom Fields
+//     Time tracking: Start Time Tracking, Stop Time Tracking, Add Time Entry, Get Current Time Entry
+//     Workspace hierarchy: Get Workspace Hierarchy
+//     Lists: Create List, Create List in Folder, Get List, Update List
+//     Folders: Get Folder, Create Folder, Update Folder
+//   MCP tool count: ~20 tools (public beta, count growing)
+//
+// Our adapter covers: 19 tools (REST API operations).
+// Vendor MCP covers: ~20 tools focused on search, hierarchy, and core task/time operations.
+//
+// Integration: use-both
+//   MCP-sourced tools: Search Workspace, Search tasks by task type, Search tasks by tag,
+//     Get Workspace Hierarchy — these expose cross-workspace search and full hierarchy traversal
+//     not available through our per-list/per-folder REST tool set.
+//   REST-sourced tools (our adapter): get_authorized_user, get_workspaces, get_spaces,
+//     get_folders, get_folder, get_lists, get_folder_lists, get_tasks, get_task, create_task,
+//     update_task, delete_task, create_task_comment, get_task_comments, get_list_members,
+//     get_task_members, get_time_entries (workspace-level date-range — NOT in MCP per user
+//     feedback at feedback.clickup.com), start_timer, stop_timer.
+//   Shared (exist in both MCP and REST API, MCP takes priority per FederationManager):
+//     Create Task, Get Task, Update Task, Delete Task, Start Time Tracking, Stop Time Tracking.
+//   Combined coverage: MCP search/hierarchy tools + REST workspace-level time entries and member
+//     endpoints fill the gaps on each side.
 //
 // Base URL: https://api.clickup.com/api/v2
 // Auth: Authorization: {token} header (no "Bearer" prefix) — works for both personal API tokens
 //   (pk_…) and OAuth2 access tokens per ClickUp v2 docs.
 // Docs: https://developer.clickup.com/docs
-// Rate limits: Not publicly documented; ClickUp applies per-token throttling. Recommended: stay
-//   under ~100 req/min to avoid 429 errors.
+// Rate limits: Plan-dependent per-token limits. Returns HTTP 429 with X-RateLimit-* headers.
+//   See https://developer.clickup.com/docs/rate-limits for per-plan details.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

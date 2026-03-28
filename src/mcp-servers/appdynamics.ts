@@ -4,17 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Cisco or AppDynamics MCP server exists on GitHub.
-// The AppDynamics GitHub org (github.com/appdynamics / github.com/CiscoDevNet) contains
-// agents, extensions, and tooling — no MCP server.
+// Official MCP: None found as of 2026-03-28 (no Cisco/AppDynamics-published server).
+//   Community: https://github.com/asafkiv/appdynamics-mcp-server — transport: stdio,
+//   auth: OAuth2 client credentials; 30 tools; last commit Mar 10, 2026.
+//   NOT adopted: community repo (not official Cisco/AppDynamics source), fails criteria 1.
+// Our adapter covers: 15 tools. Community MCP covers: 30 tools.
+// Recommendation: use-rest-api — no official vendor MCP meets all four adoption criteria.
+//   Monitor asafkiv/appdynamics-mcp-server for potential future use-both evaluation.
 //
 // Base URL: https://{account}.saas.appdynamics.com (SaaS) or http://controller.internal:8090 (on-prem)
-//   Set via controllerUrl in config. All REST endpoints are under /controller/rest/.
+//   Set via controllerUrl in config. Endpoints split across /controller/rest/, /controller/alerting/rest/v1/,
+//   and /controller/sim/v2/user/ depending on API area.
 // Auth: HTTP Basic — username format: username@accountName (e.g. admin@myaccount).
 //   On-prem: admin@customer1. SaaS: admin@myaccount.
 //   Password: Controller UI password.
-// Docs: https://docs.appdynamics.com/appd/23.x/latest/en/extend-appdynamics/appdynamics-apis
+// Docs: https://help.splunk.com/en/appdynamics-on-premises/extend-appdynamics/25.11.0/extend-splunk-appdynamics/splunk-appdynamics-apis/overview-of-splunk-appdynamics-apis
 // Rate limits: Not publicly documented. Recommend < 60 req/min for production controllers.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -411,7 +415,7 @@ export class AppDynamicsMCPServer {
 
     const data = await response.json();
     return {
-      content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+      content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
       isError: false,
     };
   }
@@ -684,7 +688,7 @@ export class AppDynamicsMCPServer {
 
   private async listMachines(): Promise<ToolResult> {
     const response = await fetch(
-      `${this.controllerUrl}/controller/rest/machines?output=JSON`,
+      `${this.controllerUrl}/controller/sim/v2/user/machines`,
       { method: 'GET', headers: this.headers },
     );
 

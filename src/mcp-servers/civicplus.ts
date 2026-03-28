@@ -4,16 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official CivicPlus MCP server was found on GitHub or npm as of March 2026.
-// Community civic-government MCP servers exist (civicnet-mcp-server, civic-mcp-server) but are unrelated to CivicPlus products.
+// Official MCP: None found as of 2026-03-28
+// No official CivicPlus MCP server was found on GitHub or npm.
+// Community MCP: github.com/chrisjamesbond/seeclickfix-mcp-server — NOT official (not published by CivicPlus),
+//   last commit Jul 2025, only 1 tool (get_requests via Open311 API), stdio transport. Fails criteria 1 & 3.
 //
-// This adapter targets the CivicPlus SeeClickFix 311 CRM API (the primary CivicPlus REST API).
+// This adapter targets the CivicPlus SeeClickFix 311 CRM APIv2 for Organizations (private org API).
+// Our adapter covers: 13 tools. Vendor MCP: N/A (no official server).
+// Recommendation: use-rest-api — no official vendor MCP exists.
+//
 // Base URL: https://seeclickfix.com/api/v2
 // Sandbox URL: https://int.seeclickfix.com/api/v2 (prefix int. to any URL for sandbox testing)
 // Auth: Bearer token — Personal Access Token from CivicPlus Account → Password & Security page
 // Docs: https://dev.seeclickfix.com/ | https://www.civicplus.help/seeclickfix/docs/seeclickfix-api-information
 // Rate limits: Not publicly documented; use sandbox for bulk testing
+// NOTE: update_issue uses PATCH — the public API docs describe status changes via POST /issues/{id}/close
+//   and POST /issues/{id}/open. The private organizational API may differ; update_issue is UNVERIFIED.
+// NOTE: search_issues uses a /issues/search sub-path — the public API uses search= parameter on GET /issues.
+//   The private org API endpoint is not publicly documented; search_issues path is UNVERIFIED.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

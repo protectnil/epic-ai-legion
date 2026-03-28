@@ -4,21 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/backstage/backstage/tree/master/plugins/mcp-actions-backend
-// The official backstage/mcp-actions-backend plugin exposes Backstage scaffolder actions as MCP
-// tools for AI clients invoking INTO Backstage (scaffolding / template execution). It does NOT
-// expose Catalog query, entity management, location registration, or TechDocs search as tools.
-// Community catalog-wrapping MCP servers (iocanel/backstage-mcp, p7ayfu77/backstage-mcp,
-// Coderrob/backstage-mcp-server) exist but are not officially maintained by Backstage.
-// Recommendation: Use mcp-actions-backend plugin for scaffolder action invocation from AI agents.
-// Use this adapter for Catalog queries, entity management, location registration, and search — the
-// core developer portal operations not covered by the official plugin.
+// Official MCP: https://github.com/backstage/backstage/tree/master/plugins/mcp-actions-backend — transport: streamable-HTTP, auth: Bearer token
+// The official @backstage/plugin-mcp-actions-backend plugin exposes Backstage scaffolder actions
+// (registered via the ActionsRegistry) as MCP tools for AI clients invoking INTO Backstage.
+// It does NOT expose Catalog query, entity management, location registration, or TechDocs search.
+// Tool count is dynamic — depends on which actions are registered in the deploying org (not a fixed set).
+// Community catalog-wrapping MCP servers (iocanel/backstage-mcp, Coderrob/backstage-mcp-server)
+// exist but are not vendor-official, not actively maintained with 10+ tools, and not on a supported
+// transport — insufficient for production use under the four MCP criteria.
+// Our adapter covers: 13 tools (Catalog + Search). Vendor MCP covers: scaffolder actions only.
+// Recommendation: use-rest-api for all Catalog operations. The official MCP plugin adds scaffolder
+// invocation from AI agents but does not replace Catalog queries — no overlap with our tools.
 //
-// Base URL: {your Backstage backend URL}/api (e.g. https://backstage.example.com/api)
-// Auth: Bearer token (Backstage identity token or static token via dangerouslyDisableDefaultAuthPolicy).
-//       Optional — omit for Backstage instances with auth disabled.
+// Base URL: {your Backstage backend URL} (e.g. https://backstage.example.com)
+// Auth: Bearer token (Backstage identity token or static token). Optional if auth is disabled.
 // Docs: https://backstage.io/docs/features/software-catalog/software-catalog-api/
-// Rate limits: Dependent on your Backstage deployment; no documented upstream rate limits
+// Rate limits: Not documented — dependent on Backstage deployment configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -389,8 +390,21 @@ export class BackstageMCPServer {
   }
 
   private async getEntityByRef(args: Record<string, unknown>): Promise<ToolResult> {
-    const entityRef = String(args.entityRef);
-    return this.fetchJSON(`${this.catalogBase}/entities/by-ref/${encodeURIComponent(entityRef)}`);
+    // Docs: GET /entities/by-name/{kind}/{namespace}/{name}
+    // entityRef format is kind:namespace/name — parse it into path segments.
+    const ref = String(args.entityRef);
+    const colonIdx = ref.indexOf(':');
+    const slashIdx = ref.indexOf('/');
+    if (colonIdx === -1 || slashIdx === -1 || slashIdx <= colonIdx) {
+      return {
+        content: [{ type: 'text', text: 'entityRef must be in the format kind:namespace/name, e.g. component:default/my-service' }],
+        isError: true,
+      };
+    }
+    const kind = encodeURIComponent(ref.slice(0, colonIdx));
+    const namespace = encodeURIComponent(ref.slice(colonIdx + 1, slashIdx));
+    const name = encodeURIComponent(ref.slice(slashIdx + 1));
+    return this.fetchJSON(`${this.catalogBase}/entities/by-name/${kind}/${namespace}/${name}`);
   }
 
   // ── Facets ────────────────────────────────────────────────────────────────
@@ -483,8 +497,22 @@ export class BackstageMCPServer {
   // ── Ancestry ──────────────────────────────────────────────────────────────
 
   private async getEntityAncestors(args: Record<string, unknown>): Promise<ToolResult> {
+    // Docs: GET /entities/by-name/{kind}/{namespace}/{name}/ancestry
+    // entityRef format is kind:namespace/name — parse it into path segments.
+    const ref = String(args.entityRef);
+    const colonIdx = ref.indexOf(':');
+    const slashIdx = ref.indexOf('/');
+    if (colonIdx === -1 || slashIdx === -1 || slashIdx <= colonIdx) {
+      return {
+        content: [{ type: 'text', text: 'entityRef must be in the format kind:namespace/name, e.g. component:default/my-service' }],
+        isError: true,
+      };
+    }
+    const kind = encodeURIComponent(ref.slice(0, colonIdx));
+    const namespace = encodeURIComponent(ref.slice(colonIdx + 1, slashIdx));
+    const name = encodeURIComponent(ref.slice(slashIdx + 1));
     return this.fetchJSON(
-      `${this.catalogBase}/entities/by-ref/${encodeURIComponent(String(args.entityRef))}/ancestry`,
+      `${this.catalogBase}/entities/by-name/${kind}/${namespace}/${name}/ancestry`,
     );
   }
 

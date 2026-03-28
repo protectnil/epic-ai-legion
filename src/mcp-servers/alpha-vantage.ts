@@ -59,7 +59,6 @@ export class AlphaVantageMCPServer {
         'get_fx_rate',
         'get_fx_daily',
         'get_fx_intraday',
-        'get_crypto_rating',
         'get_crypto_daily',
         'get_crypto_exchange_rate',
         'get_rsi',
@@ -348,20 +347,6 @@ export class AlphaVantageMCPServer {
           required: ['symbol', 'market'],
         },
       },
-      {
-        name: 'get_crypto_rating',
-        description: 'Get the Fundamental Crypto Asset Score (FCAS) rating for a cryptocurrency — a measure of project health',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            symbol: {
-              type: 'string',
-              description: 'Cryptocurrency symbol to get the FCAS rating for (e.g. BTC, ETH)',
-            },
-          },
-          required: ['symbol'],
-        },
-      },
       // ── Technical Indicators ───────────────────────────────────────────────
       {
         name: 'get_rsi',
@@ -479,7 +464,6 @@ export class AlphaVantageMCPServer {
         case 'get_fx_intraday':         return this.getFxIntraday(args);
         case 'get_crypto_exchange_rate':return this.getCryptoExchangeRate(args);
         case 'get_crypto_daily':        return this.getCryptoDaily(args);
-        case 'get_crypto_rating':       return this.getCryptoRating(args);
         case 'get_rsi':                 return this.getRsi(args);
         case 'get_macd':                return this.getMacd(args);
         case 'get_sma':                 return this.getSma(args);
@@ -658,11 +642,6 @@ export class AlphaVantageMCPServer {
       symbol: args.symbol as string,
       market: args.market as string,
     });
-  }
-
-  private async getCryptoRating(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.symbol) return { content: [{ type: 'text', text: 'symbol is required' }], isError: true };
-    return this.query({ function: 'CRYPTO_RATING', symbol: args.symbol as string });
   }
 
   // ── Technical indicator methods ────────────────────────────────────────────

@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Abnormal Security MCP server was found on GitHub as of March 2026.
+// Official MCP: None found as of 2026-03-28
+// No official Abnormal Security MCP server was found on GitHub as of 2026-03-28.
+// Our adapter covers: 13 tools. Vendor MCP covers: 0 tools (none exists).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://api.abnormalplatform.com (default; may vary by tenant region)
 // Auth: Authorization: Bearer {access_token}
@@ -242,6 +244,27 @@ export class AbnormalSecurityMCPServer {
           },
         },
       },
+      {
+        name: 'list_abuse_mailbox',
+        description: 'List AI Security Mailbox (formerly Abuse Mailbox) submissions — user-reported suspicious emails analyzed by Abnormal AI, with attack type and reporter details. Pass not_analyzed=true to list submissions that were skipped with reasons.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            not_analyzed: {
+              type: 'boolean',
+              description: 'If true, returns unprocessed submissions that Abnormal did not analyze, including the reason why (default: false)',
+            },
+            page_size: {
+              type: 'number',
+              description: 'Number of results per page (default: 100)',
+            },
+            page_number: {
+              type: 'number',
+              description: 'Page number (1-based, default: 1)',
+            },
+          },
+        },
+      },
     ];
   }
 
@@ -272,6 +295,8 @@ export class AbnormalSecurityMCPServer {
           return await this.getVendorCase(args);
         case 'list_detection_rules':
           return await this.listDetectionRules(args);
+        case 'list_abuse_mailbox':
+          return await this.listAbuseMailbox(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -413,6 +438,15 @@ export class AbnormalSecurityMCPServer {
     return this.request(`/v1/detection-rules?pageSize=${pageSize}&pageNumber=${pageNumber}`, 'GET');
   }
 
+  private async listAbuseMailbox(args: Record<string, unknown>): Promise<ToolResult> {
+    const pageSize = (args.page_size as number) ?? 100;
+    const pageNumber = (args.page_number as number) ?? 1;
+    const path = args.not_analyzed
+      ? `/v1/abuse_mailbox/not_analyzed?pageSize=${pageSize}&pageNumber=${pageNumber}`
+      : `/v1/abuse_mailbox?pageSize=${pageSize}&pageNumber=${pageNumber}`;
+    return this.request(path, 'GET');
+  }
+
   static catalog() {
     return {
       name: 'abnormal-security',
@@ -420,7 +454,7 @@ export class AbnormalSecurityMCPServer {
       version: '1.0.0',
       category: 'cybersecurity' as const,
       keywords: ['abnormal-security', 'abnormal', 'security'],
-      toolNames: ['list_threats', 'get_threat', 'take_threat_action', 'list_cases', 'get_case', 'take_case_action', 'get_audit_logs', 'list_employees', 'get_employee', 'list_vendor_cases', 'get_vendor_case', 'list_detection_rules'],
+      toolNames: ['list_threats', 'get_threat', 'take_threat_action', 'list_cases', 'get_case', 'take_case_action', 'get_audit_logs', 'list_employees', 'get_employee', 'list_vendor_cases', 'get_vendor_case', 'list_detection_rules', 'list_abuse_mailbox'],
       description: 'Abnormal Security adapter for the Epic AI Intelligence Platform',
       author: 'protectnil' as const,
     };

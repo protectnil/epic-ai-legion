@@ -4,14 +4,48 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/microsoft/azure-devops-mcp — transport: stdio + streamable-HTTP (Remote MCP in public preview), auth: PAT / Entra ID
-// The official Azure DevOps MCP Server is actively maintained (regular commits in 2025-2026)
-// and covers boards, repos, pipelines, releases, and test plans.
+// Official MCP: https://github.com/microsoft/azure-devops-mcp — transport: stdio + streamable-HTTP
+//   (Remote MCP in public preview), auth: PAT / Entra ID. Actively maintained (2025-2026 commits).
+//   Published as @azure-devops/mcp on npm. 50+ tools across domains: core, work, work-items,
+//   repositories, wiki, pipelines, test-plans, search, advanced-security.
+//   Meets all 4 MCP criteria: official, maintained, 50+ tools, stdio + streamable-HTTP.
 // Our adapter covers: 22 tools (work items, repositories, pull requests, builds, pipelines,
-// releases, sprints, and test plans) for air-gapped or PAT-only deployments.
-// Vendor MCP covers: broader tool set including the Remote MCP hosted endpoint.
-// Recommendation: Use microsoft/azure-devops-mcp (Remote MCP) for full coverage and hosted auth.
-// Use this adapter for air-gapped deployments or environments where npm runtime installs are blocked.
+//   releases, sprints, test plans) for air-gapped or PAT-only deployments.
+// Recommendation: use-both — the official MCP covers repos/work-items/pipelines/wiki/search/
+//   advanced-security with 50+ tools. However, Classic Release Management (VSRM:
+//   list_releases, get_release, create_release via vsrm.dev.azure.com) is NOT covered by the
+//   official MCP. Our REST adapter is authoritative for release management tools.
+//
+// Integration: use-both
+// MCP-sourced tools (50+): mcp_ado_core_list_projects, mcp_ado_core_list_project_teams,
+//   mcp_ado_core_get_identity_ids, mcp_ado_repo_list_repos_by_project,
+//   mcp_ado_repo_get_repo_by_name_or_id, mcp_ado_repo_list_branches_by_repo,
+//   mcp_ado_repo_list_my_branches_by_repo, mcp_ado_repo_get_branch_by_name,
+//   mcp_ado_repo_create_branch, mcp_ado_repo_search_commits,
+//   mcp_ado_repo_list_pull_requests_by_repo_or_project, mcp_ado_repo_list_pull_requests_by_commits,
+//   mcp_ado_repo_get_pull_request_by_id, mcp_ado_repo_create_pull_request,
+//   mcp_ado_repo_update_pull_request, mcp_ado_repo_update_pull_request_reviewers,
+//   mcp_ado_repo_list_pull_request_threads, mcp_ado_repo_list_pull_request_thread_comments,
+//   mcp_ado_wit_get_work_item, mcp_ado_wit_list_work_items, mcp_ado_wit_create_work_item,
+//   mcp_ado_wit_update_work_item, mcp_ado_wit_update_work_items_batch,
+//   mcp_ado_wit_add_child_work_items, mcp_ado_wit_work_items_link,
+//   mcp_ado_pipelines_create_pipeline, mcp_ado_pipelines_get_builds,
+//   mcp_ado_pipelines_get_build_status, mcp_ado_pipelines_get_build_log,
+//   mcp_ado_pipelines_get_build_log_by_id, mcp_ado_pipelines_get_build_changes,
+//   mcp_ado_pipelines_get_build_definitions, mcp_ado_pipelines_list_runs,
+//   mcp_ado_pipelines_run_pipeline, mcp_ado_pipelines_get_run,
+//   mcp_ado_pipelines_update_build_stage, mcp_ado_search_code, mcp_ado_search_wiki,
+//   mcp_ado_search_workitem, mcp_ado_wiki_list_wikis, mcp_ado_wiki_get_wiki,
+//   mcp_ado_wiki_list_pages, mcp_ado_wiki_get_page, mcp_ado_wiki_get_page_content,
+//   mcp_ado_wiki_create_or_update_page, mcp_ado_testplan_* (multiple),
+//   mcp_ado_advsec_get_alerts, mcp_ado_advsec_get_alert_details
+// REST-sourced tools (3 — not covered by MCP): list_releases, get_release, create_release
+//   (Classic Release Management via vsrm.dev.azure.com is absent from the official MCP)
+// Shared tools (routed through MCP by FederationManager): list_projects, list_repositories,
+//   get_repository, list_pull_requests, get_pull_request, create_pull_request,
+//   get_work_item, list_work_items, query_work_items, create_work_item, update_work_item,
+//   list_iterations, list_iteration_work_items, list_builds, get_build, queue_build,
+//   list_pipeline_definitions, get_pipeline_definition, list_test_plans
 //
 // Base URL: https://dev.azure.com/{organization} (or https://vsrm.dev.azure.com for Release Management)
 // Auth: Basic auth with PAT — Authorization: Basic base64(:{pat})

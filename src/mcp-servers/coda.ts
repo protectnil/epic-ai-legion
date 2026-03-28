@@ -4,15 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from Coda as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 // Multiple community MCP servers exist (orellazri/coda-mcp, bluestemso/coda-io-mcp,
 // TJC-LP/coda-mcp-server, nkpar/coda-mcp) but none are published by Coda officially.
-// Our adapter covers: 17 tools (docs, pages, tables, rows, columns, formulas, controls).
-// Recommendation: Use this adapter for full doc and data management automation.
+// Our adapter covers: 25 tools (docs, pages, tables, rows, columns, formulas, controls, account, automations).
+// Recommendation: use-rest-api — no official Coda MCP server exists.
 //
 // Base URL: https://coda.io/apis/v1
 // Auth: Bearer API token in Authorization header (generated from Coda account settings)
-// Docs: https://coda.io/developers
+// Docs: https://coda.io/developers/apis/v1
 // Rate limits: Read — 100 req/6s; Write (POST/PUT/PATCH) — 10 req/6s;
 //              Write doc content — 5 req/10s.
 
@@ -47,8 +47,11 @@ export class CodaMCPServer {
         'list_docs', 'get_doc', 'create_doc', 'delete_doc',
         'list_pages', 'get_page', 'create_page', 'update_page',
         'list_tables', 'get_table',
-        'list_columns', 'list_rows', 'get_row', 'upsert_rows', 'delete_row',
-        'list_formulas', 'list_controls',
+        'list_columns', 'get_column',
+        'list_rows', 'get_row', 'upsert_rows', 'update_row', 'delete_row', 'delete_rows', 'push_button',
+        'list_formulas', 'get_formula',
+        'list_controls', 'get_control',
+        'get_user_info', 'trigger_automation',
       ],
       description: 'Coda doc and database management: read/write docs, pages, tables, rows, columns, formulas, and controls via the Coda API.',
       author: 'protectnil',
@@ -310,6 +313,28 @@ export class CodaMCPServer {
         },
       },
       {
+        name: 'get_column',
+        description: 'Retrieve details of a specific column in a Coda table by column ID or name',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            doc_id: {
+              type: 'string',
+              description: 'Coda document ID',
+            },
+            table_id_or_name: {
+              type: 'string',
+              description: 'Table ID or URL-encoded table name',
+            },
+            column_id_or_name: {
+              type: 'string',
+              description: 'Column ID or URL-encoded column name',
+            },
+          },
+          required: ['doc_id', 'table_id_or_name', 'column_id_or_name'],
+        },
+      },
+      {
         name: 'list_rows',
         description: 'List rows in a Coda table with optional column filter, value format, and pagination',
         inputSchema: {
@@ -400,6 +425,80 @@ export class CodaMCPServer {
         },
       },
       {
+        name: 'update_row',
+        description: 'Update cells in a specific row in a Coda table by row ID or name',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            doc_id: {
+              type: 'string',
+              description: 'Coda document ID',
+            },
+            table_id_or_name: {
+              type: 'string',
+              description: 'Table ID or URL-encoded table name',
+            },
+            row_id_or_name: {
+              type: 'string',
+              description: 'Row ID or URL-encoded row display value',
+            },
+            row: {
+              type: 'string',
+              description: 'JSON object with a cells array of {column, value} pairs to update',
+            },
+          },
+          required: ['doc_id', 'table_id_or_name', 'row_id_or_name', 'row'],
+        },
+      },
+      {
+        name: 'delete_rows',
+        description: 'Delete multiple rows from a Coda table matching specified row IDs in a single request',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            doc_id: {
+              type: 'string',
+              description: 'Coda document ID',
+            },
+            table_id_or_name: {
+              type: 'string',
+              description: 'Table ID or URL-encoded table name',
+            },
+            row_ids: {
+              type: 'string',
+              description: 'JSON array of row IDs to delete (e.g. ["i-abc123", "i-def456"])',
+            },
+          },
+          required: ['doc_id', 'table_id_or_name', 'row_ids'],
+        },
+      },
+      {
+        name: 'push_button',
+        description: 'Push a button in a specific row of a Coda table to trigger its automation or formula action',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            doc_id: {
+              type: 'string',
+              description: 'Coda document ID',
+            },
+            table_id_or_name: {
+              type: 'string',
+              description: 'Table ID or URL-encoded table name',
+            },
+            row_id_or_name: {
+              type: 'string',
+              description: 'Row ID or URL-encoded row display value',
+            },
+            column_id_or_name: {
+              type: 'string',
+              description: 'Column ID or URL-encoded column name of the button column',
+            },
+          },
+          required: ['doc_id', 'table_id_or_name', 'row_id_or_name', 'column_id_or_name'],
+        },
+      },
+      {
         name: 'delete_row',
         description: 'Delete a specific row from a Coda table by row ID',
         inputSchema: {
@@ -465,6 +564,72 @@ export class CodaMCPServer {
           required: ['doc_id'],
         },
       },
+      {
+        name: 'get_formula',
+        description: 'Retrieve details and current value of a specific named formula in a Coda doc by formula ID or name',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            doc_id: {
+              type: 'string',
+              description: 'Coda document ID',
+            },
+            formula_id_or_name: {
+              type: 'string',
+              description: 'Formula ID or URL-encoded formula name',
+            },
+          },
+          required: ['doc_id', 'formula_id_or_name'],
+        },
+      },
+      {
+        name: 'get_control',
+        description: 'Retrieve details of a specific interactive control (button, slider, date picker) in a Coda doc',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            doc_id: {
+              type: 'string',
+              description: 'Coda document ID',
+            },
+            control_id_or_name: {
+              type: 'string',
+              description: 'Control ID or URL-encoded control name',
+            },
+          },
+          required: ['doc_id', 'control_id_or_name'],
+        },
+      },
+      {
+        name: 'get_user_info',
+        description: 'Retrieve info about the API token owner including name, email, and workspace memberships',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'trigger_automation',
+        description: 'Trigger a Coda automation rule (webhook-triggered) in a doc by rule ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            doc_id: {
+              type: 'string',
+              description: 'Coda document ID containing the automation',
+            },
+            rule_id: {
+              type: 'string',
+              description: 'Automation rule ID to trigger',
+            },
+            payload: {
+              type: 'string',
+              description: 'Optional JSON object to pass as payload to the automation',
+            },
+          },
+          required: ['doc_id', 'rule_id'],
+        },
+      },
     ];
   }
 
@@ -482,12 +647,20 @@ export class CodaMCPServer {
         case 'list_tables': return this.listTables(args);
         case 'get_table': return this.getTable(args);
         case 'list_columns': return this.listColumns(args);
+        case 'get_column': return this.getColumn(args);
         case 'list_rows': return this.listRows(args);
         case 'get_row': return this.getRow(args);
         case 'upsert_rows': return this.upsertRows(args);
+        case 'update_row': return this.updateRow(args);
         case 'delete_row': return this.deleteRow(args);
+        case 'delete_rows': return this.deleteRows(args);
+        case 'push_button': return this.pushButton(args);
         case 'list_formulas': return this.listFormulas(args);
+        case 'get_formula': return this.getFormula(args);
         case 'list_controls': return this.listControls(args);
+        case 'get_control': return this.getControl(args);
+        case 'get_user_info': return this.getUserInfo(args);
+        case 'trigger_automation': return this.triggerAutomation(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -716,5 +889,80 @@ export class CodaMCPServer {
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 25) };
     if (args.page_token) params.pageToken = args.page_token as string;
     return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/controls`, params);
+  }
+
+  private async getColumn(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.doc_id || !args.table_id_or_name || !args.column_id_or_name) {
+      return { content: [{ type: 'text', text: 'doc_id, table_id_or_name, and column_id_or_name are required' }], isError: true };
+    }
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/columns/${encodeURIComponent(args.column_id_or_name as string)}`);
+  }
+
+  private async updateRow(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.doc_id || !args.table_id_or_name || !args.row_id_or_name || !args.row) {
+      return { content: [{ type: 'text', text: 'doc_id, table_id_or_name, row_id_or_name, and row are required' }], isError: true };
+    }
+    let rowObj: unknown;
+    try { rowObj = JSON.parse(args.row as string); } catch {
+      return { content: [{ type: 'text', text: 'row must be valid JSON' }], isError: true };
+    }
+    return this.codaPut(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows/${encodeURIComponent(args.row_id_or_name as string)}`, { row: rowObj });
+  }
+
+  private async deleteRows(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.doc_id || !args.table_id_or_name || !args.row_ids) {
+      return { content: [{ type: 'text', text: 'doc_id, table_id_or_name, and row_ids are required' }], isError: true };
+    }
+    let rowIdsArr: unknown;
+    try { rowIdsArr = JSON.parse(args.row_ids as string); } catch {
+      return { content: [{ type: 'text', text: 'row_ids must be valid JSON array' }], isError: true };
+    }
+    const response = await fetch(`${this.baseUrl}/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows`, {
+      method: 'DELETE',
+      headers: this.headers,
+      body: JSON.stringify({ rowIds: rowIdsArr }),
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      return { content: [{ type: 'text', text: `API error ${response.status}: ${err}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async pushButton(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.doc_id || !args.table_id_or_name || !args.row_id_or_name || !args.column_id_or_name) {
+      return { content: [{ type: 'text', text: 'doc_id, table_id_or_name, row_id_or_name, and column_id_or_name are required' }], isError: true };
+    }
+    return this.codaPost(`/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows/${encodeURIComponent(args.row_id_or_name as string)}/buttons/${encodeURIComponent(args.column_id_or_name as string)}`, {});
+  }
+
+  private async getFormula(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.doc_id || !args.formula_id_or_name) {
+      return { content: [{ type: 'text', text: 'doc_id and formula_id_or_name are required' }], isError: true };
+    }
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/formulas/${encodeURIComponent(args.formula_id_or_name as string)}`);
+  }
+
+  private async getControl(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.doc_id || !args.control_id_or_name) {
+      return { content: [{ type: 'text', text: 'doc_id and control_id_or_name are required' }], isError: true };
+    }
+    return this.codaGet(`/docs/${encodeURIComponent(args.doc_id as string)}/controls/${encodeURIComponent(args.control_id_or_name as string)}`);
+  }
+
+  private async getUserInfo(_args: Record<string, unknown>): Promise<ToolResult> {
+    return this.codaGet('/whoami');
+  }
+
+  private async triggerAutomation(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.doc_id || !args.rule_id) {
+      return { content: [{ type: 'text', text: 'doc_id and rule_id are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = {};
+    if (args.payload) {
+      try { body.payload = JSON.parse(args.payload as string); } catch { /* skip */ }
+    }
+    return this.codaPost(`/docs/${encodeURIComponent(args.doc_id as string)}/hooks/automation/${encodeURIComponent(args.rule_id as string)}`, body);
   }
 }

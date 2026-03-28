@@ -4,14 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official GoFundMe Pro (Classy) MCP server was found on GitHub or npm as of March 2026.
+// Official MCP: None found as of 2026-03-28
+// No official GoFundMe Pro (Classy) MCP server was found on GitHub or npm as of 2026-03-28.
 // The Classy GitHub org (https://github.com/classy-org) contains Postman collections and sample apps but no MCP server.
+// Our adapter covers: 16 tools. Vendor MCP covers: 0 tools (no official server).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
-// Note: Classy rebranded to GoFundMe Pro in May 2025. API base URL and documentation remain at classy.org.
+// Note: Classy rebranded to GoFundMe Pro in May 2025. API base URL and documentation remain at classy.org / developers.gofundme.com/pro.
+// The GoFundMe Pro API exposes many additional endpoints beyond what this adapter covers (campaign series, promo codes,
+// questions, ticket types, activity logs, designations, staff notifications, source codes) — these are out of scope
+// for the current adapter but exist in the vendor API docs at https://developers.gofundme.com/pro/docs/.
+//
 // Base URL: https://api.classy.org/2.0
-// Auth: OAuth2 client credentials — POST /oauth2/auth with client_id + client_secret; returns Bearer access_token
-// Docs: https://docs.classy.org/ | https://developers.classy.org/overview/authentication
+// Auth: OAuth2 client credentials — POST https://api.classy.org/oauth2/auth with client_id + client_secret; returns Bearer access_token
+// Docs: https://developers.gofundme.com/pro/docs/
 // Rate limits: 429 on breach; retry-after guidance of 24 seconds per rate limit response
 
 import { ToolDefinition, ToolResult } from './types.js';

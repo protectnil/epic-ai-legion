@@ -4,9 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/builtwith/mcp — transport: stdio (npm package), auth: API key
-// Our adapter covers: 13 tools (all documented BuiltWith API methods). Vendor MCP covers: domain-lookup + subset of APIs.
-// Recommendation: Use vendor MCP for simple domain lookups in IDE workflows. Use this adapter for full API coverage including trends, lists, relationships, and lead gen.
+// Official MCP: https://github.com/builtwith/mcp — transport: stdio + streamable-HTTP, auth: Bearer API key
+// Our adapter covers: 15 tools. Vendor MCP covers: 15 tools (domain-lookup, domain-api, relationships-api, free-api,
+//   company-to-url, tags-api, recommendations-api, redirects-api, keywords-api, trends-api, product-api, trust-api,
+//   financial-api, social-api, vector-search). MCP is official (BuiltWith Pty Ltd), maintained (v1.1.0 released 2026-03-20).
+// Recommendation: use-both — vendor MCP adds vector-search (semantic similarity search, no REST equivalent);
+//   our adapter adds full parameter control. MCP fails criterion 3 threshold borderline (15 tools), but has vector-search
+//   unique tool not in REST API. Combined coverage is preferred.
+//
+// Integration: use-both
+// MCP-only tools: vector-search (semantic similarity search across technologies/categories — no REST equivalent)
+// REST-only tools: domain_lookup_live (dlive1 endpoint — live real-time scan; MCP uses domain-lookup which is cached)
+// Shared: domain_lookup (domain-api), domain_lookup_free (free-api), get_technology_lists (lists-api),
+//   get_technology_trends (trends-api), get_domain_relationships (relationships-api), get_domain_keywords (keywords-api),
+//   get_domain_redirects (redirects-api), get_company_urls (company-to-url), get_technology_recommendations (recommendations-api),
+//   get_domain_trust (trust-api), get_product_info (product-api), get_domain_tags (tags-api),
+//   get_domain_financial (financial-api), get_domain_social (social-api)
 //
 // Base URL: https://api.builtwith.com
 // Auth: API key passed as KEY query parameter on every request (no header auth)
@@ -47,6 +60,7 @@ export class BuiltWithMCPServer {
         'get_domain_redirects', 'get_company_urls',
         'get_technology_recommendations', 'get_domain_trust',
         'get_product_info', 'get_domain_tags',
+        'get_domain_financial', 'get_domain_social',
       ],
       description: 'BuiltWith technology profiling: look up website tech stacks, find leads by technology usage, track technology trends, analyze domain relationships and keywords.',
       author: 'protectnil',
@@ -253,6 +267,34 @@ export class BuiltWithMCPServer {
           required: ['domain'],
         },
       },
+      {
+        name: 'get_domain_financial',
+        description: 'Get financial and firmographic data for a domain — employee count, revenue estimate, tech spend, and SEC Edgar filings if available',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            domain: {
+              type: 'string',
+              description: 'Domain to retrieve financial data for (e.g. "example.com")',
+            },
+          },
+          required: ['domain'],
+        },
+      },
+      {
+        name: 'get_domain_social',
+        description: 'Get social media profiles associated with a domain — maps a social media URL to the websites that use it',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            lookup: {
+              type: 'string',
+              description: 'Social media URL or domain to look up (e.g. "facebook.com/wayfair" or "example.com")',
+            },
+          },
+          required: ['lookup'],
+        },
+      },
     ];
   }
 
@@ -285,6 +327,10 @@ export class BuiltWithMCPServer {
           return this.getProductInfo(args);
         case 'get_domain_tags':
           return this.getDomainTags(args);
+        case 'get_domain_financial':
+          return this.getDomainFinancial(args);
+        case 'get_domain_social':
+          return this.getDomainSocial(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -383,5 +429,15 @@ export class BuiltWithMCPServer {
   private async getDomainTags(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.domain) return { content: [{ type: 'text', text: 'domain is required' }], isError: true };
     return this.bwGet('/tags1', { LOOKUP: args.domain as string });
+  }
+
+  private async getDomainFinancial(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.domain) return { content: [{ type: 'text', text: 'domain is required' }], isError: true };
+    return this.bwGet('/fin1', { LOOKUP: args.domain as string });
+  }
+
+  private async getDomainSocial(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.lookup) return { content: [{ type: 'text', text: 'lookup is required' }], isError: true };
+    return this.bwGet('/social1', { LOOKUP: args.lookup as string });
   }
 }

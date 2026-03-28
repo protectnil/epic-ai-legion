@@ -4,11 +4,27 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://developers.activecampaign.com/page/mcp — Remote MCP, auth: API key, 9 tools
-//   ActiveCampaign published an official remote MCP server covering basic contact/automation/campaign operations.
+// Official MCP: https://developers.activecampaign.com/page/mcp — Remote MCP (streamable-HTTP), auth: API key
+//   ActiveCampaign published an official remote MCP server with 27+ tools covering contacts, field values,
+//   campaigns, automations (including contact_automation operations), and deals with notes.
+//   Vendor MCP tools (27): list_contacts, get_contact, create_or_update_contact, list_tags, get_tag,
+//   create_contact_tag, add_tag_to_contact, list_lists, get_list, list_contact_field_values,
+//   get_contact_field_value, create_contact_field_value, update_contact_field_value, list_campaigns,
+//   get_campaign, get_campaign_links, list_automations, list_contact_automations, get_contact_automation,
+//   add_contact_to_automation, remove_contact_from_automation, list_deals, get_deal, create_deal,
+//   update_deal, create_deal_note, update_deal_note
 //   Our adapter covers 22 tools (contacts, lists, tags, deals, automations, campaigns, custom fields, webhooks).
-// Recommendation: Use this adapter for broader tool coverage and air-gapped deployments.
-//   Use the official remote MCP if minimal contact-only operations suffice.
+//   MCP-only (not in our adapter): list_contact_field_values, get_contact_field_value,
+//   create_contact_field_value, update_contact_field_value, get_campaign_links, list_contact_automations,
+//   get_contact_automation, remove_contact_from_automation, create_deal_note, update_deal_note
+//   Our adapter-only (not in MCP): search_contacts, list_custom_fields, list_webhooks, create_webhook,
+//   delete_webhook, delete_contact, create_list, remove_tag_from_contact
+// Integration: use-both — vendor MCP has 10 unique tools not in our adapter; our adapter has 8 unique tools
+//   not in the MCP (webhooks, search, contact deletion, list creation). Full coverage requires union.
+// MCP-sourced tools (10): list_contact_field_values, get_contact_field_value, create_contact_field_value,
+//   update_contact_field_value, get_campaign_links, list_contact_automations, get_contact_automation,
+//   remove_contact_from_automation, create_deal_note, update_deal_note
+// REST-sourced tools (22): [all tools in this adapter]
 //
 // Base URL: https://<your-account>.api-us1.com/api/3  (account-specific — required in config)
 // Auth: Api-Token header with your API key (found in Settings → Developer)

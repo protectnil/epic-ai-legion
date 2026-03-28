@@ -4,9 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Brandwatch MCP server found on GitHub, npm, or the Brandwatch developer portal.
 // Community MCP lists do not include a Brandwatch entry. Build this REST wrapper for all deployments.
+// Our adapter covers: 17 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://api.brandwatch.com
 // Auth: OAuth2 resource-owner password flow (API user credential type)
@@ -17,6 +19,13 @@
 // Docs: https://developers.brandwatch.com/docs/getting-started
 // Rate limits: 30 requests per 10-minute rolling window (per client). HTTP 429 on breach.
 //   Headers: x-rate-limit, x-rate-limit-used returned on each response.
+//
+// NOTE on data retrieval endpoints: Brandwatch docs confirm the following operations exist:
+//   Total Mentions (count), Topics, Top Sites, Top Authors, Basic charts (volume/sentiment by dimension).
+//   Exact URL paths for /data/volume, /data/sentiment, /data/volume/topics, /data/topsites,
+//   /data/authors are consistent with documented examples and the official Python bcr-api library
+//   but were partially obscured in public docs. Marked UNVERIFIED where paths cannot be confirmed
+//   from the public documentation page content alone.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

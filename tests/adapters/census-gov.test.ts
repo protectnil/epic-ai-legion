@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CensusGovMCPServer } from '../../src/mcp-servers/census-gov.js';
 
 describe('CensusGovMCPServer', () => {
-  const adapter = new CensusGovMCPServer({ apiToken: 'test-token' });
+  const adapter = new CensusGovMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

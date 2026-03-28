@@ -4,10 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Brightcove MCP server was found on GitHub, npm, or the Brightcove developer portal.
 // No community-maintained Brightcove MCP server appears in major MCP registries.
-// Build this REST wrapper for all deployments.
+// Our adapter covers: 24 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no vendor MCP exists. Build this REST wrapper for all deployments.
 //
 // Base URL: https://cms.api.brightcove.com/v1 (CMS API)
 //           https://ingest.api.brightcove.com/v1 (Dynamic Ingest API)

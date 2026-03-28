@@ -4,10 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from Canny as of 2026-03.
-// Community servers: opensourceops/canny-mcp-server (37 tools, third-party, not official),
-// itsocialist/canny-mcp-server (third-party). Neither is published or maintained by Canny.
-// Recommendation: Use this adapter for production deployments with verified API paths.
+// Official MCP: None found as of 2026-03-28
+// Community servers exist (opensourceops/canny-mcp-server ~37 tools; itsocialist/canny-mcp-server) but neither
+// is published or maintained by Canny. Not official. Decision: use-rest-api.
+// Recommendation: Use this REST adapter. No official Canny MCP server exists.
 //
 // Base URL: https://canny.io/api/v1
 // Auth: All requests include apiKey as a JSON body field (POST requests only — Canny uses POST for all operations).
@@ -381,6 +381,57 @@ export class CannyMCPServer {
           required: ['id'],
         },
       },
+      // Companies
+      {
+        name: 'list_companies',
+        description: 'List all companies associated with the Canny account with optional search, segment filter, and cursor pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            search: { type: 'string', description: 'Filter companies by name substring search' },
+            segment: { type: 'string', description: 'URL name of a segment to filter companies by' },
+            limit: { type: 'number', description: 'Number of companies to return (default: 10, max: 100)' },
+            cursor: { type: 'string', description: 'Cursor from a previous response for pagination' },
+          },
+        },
+      },
+      {
+        name: 'update_company',
+        description: 'Update metadata (name, custom fields, monthly spend) for an existing company by ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'ID of the company to update' },
+            name: { type: 'string', description: 'Updated company name' },
+            customFields: { type: 'string', description: 'JSON object of custom field key-value pairs to update' },
+            monthlySpend: { type: 'number', description: 'Updated monthly spend value for the company' },
+          },
+          required: ['id'],
+        },
+      },
+      {
+        name: 'delete_company',
+        description: 'Permanently delete a company and disassociate it from all users in Canny',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'ID of the company to delete' },
+          },
+          required: ['id'],
+        },
+      },
+      // Opportunities
+      {
+        name: 'list_opportunities',
+        description: 'List opportunities (from Salesforce or HubSpot) linked to posts in Canny with pagination',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: { type: 'number', description: 'Number of opportunities to return (default: 10, max: 100)' },
+            skip: { type: 'number', description: 'Number of opportunities to skip for pagination (default: 0)' },
+          },
+        },
+      },
       // Status changes (admin audit)
       {
         name: 'list_status_changes',
@@ -428,6 +479,10 @@ export class CannyMCPServer {
         case 'create_category': return this.createCategory(args);
         case 'list_changelog_entries': return this.listChangelogEntries(args);
         case 'get_changelog_entry': return this.getChangelogEntry(args);
+        case 'list_companies': return this.listCompanies(args);
+        case 'update_company': return this.updateCompany(args);
+        case 'delete_company': return this.deleteCompany(args);
+        case 'list_opportunities': return this.listOpportunities(args);
         case 'list_status_changes': return this.listStatusChanges(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
@@ -630,6 +685,36 @@ export class CannyMCPServer {
     return this.post('/entries/retrieve', { id: args.id });
   }
 
+  private async listCompanies(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, unknown> = {};
+    if (args.search) params.search = args.search;
+    if (args.segment) params.segment = args.segment;
+    if (args.limit) params.limit = args.limit;
+    if (args.cursor) params.cursor = args.cursor;
+    return this.post('/companies/list', params);
+  }
+
+  private async updateCompany(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, unknown> = { id: args.id };
+    if (args.name) params.name = args.name;
+    if (args.monthlySpend !== undefined) params.monthlySpend = args.monthlySpend;
+    if (args.customFields) {
+      try { params.customFields = JSON.parse(args.customFields as string); } catch { params.customFields = args.customFields; }
+    }
+    return this.post('/companies/update', params);
+  }
+
+  private async deleteCompany(args: Record<string, unknown>): Promise<ToolResult> {
+    return this.post('/companies/delete', { id: args.id });
+  }
+
+  private async listOpportunities(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, unknown> = {};
+    if (args.limit) params.limit = args.limit;
+    if (args.skip !== undefined) params.skip = args.skip;
+    return this.post('/opportunities/list', params);
+  }
+
   private async listStatusChanges(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, unknown> = { boardID: args.boardID };
     if (args.limit) params.limit = args.limit;
@@ -644,8 +729,8 @@ export class CannyMCPServer {
       version: '1.0.0',
       category: 'misc' as const,
       keywords: ['canny', 'feedback', 'feature request', 'product management', 'roadmap', 'vote', 'post', 'board', 'changelog', 'user research', 'customer feedback'],
-      toolNames: ['list_boards', 'get_board', 'list_posts', 'get_post', 'create_post', 'update_post', 'change_post_status', 'delete_post', 'add_post_tag', 'remove_post_tag', 'list_votes', 'create_vote', 'delete_vote', 'list_comments', 'get_comment', 'create_comment', 'delete_comment', 'list_users', 'find_user', 'create_or_update_user', 'delete_user', 'list_tags', 'create_tag', 'list_categories', 'create_category', 'list_changelog_entries', 'get_changelog_entry', 'list_status_changes'],
-      description: 'Canny customer feedback management: feature requests, votes, comments, status updates, changelog, tags, categories, and user management.',
+      toolNames: ['list_boards', 'get_board', 'list_posts', 'get_post', 'create_post', 'update_post', 'change_post_status', 'delete_post', 'add_post_tag', 'remove_post_tag', 'list_votes', 'create_vote', 'delete_vote', 'list_comments', 'get_comment', 'create_comment', 'delete_comment', 'list_users', 'find_user', 'create_or_update_user', 'delete_user', 'list_tags', 'create_tag', 'list_categories', 'create_category', 'list_changelog_entries', 'get_changelog_entry', 'list_companies', 'update_company', 'delete_company', 'list_opportunities', 'list_status_changes'],
+      description: 'Canny customer feedback management: feature requests, votes, comments, status updates, changelog, tags, categories, companies, opportunities, and user management.',
       author: 'protectnil' as const,
     };
   }

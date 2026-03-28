@@ -4,10 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://docs.checkr.com/mcp/ — hosted-only cloud bridge at mcp.checkr.com.
-// Transport: hosted remote (not stdio). Requires cloud connectivity to Checkr's MCP endpoint.
-// Our adapter covers REST API v1 directly — preferred for self-hosted, air-gapped, or
-// custom-credential deployments where mcp.checkr.com is not reachable.
+// Official MCP: https://mcp.checkr.com/ (production), https://mcp.checkr-staging.com/ (staging)
+// Docs: https://docs.checkr.com/mcp/ — transport: streamable-HTTP, auth: OAuth Dynamic Client Registration
+// Vendor MCP is official (published by Checkr Inc.) and actively maintained (2025-2026).
+// Vendor MCP covers: ~4 read-only tools (get_candidate, get_candidates_table, get_report,
+//   get_screening_details). REST API covers write operations (create_candidate, create_report,
+//   create_invitation, create_adverse_action, create_geo) not exposed by the MCP.
+// Vendor MCP FAILS criterion 3: exposes only ~4 tools (< 10 threshold). Use REST adapter.
+// Recommendation: use-rest-api — vendor MCP covers only read-only subset (< 10 tools);
+//   REST adapter provides full CRUD coverage including create/write operations.
 //
 // Base URL: https://api.checkr.com/v1
 // Auth: HTTP Basic — API key as username, empty password (Base64 encoded)

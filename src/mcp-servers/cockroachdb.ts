@@ -4,18 +4,33 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from Cockroach Labs as of 2026-03.
-// Multiple community MCP servers exist (viragtripathi/cockroachdb-mcp-server,
-// amineelkouhen/mcp-cockroachdb, dhartunian/cockroachdb-mcp-server) but none are published
-// by Cockroach Labs officially. All are community-maintained with limited tool coverage.
-// Our adapter covers: 15 tools (CockroachDB Cloud API — cluster, database, and user management).
-// Recommendation: Use this adapter for Cloud API automation. For direct SQL execution,
-// connect via the PostgreSQL wire protocol (CockroachDB is PostgreSQL-compatible).
+// Official MCP: https://cockroachlabs.cloud/mcp — transport: streamable-HTTP, auth: OAuth2.1 / service account API key
+// Published by Cockroach Labs (official). Announced 2026-03-25. Actively maintained.
+// Our adapter covers: 15 tools (CockroachDB Cloud Management API — cluster, database, SQL user, backup, region ops).
+// Vendor MCP covers: SQL-level tools only (list_databases, select_query, get_table_schema, create_table, insert_rows).
+//
+// OVERLAP ANALYSIS:
+//   Shared: none — the vendor MCP operates against the SQL wire protocol (direct cluster access),
+//           while our adapter operates against the Cloud Management REST API (cluster lifecycle).
+//   MCP-only: list_databases (SQL), select_query, get_table_schema, create_table, insert_rows, etc.
+//   Our-only: list_clusters, get_cluster, create_cluster, update_cluster, delete_cluster,
+//             list_databases (Cloud API), create_database, delete_database, list_sql_users,
+//             create_sql_user, delete_sql_user, update_sql_user_password, list_backups,
+//             get_backup, list_regions.
+// Recommendation: use-both — vendor MCP handles SQL-level database interactions; this adapter
+// handles Cloud API cluster lifecycle management. Non-overlapping domains, both required.
+//
+// Integration: use-both
+// MCP-sourced tools: SQL operations (list_databases via SQL, select_query, get_table_schema, create_table, insert_rows)
+// REST-sourced tools (15): list_clusters, get_cluster, create_cluster, update_cluster, delete_cluster,
+//   list_databases, create_database, delete_database, list_sql_users, create_sql_user, delete_sql_user,
+//   update_sql_user_password, list_backups, get_backup, list_regions
+// Combined coverage: Cloud Management (this adapter) + SQL operations (vendor MCP)
 //
 // Base URL: https://cockroachlabs.cloud/api/v1
 // Auth: Bearer API key in Authorization header (service account key from Cloud Console)
-// Docs: https://www.cockroachlabs.com/docs/api/cloud/v1.html
-//       https://www.cockroachlabs.com/docs/cockroachcloud/cloud-api
+// Docs: https://www.cockroachlabs.com/docs/cockroachcloud/cloud-api
+//       https://www.cockroachlabs.com/docs/api/cloud/v1.html
 // Rate limits: 10 requests/second per user. Exceeding limit returns HTTP 429 with Retry-After header.
 
 import { ToolDefinition, ToolResult } from './types.js';

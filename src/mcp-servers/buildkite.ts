@@ -4,14 +4,26 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/buildkite/buildkite-mcp-server — transport: stdio + remote HTTP, auth: OAuth2 / API token
-// Our adapter covers: 20 tools (pipelines, builds, jobs, agents, organizations). Vendor MCP covers: 20+ tools (full API + OAuth).
-// Recommendation: Use vendor MCP for interactive IDE/Cursor workflows. Use this adapter for programmatic CI/CD data access and air-gapped deployments.
+// Official MCP: https://github.com/buildkite/buildkite-mcp-server — transport: stdio + streamable-HTTP (remote), auth: OAuth2 / API token
+// Our adapter covers: 20 tools (pipelines, builds, jobs, agents, organizations, user).
+// Vendor MCP covers: 20+ tools (list_builds, get_build, create_build, wait_for_build, list_pipelines, get_pipeline,
+//   create_pipeline, update_pipeline, get_job_logs, unblock_job, list_clusters, get_cluster, list_cluster_queues,
+//   get_cluster_queue, and more). MCP is actively maintained (523+ commits as of 2026-03-28), official, MIT licensed.
+// Recommendation: use-both — vendor MCP adds wait_for_build (polling tool not in REST API), our adapter adds
+//   list_organizations, get_organization, list_agents, get_agent, stop_agent, cancel_build, rebuild, retry_job, get_user.
+//   Use vendor MCP for interactive/IDE workflows. Use this adapter for automation, air-gapped, and agent-management tools.
+//
+// Integration: use-both
+// MCP-sourced tools (unique): wait_for_build, list_clusters, get_cluster, list_cluster_queues, get_cluster_queue
+// REST-sourced tools (unique): list_organizations, get_organization, list_agents, get_agent, stop_agent,
+//   cancel_build, rebuild, retry_job, get_user
+// Shared: list_builds, get_build, create_build, list_pipelines, get_pipeline, create_pipeline, update_pipeline,
+//   delete_pipeline, get_job_logs, unblock_job, list_jobs
 //
 // Base URL: https://api.buildkite.com/v2
 // Auth: Bearer token (API access token from Buildkite account settings → API Access Tokens)
 // Docs: https://buildkite.com/docs/apis/rest-api
-// Rate limits: Not officially documented; practical limit observed at ~100 req/min per token.
+// Rate limits: Not officially documented; practical limit ~100 req/min per token (not in official docs)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -640,6 +652,23 @@ export class BuildkiteMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
+  private async bkPut(path: string, body: Record<string, unknown> = {}): Promise<ToolResult> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    // Some PUT endpoints return 204 No Content
+    if (response.status === 204) {
+      return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }], isError: false };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
   private async bkDelete(path: string): Promise<ToolResult> {
     const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
@@ -738,14 +767,14 @@ export class BuildkiteMCPServer {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, and build_number are required' }], isError: true };
     }
-    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/cancel`);
+    return this.bkPut(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/cancel`);
   }
 
   private async rebuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, and build_number are required' }], isError: true };
     }
-    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/rebuild`);
+    return this.bkPut(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/rebuild`);
   }
 
   private async listJobs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -766,7 +795,7 @@ export class BuildkiteMCPServer {
     if (!args.org_slug || !args.pipeline_slug || args.build_number === undefined || !args.job_id) {
       return { content: [{ type: 'text', text: 'org_slug, pipeline_slug, build_number, and job_id are required' }], isError: true };
     }
-    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/jobs/${encodeURIComponent(args.job_id as string)}/retry`);
+    return this.bkPut(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/jobs/${encodeURIComponent(args.job_id as string)}/retry`);
   }
 
   private async unblockJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -775,7 +804,7 @@ export class BuildkiteMCPServer {
     }
     const body: Record<string, unknown> = {};
     if (args.unblocker_uuid) body.unblocker_uuid = args.unblocker_uuid;
-    return this.bkPost(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/jobs/${encodeURIComponent(args.job_id as string)}/unblock`, body);
+    return this.bkPut(`/organizations/${encodeURIComponent(args.org_slug as string)}/pipelines/${encodeURIComponent(args.pipeline_slug as string)}/builds/${encodeURIComponent(args.build_number as string)}/jobs/${encodeURIComponent(args.job_id as string)}/unblock`, body);
   }
 
   private async listAgents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -796,7 +825,7 @@ export class BuildkiteMCPServer {
     if (!args.org_slug || !args.agent_id) return { content: [{ type: 'text', text: 'org_slug and agent_id are required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (typeof args.force === 'boolean') body.force = args.force;
-    return this.bkPatch(`/organizations/${encodeURIComponent(args.org_slug as string)}/agents/${encodeURIComponent(args.agent_id as string)}/stop`, body);
+    return this.bkPut(`/organizations/${encodeURIComponent(args.org_slug as string)}/agents/${encodeURIComponent(args.agent_id as string)}/stop`, body);
   }
 
   private async getUser(): Promise<ToolResult> {

@@ -4,12 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Apollo.io MCP server exists. Community implementations include:
-//   github.com/Chainscore/apollo-io-mcp — 27 tools, community-maintained, stdio transport
-//   github.com/edwardchoh/apollo-io-mcp-server — community, limited tools
+// Official MCP: None found as of 2026-03-28.
+// No official Apollo.io MCP server exists. Community implementations (NOT official):
+//   github.com/Chainscore/apollo-io-mcp — 45 tools, community-maintained, stdio transport (last commit Feb 2026)
+//   github.com/edwardchoh/apollo-io-mcp-server — community, 5 tools only
 //   github.com/thevgergroup/apollo-io-mcp — community, limited tools
 // None are officially maintained by Apollo.io. Use this adapter for production.
+// Our adapter covers: 14 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://api.apollo.io/api/v1
 // Auth: X-Api-Key header (master API key from Apollo Settings > Integrations > API)
@@ -699,7 +701,7 @@ export class ApolloMCPServer {
     if (args.account_id) body.account_id = args.account_id;
 
     const response = await fetch(`${this.baseUrl}/contacts/${encodeURIComponent(contactId)}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
     });

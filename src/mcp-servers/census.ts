@@ -4,18 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Census (getcensus.com / Vero) MCP server was found on GitHub or the MCP registry.
-// Community implementations exist but are not maintained by Census.
-// This adapter covers: 14 tools (syncs, sources, destinations, models, connectors, webhooks, sync runs).
+// Official MCP: None found as of 2026-03-28
+// No official Census (getcensus.com / Fivetran Activations) MCP server was found on GitHub or the MCP registry.
+// Community implementations exist but are not maintained by Census/Fivetran.
+// This adapter covers: 14 tools (syncs, sources, destinations, models, webhooks, sync runs).
 // Recommendation: Use this adapter for all Census reverse ETL integrations.
+//
+// NOTE: Census was acquired by Fivetran. The API domain remains app.getcensus.com and the
+// developer docs have moved to developers.getcensus.com (hosted by Fivetran). Endpoints are unchanged.
+// NOTE: The list_models tool uses GET /api/v1/sources/{source_id}/models which is DEPRECATED by Census.
+// The vendor recommends migrating to the Datasets API. This tool is preserved for backward compatibility
+// but callers should plan to migrate to list_datasets when that tool is added.
 //
 // Base URL: https://app.getcensus.com/api/v1
 // Auth: Bearer token (workspace access token from Census workspace settings)
-//       Workspace API: Authorization: Bearer <workspace_token>
-//       Organization API: Authorization: Bearer <personal_access_token>
-// Docs: https://docs.getcensus.com/misc/developers/api
-//       https://developers.getcensus.com/api-reference/introduction/overview
+//       Authorization: Bearer <workspace_token>
+// Docs: https://developers.getcensus.com/api-reference/introduction/overview
 // Rate limits: Not publicly documented. Census recommends polling sync runs at reasonable intervals.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -182,9 +186,9 @@ export class CensusMCPServer {
               type: 'number',
               description: 'Census sync ID to trigger',
             },
-            full_sync: {
+            force_full_sync: {
               type: 'boolean',
-              description: 'Force a full re-sync of all records, ignoring incremental state (default: false)',
+              description: 'Force a full re-sync of all records, ignoring incremental state (default: false). Note: not supported for Append syncs.',
             },
           },
           required: ['sync_id'],
@@ -298,10 +302,14 @@ export class CensusMCPServer {
       },
       {
         name: 'list_models',
-        description: 'List all data models (SQL queries or dbt models) defined in the Census workspace as sync sources',
+        description: 'List SQL/dbt models for a specific Census source connection (DEPRECATED by vendor — use Datasets API when available)',
         inputSchema: {
           type: 'object',
           properties: {
+            source_id: {
+              type: 'number',
+              description: 'Census source connection ID (required — models are scoped per source)',
+            },
             page: {
               type: 'number',
               description: 'Page number for pagination (default: 1)',
@@ -311,23 +319,15 @@ export class CensusMCPServer {
               description: 'Number of models per page (default: 25, max: 100)',
             },
           },
+          required: ['source_id'],
         },
       },
       {
         name: 'list_webhooks',
-        description: 'List all webhooks configured in the Census workspace for sync run event notifications',
+        description: 'List all webhooks configured in the Census workspace for sync run event notifications (returns name, description, events, and endpoint URL)',
         inputSchema: {
           type: 'object',
-          properties: {
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            per_page: {
-              type: 'number',
-              description: 'Number of webhooks per page (default: 25, max: 100)',
-            },
-          },
+          properties: {},
         },
       },
     ];
@@ -481,9 +481,11 @@ export class CensusMCPServer {
 
   private async triggerSync(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.sync_id) return { content: [{ type: 'text', text: 'sync_id is required' }], isError: true };
-    const body: Record<string, unknown> = {};
-    if (typeof args.full_sync === 'boolean') body.full_sync = args.full_sync;
-    return this.censusPost(`/syncs/${encodeURIComponent(args.sync_id as string)}/trigger`, body);
+    const params: Record<string, string> = {};
+    if (typeof args.force_full_sync === 'boolean') params.force_full_sync = String(args.force_full_sync);
+    const qs = Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
+    const path = `/syncs/${encodeURIComponent(args.sync_id as string)}/trigger${qs}`;
+    return this.censusPost(path, {});
   }
 
   private async listSyncRuns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -525,16 +527,14 @@ export class CensusMCPServer {
   }
 
   private async listModels(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.source_id) return { content: [{ type: 'text', text: 'source_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.page) params.page = String(args.page);
     if (args.per_page) params.per_page = String(args.per_page);
-    return this.censusGet('/models', params);
+    return this.censusGet(`/sources/${encodeURIComponent(args.source_id as string)}/models`, params);
   }
 
-  private async listWebhooks(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {};
-    if (args.page) params.page = String(args.page);
-    if (args.per_page) params.per_page = String(args.per_page);
-    return this.censusGet('/webhooks', params);
+  private async listWebhooks(_args: Record<string, unknown>): Promise<ToolResult> {
+    return this.censusGet('/webhooks', {});
   }
 }

@@ -4,15 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 // No official Checkly MCP server was found on GitHub or the Checkly documentation site.
-// This adapter provides full REST API coverage for monitoring-as-code workflows.
+// A community-maintained server (github.com/mayankeq/checkly-mcp, 5 tools) exists but is
+// not official and covers only a subset (list_checks, get_check, update_check, run_check,
+// get_check_results). It does not qualify under the MCP criteria (not vendor-published).
+// This adapter provides REST API coverage for monitoring-as-code workflows.
 //
 // Base URL: https://api.checklyhq.com/v1
 // Auth: Bearer token (API key from app.checklyhq.com → Account Settings → API Keys)
 //       + x-checkly-account header (Account ID from Account Settings → General)
 // Docs: https://www.checklyhq.com/docs/api-reference/overview/
-// Rate limits: Not publicly documented; stay within 100 req/s to avoid throttling
+// Rate limits: 600 requests per 60 seconds for most routes; some routes have custom limits.
+//   check-results endpoint: 5 requests / 10 seconds (custom limit).
+//   Note: GET /v1/check-results/{checkId} is deprecated; replacement is GET /v2/check-results/{checkId}.
+//   This adapter retains the v1 path until v2 is fully stable per vendor guidance.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

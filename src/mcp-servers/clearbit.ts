@@ -4,14 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Clearbit or HubSpot Breeze Intelligence MCP server was found on GitHub or npm as of March 2026.
+// Official MCP: None found as of 2026-03-28
+// No official Clearbit or HubSpot Breeze Intelligence MCP server was found on GitHub or npm as of 2026-03-28.
+// A Pipedream-hosted community integration exists (3 tools only: Email Lookup, Domain Lookup, Company Name to Domain)
+// but is not published by Clearbit/HubSpot and does not qualify as an official MCP server.
 // HubSpot has an MCP server (https://github.com/HubSpot/mcp-server-hubspot) but it targets CRM operations, not enrichment.
+// Our adapter covers: 8 tools. Vendor MCP covers: 0 tools (no official server).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Note: Clearbit was acquired by HubSpot in December 2024 and is now branded as Breeze Intelligence.
 // The legacy Clearbit REST API remains operational for existing customers; HubSpot-native enrichment
 // uses Breeze Intelligence credits within the HubSpot platform and does not expose a standalone REST API.
 // This adapter wraps the legacy Clearbit API, which remains the only available REST enrichment surface.
+//
+// DEPRECATION NOTE: The public Clearbit Logo API (https://logo.clearbit.com/domain) was sunset
+// on December 1, 2025 per official Clearbit changelog (https://clearbit.com/changelog/2025-06-10).
+// The find_company_logo tool has been removed from this adapter. Use enrich_company to retrieve
+// logos via the `logo` field in the Company Enrichment API response instead.
 //
 // Base URLs:
 //   Person enrichment:  https://person.clearbit.com/v1
@@ -64,7 +73,6 @@ export class ClearbitMCPServer {
         'enrich_person', 'enrich_company', 'enrich_combined',
         'find_person_stream', 'lookup_company_by_domain',
         'reveal_company_by_ip', 'search_prospector',
-        'lookup_person_by_email', 'find_company_logo',
         'lookup_name_to_domain',
       ],
       description: 'Clearbit/HubSpot Breeze Intelligence B2B data enrichment: look up person and company firmographic data by email or domain, reveal site visitors by IP, and prospect for contacts.',
@@ -201,38 +209,6 @@ export class ClearbitMCPServer {
         },
       },
       {
-        name: 'lookup_person_by_email',
-        description: 'Look up a person record directly by email returning social profiles, bio, location, and employment',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            email: {
-              type: 'string',
-              description: 'Email address to look up',
-            },
-          },
-          required: ['email'],
-        },
-      },
-      {
-        name: 'find_company_logo',
-        description: 'Retrieve the logo image URL for a company by its domain using the Clearbit Logo API',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            domain: {
-              type: 'string',
-              description: 'Company domain (e.g. google.com)',
-            },
-            size: {
-              type: 'number',
-              description: 'Logo size in pixels (default: 128, options: 32, 64, 128, 256)',
-            },
-          },
-          required: ['domain'],
-        },
-      },
-      {
         name: 'lookup_name_to_domain',
         description: 'Convert a company name to its primary web domain using Clearbit NameToDomain API',
         inputSchema: {
@@ -266,10 +242,6 @@ export class ClearbitMCPServer {
           return this.revealCompanyByIp(args);
         case 'search_prospector':
           return this.searchProspector(args);
-        case 'lookup_person_by_email':
-          return this.lookupPersonByEmail(args);
-        case 'find_company_logo':
-          return this.findCompanyLogo(args);
         case 'lookup_name_to_domain':
           return this.lookupNameToDomain(args);
         default:
@@ -377,22 +349,6 @@ export class ClearbitMCPServer {
     if (args.role) params.role = args.role as string;
     if (args.seniority) params.seniority = args.seniority as string;
     return this.clearbitGet(`${this.prospectorBaseUrl}/v1/people/search`, params);
-  }
-
-  private async lookupPersonByEmail(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.email) return { content: [{ type: 'text', text: 'email is required' }], isError: true };
-    return this.clearbitGet(`${this.personBaseUrl}/v1/people/email/${encodeURIComponent(args.email as string)}`);
-  }
-
-  private async findCompanyLogo(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.domain) return { content: [{ type: 'text', text: 'domain is required' }], isError: true };
-    const size = (args.size as number) ?? 128;
-    const logoUrl = `https://logo.clearbit.com/${encodeURIComponent(args.domain as string)}?size=${size}`;
-    // Logo API returns an image, not JSON — return the URL directly
-    return {
-      content: [{ type: 'text', text: JSON.stringify({ logo_url: logoUrl, domain: args.domain, size }) }],
-      isError: false,
-    };
   }
 
   private async lookupNameToDomain(args: Record<string, unknown>): Promise<ToolResult> {

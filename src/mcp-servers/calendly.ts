@@ -4,9 +4,24 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Calendly MCP server was found on GitHub. Community implementations exist
-// (universal-mcp/calendly, meAmitPatil/calendly-mcp-server) but are not maintained by Calendly Inc.
+// Official MCP: https://api.calendly.com/mcp — transport: streamable-HTTP, auth: OAuth2 DCR (Dynamic Client
+//   Registration, RFC 7591). Vendor-hosted by Calendly Inc. No self-hosting supported.
+//   Docs: https://developer.calendly.com/calendly-mcp-server
+//   Tools: https://developer.calendly.com/supported-tools
+// Our adapter covers: 22 tools. Vendor MCP covers: ~19 tools.
+// Recommendation: use-both — MCP has unique tools (create_event_invitee/Scheduling API booking,
+//   list_user_meeting_locations, get/delete invitee_no_show, get_routing_form_submission) not in REST.
+//   Our adapter has webhook management tools (list/create/delete webhook_subscriptions) not in MCP.
+//   Use MCP for booking + no-show ops; use this REST adapter for webhook management and full org control.
+// Integration: use-both
+//   MCP-sourced tools (5): create_event_invitee (scheduled_events-create_event_invitee),
+//     list_user_meeting_locations (locations-list_user_meeting_locations),
+//     get_invitee_no_show (scheduled_events-get_invitee_no_show),
+//     delete_invitee_no_show (scheduled_events-delete_invitee_no_show),
+//     get_routing_form_submission (routing_forms-get_routing_form_submission)
+//   REST-sourced tools (3 unique): list_webhook_subscriptions, create_webhook_subscription,
+//     delete_webhook_subscription
+//   Combined coverage: 25 tools (MCP ~19 + REST 22 - shared ~16)
 //
 // Base URL: https://api.calendly.com
 // Auth: Bearer token (Personal Access Token or OAuth2 access token)

@@ -4,10 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/AutomoxCommunity/automox-mcp — transport: stdio + HTTP (FastMCP), auth: API key
-// Last commit: February 23, 2026. Active development; 2 commits, pre-1.0 stability warning.
-// The community MCP covers: 18 tools (workflow-oriented). Our adapter covers: 20 tools (full REST surface).
-// Recommendation: Use community MCP for workflow automation. Use this adapter for direct REST coverage or air-gapped deployments.
+// Official MCP: None found as of 2026-03-28.
+//   Community MCP exists: https://github.com/AutomoxCommunity/automox-mcp — published by AutomoxCommunity
+//   (NOT the official Automox vendor). Transport: stdio + streamable-HTTP + SSE (FastMCP). Auth: API key.
+//   Last commit: February 23, 2026. v0.1.0 only (2 commits total). Pre-1.0 stability warning — not suitable for production.
+//   Fails MCP criterion 1 (not published by vendor) and criterion 3 (pre-1.0 with stability caution).
+//   Community MCP covers: 18 workflow-oriented tools (list_devices, device_detail, devices_needing_attention,
+//   search_devices, device_health_metrics, execute_device_command, policy_health_overview, policy_execution_timeline,
+//   policy_run_results, policy_catalog, policy_detail, apply_policy_changes, patch_approvals_summary,
+//   decide_patch_approval, execute_policy_now, invite_user_to_account, remove_user_from_account,
+//   audit_trail_user_activity). Our adapter covers: 20 tools (full REST surface).
+// Recommendation: use-rest-api — community MCP is not official and pre-1.0. Use this REST adapter for
+//   direct API coverage. Revisit if Automox publishes an official vendor MCP server.
 //
 // Base URL: https://console.automox.com/api
 // Auth: Bearer API key in Authorization header. Obtain from Automox Console → Settings → Keys.
@@ -326,7 +334,7 @@ export class AutomoxMCPServer {
       },
       {
         name: 'execute_policy',
-        description: 'Trigger immediate execution of a policy on all its assigned devices outside the normal schedule',
+        description: 'Trigger immediate execution of a policy outside the normal schedule; action must be remediateAll (all devices) or remediateServer (specific device)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -336,7 +344,7 @@ export class AutomoxMCPServer {
             },
             action: {
               type: 'string',
-              description: 'Action to perform: remediateAll (run the policy) or scan (inventory scan only)',
+              description: 'Action to perform: remediateAll (run policy on all assigned devices) or remediateServer (run on a specific device)',
             },
           },
           required: ['policy_id'],

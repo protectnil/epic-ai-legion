@@ -4,13 +4,28 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/awslabs/mcp — transport: stdio, auth: AWS credentials
-// The awslabs/mcp suite is a collection of specialized servers (documentation, IaC, CDK, etc.)
-// focused on developer tooling, not general AWS resource management operations.
-// Our adapter covers: 20 tools (resource management across EC2, S3, Lambda, IAM, CloudWatch,
-// RDS, ECS, SQS, SNS, STS). Vendor MCP covers: developer-tooling workflows (docs, IaC).
-// Recommendation: Use awslabs/mcp for documentation and IaC workflows. Use this adapter
-// for resource inventory, monitoring, and operational management in air-gapped or PAT deployments.
+// Official MCP: https://github.com/awslabs/mcp — transport: stdio (streamable-HTTP also available),
+//   auth: AWS credentials (same IAM credentials as CLI)
+// The awslabs/mcp suite exposes 66 specialized servers as of 2026-03-28. The closest to general
+// resource management is the AWS API MCP Server (aws-api-mcp-server), which exposes 3 tools:
+//   call_aws, suggest_aws_commands, get_execution_plan (experimental)
+// call_aws is a generic CLI wrapper — it can reach any AWS service but returns raw CLI output
+// and has no typed schemas per operation. It does NOT expose structured per-service tools.
+// Our adapter covers: 20 tools (typed, structured resource management across EC2, S3, Lambda,
+//   IAM, CloudWatch, RDS, ECS, SQS, SNS, STS). Vendor MCP covers: 3 generic CLI tools.
+// Recommendation: use-both — awslabs/mcp aws-api-mcp-server provides CLI breadth (all services)
+//   while our adapter provides typed structured tools for the 10 services listed above.
+//   MCP is preferred for services we don't cover; our structured tools are preferred for EC2/S3/
+//   Lambda/IAM/CloudWatch/RDS/ECS/SQS/SNS/STS where schema-aware calls reduce hallucination risk.
+//
+// Integration: use-both
+// MCP-sourced tools (3): call_aws, suggest_aws_commands, get_execution_plan
+// REST-sourced tools (20): list_s3_buckets, list_s3_objects, get_s3_object, list_ec2_instances,
+//   describe_ec2_instance, list_ec2_security_groups, list_lambda_functions, get_lambda_function,
+//   invoke_lambda_function, list_iam_users, list_iam_roles, get_iam_role,
+//   list_cloudwatch_metrics, get_cloudwatch_metric_statistics, list_rds_instances,
+//   list_ecs_clusters, list_ecs_services, list_sqs_queues, list_sns_topics, get_caller_identity
+// Combined coverage: 23 tools (MCP: 3 + REST: 20, no overlap on tool names)
 //
 // Base URL: https://{service}.{region}.amazonaws.com (per-service regional endpoints)
 // Auth: AWS Signature Version 4 (HMAC-SHA256) — accessKeyId + secretAccessKey + optional sessionToken

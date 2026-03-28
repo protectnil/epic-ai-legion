@@ -4,17 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: Multiple community servers exist (LucasHild/mcp-server-bigquery,
-// ergut/mcp-bigquery-server, SnowLeopard-AI/bigquery-mcp, aicayzer/bigquery-mcp, and others)
-// but none are vendor-official (from Google). All are community-authored, read-only focused,
-// and do not cover the full BigQuery v2 API surface (datasets, jobs, routines, models, tabledata).
-// No official Google MCP server for BigQuery was found on GitHub as of 2026-03.
-// Recommendation: Use this REST wrapper for full API coverage in all deployments.
+// Official MCP: https://bigquery.googleapis.com/mcp — transport: streamable-HTTP (HTTPS),
+//   auth: OAuth2 (IAM — does NOT accept API keys). Published by Google. Actively maintained.
+//   Google MCP tools (5): list_dataset_ids, list_table_ids, get_dataset_info, get_table_info, execute_sql.
+//   Recommendation: use-rest-api — Google MCP covers only 5 read/query tools. Our adapter covers
+//   19 tools including create/delete datasets, create/delete tables, insert_rows, streaming inserts,
+//   job management (create_query_job, get_query_results, list_jobs, cancel_job), list_routines,
+//   get_routine, and list_projects. The Google MCP is a strict subset. Use our REST adapter for
+//   full API surface. Air-gapped deployments: use this adapter directly.
 //
 // Base URL: https://bigquery.googleapis.com/bigquery/v2
 // Auth: Bearer token (OAuth2 access token or service account token via google-auth-library or
 //       Application Default Credentials). Pass as Authorization: Bearer {token}.
 // Docs: https://cloud.google.com/bigquery/docs/reference/rest
+//       https://cloud.google.com/bigquery/docs/reference/mcp (official Google MCP reference)
 // Rate limits: 300 concurrent API requests per project; query jobs subject to concurrent slot limits
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -468,7 +471,7 @@ export class BigQueryMCPServer {
       body: JSON.stringify(body),
     });
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: !response.ok };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: !response.ok };
   }
 
   private async deleteDataset(args: Record<string, unknown>): Promise<ToolResult> {
@@ -526,7 +529,7 @@ export class BigQueryMCPServer {
       { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) },
     );
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: !response.ok };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: !response.ok };
   }
 
   private async deleteTable(args: Record<string, unknown>): Promise<ToolResult> {
@@ -556,7 +559,7 @@ export class BigQueryMCPServer {
       { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) },
     );
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: !response.ok };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: !response.ok };
   }
 
   private async readTableRows(args: Record<string, unknown>): Promise<ToolResult> {
@@ -614,7 +617,7 @@ export class BigQueryMCPServer {
       { method: 'POST', headers: this.authHeaders },
     );
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: !response.ok };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: !response.ok };
   }
 
   private async listRoutines(args: Record<string, unknown>): Promise<ToolResult> {
