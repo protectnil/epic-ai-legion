@@ -24,7 +24,7 @@ interface AppCenterConfig {
   baseUrl?: string;
 }
 
-export class AppCenterMCPServer {
+export class AppCenterMSMCPServer {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 

@@ -27,14 +27,10 @@ interface BrainBIConfig {
 
 export class BrainBIMCPServer {
   private bearerToken: string;
-  private readonly email: string;
-  private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: BrainBIConfig) {
     this.bearerToken = config.bearerToken ?? '';
-    this.email = config.email ?? '';
-    this.password = config.password ?? '';
     this.baseUrl = config.baseUrl ?? 'https://brainbi.net';
   }
 

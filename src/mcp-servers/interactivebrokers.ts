@@ -22,12 +22,10 @@ interface InteractiveBrokersConfig {
 
 export class InteractiveBrokersMCPServer {
   private readonly accessToken: string;
-  private readonly accessTokenSecret: string;
   private readonly baseUrl: string;
 
   constructor(config: InteractiveBrokersConfig) {
     this.accessToken = config.accessToken;
-    this.accessTokenSecret = config.accessTokenSecret || '';
     this.baseUrl = config.baseUrl || 'https://www.interactivebrokers.com/tradingapi/v1';
   }
 

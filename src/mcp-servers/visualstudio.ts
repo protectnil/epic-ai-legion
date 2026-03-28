@@ -368,8 +368,8 @@ export class VisualStudioMCPServer {
     if (args.dotfilesRepository) {
       body.personalizations = {
         dotfilesRepository: args.dotfilesRepository,
-        ...(args.dotfilesTargetPath && { dotfilesTargetPath: args.dotfilesTargetPath }),
-        ...(args.dotfilesInstallCommand && { dotfilesInstallCommand: args.dotfilesInstallCommand }),
+        ...(args.dotfilesTargetPath ? { dotfilesTargetPath: args.dotfilesTargetPath as string } : {}),
+        ...(args.dotfilesInstallCommand ? { dotfilesInstallCommand: args.dotfilesInstallCommand as string } : {}),
       };
     }
     return this.request('POST', '/api/v1/Environments', undefined, body);

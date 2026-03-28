@@ -562,19 +562,6 @@ export class OnfidoMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async patch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'PATCH',
-      headers: this.headers,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
-    }
-    const responseText = await response.text();
-    const data: unknown = responseText ? JSON.parse(responseText) : { success: true };
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
 
   private async del(path: string): Promise<ToolResult> {
     const response = await fetch(`${this.baseUrl}${path}`, {

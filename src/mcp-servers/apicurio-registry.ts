@@ -330,7 +330,7 @@ export class ApicurioRegistryMCPServer {
   }
 
   private async createArtifact(args: Record<string, unknown>): Promise<ToolResult> {
-    const headers = { ...this.headers, 'X-Registry-ArtifactType': String(args.artifactType), 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = { ...this.headers, 'X-Registry-ArtifactType': String(args.artifactType), 'Content-Type': 'application/json' };
     if (args.artifactId) headers['X-Registry-ArtifactId'] = String(args.artifactId);
     const params = new URLSearchParams();
     if (args.ifExists) params.set('ifExists', String(args.ifExists));

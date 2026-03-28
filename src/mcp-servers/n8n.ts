@@ -506,18 +506,6 @@ export class N8NMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async n8nPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'PATCH',
-      headers: this.headers,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
-    }
-    const data = await response.json();
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
 
   private async n8nPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const response = await fetch(`${this.baseUrl}${path}`, {

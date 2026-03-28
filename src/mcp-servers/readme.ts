@@ -441,11 +441,6 @@ export class ReadMeMCPServer {
     };
   }
 
-  private versionHeader(version?: unknown): Record<string, string> {
-    if (version && typeof version === 'string') return { ...this.headers, 'x-readme-version': version };
-    return this.headers;
-  }
-
   private truncate(data: unknown): string {
     const text = JSON.stringify(data, null, 2);
     return text.length > 10_000
@@ -488,12 +483,12 @@ export class ReadMeMCPServer {
   // ── API Specification ─────────────────────────────────────────────────────
   private async getApiSpecification(args: Record<string, unknown>): Promise<ToolResult> {
     const qs = this.buildQuery({ perPage: args.perPage ?? 10, page: args.page ?? 1 });
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('GET', `/api-specification${qs}`, undefined, versionHdr);
   }
 
   private async uploadApiSpecification(args: Record<string, unknown>): Promise<ToolResult> {
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('POST', '/api-specification', { spec: args.spec }, versionHdr);
   }
 
@@ -507,18 +502,18 @@ export class ReadMeMCPServer {
 
   // ── Categories ────────────────────────────────────────────────────────────
   private async getCategory(args: Record<string, unknown>): Promise<ToolResult> {
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('GET', `/categories/${args.slug}`, undefined, versionHdr);
   }
 
   private async getCategoryDocs(args: Record<string, unknown>): Promise<ToolResult> {
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('GET', `/categories/${args.slug}/docs`, undefined, versionHdr);
   }
 
   // ── Docs ─────────────────────────────────────────────────────────────────
   private async getDoc(args: Record<string, unknown>): Promise<ToolResult> {
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('GET', `/docs/${args.slug}`, undefined, versionHdr);
   }
 
@@ -531,7 +526,7 @@ export class ReadMeMCPServer {
     if (args.body) body['body'] = args.body;
     if (args.order !== undefined) body['order'] = args.order;
     if (args.parentDoc) body['parentDoc'] = args.parentDoc;
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('POST', '/docs', body, versionHdr);
   }
 
@@ -541,18 +536,18 @@ export class ReadMeMCPServer {
     if (args.body !== undefined) body['body'] = args.body;
     if (args.hidden !== undefined) body['hidden'] = args.hidden;
     if (args.category !== undefined) body['category'] = args.category;
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('PUT', `/docs/${args.slug}`, body, versionHdr);
   }
 
   private async deleteDoc(args: Record<string, unknown>): Promise<ToolResult> {
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('DELETE', `/docs/${args.slug}`, undefined, versionHdr);
   }
 
   private async searchDocs(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { search: args.query };
-    const versionHdr = args.version ? { 'x-readme-version': String(args.version) } : {};
+    const versionHdr: Record<string, string> = args.version ? { 'x-readme-version': String(args.version) } : {};
     return this.request('POST', '/docs/search', body, versionHdr);
   }
 

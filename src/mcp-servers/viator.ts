@@ -78,7 +78,7 @@ export class ViatorMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
-            text: { type: 'string', description: 'Search text' },
+            text: { type: 'string', description: 'Search text (free-text query)' },
             destination_id: { type: 'number', description: 'Optional destination ID to scope search' },
             top_x: { type: 'number', description: 'Number of results to return (default: 10)' },
             sort_order: { type: 'string', description: 'Sort: PRICE_FROM_LOW_TO_HIGH, PRICE_FROM_HIGH_TO_LOW, TOP_SELLERS, REVIEW_AVG_RATING_A' },
@@ -210,6 +210,7 @@ export class ViatorMCPServer {
           type: 'object',
           properties: {
             booking_reference: { type: 'string', description: 'Booking reference to cancel' },
+            item_id: { type: 'number', description: 'Viator item ID to cancel (alternative to booking_reference)' },
             reason_code: { type: 'number', description: 'Cancellation reason code' },
           },
           required: ['booking_reference', 'reason_code'],

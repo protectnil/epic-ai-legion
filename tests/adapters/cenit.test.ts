@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { JavatpointMCPServer } from '../../src/mcp-servers/javatpoint.js';
+import { CenitMCPServer } from '../../src/mcp-servers/cenit.js';
 
-describe('JavatpointMCPServer', () => {
-  const adapter = new JavatpointMCPServer({ projectId: 'test-project', accessToken: 'test-token' });
+describe('CenitMCPServer', () => {
+  const adapter = new CenitMCPServer({ accessKey: 'test-key', accessToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();
@@ -28,7 +28,7 @@ describe('JavatpointMCPServer', () => {
   });
 
   it('catalog returns correct name and category', () => {
-    const cat = JavatpointMCPServer.catalog();
+    const cat = CenitMCPServer.catalog();
     expect(cat.name).toBeTruthy();
     expect(cat.category).toBeTruthy();
     expect(cat.toolNames.length).toBeGreaterThan(0);

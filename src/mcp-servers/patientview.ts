@@ -27,14 +27,10 @@ interface PatientViewConfig {
 }
 
 export class PatientViewMCPServer {
-  private readonly username: string;
-  private readonly password: string;
   private readonly authToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PatientViewConfig) {
-    this.username = config.username ?? '';
-    this.password = config.password ?? '';
     this.authToken = config.authToken ?? '';
     this.baseUrl = config.baseUrl ?? 'https://www.patientview.org';
   }

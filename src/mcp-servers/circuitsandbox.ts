@@ -1142,7 +1142,7 @@ export class CircuitSandboxMCPServer {
     if (!args.convId || !args.participants) {
       return { content: [{ type: 'text', text: 'convId and participants are required' }], isError: true };
     }
-    const { convId, ...body } = args;
+    const { convId } = args;
     return this.request('DELETE', `/conversations/group/${encodeURIComponent(convId as string)}/participants`);
   }
 

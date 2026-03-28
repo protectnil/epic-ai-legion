@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { JavatpointMCPServer } from '../../src/mcp-servers/javatpoint.js';
+import { CDCGovPrimeDataHubMCPServer } from '../../src/mcp-servers/cdcgov-prime-data-hub.js';
 
-describe('JavatpointMCPServer', () => {
-  const adapter = new JavatpointMCPServer({ projectId: 'test-project', accessToken: 'test-token' });
+describe('CDCGovPrimeDataHubMCPServer', () => {
+  const adapter = new CDCGovPrimeDataHubMCPServer({ apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();
@@ -28,7 +28,7 @@ describe('JavatpointMCPServer', () => {
   });
 
   it('catalog returns correct name and category', () => {
-    const cat = JavatpointMCPServer.catalog();
+    const cat = CDCGovPrimeDataHubMCPServer.catalog();
     expect(cat.name).toBeTruthy();
     expect(cat.category).toBeTruthy();
     expect(cat.toolNames.length).toBeGreaterThan(0);

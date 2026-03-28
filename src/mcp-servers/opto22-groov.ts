@@ -317,10 +317,6 @@ export class Opto22GroovMCPServer {
   private async writeTag(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.tag_id === undefined) return { content: [{ type: 'text', text: 'tag_id is required' }], isError: true };
     if (args.value === undefined) return { content: [{ type: 'text', text: 'value is required' }], isError: true };
-    const params: Record<string, string | number | undefined> = {
-      value: args.value as string,
-      index: args.index as number | undefined,
-    };
     // write_tag uses POST with query params per the OpenAPI spec
     const qs = new URLSearchParams({ api_key: this.apiKey, value: String(args.value) });
     if (args.index !== undefined) qs.set('index', String(args.index));
