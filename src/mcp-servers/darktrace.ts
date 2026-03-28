@@ -4,15 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Darktrace MCP server was found on GitHub or npmjs.
+// Official MCP: None found as of 2026-03-28
+// No official Darktrace MCP server was found on GitHub, npmjs, or vendor channels.
 //
 // Base URL: https://{instance}.darktrace.com  (or on-prem IP)
-// Auth: HMAC-SHA1 — DTAPI-Token (public token) + DTAPI-Date (ISO timestamp) + DTAPISignature
-//       Signature = HMAC-SHA1(privateToken, "{endpoint}\n{publicToken}\n{epochSeconds}")
+// Auth: HMAC-SHA1 — DTAPI-Token (public token) + DTAPI-Date (formatted datetime string) + DTAPISignature
+//       Signature = HMAC-SHA1(privateToken, "{endpoint}\n{publicToken}\n{YYYYMMDDTHHMMSS}")
+//       DTAPI-Date must be formatted as "YYYY-MM-DD HH:MM:SS" or "YYYYMMDDTHHMMSS" (NOT epoch seconds)
+//       Timestamp must be within 30 minutes of the appliance time.
 // Docs: https://customerportal.darktrace.com/api (login required); community guide at
 //       https://pdfcoffee.com/darktrace-api-guide-pdf-free.html
 // Rate limits: Not publicly documented; timestamp must be within 30 minutes of appliance time
+// Our adapter covers: 14 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — No official Darktrace MCP server exists.
 
 import { createHmac } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
@@ -341,7 +345,7 @@ export class DarktraceMCPServer {
         case 'get_system_status':
           return await this.getSystemStatus();
         case 'trigger_antigena_action':
-          return await this.triggerAntigenAction(args);
+          return await this.triggerAntigenaAction(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -362,14 +366,21 @@ export class DarktraceMCPServer {
    * Build HMAC-SHA1 Authorization headers for the given endpoint path+query string.
    * Timestamp is computed once and shared between header and signature to eliminate
    * a race condition that would occur with two separate Date.now() calls.
+   *
+   * Per the Darktrace API Guide, DTAPI-Date must be a formatted datetime string
+   * (e.g. "2020-01-01 12:00:00") and the signature uses the same string — NOT epoch seconds.
    */
   private authHeaders(endpoint: string): Record<string, string> {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const message = `${endpoint}\n${this.publicToken}\n${timestamp}`;
+    const now = new Date();
+    // Format: "YYYY-MM-DD HH:MM:SS" (UTC) as required by the Darktrace API Guide
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const dateStr = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ` +
+      `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+    const message = `${endpoint}\n${this.publicToken}\n${dateStr}`;
     const signature = createHmac('sha1', this.privateToken).update(message).digest('hex');
     return {
       'DTAPI-Token': this.publicToken,
-      'DTAPI-Date': String(timestamp),
+      'DTAPI-Date': dateStr,
       'DTAPISignature': signature,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -522,7 +533,7 @@ export class DarktraceMCPServer {
     return this.truncate(await this.jsonOrError(await this.dtFetch('/status')));
   }
 
-  private async triggerAntigenAction(args: Record<string, unknown>): Promise<ToolResult> {
+  private async triggerAntigenaAction(args: Record<string, unknown>): Promise<ToolResult> {
     const did = args.did;
     const action = args.action as string;
     if (did === undefined) throw new Error('did is required');

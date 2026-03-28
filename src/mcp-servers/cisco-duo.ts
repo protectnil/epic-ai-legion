@@ -4,9 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Cisco Duo MCP server was found on GitHub. Community Cisco MCP repos
 // (cisco-mcp, mcp-cisco-support) cover network devices and support APIs, not Duo.
+// Duo publishes an OAuth/SSO integration for securing MCP servers (duo.com/docs/sso-oauth-server-mcp)
+// but this is an identity provider for MCP, not an MCP server exposing Duo Admin API tools.
+// Our adapter covers: 17 tools. Vendor MCP covers: 0 tools (N/A).
+// Recommendation: use-rest-api — no official Duo MCP server exists.
 //
 // Base URL: https://{apiHost}  where apiHost = api-xxxxxxxx.duosecurity.com
 // Auth: HMAC-SHA1 — canonical request signed with secretKey; integrationKey as Basic Auth username.
@@ -15,7 +19,7 @@
 //   Date header must match the date used in the canonical string exactly.
 // Docs: https://duo.com/docs/adminapi
 // Rate limits: 60 API calls per second per integration (burst allowed; sustained limit applies).
-// Note: v1 auth log endpoint deprecated Sept 30, 2026 — this adapter targets v2 log endpoints.
+// Log endpoints: authentication=v2, administrator=v1, telephony=v2 (v1 deprecated Sept 30, 2026).
 
 import { ToolDefinition, ToolResult } from './types.js';
 import { createHmac } from 'node:crypto';
@@ -280,12 +284,18 @@ export class CiscoDuoMCPServer {
       },
       {
         name: 'get_telephony_logs',
-        description: 'Retrieve Duo telephony log events (SMS and phone call authentications) for billing and audit purposes',
+        description: 'Retrieve Duo telephony log events (SMS and phone call authentications) for billing and audit purposes. Uses v2 endpoint with cursor-based pagination.',
         inputSchema: {
           type: 'object',
           properties: {
-            mintime: { type: 'number', description: 'Unix timestamp (seconds): return events at or after this time' },
-            limit: { type: 'number', description: 'Max log entries to return (default 100)' },
+            mintime: { type: 'number', description: 'Unix millisecond timestamp: return events at or after this time' },
+            maxtime: { type: 'number', description: 'Unix millisecond timestamp: return events before this time' },
+            limit: { type: 'number', description: 'Max log entries to return (max 1000, default 100)' },
+            next_offset: {
+              type: 'array',
+              description: 'Pagination cursor from a previous response (array of two strings)',
+              items: { type: 'string' },
+            },
           },
         },
       },
@@ -478,8 +488,13 @@ export class CiscoDuoMCPServer {
   private async getTelephonyLogs(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {};
     if (typeof args.mintime === 'number') params.mintime = String(args.mintime);
+    if (typeof args.maxtime === 'number') params.maxtime = String(args.maxtime);
     if (typeof args.limit === 'number') params.limit = String(args.limit);
-    return this.duoGet('/admin/v1/logs/telephony', params);
+    if (Array.isArray(args.next_offset) && args.next_offset.length === 2) {
+      params['next_offset[0]'] = String(args.next_offset[0]);
+      params['next_offset[1]'] = String(args.next_offset[1]);
+    }
+    return this.duoGet('/admin/v2/logs/telephony', params);
   }
 
   private async bypassUser(args: Record<string, unknown>): Promise<ToolResult> {

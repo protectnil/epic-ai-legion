@@ -4,13 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Cybereason MCP server was found on GitHub or npmjs.
+// Official MCP: None found as of 2026-03-28
+// No official Cybereason MCP server was found on GitHub, npmjs, or vendor channels.
 //
-// Base URL: https://{tenant}.cybereason.net:8443
+// Base URL: https://{tenant}.cybereason.net:8443  (port 443 for API users, 8443 for GUI users)
 // Auth: Session cookie — POST /login.html with username/password (form-encoded), cache JSESSIONID
-// Docs: https://nest.cybereason.com/documentation/api-documentation
+// Docs: https://nest.cybereason.com/documentation/api-documentation (login required)
 // Rate limits: Not publicly documented; session TTL default 24 hours
+//
+// ENDPOINT PATH NOTE: Official Cybereason API docs are fully gated behind nest.cybereason.com login.
+// Community integrations (Demisto/XSOAR, LogicHub) use /rest/visualsearch/query/simple (POST) for
+// queries and /rest/... paths for response actions — NOT /api/v2.1/... paths used in this adapter.
+// The /api/v2.1/ path structure used here is UNVERIFIED. Review against official docs when available.
+// Demisto integration reference: github.com/demisto/content/tree/master/Packs/Cybereason
+//
+// Our adapter covers: 15 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — No official Cybereason MCP server exists.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

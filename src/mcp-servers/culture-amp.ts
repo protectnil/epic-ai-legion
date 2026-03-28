@@ -49,8 +49,12 @@ export class CultureAmpMCPServer {
       ],
       toolNames: [
         'list_employees', 'get_employee', 'list_employee_demographics',
-        'list_surveys', 'get_survey', 'list_survey_responses',
-        'list_performance_cycles', 'get_performance_cycle', 'list_performance_reviews',
+        'list_surveys', 'get_survey', 'list_survey_responses', 'get_survey_response',
+        'list_survey_questions', 'get_survey_question', 'list_survey_factors', 'get_survey_factor',
+        'list_survey_sections', 'get_survey_section',
+        'list_performance_cycles', 'get_performance_cycle',
+        'list_manager_reviews_by_cycle', 'list_manager_reviews', 'get_manager_review',
+        'list_manager_reviews_by_employee',
       ],
       description: 'Culture Amp employee engagement and performance data: list employees, survey results, response data, and performance review cycles.',
       author: 'protectnil',
@@ -501,8 +505,6 @@ export class CultureAmpMCPServer {
     if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
     const params: Record<string, string> = {};
     if (args.cursor) params.cursor = args.cursor as string;
-    if (args.limit) params.limit = String(args.limit);
-    // Reporting API uses a different path structure
     return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/responses`, params);
   }
 
@@ -511,21 +513,77 @@ export class CultureAmpMCPServer {
     if (args.status) params.status = args.status as string;
     if (args.cursor) params.cursor = args.cursor as string;
     if (args.limit) params.limit = String(args.limit);
-    return this.apiGet('/performance_cycles', params);
+    return this.apiGet('/performance-cycles', params);
   }
 
   private async getPerformanceCycle(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cycle_id) return { content: [{ type: 'text', text: 'cycle_id is required' }], isError: true };
-    return this.apiGet(`/performance_cycles/${encodeURIComponent(args.cycle_id as string)}`);
+    return this.apiGet(`/performance-cycles/${encodeURIComponent(args.cycle_id as string)}`);
   }
 
-  private async listPerformanceReviews(args: Record<string, unknown>): Promise<ToolResult> {
+  private async listManagerReviewsByCycle(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.cycle_id) return { content: [{ type: 'text', text: 'cycle_id is required' }], isError: true };
     const params: Record<string, string> = {};
-    if (args.employee_id) params.employee_id = args.employee_id as string;
-    if (args.status) params.status = args.status as string;
     if (args.cursor) params.cursor = args.cursor as string;
-    if (args.limit) params.limit = String(args.limit);
-    return this.apiGet(`/performance_cycles/${encodeURIComponent(args.cycle_id as string)}/reviews`, params);
+    return this.apiGet(`/performance-cycles/${encodeURIComponent(args.cycle_id as string)}/manager-reviews`, params);
+  }
+
+  private async listManagerReviews(args: Record<string, unknown>): Promise<ToolResult> {
+    const params: Record<string, string> = {};
+    if (args.cursor) params.cursor = args.cursor as string;
+    return this.apiGet('/manager-reviews', params);
+  }
+
+  private async getManagerReview(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.review_id) return { content: [{ type: 'text', text: 'review_id is required' }], isError: true };
+    return this.apiGet(`/manager-reviews/${encodeURIComponent(args.review_id as string)}`);
+  }
+
+  private async listManagerReviewsByEmployee(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.employee_id) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
+    const params: Record<string, string> = {};
+    if (args.cursor) params.cursor = args.cursor as string;
+    return this.apiGet(`/employees/${encodeURIComponent(args.employee_id as string)}/manager-reviews`, params);
+  }
+
+  private async getSurveyResponse(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.response_id) return { content: [{ type: 'text', text: 'response_id is required' }], isError: true };
+    return this.apiGet(`/responses/${encodeURIComponent(args.response_id as string)}`);
+  }
+
+  private async listSurveyQuestions(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
+    const params: Record<string, string> = {};
+    if (args.cursor) params.cursor = args.cursor as string;
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/questions`, params);
+  }
+
+  private async getSurveyQuestion(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.question_id) return { content: [{ type: 'text', text: 'question_id is required' }], isError: true };
+    return this.apiGet(`/questions/${encodeURIComponent(args.question_id as string)}`);
+  }
+
+  private async listSurveyFactors(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
+    const params: Record<string, string> = {};
+    if (args.cursor) params.cursor = args.cursor as string;
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/factors`, params);
+  }
+
+  private async getSurveyFactor(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.factor_id) return { content: [{ type: 'text', text: 'factor_id is required' }], isError: true };
+    return this.apiGet(`/factors/${encodeURIComponent(args.factor_id as string)}`);
+  }
+
+  private async listSurveySections(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.survey_id) return { content: [{ type: 'text', text: 'survey_id is required' }], isError: true };
+    const params: Record<string, string> = {};
+    if (args.cursor) params.cursor = args.cursor as string;
+    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/sections`, params);
+  }
+
+  private async getSurveySection(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.section_id) return { content: [{ type: 'text', text: 'section_id is required' }], isError: true };
+    return this.apiGet(`/sections/${encodeURIComponent(args.section_id as string)}`);
   }
 }

@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Cvent MCP server was found on GitHub or the MCP registry.
+// Note: CData publishes a read-only community MCP (https://github.com/CDataSoftware/cvent-mcp-server-by-cdata)
+//   but it is not official, read-only only, uses JDBC not REST, and does not meet the 4-criteria threshold.
 //
 // Base URL: https://api-platform.cvent.com/ea (US region)
 //           https://api-platform-eur.cvent.com/ea (EU region)

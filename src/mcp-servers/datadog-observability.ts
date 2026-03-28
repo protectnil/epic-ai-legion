@@ -4,9 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/DataDog/datadog-mcp-server — transport: stdio, auth: DD-API-KEY
-// Our adapter covers: 18 tools (core observability). Vendor MCP covers: broader surface area.
-// Recommendation: Use vendor MCP for full tool parity. Use this adapter for air-gapped deployments.
+// Official MCP: https://github.com/datadog-labs/mcp-server — transport: streamable-HTTP, auth: DD-API-KEY + DD-APPLICATION-KEY
+// Our adapter covers: 18 tools (core observability). Vendor MCP covers: 16+ core tools (logs, metrics, traces, dashboards, monitors, incidents, hosts).
+// Recommendation: use-both — vendor MCP covers logs, metrics, traces, monitors, hosts, incidents, dashboards as read operations;
+//   our REST adapter adds mute_monitor, unmute_monitor, list_downtimes, get_host_totals, list_events, list_slos, get_slo_history
+//   which are not exposed by the vendor MCP core toolset. Use MCP for reads, REST adapter for write/downtime/SLO operations.
+//
+// MCP tool names (core): get_logs, list_spans, get_trace, list_metrics, get_metrics, get_monitors, list_hosts,
+//   list_incidents, get_incident, list_dashboards, search_datadog_events, search_datadog_monitors,
+//   search_datadog_dashboards, search_datadog_hosts, search_datadog_incidents, search_datadog_metrics
 //
 // Base URL: https://api.{site}  (site examples: datadoghq.com, datadoghq.eu, us3.datadoghq.com)
 // Auth: DD-API-KEY + DD-APPLICATION-KEY headers (Application Key required for most read operations)

@@ -4,11 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/datadog-labs/mcp-server — transport: streamable-HTTP and stdio, auth: DD_API_KEY + DD_APPLICATION_KEY
+// Official MCP: https://github.com/datadog-labs/mcp-server — transport: streamable-HTTP, auth: DD-API-KEY + DD-APPLICATION-KEY
 // Our adapter covers: 10 tools (RUM-focused: applications, events, aggregations, metrics).
-// Vendor MCP covers: 16+ core tools across logs, metrics, traces, dashboards, incidents, hosts, etc.
-// Recommendation: Use vendor MCP for full Datadog observability coverage.
-//                 Use this adapter when RUM-only access is required or for air-gapped deployments.
+// Vendor MCP covers: 16+ core tools (logs, metrics, traces, dashboards, monitors, incidents, hosts) — ZERO RUM-specific tools.
+// Recommendation: use-rest-api — vendor MCP has no RUM application, RUM events, or RUM metrics tools.
+//   This adapter is the only integration layer for Datadog RUM operations.
 //
 // Base URL: https://api.datadoghq.com (US1 — default). Regional variants:
 //   US3: https://api.us3.datadoghq.com
