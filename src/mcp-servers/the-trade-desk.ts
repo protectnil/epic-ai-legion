@@ -4,13 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official The Trade Desk MCP server was found on GitHub. The Trade Desk GitHub org
 // (github.com/thetradedesk) does not publish an MCP server as of this date.
+// Our adapter covers: 17 tools.
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://api.thetradedesk.com/v3
 // Auth: Proprietary token — POST /v3/authentication with login/password; include returned
 //       token as "TTD {token}" in the Authorization header for all subsequent requests.
+//       Note: TTD also supports static long-lived tokens (1 week – 1 year) generated in the
+//       Platform UI and placed directly in the Authorization header as "TTD {token}".
 // Docs: https://partner.thetradedesk.com/v3/portal/api/doc/ApiReferencePlatform
 // Rate limits: Not publicly documented; enforced per-partner. Contact TTD account manager
 //              for partner-specific thresholds. Implement exponential backoff on 429.
@@ -41,7 +45,7 @@ export class TheTradeDeskMCPServer {
       name: 'the-trade-desk',
       displayName: 'The Trade Desk',
       version: '1.0.0',
-      category: 'social',
+      category: 'misc',
       keywords: [
         'trade desk', 'ttd', 'programmatic', 'display advertising', 'dsp',
         'campaigns', 'adgroups', 'creatives', 'advertisers', 'audiences',

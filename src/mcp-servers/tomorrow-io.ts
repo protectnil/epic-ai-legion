@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Tomorrow.io MCP server was found on GitHub or the Tomorrow.io developer portal.
 //
 // Base URL: https://api.tomorrow.io/v4
@@ -190,20 +190,32 @@ export class TomorrowIOMCPServer {
       },
       {
         name: 'get_weather_map',
-        description: 'Get a weather map tile URL for a specific weather layer and time for visualization',
+        description: 'Get a weather map tile image for a specific weather field, zoom level, and XYZ tile coordinates',
         inputSchema: {
           type: 'object',
           properties: {
-            layer: {
+            field: {
               type: 'string',
-              description: 'Map layer type: precipitationIntensity, temperature, windSpeed, humidity, cloudCover',
+              description: 'Weather data field to visualize: precipitationIntensity, temperature, windSpeed, humidity, cloudCover',
+            },
+            zoom: {
+              type: 'number',
+              description: 'Map zoom level 1-12 (default: 5)',
+            },
+            x: {
+              type: 'number',
+              description: 'Tile X coordinate for the zoom level (default: 2)',
+            },
+            y: {
+              type: 'number',
+              description: 'Tile Y coordinate for the zoom level (default: 3)',
             },
             timestamp: {
               type: 'string',
-              description: 'Timestamp for the map tile in ISO 8601 format (default: current time)',
+              description: 'ISO 8601 timestamp for the tile (default: current time)',
             },
           },
-          required: ['layer'],
+          required: ['field'],
         },
       },
       {
@@ -421,10 +433,13 @@ export class TomorrowIOMCPServer {
   }
 
   private async getWeatherMap(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.layer) return { content: [{ type: 'text', text: 'layer is required' }], isError: true };
-    const params: Record<string, string> = { layer: args.layer as string };
+    if (!args.field) return { content: [{ type: 'text', text: 'field is required' }], isError: true };
+    const zoom = (args.zoom as number) ?? 5;
+    const x = (args.x as number) ?? 2;
+    const y = (args.y as number) ?? 3;
+    const params: Record<string, string> = { field: args.field as string };
     if (args.timestamp) params.timestamp = args.timestamp as string;
-    return this.tomorrowGet('/map/tile', params);
+    return this.tomorrowGet(`/map/tile/${encodeURIComponent(zoom)}/${encodeURIComponent(x)}/${encodeURIComponent(y)}`, params);
   }
 
   private async listWeatherAlerts(args: Record<string, unknown>): Promise<ToolResult> {

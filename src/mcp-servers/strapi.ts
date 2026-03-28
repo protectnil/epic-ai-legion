@@ -4,15 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Strapi MCP server was found on GitHub or in Strapi's developer documentation.
+// Official MCP: None found as of 2026-03-28
+// Community MCP servers exist (misterboe/strapi-mcp-server, l33tdawg/strapi-mcp) but none are published by Strapi Inc.
+// misterboe server last commit Jan 7, 2026 (~10 tools); NOT official — community only.
 //
 // Base URL: {your-strapi-host}/api  (self-hosted; no fixed domain)
 // Auth: Bearer API token in Authorization header — generated in Strapi Admin > Settings > API Tokens
-// Docs: https://docs.strapi.io/cms/api/rest
+// Docs: https://docs.strapi.io/cms/api/rest | https://docs.strapi.io/cms/api/rest/upload
 // Rate limits: Determined by the hosting infrastructure; Strapi itself does not enforce rate limits by default
 // Note: Content type names in API paths are plural and kebab-cased (e.g. /api/blog-posts).
-//       The baseUrl must include the host and /api prefix configured in the constructor.
+//       The baseUrl must include the host and /api prefix (e.g. https://cms.example.com/api).
+//       list_content_types uses the Content-Type Builder admin API (/content-type-builder/content-types)
+//       which requires admin JWT auth, not an API token. Callers should be aware of this distinction.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -485,9 +488,9 @@ export class StrapiMCPServer {
     };
     if (args.sort) params.sort = args.sort as string;
     if (args.populate) params.populate = args.populate as string;
-    // filters is passed as a pre-encoded query string fragment — not URLSearchParams safe, so append raw
+    // filters is a raw query string fragment (e.g. filters[title][$contains]=hello) — append as-is
     const qs = new URLSearchParams(params).toString();
-    const filterStr = args.filters ? `&${encodeURIComponent(args.filters as string)}` : '';
+    const filterStr = args.filters ? `&${args.filters as string}` : '';
     const url = `${this.baseUrl}/${encodeURIComponent(args.content_type as string)}?${qs}${filterStr}`;
     const response = await fetch(url, { headers: this.headers });
     if (!response.ok) {
@@ -542,7 +545,7 @@ export class StrapiMCPServer {
     };
     if (args.sort) params.sort = args.sort as string;
     const qs = new URLSearchParams(params).toString();
-    const filterStr = args.filters ? `&${encodeURIComponent(args.filters as string)}` : '';
+    const filterStr = args.filters ? `&${args.filters as string}` : '';
     const url = `${this.baseUrl}/users?${qs}${filterStr}`;
     const response = await fetch(url, { headers: this.headers });
     if (!response.ok) {

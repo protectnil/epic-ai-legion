@@ -4,12 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/StackExchange/Stack-MCP — transport: stdio, auth: OAuth2 (Stack Exchange)
-// Official server is in public beta (released Dec 2025), limited to 100 calls/day per user.
+// Official MCP: https://mcp.stackoverflow.com (hosted remote server) — transport: streamable-HTTP (via npx mcp-remote), auth: OAuth2 (Stack Exchange)
+// GitHub repo (README only): https://github.com/StackExchange/Stack-MCP — 3 commits, released Dec 2025, in public beta.
+// Vendor MCP exposes 2 tools: so_search, get_content. Fails criterion #3 (fewer than 10 tools).
 // Our adapter covers: 13 tools (questions, answers, comments, users, tags, badges, search, site info).
-// Vendor MCP covers: Stack Overflow knowledge base access optimized for AI coding workflows.
-// Recommendation: Use vendor MCP for AI-native coding context. Use this adapter for structured data queries
-//   and multi-site Stack Exchange access without the 100 calls/day cap limitation.
+// Recommendation: use-rest-api — vendor MCP fails criterion #3 (2 tools, not 10+ named tools).
+//   Also: 100 calls/day cap makes it unsuitable for production. Our adapter provides full structured
+//   data access across all Stack Exchange sites without the daily cap.
 //
 // Base URL: https://api.stackexchange.com/2.3
 // Auth: API key (rate limit: 10,000 requests/day with key vs 300/day without). Optional OAuth2 access_token

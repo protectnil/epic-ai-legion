@@ -10,7 +10,7 @@
 // Base URL: https://api.surveymonkey.com/v3
 // Auth: OAuth2 Bearer token in Authorization header — exchange authorization code for access_token at /oauth/token
 // Docs: https://api.surveymonkey.com/v3/docs
-// Rate limits: 500 requests/day for free plans; paid plans vary. Default 120 req/min per token.
+// Rate limits: 500 req/day (free app); 5,000 req/day (paid app). Per-minute: ~120 req/min. 429 on breach (no Retry-After header).
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -645,8 +645,8 @@ export class SurveyMonkeyMCPServer {
   }
 
   private async getCollector(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.survey_id || !args.collector_id) return { content: [{ type: 'text', text: 'survey_id and collector_id are required' }], isError: true };
-    return this.apiGet(`/surveys/${encodeURIComponent(args.survey_id as string)}/collectors/${encodeURIComponent(args.collector_id as string)}`);
+    if (!args.collector_id) return { content: [{ type: 'text', text: 'collector_id is required' }], isError: true };
+    return this.apiGet(`/collectors/${encodeURIComponent(args.collector_id as string)}`);
   }
 
   private async createCollector(args: Record<string, unknown>): Promise<ToolResult> {
@@ -659,17 +659,17 @@ export class SurveyMonkeyMCPServer {
   }
 
   private async updateCollector(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.survey_id || !args.collector_id) return { content: [{ type: 'text', text: 'survey_id and collector_id are required' }], isError: true };
+    if (!args.collector_id) return { content: [{ type: 'text', text: 'collector_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.status) body.status = args.status;
     if (args.close_date) body.close_date = args.close_date;
-    return this.apiPatch(`/surveys/${encodeURIComponent(args.survey_id as string)}/collectors/${encodeURIComponent(args.collector_id as string)}`, body);
+    return this.apiPatch(`/collectors/${encodeURIComponent(args.collector_id as string)}`, body);
   }
 
   private async deleteCollector(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.survey_id || !args.collector_id) return { content: [{ type: 'text', text: 'survey_id and collector_id are required' }], isError: true };
-    return this.apiDelete(`/surveys/${encodeURIComponent(args.survey_id as string)}/collectors/${encodeURIComponent(args.collector_id as string)}`);
+    if (!args.collector_id) return { content: [{ type: 'text', text: 'collector_id is required' }], isError: true };
+    return this.apiDelete(`/collectors/${encodeURIComponent(args.collector_id as string)}`);
   }
 
   private async listCollectorMessages(args: Record<string, unknown>): Promise<ToolResult> {

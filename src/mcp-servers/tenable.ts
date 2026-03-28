@@ -4,9 +4,9 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 // Tenable publishes an FAQ about MCP integrations (blog post) and has a tenable/mcp-blog repo
-// containing configuration examples, but no official standalone MCP server with published tools.
+// containing configuration examples only — not a published MCP server with tools.
 // Community servers exist (rajagrawal104/tenablemcp, Cyreslab-AI/nessus-mcp-server) but are
 // unofficial and unmaintained. This adapter provides REST wrapper coverage.
 //

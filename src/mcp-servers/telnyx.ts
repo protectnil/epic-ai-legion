@@ -4,12 +4,39 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Telnyx MCP server was found on GitHub or in Telnyx's developer documentation.
+// Official MCP: https://github.com/team-telnyx/telnyx-mcp-server — transport: stdio + streamable-HTTP (Remote MCP), auth: API key
+// Actively maintained by Telnyx (team-telnyx). Python repo deprecated; official TypeScript repo is current.
+// MCP tool count: ~35+ tools across Assistant, Call Control, Messaging, Messaging Profile, Phone Number,
+//   Connection, Cloud Storage, Embeddings, and Secrets Manager categories.
+// MCP-only tools (no REST equivalent in this adapter): create_assistant, get_assistant, list_assistants,
+//   update_assistant, delete_assistant, start_assistant_call, get_assistant_texml, hangup, transfer,
+//   playback_start, playback_stop, send_dtmf, speak, create_call_control_application,
+//   get_call_control_application, list_call_control_applications, update_phone_number,
+//   update_phone_number_messaging_settings, update_messaging_profile, update_connection,
+//   cloud_storage_*, embed_url, create_embeddings, list_embedded_buckets,
+//   create_integration_secret, delete_integration_secret, list_integration_secrets.
+// REST-only tools (in this adapter but not in MCP): list_number_order_phone_numbers.
+// Recommendation: use-both — Telnyx MCP covers AI assistants, call control actions (hangup, transfer,
+//   DTMF, TTS), storage, embeddings, and secrets not exposed by this REST adapter. This REST adapter
+//   covers number order status not in the MCP. FederationManager routes shared tools through MCP.
+// Integration: use-both
+// MCP-sourced tools (26): create_assistant, get_assistant, list_assistants, update_assistant,
+//   delete_assistant, start_assistant_call, get_assistant_texml, make_call, hangup, transfer,
+//   playback_start, playback_stop, send_dtmf, speak, create_call_control_application,
+//   get_call_control_application, list_call_control_applications, send_message, get_message,
+//   create_messaging_profile, get_messaging_profile, list_messaging_profiles, update_messaging_profile,
+//   get_phone_number, list_phone_numbers, list_available_phone_numbers, initiate_phone_number_order,
+//   update_phone_number, update_phone_number_messaging_settings, get_connection, list_connections,
+//   update_connection, cloud_storage_create_bucket, cloud_storage_list_buckets,
+//   cloud_storage_upload_file, cloud_storage_download_file, cloud_storage_list_objects,
+//   cloud_storage_delete_object, cloud_storage_get_bucket_location, embed_url, create_embeddings,
+//   list_embedded_buckets, create_integration_secret, delete_integration_secret, list_integration_secrets
+// REST-sourced tools (3): purchase_phone_number, release_phone_number, list_number_order_phone_numbers
+// Combined coverage: ~48 tools (MCP: 45 + REST: 3 unique)
 //
 // Base URL: https://api.telnyx.com/v2
-// Auth: Bearer token in Authorization header — API key from Mission Control Portal under Auth > Auth V2
-// Docs: https://developers.telnyx.com/docs/api/v2/overview
+// Auth: Bearer token in Authorization header — API key from Mission Control Portal under API Keys
+// Docs: https://developers.telnyx.com/api-reference/overview
 // Rate limits: Not publicly documented per-endpoint; contact Telnyx for production rate limit details
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -275,23 +302,16 @@ export class TelnyxMCPServer {
       },
       {
         name: 'list_calls',
-        description: 'List active calls on a Call Control Application with their status and session details',
+        description: 'List active calls on a Call Control Application (connection) by connection ID',
         inputSchema: {
           type: 'object',
           properties: {
             connection_id: {
               type: 'string',
-              description: 'Call Control Application ID to list calls for',
-            },
-            page_number: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-            page_size: {
-              type: 'number',
-              description: 'Calls per page (default: 20)',
+              description: 'Call Control Application ID to list active calls for',
             },
           },
+          required: ['connection_id'],
         },
       },
       {
@@ -611,11 +631,7 @@ export class TelnyxMCPServer {
 
   private async listCalls(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.connection_id) return { content: [{ type: 'text', text: 'connection_id is required' }], isError: true };
-    const params: Record<string, string> = {
-      'page[number]': String((args.page_number as number) || 1),
-      'page[size]': String((args.page_size as number) || 20),
-    };
-    return this.apiGet(`/calls?filter[connection_id]=${encodeURIComponent(args.connection_id as string)}`, params);
+    return this.apiGet(`/connections/${encodeURIComponent(args.connection_id as string)}/active_calls`);
   }
 
   private async getCall(args: Record<string, unknown>): Promise<ToolResult> {

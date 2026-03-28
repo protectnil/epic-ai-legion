@@ -5,14 +5,16 @@
  */
 
 // Official MCP: https://www.statsig.com/updates/update/mcpserver — transport: stdio, auth: Console API key
-// Statsig publishes an official MCP server with 27 Console API tools for feature gate and experiment management.
-// Our adapter covers: 16 tools (feature gates, experiments, dynamic configs, layers, users, events).
-// Recommendation: Use the official Statsig MCP server for full Console API coverage. Use this adapter for air-gapped deployments.
+// Statsig publishes an official MCP server. Community listing (mcpbundles.com) shows ~21 Console API tools;
+// no official GitHub repo or npm package was found published by Statsig Inc. as of 2026-03-28.
+// MCP criteria: official publisher UNCONFIRMED — treating as unofficial/community until verified.
+// Our adapter covers: 16 tools (feature gates, experiments, dynamic configs, layers, events).
+// Recommendation: use-rest-api — official MCP publisher status unconfirmed. Use this adapter as primary.
 //
-// Base URL: https://statsigapi.net/console/v1 (Console API) | https://api.statsig.com/v1 (Server SDK API)
-// Auth: statsig-api-key header with Console API key (CONSOLE_*) or Server Secret key (secret-*)
-// Docs: https://docs.statsig.com/http-api/
-// Rate limits: Not publicly documented; server SDK API is high-throughput, Console API is lower-volume
+// Base URL: https://statsigapi.net/console/v1 (Console API) | https://api.statsig.com/v1 (HTTP SDK API)
+// Auth: STATSIG-API-KEY header with Console API key (for Console endpoints) or Server Secret key (for SDK endpoints)
+// Docs: https://docs.statsig.com/console-api/introduction | https://docs.statsig.com/http-api/overview
+// Rate limits: Console API mutation requests ~100/10s and ~900/15min per project (GET requests unthrottled)
 
 import { ToolDefinition, ToolResult } from './types.js';
 

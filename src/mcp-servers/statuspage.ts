@@ -4,14 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// Atlassian's official MCP server (atlassian/atlassian-mcp-server) covers Jira and Confluence only.
-// No official Statuspage MCP server exists on GitHub or npmjs.com as of March 2026.
+// Official MCP: None found as of 2026-03-28
+// Atlassian's official MCP server covers Jira and Confluence only — Statuspage is explicitly excluded.
+// No official Statuspage MCP server exists on GitHub or npmjs.com as of 2026-03-28.
 //
 // Base URL: https://api.statuspage.io/v1
-// Auth: OAuth {apiKey} header — API key found in Statuspage management UI under API Info
+// Auth: Authorization: OAuth {apiKey} header — API key found in Statuspage management UI under API Info
 // Docs: https://developer.statuspage.io/
-// Rate limits: Not officially published; practical limit ~60 requests/min per API key
+// Rate limits: Not officially documented by Atlassian/Statuspage
 
 import { ToolDefinition, ToolResult } from './types.js';
 

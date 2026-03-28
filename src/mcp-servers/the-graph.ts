@@ -4,8 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official The Graph MCP server was found on GitHub or in The Graph's developer documentation.
+// Official MCP: https://github.com/graphprotocol/mcp-monorepo — transport: streamable-HTTP (hosted), auth: Bearer API key
+// The Graph publishes an official Subgraph MCP server at thegraph.com/docs/en/ai-suite/subgraph-mcp/introduction/
+// Vendor MCP covers: 6 tools (get_schema_by_deployment_id, get_schema_by_subgraph_id, get_schema_by_ipfs_hash,
+//   execute_query_by_deployment_id, execute_query_by_subgraph_id, get_top_subgraph_deployments).
+// Our adapter covers: 11 tools (superset — adds list_network_subgraphs, search_subgraphs, get_indexer_status,
+//   query_graph_network, get_entity_by_id, list_entities, get_recent_events beyond MCP scope).
+// Recommendation: use-both — MCP covers schema introspection and basic query execution; our REST adapter
+//   adds network-level queries, entity listing, indexer status, and discovery that the MCP does not expose.
+//
+// Integration: use-both
+// MCP-sourced tools (6): get_schema_by_deployment_id, get_schema_by_subgraph_id, get_schema_by_ipfs_hash,
+//   execute_query_by_deployment_id, execute_query_by_subgraph_id, get_top_subgraph_deployments
+// REST-sourced tools (11): query_subgraph, query_subgraph_studio, introspect_subgraph, get_subgraph_metadata,
+//   list_network_subgraphs, search_subgraphs, get_indexer_status, query_graph_network,
+//   get_entity_by_id, list_entities, get_recent_events
+// Combined coverage: 11 REST tools + 6 MCP tools (shared ~3, MCP-only ~3, REST-only ~8)
 //
 // Base URL: https://gateway-arbitrum.network.thegraph.com/api/{api-key}/subgraphs/id/{subgraph-id}
 // Auth: API key embedded in URL path — generated in Subgraph Studio under API Keys

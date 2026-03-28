@@ -4,11 +4,47 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-//   No vendor-official MCP server exists specifically for Splunk Observability Cloud
-//   (formerly SignalFx). Community implementations are not officially maintained.
-// Our adapter covers: 15 tools (detectors, alerts, incidents, dashboards, charts, dashboard groups,
-//   metrics/MTS, SignalFlow analytics, organization tokens, integrations).
+// Official MCP: https://splunkbase.splunk.com/app/7931 (Splunk MCP Server) — official, published
+//   by Splunk. Transport: streamable-HTTP (SSE). Auth: Bearer token + X-SF-TOKEN + X-SF-REALM.
+//   Latest version: 1.0.5, published March 26, 2026. Actively maintained.
+//   Observability-specific tools (12): get_metric_names, get_metric_metadata,
+//   generate_signalflow_program, execute_signalflow_program, get_apm_environments,
+//   get_apm_services, get_apm_service_dependencies, get_apm_service_latency,
+//   get_apm_service_errors_and_requests, get_apm_exemplar_traces, get_apm_trace_tool,
+//   search_alerts_or_incidents. These are AI Assistant / NLP-to-SignalFlow tools.
+//
+// Our adapter covers: 15 tools (detector CRUD, alert list, dashboard CRUD, chart CRUD,
+//   dashboard group CRUD, metric time series search, SignalFlow execute).
+//
+// OVERLAP ANALYSIS:
+//   MCP tools: get_metric_names, get_metric_metadata, generate_signalflow_program,
+//     execute_signalflow_program, get_apm_environments, get_apm_services,
+//     get_apm_service_dependencies, get_apm_service_latency,
+//     get_apm_service_errors_and_requests, get_apm_exemplar_traces, get_apm_trace_tool,
+//     search_alerts_or_incidents
+//   Shared (approximate): search_metrics ↔ get_metric_names/get_metric_metadata (similar intent)
+//     execute_signalflow ↔ execute_signalflow_program (same operation, different transports)
+//   MCP-only (10): generate_signalflow_program, get_apm_environments, get_apm_services,
+//     get_apm_service_dependencies, get_apm_service_latency, get_apm_service_errors_and_requests,
+//     get_apm_exemplar_traces, get_apm_trace_tool, search_alerts_or_incidents, get_metric_metadata
+//   REST-only (13): list_detectors, get_detector, create_detector, update_detector,
+//     delete_detector, list_detector_incidents, list_alerts, list_dashboards, get_dashboard,
+//     list_dashboard_groups, get_dashboard_group, list_charts, get_chart
+//
+// Recommendation: use-both — Vendor MCP has 10 unique tools (NLP/APM/AI-assistant) not in our
+//   REST adapter. Our REST adapter has 13 unique CRUD tools not in the MCP. Full coverage requires
+//   both. MCP sources: execute_signalflow_program, search (metric/alert NLP), APM tools.
+//   REST sources: all detector/dashboard/chart CRUD operations.
+//
+// Integration: use-both
+// MCP-sourced tools (10): generate_signalflow_program, get_apm_environments, get_apm_services,
+//   get_apm_service_dependencies, get_apm_service_latency, get_apm_service_errors_and_requests,
+//   get_apm_exemplar_traces, get_apm_trace_tool, search_alerts_or_incidents, get_metric_metadata
+// REST-sourced tools (15): list_detectors, get_detector, create_detector, update_detector,
+//   delete_detector, list_detector_incidents, list_alerts, list_dashboards, get_dashboard,
+//   list_dashboard_groups, get_dashboard_group, list_charts, get_chart, search_metrics,
+//   execute_signalflow
+// Combined coverage: 25 tools (MCP: 12 + REST: 15 - shared ~2 = 25 unique operations)
 //
 // Base URL: https://api.{realm}.signalfx.com
 //   Replace {realm} with your org realm: us0, us1, us2, eu0, ap0, jp0, etc.

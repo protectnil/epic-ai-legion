@@ -12,7 +12,7 @@
 // Base URL: https://api.{region}.sumologic.com/api  (US1: https://api.sumologic.com/api)
 // Auth: Basic auth — Base64(accessId:accessKey) in Authorization header
 // Docs: https://api.sumologic.com/docs/  |  https://help.sumologic.com/docs/api/
-// Rate limits: Varies by endpoint; search jobs limited to 200 concurrent per org
+// Rate limits: 4 requests/second per access key; 10 in-flight requests max; 429 on breach
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -49,10 +49,10 @@ export class SumoLogicMCPServer {
       toolNames: [
         'create_search_job', 'get_search_job_status', 'get_search_results', 'delete_search_job',
         'list_collectors', 'get_collector', 'list_sources', 'get_source',
-        'list_monitors', 'get_monitor', 'create_monitor', 'update_monitor',
+        'search_monitors', 'get_monitor', 'create_monitor', 'update_monitor',
         'list_dashboards', 'get_dashboard',
         'list_users', 'get_user',
-        'list_fields', 'list_scheduled_searches',
+        'list_fields', 'list_log_searches',
       ],
       description: 'Log search, monitors, alerts, dashboards, collectors, and user management for Sumo Logic observability platform.',
       author: 'protectnil' as const,
@@ -163,15 +163,14 @@ export class SumoLogicMCPServer {
       },
       // ── Monitors ─────────────────────────────────────────────────────────────
       {
-        name: 'list_monitors',
-        description: 'List Sumo Logic monitors (alert rules) with optional status and type filters.',
+        name: 'search_monitors',
+        description: 'Search Sumo Logic monitors in the monitors library by name or query string. Returns matching monitors with their IDs and paths.',
         inputSchema: {
           type: 'object',
           properties: {
+            query: { type: 'string', description: 'Search query to filter monitors by name (optional; omit to list all)' },
             limit: { type: 'number', description: 'Maximum monitors to return (default: 100)' },
             offset: { type: 'number', description: 'Pagination offset (default: 0)' },
-            status: { type: 'string', description: 'Filter by status: Normal, Critical, Warning, MissingData, Disabled' },
-            monitor_type: { type: 'string', description: 'Filter by type: Logs or Metrics' },
           },
         },
       },
@@ -188,10 +187,11 @@ export class SumoLogicMCPServer {
       },
       {
         name: 'create_monitor',
-        description: 'Create a new Sumo Logic monitor (alert rule) for log or metrics data.',
+        description: 'Create a new Sumo Logic monitor (alert rule) for log or metrics data. Requires a parent folder ID to place the monitor in.',
         inputSchema: {
           type: 'object',
           properties: {
+            parent_id: { type: 'string', description: 'ID of the parent folder in the monitors library to create the monitor under (required)' },
             name: { type: 'string', description: 'Display name for the monitor' },
             description: { type: 'string', description: 'Optional description' },
             monitor_type: { type: 'string', description: 'Monitor type: Logs or Metrics' },
@@ -200,7 +200,7 @@ export class SumoLogicMCPServer {
             notifications: { type: 'array', description: 'Array of notification configuration objects', items: { type: 'object' } },
             is_disabled: { type: 'boolean', description: 'Create monitor in disabled state (default: false)' },
           },
-          required: ['name', 'monitor_type', 'queries', 'triggers'],
+          required: ['parent_id', 'name', 'monitor_type', 'queries', 'triggers'],
         },
       },
       {
@@ -277,15 +277,15 @@ export class SumoLogicMCPServer {
           properties: {},
         },
       },
-      // ── Scheduled Searches ───────────────────────────────────────────────────
+      // ── Log Searches ─────────────────────────────────────────────────────────
       {
-        name: 'list_scheduled_searches',
-        description: 'List saved scheduled searches in Sumo Logic, including their cron schedule and alert thresholds.',
+        name: 'list_log_searches',
+        description: 'List all saved log searches in the Sumo Logic content library, including scheduled searches. Paginate with limit/token.',
         inputSchema: {
           type: 'object',
           properties: {
-            limit: { type: 'number', description: 'Maximum results to return (default: 100)' },
-            offset: { type: 'number', description: 'Pagination offset (default: 0)' },
+            limit: { type: 'number', description: 'Maximum results to return (default: 50, max: 100)' },
+            token: { type: 'string', description: 'Pagination token from previous response (omit for first page)' },
           },
         },
       },
@@ -311,8 +311,8 @@ export class SumoLogicMCPServer {
           return await this.listSources(args);
         case 'get_source':
           return await this.getSource(args);
-        case 'list_monitors':
-          return await this.listMonitors(args);
+        case 'search_monitors':
+          return await this.searchMonitors(args);
         case 'get_monitor':
           return await this.getMonitor(args);
         case 'create_monitor':
@@ -329,8 +329,8 @@ export class SumoLogicMCPServer {
           return await this.getUser(args);
         case 'list_fields':
           return await this.listFields();
-        case 'list_scheduled_searches':
-          return await this.listScheduledSearches(args);
+        case 'list_log_searches':
+          return await this.listLogSearches(args);
         default:
           return {
             content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -461,14 +461,13 @@ export class SumoLogicMCPServer {
     );
   }
 
-  private async listMonitors(args: Record<string, unknown>): Promise<ToolResult> {
+  private async searchMonitors(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({
       limit: String((args.limit as number) ?? 100),
       offset: String((args.offset as number) ?? 0),
     });
-    if (args.status) params.set('status', args.status as string);
-    if (args.monitor_type) params.set('type', args.monitor_type as string);
-    return this.apiGet(`/v1/monitors?${params}`);
+    if (args.query) params.set('query', args.query as string);
+    return this.apiGet(`/v1/monitors/search?${params}`);
   }
 
   private async getMonitor(args: Record<string, unknown>): Promise<ToolResult> {
@@ -476,7 +475,9 @@ export class SumoLogicMCPServer {
   }
 
   private async createMonitor(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.apiPost('/v1/monitors', {
+    const parentId = encodeURIComponent(args.parent_id as string);
+    return this.apiPost(`/v1/monitors?parentId=${parentId}`, {
+      type: 'MonitorsLibraryMonitor',
       name: args.name,
       description: args.description,
       monitorType: args.monitor_type,
@@ -529,11 +530,11 @@ export class SumoLogicMCPServer {
     return this.apiGet('/v1/fields');
   }
 
-  private async listScheduledSearches(args: Record<string, unknown>): Promise<ToolResult> {
+  private async listLogSearches(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({
-      limit: String((args.limit as number) ?? 100),
-      offset: String((args.offset as number) ?? 0),
+      limit: String((args.limit as number) ?? 50),
     });
-    return this.apiGet(`/v1/scheduledSearches?${params}`);
+    if (args.token) params.set('token', args.token as string);
+    return this.apiGet(`/v1/logSearches?${params}`);
   }
 }

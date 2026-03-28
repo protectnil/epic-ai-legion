@@ -4,12 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official ThreatConnect MCP server was found on GitHub or npm as of March 2026.
+// Our adapter covers: 22 tools.
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://api.threatconnect.com/v3
-// Auth: HMAC-SHA256 — Authorization header: TC-Token {accessId}:{signature}:{timestamp}
-//   Signature = HMAC-SHA256( "{path}:{accessId}:{timestamp}", secretKey ) → Base64
+// Auth: HMAC-SHA256 — Two required headers per request:
+//   Timestamp: {unix_epoch_seconds}
+//   Authorization: TC {accessId}:{signature}
+//   Signature = HMAC-SHA256( "{path}:{httpMethod}:{timestamp}", secretKey ) → Base64
+//   Example signing string: "/v3/indicators:GET:1513703787"
 // Docs: https://docs.threatconnect.com/en/latest/rest_api/v3/available_endpoints.html
 // Rate limits: Not publicly documented; recommended max 100 req/min per access ID
 
@@ -61,15 +66,20 @@ export class ThreatConnectMCPServer {
 
   // ──────────────────────────────────────────────
   // HMAC signing helper
+  // Per ThreatConnect docs: two required headers —
+  //   Timestamp: {unix_epoch_seconds}
+  //   Authorization: TC {accessId}:{signature}
+  // Signing string: "{path}:{httpMethod}:{timestamp}"
   // ──────────────────────────────────────────────
-  private buildAuthHeader(path: string): Record<string, string> {
+  private buildAuthHeader(path: string, method = 'GET'): Record<string, string> {
     const timestamp = Math.floor(Date.now() / 1000);
-    const signingString = `${path}:${this.accessId}:${timestamp}`;
+    const signingString = `${path}:${method.toUpperCase()}:${timestamp}`;
     const signature = createHmac('sha256', this.secretKey)
       .update(signingString)
       .digest('base64');
     return {
-      Authorization: `TC-Token ${this.accessId}:${signature}:${timestamp}`,
+      Authorization: `TC ${this.accessId}:${signature}`,
+      Timestamp: String(timestamp),
       'Content-Type': 'application/json',
     };
   }
@@ -79,7 +89,11 @@ export class ThreatConnectMCPServer {
   // ──────────────────────────────────────────────
   private async req(path: string, method = 'GET', body?: unknown): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
-    const headers = this.buildAuthHeader(path);
+    // Signing path must be the full URL path + query string per ThreatConnect docs.
+    // baseUrl ends with "/v3", so signing path = "/v3" + path (e.g. "/v3/indicators?tql=...").
+    const parsed = new URL(url);
+    const signingPath = parsed.pathname + (parsed.search ? parsed.search : '');
+    const headers = this.buildAuthHeader(signingPath, method);
     const response = await fetch(url, {
       method,
       headers,

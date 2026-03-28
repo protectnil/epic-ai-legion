@@ -5,15 +5,25 @@
  */
 
 // Official MCP: https://github.com/supabase-community/supabase-mcp — transport: stdio + streamable-HTTP (remote: https://mcp.supabase.com/mcp)
-// Actively maintained; uses OAuth2 browser flow for remote. Covers 20+ tools across database, storage, auth, branching, functions.
-// Recommendation: Use the official MCP for full Management API coverage (project provisioning, branching, migrations).
-// Use this adapter for direct PostgREST data operations in air-gapped or bring-your-own-key deployments.
+// Actively maintained (launched Apr 2025, actively developed). Official — published by supabase-community (Supabase's official open source org).
+// Vendor MCP covers: ~32 tools — database, edge functions, branching, projects, orgs, storage config, docs search.
+// Our adapter covers: 15 tools — direct PostgREST data ops (select/insert/update/delete/upsert/rpc), storage objects, auth users, project health.
+//
+// Integration: use-both
+// MCP-sourced tools (27): list_tables, list_extensions, list_migrations, apply_migration, execute_sql, get_logs, get_advisors,
+//   get_project_url, get_publishable_keys, generate_typescript_types, list_edge_functions, get_edge_function, deploy_edge_function,
+//   list_projects, get_project, create_project, pause_project, restore_project, list_organizations, get_organization,
+//   get_cost, confirm_cost, search_docs, create_branch, list_branches, delete_branch, merge_branch, reset_branch, rebase_branch,
+//   list_storage_buckets, get_storage_config, update_storage_config
+// REST-sourced tools (10): select, insert, update, delete, upsert, rpc, list_storage_objects, list_auth_users, get_auth_user, get_project_health
+// Shared (covered by both, MCP takes priority): list_tables, execute_sql, list_projects, get_project, list_storage_buckets
+// Combined coverage: 37 tools (MCP: 32 + REST: 15 - shared: 5 — with some rounding due to tool naming differences)
 //
 // Base URL (data): https://{project}.supabase.co/rest/v1  (PostgREST)
 // Base URL (management): https://api.supabase.com/v1
 // Auth: Bearer token (anon key or service role key) in Authorization + apikey headers
 // Docs: https://supabase.com/docs/reference/api/introduction  |  https://supabase.com/docs/guides/api
-// Rate limits: Project-level, based on Supabase plan; Management API has per-user/per-scope limits
+// Rate limits: Management API — 120 requests/minute per user per project/org; 429 on breach
 
 import { ToolDefinition, ToolResult } from './types.js';
 

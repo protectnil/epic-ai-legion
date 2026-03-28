@@ -4,9 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03 (no Telegram Inc. official MCP server)
+// Official MCP: None found as of 2026-03-28 (no Telegram Inc. official MCP server)
 // Several community MCP servers exist (guangxiangdebizi/telegram-mcp, chigwell/telegram-mcp, etc.)
-// but none are published by Telegram Inc. This adapter wraps the official Bot API.
+// but none are published by Telegram Inc. Decision: use-rest-api
+// Note: Tool get_chat_members_count calls Bot API method getChatMemberCount (current name).
+//   getChatMembersCount was renamed to getChatMemberCount in Bot API 7.3+ — implementation is correct.
 //
 // Base URL: https://api.telegram.org/bot{token}
 // Auth: Bot token embedded in URL path — obtained from @BotFather

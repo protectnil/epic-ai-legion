@@ -4,10 +4,31 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/tableau/tableau-mcp — transport: stdio (npx), auth: Personal Access Token
-// Actively maintained by Salesforce/Tableau. Covers Tableau REST API via connected app auth.
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments
-// where npx is unavailable or PAT-only auth is required.
+// Official MCP: https://github.com/tableau/tableau-mcp — transport: stdio + streamable-HTTP, auth: OAuth2 (connected app)
+// Published by Salesforce/Tableau. Actively maintained (v1.17.19, last release Mar 2026).
+// Vendor MCP covers: 15 tools — list-datasources, list-workbooks, list-views, query-datasource,
+//   get-datasource-metadata, get-workbook, get-view-data, get-view-image,
+//   list-all-pulse-metric-definitions, list-pulse-metric-definitions-from-definition-ids,
+//   list-pulse-metrics-from-metric-definition-id, list-pulse-metrics-from-metric-ids,
+//   list-pulse-metric-subscriptions, generate-pulse-metric-value-insight-bundle,
+//   generate-pulse-insight-brief, search-content
+// Our adapter covers: 21 tools — workbook/view/datasource/project/user/group/job/schedule/flow management
+// Recommendation: use-both — MCP has Pulse tools + query/metadata not in our adapter; our adapter
+//   has project/user/group/job/schedule/flow management not in MCP. Full coverage requires union.
+//
+// Integration: use-both
+// MCP-sourced tools (15): list-datasources, list-workbooks, list-views, query-datasource,
+//   get-datasource-metadata, get-workbook, get-view-data, get-view-image, list-all-pulse-metric-definitions,
+//   list-pulse-metric-definitions-from-definition-ids, list-pulse-metrics-from-metric-definition-id,
+//   list-pulse-metrics-from-metric-ids, list-pulse-metric-subscriptions,
+//   generate-pulse-metric-value-insight-bundle, generate-pulse-insight-brief, search-content
+// REST-sourced tools (21): list_workbooks, get_workbook, list_views, get_view, list_datasources,
+//   get_datasource, refresh_datasource, list_projects, create_project, list_users, get_user,
+//   list_groups, get_group, list_jobs, get_job, cancel_job, list_schedules, get_schedule,
+//   list_flows, run_flow, query_views_for_site
+// Combined coverage: 37 unique tools (MCP: 16 unique + REST: 21 total; 7 overlapping operations
+//   for list_workbooks/list_datasources/list_views/get_workbook/get_view; FederationManager routes
+//   shared operations through MCP by default)
 //
 // Base URL: https://{serverUrl}/api/{apiVersion}
 // Auth: Tableau Personal Access Token (PAT) — sign-in via POST /auth/signin → credentials token
@@ -501,7 +522,8 @@ export class TableauMCPServer {
 
   private async cancelJob(base: string, args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     const url = `${base}/jobs/${encodeURIComponent(args.job_id as string)}`;
-    const response = await fetch(url, { method: 'PUT', headers, body: JSON.stringify({ job: { status: 'Cancelled' } }) });
+    // Tableau REST API: PUT with no request body (docs confirmed — response body is also empty, returns 200)
+    const response = await fetch(url, { method: 'PUT', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }

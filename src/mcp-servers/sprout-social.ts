@@ -4,13 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/jmeserve/sprout-mcp — community-built, transport: stdio, auth: API token
-// No official Sprout Social MCP server found. The sprout-mcp repo is community-maintained (not by Sprout Social).
-// Our adapter covers: 15 tools (profiles, analytics, posts, tags, publishing).
-// Recommendation: Use this adapter; no official vendor MCP exists as of 2026-03.
+// Official MCP: https://github.com/jmeserve/sprout-mcp — community-built (NOT official Sprout Social),
+//   transport: stdio, auth: API token. Last commit: Feb 19, 2026. ~12 tools (list_customers,
+//   list_profiles, list_tags, list_groups, list_users, list_teams, get_profile_analytics,
+//   get_post_analytics, list_listening_topics, get_listening_messages, get_messages,
+//   list_publishing_posts). NOT published by Sprout Social — fails official MCP criterion.
+// Our adapter covers: 15 tools (profiles, tags, analytics, publishing, messages).
+// Recommendation: use-rest-api — no official vendor MCP exists. Community MCP not authoritative.
+//
+// Integration: use-rest-api
+// REST-sourced tools (15): list_profiles, get_profile, list_profile_groups, list_posts, get_post,
+//   create_post, schedule_post, delete_post, get_profile_analytics, get_post_analytics,
+//   list_tags, create_tag, tag_post, list_pending_posts, list_sent_messages
+//
+// CRITICAL NOTE: All Sprout Social API paths (except /v1/metadata/client) require the customer ID
+// as a path segment: /v1/{customerId}/{resource}. Callers MUST supply customerId in the config.
+// The customerId is obtained from GET /v1/metadata/client.
 //
 // Base URL: https://api.sproutsocial.com/v1
-// Auth: Bearer token in Authorization header (generated in Sprout Social app under Settings > API)
+// Auth: Bearer token in Authorization header (API token from Settings > Global Features > API)
 // Docs: https://api.sproutsocial.com/docs/
 // Rate limits: 100 req/min per access token; analytics endpoints have separate quota
 
@@ -18,16 +30,23 @@ import { ToolDefinition, ToolResult } from './types.js';
 
 interface SproutSocialConfig {
   apiToken: string;
+  /**
+   * Your Sprout Social customer ID. Required for all API calls except list_profiles.
+   * Obtain by calling GET /v1/metadata/client — returns the customerId for your account.
+   */
+  customerId?: string;
   baseUrl?: string;
 }
 
 export class SproutSocialMCPServer {
   private readonly apiToken: string;
   private readonly baseUrl: string;
+  private readonly customerId: string;
 
   constructor(config: SproutSocialConfig) {
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.sproutsocial.com/v1';
+    this.customerId = config.customerId || '';
   }
 
   static catalog() {
@@ -56,38 +75,28 @@ export class SproutSocialMCPServer {
     return [
       {
         name: 'list_profiles',
-        description: 'List all social profiles connected to the Sprout Social account with network type and status',
+        description: 'List all social profiles (customer metadata) connected to the Sprout Social account, including network type and profile IDs',
         inputSchema: {
           type: 'object',
-          properties: {
-            networks: {
-              type: 'string',
-              description: 'Comma-separated network filter: twitter, facebook, instagram, linkedin, pinterest, youtube, tiktok, threads',
-            },
-            status: {
-              type: 'string',
-              description: 'Filter by profile status: active, inactive (default: active)',
-            },
-          },
+          properties: {},
         },
       },
       {
         name: 'get_profile',
-        description: 'Get detailed information about a specific social profile by its Sprout profile ID',
+        description: 'Get detailed information about all social profiles for a given Sprout customer account — returns profile metadata for the customerId',
         inputSchema: {
           type: 'object',
           properties: {
-            profile_id: {
-              type: 'number',
-              description: 'Numeric Sprout Social profile ID',
+            customer_id: {
+              type: 'string',
+              description: 'Sprout Social customer ID (from list_profiles). Overrides config customerId if provided.',
             },
           },
-          required: ['profile_id'],
         },
       },
       {
         name: 'list_profile_groups',
-        description: 'List profile groups (collections of profiles) in the Sprout Social account',
+        description: 'List profile groups (collections of profiles) in the Sprout Social account for the configured customer',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -204,13 +213,13 @@ export class SproutSocialMCPServer {
       },
       {
         name: 'get_profile_analytics',
-        description: 'Retrieve engagement analytics for one or more profiles over a date range including impressions, engagements, and follower growth',
+        description: 'Retrieve owned profile analytics (impressions, engagements, follower growth) for one or more profiles over a date range — POST to analytics/profiles',
         inputSchema: {
           type: 'object',
           properties: {
             profile_ids: {
-              type: 'string',
-              description: 'Comma-separated list of profile IDs',
+              type: 'array',
+              description: 'Array of numeric profile IDs to query analytics for',
             },
             start_date: {
               type: 'string',
@@ -221,8 +230,8 @@ export class SproutSocialMCPServer {
               description: 'End date in YYYY-MM-DD format (required)',
             },
             fields: {
-              type: 'string',
-              description: 'Comma-separated metrics: impressions, engagements, followers, reach, clicks (default: all)',
+              type: 'array',
+              description: 'Array of metric field names to include (default: all available metrics)',
             },
           },
           required: ['profile_ids', 'start_date', 'end_date'],
@@ -230,13 +239,13 @@ export class SproutSocialMCPServer {
       },
       {
         name: 'get_post_analytics',
-        description: 'Retrieve per-post performance metrics for posts published in a date range across selected profiles',
+        description: 'Retrieve per-post performance metrics for published posts in a date range across selected profiles — POST to analytics/posts',
         inputSchema: {
           type: 'object',
           properties: {
             profile_ids: {
-              type: 'string',
-              description: 'Comma-separated list of profile IDs',
+              type: 'array',
+              description: 'Array of numeric profile IDs to query post metrics for',
             },
             start_date: {
               type: 'string',
@@ -246,33 +255,16 @@ export class SproutSocialMCPServer {
               type: 'string',
               description: 'End date in YYYY-MM-DD format',
             },
-            count: {
-              type: 'number',
-              description: 'Number of posts to return (default: 50, max: 100)',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
           },
           required: ['profile_ids', 'start_date', 'end_date'],
         },
       },
       {
         name: 'list_tags',
-        description: 'List all tags available in the Sprout Social account for categorizing posts and messages',
+        description: 'List all message tags available for the customer account — returns tag IDs and names for use in tagging messages',
         inputSchema: {
           type: 'object',
-          properties: {
-            count: {
-              type: 'number',
-              description: 'Number of tags to return (default: 100)',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
-            },
-          },
+          properties: {},
         },
       },
       {
@@ -309,34 +301,26 @@ export class SproutSocialMCPServer {
       },
       {
         name: 'list_pending_posts',
-        description: 'List posts awaiting approval in the Sprout Social approval workflow queue',
+        description: 'List publishing posts in the Sprout Social account — returns posts in draft, scheduled, or sent status by querying the publishing/posts endpoint',
         inputSchema: {
           type: 'object',
           properties: {
-            profile_ids: {
+            status: {
               type: 'string',
-              description: 'Comma-separated profile IDs to filter (default: all profiles)',
-            },
-            count: {
-              type: 'number',
-              description: 'Number of posts to return (default: 50)',
-            },
-            page: {
-              type: 'number',
-              description: 'Page number for pagination (default: 1)',
+              description: 'Filter by post status: draft, scheduled, sent (default: draft for pending approval)',
             },
           },
         },
       },
       {
         name: 'list_sent_messages',
-        description: 'List messages (posts and comments) that have been sent from Sprout Social, with optional profile and date filters',
+        description: 'Retrieve inbox messages (inbound mentions, DMs, comments) received by profiles — POST to the messages endpoint with profile and date filters',
         inputSchema: {
           type: 'object',
           properties: {
             profile_ids: {
-              type: 'string',
-              description: 'Comma-separated profile IDs to filter',
+              type: 'array',
+              description: 'Array of numeric profile IDs to filter',
             },
             start_date: {
               type: 'string',
@@ -438,129 +422,152 @@ export class SproutSocialMCPServer {
     return { content: [{ type: 'text', text: JSON.stringify({ success: true, status: response.status }) }], isError: false };
   }
 
-  private async listProfiles(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {};
-    if (args.networks) params['fields[profile][networks]'] = args.networks as string;
-    if (args.status) params.status = args.status as string;
-    return this.apiGet('/metadata/client', params);
+  private customerPath(path: string, customerIdOverride?: string): string {
+    const cid = customerIdOverride || this.customerId;
+    if (!cid) return `/metadata/client`;  // fallback for list_profiles
+    return `/${encodeURIComponent(cid)}${path}`;
+  }
+
+  private async listProfiles(_args: Record<string, unknown>): Promise<ToolResult> {
+    // GET /v1/metadata/client — returns customer IDs and names (no customerId required)
+    return this.apiGet('/metadata/client');
   }
 
   private async getProfile(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.profile_id) return { content: [{ type: 'text', text: 'profile_id is required' }], isError: true };
-    return this.apiGet(`/metadata/client/${encodeURIComponent(args.profile_id as string)}`);
+    const cid = (args.customer_id as string) || this.customerId;
+    if (!cid) return { content: [{ type: 'text', text: 'customer_id is required (provide in config or as argument)' }], isError: true };
+    // GET /v1/{customerId}/metadata/customer — returns social profiles for a customer
+    return this.apiGet(`/${encodeURIComponent(cid)}/metadata/customer`);
   }
 
   private async listProfileGroups(): Promise<ToolResult> {
-    return this.apiGet('/metadata/client/profile_groups');
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for list_profile_groups' }], isError: true };
+    // GET /v1/{customerId}/metadata/customer/groups
+    return this.apiGet(this.customerPath('/metadata/customer/groups'));
   }
 
   private async listPosts(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for list_posts' }], isError: true };
     const params: Record<string, string> = {
-      status: (args.status as string) || 'sent',
       count: String((args.count as number) || 50),
       page: String((args.page as number) || 1),
     };
-    if (args.profile_ids) params.profile_ids = args.profile_ids as string;
+    if (args.status) params.status = args.status as string;
     if (args.start_date) params.start_date = args.start_date as string;
     if (args.end_date) params.end_date = args.end_date as string;
-    return this.apiGet('/message', params);
+    if (args.profile_ids) params.profile_ids = args.profile_ids as string;
+    // GET /v1/{customerId}/publishing/posts — list publishing posts
+    return this.apiGet(this.customerPath('/publishing/posts'), params);
   }
 
   private async getPost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.apiGet(`/message/${encodeURIComponent(args.post_id as string)}`);
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for get_post' }], isError: true };
+    // GET /v1/{customerId}/publishing/posts/{postId}
+    return this.apiGet(this.customerPath(`/publishing/posts/${encodeURIComponent(args.post_id as string)}`));
   }
 
   private async createPost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_ids || !args.text) return { content: [{ type: 'text', text: 'profile_ids and text are required' }], isError: true };
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for create_post' }], isError: true };
     const body: Record<string, unknown> = {
       profile_ids: args.profile_ids,
       status: { text: args.text },
     };
     if (args.media_urls) body.media_urls = args.media_urls;
-    return this.apiPost('/message', body);
+    // POST /v1/{customerId}/publishing/posts
+    return this.apiPost(this.customerPath('/publishing/posts'), body);
   }
 
   private async schedulePost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_ids || !args.text || !args.scheduled_send_time) {
       return { content: [{ type: 'text', text: 'profile_ids, text, and scheduled_send_time are required' }], isError: true };
     }
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for schedule_post' }], isError: true };
     const body: Record<string, unknown> = {
       profile_ids: args.profile_ids,
       status: { text: args.text },
       scheduling: { scheduled_send_time: args.scheduled_send_time },
     };
     if (args.media_urls) body.media_urls = args.media_urls;
-    return this.apiPost('/message', body);
+    // POST /v1/{customerId}/publishing/posts (with scheduling)
+    return this.apiPost(this.customerPath('/publishing/posts'), body);
   }
 
   private async deletePost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id) return { content: [{ type: 'text', text: 'post_id is required' }], isError: true };
-    return this.apiDelete(`/message/${encodeURIComponent(args.post_id as string)}`);
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for delete_post' }], isError: true };
+    // DELETE /v1/{customerId}/publishing/posts/{postId}
+    return this.apiDelete(this.customerPath(`/publishing/posts/${encodeURIComponent(args.post_id as string)}`));
   }
 
   private async getProfileAnalytics(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_ids || !args.start_date || !args.end_date) {
       return { content: [{ type: 'text', text: 'profile_ids, start_date, and end_date are required' }], isError: true };
     }
-    const params: Record<string, string> = {
-      profile_ids: args.profile_ids as string,
-      start_date: args.start_date as string,
-      end_date: args.end_date as string,
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for get_profile_analytics' }], isError: true };
+    // POST /v1/{customerId}/analytics/profiles — analytics endpoints use POST with JSON body
+    const body: Record<string, unknown> = {
+      profile_ids: args.profile_ids,
+      start_date: args.start_date,
+      end_date: args.end_date,
     };
-    if (args.fields) params.fields = args.fields as string;
-    return this.apiGet('/analytics/profiles', params);
+    if (args.fields) body.fields = args.fields;
+    return this.apiPost(this.customerPath('/analytics/profiles'), body);
   }
 
   private async getPostAnalytics(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.profile_ids || !args.start_date || !args.end_date) {
       return { content: [{ type: 'text', text: 'profile_ids, start_date, and end_date are required' }], isError: true };
     }
-    const params: Record<string, string> = {
-      profile_ids: args.profile_ids as string,
-      start_date: args.start_date as string,
-      end_date: args.end_date as string,
-      count: String((args.count as number) || 50),
-      page: String((args.page as number) || 1),
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for get_post_analytics' }], isError: true };
+    // POST /v1/{customerId}/analytics/posts — analytics endpoints use POST with JSON body
+    const body: Record<string, unknown> = {
+      profile_ids: args.profile_ids,
+      start_date: args.start_date,
+      end_date: args.end_date,
     };
-    return this.apiGet('/analytics/posts', params);
+    return this.apiPost(this.customerPath('/analytics/posts'), body);
   }
 
-  private async listTags(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      count: String((args.count as number) || 100),
-      page: String((args.page as number) || 1),
-    };
-    return this.apiGet('/metadata/tag', params);
+  private async listTags(_args: Record<string, unknown>): Promise<ToolResult> {
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for list_tags' }], isError: true };
+    // GET /v1/{customerId}/metadata/customer/tags
+    return this.apiGet(this.customerPath('/metadata/customer/tags'));
   }
 
   private async createTag(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
-    return this.apiPost('/metadata/tag', { name: args.name });
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for create_tag' }], isError: true };
+    // POST /v1/{customerId}/metadata/customer/tags — tag creation uses customer tags endpoint
+    return this.apiPost(this.customerPath('/metadata/customer/tags'), { name: args.name });
   }
 
   private async tagPost(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.post_id || !args.tag_ids) return { content: [{ type: 'text', text: 'post_id and tag_ids are required' }], isError: true };
-    return this.apiPost(`/message/${encodeURIComponent(args.post_id as string)}/tags`, { tag_ids: args.tag_ids });
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for tag_post' }], isError: true };
+    // POST /v1/{customerId}/publishing/posts/{postId}/tags
+    return this.apiPost(this.customerPath(`/publishing/posts/${encodeURIComponent(args.post_id as string)}/tags`), { tag_ids: args.tag_ids });
   }
 
   private async listPendingPosts(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      count: String((args.count as number) || 50),
-      page: String((args.page as number) || 1),
-    };
-    if (args.profile_ids) params.profile_ids = args.profile_ids as string;
-    return this.apiGet('/message/pending', params);
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for list_pending_posts' }], isError: true };
+    const params: Record<string, string> = {};
+    if (args.status) params.status = args.status as string;
+    // GET /v1/{customerId}/publishing/posts — query publishing posts
+    return this.apiGet(this.customerPath('/publishing/posts'), params);
   }
 
   private async listSentMessages(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      count: String((args.count as number) || 50),
-      page: String((args.page as number) || 1),
+    if (!this.customerId) return { content: [{ type: 'text', text: 'customerId is required in config for list_sent_messages' }], isError: true };
+    const body: Record<string, unknown> = {
+      count: (args.count as number) || 50,
+      page: (args.page as number) || 1,
     };
-    if (args.profile_ids) params.profile_ids = args.profile_ids as string;
-    if (args.start_date) params.start_date = args.start_date as string;
-    if (args.end_date) params.end_date = args.end_date as string;
-    return this.apiGet('/message/sent', params);
+    if (args.profile_ids) body.profile_ids = args.profile_ids;
+    if (args.start_date) body.start_date = args.start_date;
+    if (args.end_date) body.end_date = args.end_date;
+    // POST /v1/{customerId}/messages — inbox messages endpoint (inbound messages)
+    return this.apiPost(this.customerPath('/messages'), body);
   }
 }

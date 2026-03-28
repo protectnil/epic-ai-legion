@@ -4,11 +4,31 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/hashicorp/terraform-mcp-server — transport: stdio + streamable-HTTP
-// Actively maintained by HashiCorp. Covers Terraform Registry (modules, providers, policies) and
-// HCP Terraform / Terraform Enterprise (workspaces, runs, variable sets, organizations, projects).
-// Current release: v0.3.0 (2025-09-24).
-// Recommendation: Use vendor MCP for full coverage. Use this adapter for air-gapped deployments.
+// Official MCP: https://github.com/hashicorp/terraform-mcp-server — transport: stdio + streamable-HTTP, auth: TFE_TOKEN env var
+// Actively maintained by HashiCorp. Current release: v0.4.0 (2026-03+).
+// MCP tool count: 30+ tools across registry (search_providers, get_provider_details, get_latest_provider_version,
+//   search_modules, get_module_details, get_latest_module_version, search_policies, get_policy_details),
+//   registry-private (search_private_modules, get_private_module_details), and terraform toolset
+//   (list_terraform_orgs, list_terraform_projects, list_workspaces, get_workspace_details, create_workspace,
+//   update_workspace, delete_workspace_safely, list_runs, get_run_details, create_run, action_run,
+//   list_workspace_variables, list_variable_sets, create_variable_set, create_variable_in_variable_set,
+//   delete_variable_in_variable_set, attach_variable_set_to_workspaces, detach_variable_set_from_workspaces,
+//   create_workspace_tags, read_workspace_tags, get_workspace_policy_sets, attach_policy_set_to_workspace,
+//   list_stacks, get_stack_details).
+// MCP-only tools (not in this adapter): delete_workspace_safely, action_run, list_variable_sets,
+//   create_variable_set, create_variable_in_variable_set, delete_variable_in_variable_set,
+//   attach_variable_set_to_workspaces, detach_variable_set_from_workspaces, create_workspace_tags,
+//   read_workspace_tags, get_workspace_policy_sets, attach_policy_set_to_workspace, list_stacks,
+//   get_stack_details, search_policies, get_policy_details, get_latest_provider_version,
+//   get_latest_module_version, get_run_details, get_workspace_details.
+// REST-only tools (in this adapter but not in MCP): get_run (maps to get_run_details in MCP),
+//   create_workspace_variable, update_workspace_variable, get_current_state_version, list_state_versions,
+//   list_private_modules (search_private_modules in MCP), get_private_module, search_public_providers,
+//   get_public_provider, get_public_module_versions.
+// Recommendation: use-both — MCP covers variable sets, tags, policy sets, stacks, and workspace deletion
+//   not in this adapter. This adapter covers state versions, workspace variables CRUD, and public
+//   registry provider/module detail lookup not fully covered by the MCP. FederationManager routes
+//   shared operations through MCP.
 //
 // Base URLs:
 //   HCP Terraform:     https://app.terraform.io/api/v2
@@ -245,15 +265,15 @@ export class TerraformRegistryMCPServer {
       // ── State Versions ────────────────────────────────────────────────────────
       {
         name: 'list_state_versions',
-        description: 'List state versions (state history) for a HCP Terraform workspace.',
+        description: 'List state versions (state history) for a HCP Terraform workspace by workspace name.',
         inputSchema: {
           type: 'object',
           properties: {
-            workspace_id: { type: 'string', description: 'Workspace ID (ws-XXXXXXXX)' },
+            workspace_name: { type: 'string', description: 'Workspace name (slug) — required by the API filter' },
             page_size: { type: 'number', description: 'Results per page (default: 20)' },
             page_number: { type: 'number', description: 'Page number (default: 1)' },
           },
-          required: ['workspace_id'],
+          required: ['workspace_name'],
         },
       },
       {
@@ -635,7 +655,8 @@ export class TerraformRegistryMCPServer {
 
   private async listStateVersions(args: Record<string, unknown>): Promise<ToolResult> {
     const params = this.buildPageParams(args);
-    params.set('filter[workspace][name]', args.workspace_id as string);
+    params.set('filter[workspace][name]', args.workspace_name as string);
+    params.set('filter[organization][name]', this.organization);
     return this.cloudGet(`/state-versions?${params}`);
   }
 

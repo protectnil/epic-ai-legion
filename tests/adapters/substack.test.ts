@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SubstackMCPServer } from '../../src/mcp-servers/substack.js';
 
 describe('SubstackMCPServer', () => {
-  const adapter = new SubstackMCPServer({ apiToken: 'test-token' });
+  const adapter = new SubstackMCPServer({});
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

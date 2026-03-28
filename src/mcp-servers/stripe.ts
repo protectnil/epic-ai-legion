@@ -7,10 +7,32 @@
 // Official MCP: https://github.com/stripe/agent-toolkit — transport: stdio (local npx) or remote HTTPS (mcp.stripe.com)
 // Remote server: https://mcp.stripe.com — OAuth2, no API key required in MCP client config.
 // Local server: npx -y @stripe/mcp --api-key=sk_... — transport: stdio, auth: Stripe secret key.
-// Vendor MCP covers: 14+ tools (customers, charges, invoices, subscriptions, products, prices, refunds, payment intents).
-// Our adapter covers: 20 tools (same surface plus balance, charges list, setup intents, coupons, webhooks).
-// Recommendation: Use vendor MCP for production AI agents needing OAuth + Stripe-managed security.
-//   Use this adapter for air-gapped deployments or direct REST access without npx dependency.
+// Vendor MCP covers: 25 tools — get_stripe_account_info, retrieve_balance, create_coupon, list_coupons,
+//   create_customer, list_customers, list_disputes, update_dispute, create_invoice, create_invoice_item,
+//   finalize_invoice, list_invoices, create_payment_link, list_payment_intents, create_price, list_prices,
+//   create_product, list_products, create_refund, cancel_subscription, list_subscriptions, update_subscription,
+//   search_stripe_resources, fetch_stripe_resources, search_stripe_documentation.
+// Our adapter covers: 21 tools — list_customers, get_customer, create_customer, update_customer,
+//   list_charges, get_charge, list_payment_intents, create_payment_intent, get_payment_intent,
+//   list_subscriptions, get_subscription, cancel_subscription, list_invoices, get_invoice, pay_invoice,
+//   list_refunds, create_refund, list_products, create_product, list_prices, create_price.
+//
+// Integration: use-both
+// MCP-only tools (14): get_stripe_account_info, retrieve_balance, create_coupon, list_coupons,
+//   list_disputes, update_dispute, create_invoice, create_invoice_item, finalize_invoice,
+//   create_payment_link, update_subscription, search_stripe_resources, fetch_stripe_resources,
+//   search_stripe_documentation.
+// REST-only tools (10): get_customer, update_customer, list_charges, get_charge,
+//   create_payment_intent, get_payment_intent, get_subscription, get_invoice, pay_invoice,
+//   list_refunds.
+// Shared tools (11): list_customers, create_customer, list_payment_intents, list_subscriptions,
+//   cancel_subscription, list_invoices, create_refund, list_products, create_product,
+//   list_prices, create_price. (FederationManager routes shared tools through MCP by default.)
+// Combined coverage: 35 unique tools (MCP: 25 + REST: 21 - shared: 11).
+// Recommendation: use-both. MCP has 14 unique tools (account info, balance, coupons, disputes,
+//   invoice creation, payment links, subscription update, documentation search). REST has 10
+//   unique tools (single-resource GET/update by ID, create_payment_intent, pay_invoice,
+//   list_refunds, list_charges). Full coverage requires both.
 //
 // Base URL: https://api.stripe.com/v1
 // Auth: Bearer token (Stripe secret key, format: sk_live_... or sk_test_...)

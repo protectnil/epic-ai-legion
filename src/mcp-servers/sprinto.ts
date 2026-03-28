@@ -4,16 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Sprinto MCP server was found on GitHub.
+// Official MCP: None found as of 2026-03-28.
+// No official Sprinto MCP server was found on GitHub, npm, or Splunkbase.
 //
-// Base URL: https://app.sprinto.com/dev-api/graphql  (GraphQL endpoint)
+// Base URL: https://app.sprinto.com/dev-api/graphql  (GraphQL endpoint — US region default)
+//   Regional variants: US, Europe, India — exact regional URLs not publicly documented
+//   in searchable form; the config baseUrl field allows override per region.
 // Auth: API key header — api-key: <YOUR_API_KEY>
 //       Generated in Sprinto UI by any admin under Settings → Developer API.
 // Docs: https://developer.sprinto.com/docs/sprinto-developer-api-documentation
-//       https://docs.sprinto.com/api-references/sprinto-developer-api
+//       https://developer.sprinto.com/docs/quick-start
 // Rate limits: Rate-limited by IP address and API key. Exact limits not publicly documented.
 //              Uses GraphQL — all requests are POST to a single endpoint.
+//              GraphQL schema is available via the Sprinto API Playground (region-specific).
 
 import { ToolDefinition, ToolResult } from './types.js';
 

@@ -4,34 +4,42 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Tipalti MCP server was found on GitHub or npm as of March 2026.
+// Official MCP: None found as of 2026-03-28
+// No official Tipalti MCP server was found on GitHub or npm as of 2026-03-28.
+// Our adapter covers: 15 tools. Vendor MCP covers: N/A (no official MCP).
+// Recommendation: use-rest-api — no official vendor MCP exists.
 //
-// Base URL: https://api.tipalti.com  (sandbox: https://api.sandbox.tipalti.com)
-// Auth: OAuth2 client_credentials — POST /oauth2/token with client_id + client_secret
-//   Token endpoint returns access_token + expires_in; refresh 60 seconds early.
+// IMPORTANT — TWO TIPALTI API SURFACES:
+//   1. Procurement REST API: x-api-key header auth; Tipalti redacts base URLs in public docs (contact
+//      Implementation Manager for base URL and token). Covers POs and procurement workflows.
+//      Confirmed paths: POST/GET /api/v1/resources/pos, POST /api/v1/resources/getUploadUrl.
+//   2. Legacy SOAP API: https://api.tipalti.com (PayeeFunctions.asmx, PayerFunctions.asmx) — NOT REST.
+//
+// Base URL: Tipalti Procurement REST API base URL is provisioned per-tenant (not public). The default
+//   in this adapter (https://api.tipalti.com) is the SOAP service host, not REST. Operators must
+//   override baseUrl with their provisioned REST base URL from Tipalti Implementation.
+// Auth: Static API token in x-api-key header — obtained from Tipalti Implementation Manager.
+//   NOTE: Previous OAuth2 client_credentials flow was INCORRECT per official docs.
 // Docs: https://help.tipalti.com/hc/en-us/articles/30718248220823-Procurement-REST-API-documentation
 //       https://developer.tipalti.com/
-// Rate limits: Not publicly documented; recommended max 120 req/min per OAuth2 token
+// Rate limits: 429 returned when rate limit exceeded; Retry-After header indicates wait time.
+//   Specific limits not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface TipaltiConfig {
-  clientId: string;
-  clientSecret: string;
+  apiToken: string;
   baseUrl?: string;
 }
 
 export class TipaltiMCPServer {
-  private readonly clientId: string;
-  private readonly clientSecret: string;
+  private readonly apiToken: string;
   private readonly baseUrl: string;
-  private bearerToken: string | null = null;
-  private tokenExpiry: number = 0;
 
   constructor(config: TipaltiConfig) {
-    this.clientId = config.clientId;
-    this.clientSecret = config.clientSecret;
+    this.apiToken = config.apiToken;
+    // NOTE: The Tipalti Procurement REST API base URL is tenant-provisioned. Operators must
+    // supply their actual base URL via config.baseUrl. The default below is a placeholder.
     this.baseUrl = (config.baseUrl ?? 'https://api.tipalti.com').replace(/\/$/, '');
   }
 
@@ -60,40 +68,14 @@ export class TipaltiMCPServer {
   }
 
   // ──────────────────────────────────────────────
-  // OAuth2 client credentials
-  // ──────────────────────────────────────────────
-  private async getOrRefreshToken(): Promise<string> {
-    const now = Date.now();
-    if (this.bearerToken && this.tokenExpiry > now) {
-      return this.bearerToken;
-    }
-    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
-      }).toString(),
-    });
-    if (!response.ok) {
-      throw new Error(`Tipalti OAuth2 token request failed: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json() as { access_token: string; expires_in: number };
-    this.bearerToken = data.access_token;
-    this.tokenExpiry = now + (data.expires_in - 60) * 1000;
-    return this.bearerToken;
-  }
-
-  // ──────────────────────────────────────────────
   // HTTP helper — throws on non-OK
+  // Auth: x-api-key header with static API token (per Tipalti Procurement REST API docs)
   // ──────────────────────────────────────────────
   private async req(path: string, method = 'GET', body?: unknown): Promise<unknown> {
-    const token = await this.getOrRefreshToken();
     const response = await fetch(`${this.baseUrl}${path}`, {
       method,
       headers: {
-        Authorization: `Bearer ${token}`,
+        'x-api-key': this.apiToken,
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },

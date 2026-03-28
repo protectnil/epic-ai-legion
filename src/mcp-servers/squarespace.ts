@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Squarespace MCP server was found on GitHub or in Squarespace's developer documentation.
 //
 // Base URL: https://api.squarespace.com/1.0
@@ -499,7 +499,7 @@ export class SquarespaceMCPServer {
     const body: Record<string, unknown> = {};
     if (args.name) body.name = args.name;
     if (args.description) body.description = args.description;
-    return this.apiPut(`/commerce/products/${encodeURIComponent(args.product_id as string)}`, body);
+    return this.apiPost(`/commerce/products/${encodeURIComponent(args.product_id as string)}`, body);
   }
 
   private async deleteProduct(args: Record<string, unknown>): Promise<ToolResult> {

@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official TeamCity MCP server was found on GitHub or in JetBrains' documentation.
+// Official MCP: None found as of 2026-03-28
+// No official JetBrains/TeamCity MCP server found. Community MCP exists (github.com/Daghis/teamcity-mcp,
+// 87 tools, actively maintained) but is NOT published by JetBrains — fails criterion 1 (vendor official).
+// Decision: use-rest-api
 //
 // Base URL: {your-teamcity-host}/app/rest  (self-hosted; no fixed domain)
 // Auth: Bearer token (personal access token) in Authorization header — generated in My Settings & Tools > Access Tokens
@@ -613,8 +615,9 @@ export class TeamCityMCPServer {
 
   private async pinBuild(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    const comment = (args.comment as string) || '';
-    return this.apiPut(`/builds/id:${encodeURIComponent(args.build_id as string)}/pin`, comment, 'text/plain');
+    // TeamCity REST API: PUT /app/rest/builds/{buildLocator}/pinInfo with PinInfo body (application/json)
+    const body = JSON.stringify({ comment: { text: (args.comment as string) || '' }, status: 'pinned' });
+    return this.apiPut(`/builds/id:${encodeURIComponent(args.build_id as string)}/pinInfo`, body, 'application/json');
   }
 
   private async listBuildQueue(args: Record<string, unknown>): Promise<ToolResult> {
@@ -628,7 +631,17 @@ export class TeamCityMCPServer {
 
   private async getBuildLog(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.apiGet(`/builds/id:${encodeURIComponent(args.build_id as string)}/log`);
+    // TeamCity REST API has no GET /app/rest/builds/{id}/log endpoint (that path is POST-only for adding messages).
+    // Build log download uses: {serverRoot}/downloadBuildLog.html?buildId={numericId}&plain=true
+    // Strip /app/rest suffix to get the server root URL.
+    const serverRoot = this.baseUrl.replace(/\/app\/rest\/?$/, '');
+    const url = `${serverRoot}/downloadBuildLog.html?buildId=${encodeURIComponent(args.build_id as string)}&plain=true`;
+    const response = await fetch(url, { headers: this.headers });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const text = await response.text();
+    return { content: [{ type: 'text', text: this.truncate(text) }], isError: false };
   }
 
   private async listArtifacts(args: Record<string, unknown>): Promise<ToolResult> {

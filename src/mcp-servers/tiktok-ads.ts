@@ -4,8 +4,12 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official TikTok Ads MCP server was found on GitHub or the TikTok for Business developer portal.
+// Official MCP: None found as of 2026-03-28
+// No official TikTok Ads MCP server was found. Community servers exist (github.com/AdsMCP/tiktok-ads-mcp-server,
+// github.com/ysntony/tiktok-ads-mcp) but are not published by TikTok/ByteDance and expose only 6-9 tools — below
+// the 10-tool threshold. Neither qualifies as an official vendor MCP.
+// Our adapter covers: 16 tools. Vendor MCP covers: N/A (no official MCP).
+// Recommendation: use-rest-api — no qualifying official vendor MCP server exists.
 //
 // Base URL: https://business-api.tiktok.com/open_api/v1.3
 // Auth: Access token in the Access-Token header (obtained via OAuth2 authorization code flow).
@@ -747,16 +751,17 @@ export class TikTokAdsMCPServer {
     if (!args.advertiser_id || !args.dimensions || !args.metrics || !args.start_date || !args.end_date) {
       return { content: [{ type: 'text', text: 'advertiser_id, dimensions, metrics, start_date, and end_date are required' }], isError: true };
     }
-    return this.ttdPost('/report/integrated/get/', {
-      advertiser_id: args.advertiser_id,
+    const params: Record<string, string> = {
+      advertiser_id: args.advertiser_id as string,
       report_type: (args.report_type as string) ?? 'BASIC',
-      dimensions: (args.dimensions as string).split(',').map(d => d.trim()),
-      metrics: (args.metrics as string).split(',').map(m => m.trim()),
-      start_date: args.start_date,
-      end_date: args.end_date,
-      page: (args.page as number) ?? 1,
-      page_size: (args.page_size as number) ?? 20,
-    });
+      dimensions: JSON.stringify((args.dimensions as string).split(',').map(d => d.trim())),
+      metrics: JSON.stringify((args.metrics as string).split(',').map(m => m.trim())),
+      start_date: args.start_date as string,
+      end_date: args.end_date as string,
+      page: String((args.page as number) ?? 1),
+      page_size: String((args.page_size as number) ?? 20),
+    };
+    return this.ttdGet('/report/integrated/get/', params);
   }
 
   private async listAudiences(args: Record<string, unknown>): Promise<ToolResult> {

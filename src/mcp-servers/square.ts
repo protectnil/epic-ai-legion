@@ -4,12 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/square/square-mcp-server — transport: stdio, auth: OAuth2 access token
-// Their server is auto-generated from Square's OpenAPI spec and exposes 3 generic tools:
-//   make_api_request, get_type_info, get_service_info — a single unified wrapper, not named domain tools.
+// Official MCP: https://github.com/square/square-mcp-server — transport: stdio + remote (hosted at connect.squareup.com/mcp), auth: OAuth2 access token
+// Their server exposes 3 generic tools: make_api_request, get_type_info, get_service_info — a single unified
+//   wrapper, not named domain tools. Fails criterion #3 (fewer than 10 named tools).
 // Our adapter covers: 18 tools (payments, refunds, customers, orders, catalog, invoices, disputes, locations).
 // Vendor MCP covers: all Square APIs via make_api_request but requires prompt-engineering the path/method.
-// Recommendation: Use this adapter for named, typed tool resolution. Use vendor MCP for raw API exploration.
+// Recommendation: use-rest-api — vendor MCP fails criterion #3 (3 generic tools, not 10+ named tools).
+//   MCP documented here for reference; our adapter provides named, typed tool resolution.
 //
 // Base URL: https://connect.squareup.com/v2 (production) | https://connect.squareupsandbox.com/v2 (sandbox)
 // Auth: Bearer token (Square access token or OAuth2 bearer)
@@ -39,7 +40,7 @@ export class SquareMCPServer {
 
   constructor(config: SquareConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl ?? 'https://connect.squareupsandbox.com/v2';
+    this.baseUrl = config.baseUrl ?? 'https://connect.squareup.com/v2';
     this.apiVersion = config.apiVersion ?? '2026-01-22';
   }
 

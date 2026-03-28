@@ -4,10 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Together AI MCP server was found on GitHub. Community servers exist for image
-// generation only (github.com/manascb1344/together-mcp-server) but are not maintained by
-// Together AI and cover a single model, not the full API surface.
+// Official MCP: None found as of 2026-03-28
+// No official Together AI MCP server was found on GitHub. Multiple community servers exist for image
+// generation only (github.com/manascb1344/together-mcp-server, stefanskiasan/togetherai-image-mcp-server,
+// zym9863/together-ai-image-server) but are not published by Together AI and cover only image generation,
+// not the full API surface. None meet the official MCP criteria.
 //
 // Base URL: https://api.together.xyz/v1
 // Auth: Bearer token — Authorization: Bearer {TOGETHER_API_KEY}

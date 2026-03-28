@@ -4,8 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Stytch MCP server was found on GitHub or in Stytch's developer documentation.
+// Official MCP: https://mcp.stytch.dev/mcp — transport: streamable-HTTP, auth: OAuth2 (Stytch workspace OAuth)
+// Vendor MCP covers: 7 tools (workspace management: listProjects, createSecret, createPublicToken,
+//   updateConsumerSDKConfig, getProject, listEnvironments, etc. — manages the Stytch dashboard/workspace,
+//   NOT the consumer authentication API surface this adapter covers).
+// MCP DECISION: use-rest-api. The official Stytch MCP server exists but covers Stytch workspace
+//   configuration (project management, secrets, SDK config) — not the consumer auth endpoints
+//   (users, magic links, OTPs, sessions) that this adapter implements. The MCP has 7 tools and
+//   covers a fully non-overlapping API surface. This adapter is the only integration for consumer
+//   auth operations. Fails MCP criteria: exposes <10 tools, covers different API surface.
 //
 // Base URL: https://api.stytch.com/v1
 // Auth: HTTP Basic auth — project_id as username, secret as password (base64 encoded)
@@ -456,11 +463,12 @@ export class StytchMCPServer {
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      limit: String((args.limit as number) || 100),
-    };
-    if (args.cursor) params.cursor = args.cursor as string;
-    return this.apiGet('/users', params);
+    // Stytch has no GET /users list endpoint. List is done via POST /v1/users/search
+    // with an empty query (returns all users). Pagination via cursor and limit in body.
+    const body: Record<string, unknown> = { query: {} };
+    if (args.limit) body.limit = args.limit;
+    if (args.cursor) body.cursor = args.cursor;
+    return this.apiPost('/users/search', body);
   }
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {

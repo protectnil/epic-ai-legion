@@ -4,14 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Toast MCP server was found on GitHub or the Toast developer portal.
+// Community servers exist (github.com/matthewmckenzie/toast-mcp-server, naveenbanoth/toast-admin-mcp-server)
+// but are not published by Toast Inc. and do not meet the official MCP criteria.
 //
 // Base URL: https://ws-api.toasttab.com  (production)
 //   Sandbox: https://ws-sandbox-api.eng.toasttab.com
 // Auth: OAuth2 client credentials — POST to /authentication/v1/authentication/login with
-//       clientId and clientSecret; returns bearerToken valid for a limited period (typically 1 hour).
-//       Include as: Authorization: Bearer {token}
+//       clientId, clientSecret, and userAccessType: "TOAST_MACHINE_CLIENT";
+//       response token at data.token.accessToken, expires in data.token.expiresIn seconds.
+//       Include as: Authorization: Bearer {token}. Also requires Toast-Restaurant-External-ID header per request.
 // Docs: https://doc.toasttab.com/doc/devguide/apiOverview.html
 // Rate limits: Not publicly documented; standard practice is to implement exponential backoff on 429.
 
@@ -361,7 +364,7 @@ export class ToastMCPServer {
     const response = await fetch(`${this.baseUrl}/authentication/v1/authentication/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId: this.clientId, clientSecret: this.clientSecret }),
+      body: JSON.stringify({ clientId: this.clientId, clientSecret: this.clientSecret, userAccessType: 'TOAST_MACHINE_CLIENT' }),
     });
     if (!response.ok) {
       throw new Error(`Toast authentication failed: ${response.status} ${response.statusText}`);
@@ -423,7 +426,7 @@ export class ToastMCPServer {
 
   private async getRestaurant(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_guid) return { content: [{ type: 'text', text: 'restaurant_guid is required' }], isError: true };
-    return this.toastGet('/config/v2/restaurantInfo', args.restaurant_guid as string);
+    return this.toastGet(`/restaurants/v1/restaurants/${encodeURIComponent(args.restaurant_guid as string)}`, args.restaurant_guid as string);
   }
 
   private async listOrders(args: Record<string, unknown>): Promise<ToolResult> {
@@ -433,12 +436,12 @@ export class ToastMCPServer {
     if (args.end_date) params.endDate = args.end_date as string;
     if (args.page_token) params.pageToken = args.page_token as string;
     if (args.page_size) params.pageSize = String(args.page_size);
-    return this.toastGet('/orders/v2/orders', args.restaurant_guid as string, params);
+    return this.toastGet('/ordersBulk', args.restaurant_guid as string, params);
   }
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_guid || !args.order_guid) return { content: [{ type: 'text', text: 'restaurant_guid and order_guid are required' }], isError: true };
-    return this.toastGet(`/orders/v2/orders/${encodeURIComponent(args.order_guid as string)}`, args.restaurant_guid as string);
+    return this.toastGet(`/orders/${encodeURIComponent(args.order_guid as string)}`, args.restaurant_guid as string);
   }
 
   private async createOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -452,7 +455,7 @@ export class ToastMCPServer {
       selections,
     };
     if (args.table_guid) body.table = { guid: args.table_guid };
-    return this.toastPost('/orders/v2/orders', args.restaurant_guid as string, body);
+    return this.toastPost('/orders', args.restaurant_guid as string, body);
   }
 
   private async getMenus(args: Record<string, unknown>): Promise<ToolResult> {
@@ -489,7 +492,7 @@ export class ToastMCPServer {
 
   private async getPayment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.restaurant_guid || !args.payment_guid) return { content: [{ type: 'text', text: 'restaurant_guid and payment_guid are required' }], isError: true };
-    return this.toastGet(`/orders/v2/payments/${encodeURIComponent(args.payment_guid as string)}`, args.restaurant_guid as string);
+    return this.toastGet(`/payments/${encodeURIComponent(args.payment_guid as string)}`, args.restaurant_guid as string);
   }
 
   private async listPayments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -498,6 +501,6 @@ export class ToastMCPServer {
     if (args.start_date) params.startDate = args.start_date as string;
     if (args.end_date) params.endDate = args.end_date as string;
     if (args.page_token) params.pageToken = args.page_token as string;
-    return this.toastGet('/orders/v2/payments', args.restaurant_guid as string, params);
+    return this.toastGet('/payments', args.restaurant_guid as string, params);
   }
 }
