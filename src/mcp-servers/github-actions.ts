@@ -4,9 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/github/github-mcp-server — transport: stdio, auth: Personal Access Token
-// Our adapter covers: 22 tools (CI/CD operations). Vendor MCP covers: broader GitHub surface.
-// Recommendation: Use vendor MCP for full GitHub coverage. Use this adapter for Actions-specific air-gapped deployments.
+// Official MCP: https://github.com/github/github-mcp-server — transport: stdio (Docker/Go binary) and
+//   streamable-HTTP (remote), auth: Personal Access Token or GitHub App. Vendor-published, actively
+//   maintained (v0.29.0, March 2026). Actions toolset exposes 4 consolidated tools: actions_get,
+//   actions_list, actions_run_trigger, get_job_logs.
+// Our adapter covers: 22 tools (CI/CD operations). Vendor MCP Actions toolset covers: 4 consolidated tools.
+// Recommendation: use-both — our adapter's 22 fine-grained tools cover operations the 4-tool MCP Actions
+//   toolset does not expose individually (secrets CRUD, variables CRUD, self-hosted runners, per-job log
+//   download, artifact management). MCP's actions_run_trigger covers workflow dispatch which we don't expose.
+//   Use vendor MCP for workflow dispatch and high-level listing; use this adapter for fine-grained
+//   secrets/variables/runners management and air-gapped deployments.
+//
+// Integration: use-both
+// MCP-sourced tools (4): actions_get, actions_list, actions_run_trigger, get_job_logs
+// REST-sourced tools (22): list_workflows, get_workflow, enable_workflow, disable_workflow,
+//   list_workflow_runs, get_workflow_run, rerun_workflow, cancel_workflow_run, delete_workflow_run,
+//   list_workflow_jobs, get_workflow_job, download_job_logs, list_artifacts, get_artifact,
+//   delete_artifact, list_secrets, create_or_update_secret, delete_secret, list_variables,
+//   create_or_update_variable, delete_variable, list_self_hosted_runners
+// Combined coverage: 26 tools (MCP: 4 + REST: 22 - shared: 0)
 //
 // Base URL: https://api.github.com
 // Auth: Bearer token (Personal Access Token or GitHub App installation token) in Authorization header

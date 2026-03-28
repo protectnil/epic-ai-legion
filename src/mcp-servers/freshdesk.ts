@@ -4,16 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03. Freshworks has not published an official MCP server.
-//   Community implementations exist (effytech/freshdesk_mcp, Enreign/freshdeck-mcp) but are
-//   not official Freshworks products.
+// Official MCP: None found as of 2026-03-28. Freshworks has not published an official MCP server.
+//   Community implementations exist (effytech/freshdesk_mcp — community, MIT, ~30 tools, stdio;
+//   bcavas/freshdesk-mcp-server — community, 33+ tools, stdio + streamable-HTTP) but are
+//   not official Freshworks products. None qualify under the 4-criteria protocol gate.
+// Our adapter covers: 26 tools. Vendor MCP covers: 0 tools (no official server).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://{domain}.freshdesk.com/api/v2
 //   domain = your Freshdesk subdomain, e.g. "acme" for acme.freshdesk.com
 // Auth: HTTP Basic — API key as username, literal "X" as password
 //   Authorization: Basic base64("<api_key>:X")
 // Docs: https://developers.freshdesk.com/api/
-// Rate limits: 1000 req/hour per agent (Free/Growth); 3000 req/hour (Pro/Enterprise)
+// Rate limits: Growth: 200 req/min (overall); Pro: 400 req/min; Enterprise: 700 req/min
+//   Per-endpoint sub-limits apply (e.g., Ticket Create: 80/min on Growth, 160/min on Pro).
 
 import { ToolDefinition, ToolResult } from './types.js';
 

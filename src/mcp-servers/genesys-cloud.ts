@@ -5,14 +5,21 @@
  */
 
 // Official MCP: https://github.com/MakingChatbots/genesys-cloud-mcp-server — transport: stdio, auth: OAuth2 client credentials
-// Community MCP (not by Genesys). Covers ~8 tools. Our adapter covers 20+ tools (broader API surface).
-// Recommendation: Use this adapter for broader coverage. Use the community MCP for minimal footprint.
+// Community MCP (NOT published by Genesys — published by @MakingChatbots, a personal project).
+// MCP tools (8): Search Queues, Query Queue Volumes, Sample Conversations By Queue,
+//   Voice Call Quality, Conversation Sentiment, Conversation Topics,
+//   Search Voice Conversation, Conversation Transcript, OAuth Clients.
+// MCP focuses on analytics/quality. Our adapter covers 20 tools across users, queues,
+// conversations, campaigns, flows, recordings, telephony, and org management.
+// Our adapter covers: 20 tools. Vendor MCP covers: 8 tools (analytics/quality focused).
+// Recommendation: use-rest-api — MCP is community/unofficial (not vendor-published).
+//   MCP criteria check: fails criterion 1 (not vendor-published), criterion 3 (only 8 tools).
 //
 // Base URL: https://api.mypurecloud.com (US East — region-configurable via constructor)
 //           Other regions: api.mypurecloud.ie (EU), api.mypurecloud.com.au (AU),
 //                          api.mypurecloud.jp (AP), api.cac1.pure.cloud (CA)
-// Auth: OAuth2 client credentials — POST to https://login.mypurecloud.com/oauth/token
-//       (replace mypurecloud.com with region domain for non-US deployments)
+// Auth: OAuth2 client credentials — POST to https://login.{region}/oauth/token
+//       Uses Basic auth (clientId:clientSecret) to exchange for Bearer token.
 // Docs: https://developer.genesys.cloud/api/rest/
 // Rate limits: Varies per endpoint; burst limits enforced. Retry-After header on 429.
 
@@ -330,10 +337,14 @@ export class GenesysCloudMCPServer {
       },
       {
         name: 'list_recordings',
-        description: 'List conversation recordings with optional filters for date range, media type, and retention state',
+        description: 'List recordings for a specific conversation by conversation ID, with optional pagination',
         inputSchema: {
           type: 'object',
           properties: {
+            conversation_id: {
+              type: 'string',
+              description: 'Conversation UUID to retrieve recordings for (required)',
+            },
             page_size: {
               type: 'number',
               description: 'Number of recordings per page (default: 25, max: 100)',
@@ -342,11 +353,8 @@ export class GenesysCloudMCPServer {
               type: 'number',
               description: 'Page number for pagination (default: 1)',
             },
-            conversation_id: {
-              type: 'string',
-              description: 'Filter recordings by conversation UUID (optional)',
-            },
           },
+          required: ['conversation_id'],
         },
       },
       {
@@ -671,9 +679,14 @@ export class GenesysCloudMCPServer {
   }
 
   private async listRecordings(args: Record<string, unknown>): Promise<ToolResult> {
-    const extra: Record<string, string> = {};
-    if (args.conversation_id) extra.conversationId = args.conversation_id as string;
-    return this.apiGet(`/api/v2/recordings?${this.buildPagingParams(args, extra)}`);
+    // Genesys Cloud Recording API: GET /api/v2/conversations/{conversationId}/recordings
+    // A conversationId is required to retrieve recordings for that conversation.
+    if (!args.conversation_id) {
+      return { content: [{ type: 'text', text: 'conversation_id is required to list recordings for a specific conversation' }], isError: true };
+    }
+    return this.apiGet(
+      `/api/v2/conversations/${encodeURIComponent(args.conversation_id as string)}/recordings?${this.buildPagingParams(args)}`,
+    );
   }
 
   private async getRecording(args: Record<string, unknown>): Promise<ToolResult> {

@@ -4,13 +4,35 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/github/github-mcp-server — vendor-published, actively maintained.
-// Transport: stdio (Docker or Go binary). Auth: Personal access token or GitHub App.
-// Covers 50+ tools including repos, issues, PRs, code, actions, security, and more.
-// Our adapter covers: 22 tools (repos, issues, PRs, commits, branches, releases,
-//   deployments, workflow runs, code search, file contents, comments, and gists).
-// Recommendation: Use vendor MCP for full GitHub surface. Use this adapter for
-//   air-gapped deployments or when Docker/Go runtime is unavailable.
+// Official MCP: https://github.com/github/github-mcp-server — transport: stdio (Docker/Go binary) and
+//   streamable-HTTP (remote), auth: Personal Access Token or GitHub App. Vendor-published, actively
+//   maintained (v0.29.0, March 2026). Covers 50+ tools across toolsets: repos, issues, pull_requests,
+//   actions, context, users, gists, git, labels, notifications, orgs, projects, code_security,
+//   dependabot, discussions, secret_protection, security_advisories, stargazers.
+// Our adapter covers: 22 tools. Vendor MCP covers: 50+ tools.
+// Recommendation: use-both — Vendor MCP covers everything our adapter does plus many more toolsets
+//   (projects, orgs, notifications, gists, git operations, code security, dependabot, etc.). Our REST
+//   adapter provides air-gapped coverage for the 22 core operations when Docker/Go runtime is
+//   unavailable or MCP transport is blocked.
+//
+// Integration: use-both
+// MCP-sourced tools (50+): get_me, list_branches, list_code_scanning_alerts, get_code_scanning_alert,
+//   create_or_update_file, create_pull_request_review, create_repository, delete_file, fork_repository,
+//   get_code_scanning_alert, get_commit, get_discussion, get_file_contents, get_issue,
+//   get_pull_request, get_pull_request_comments, get_pull_request_files, get_pull_request_reviews,
+//   get_pull_request_status, get_repo, get_tag, get_user, list_commits, list_discussions,
+//   list_issues, list_notifications, list_pull_requests, list_repos, list_tags, list_workflow_runs,
+//   list_workflow_run_artifacts, manage_notification_subscription, merge_pull_request,
+//   push_files, request_copilot_review, search_code, search_issues, search_repos, search_users,
+//   submit_pull_request_review, update_issue, update_pull_request, update_pull_request_branch,
+//   actions_get, actions_list, actions_run_trigger, get_job_logs, assign_copilot_to_issue,
+//   add_pull_request_review_comment_to_pending_review (and more)
+// REST-sourced tools (22): list_repos, get_repo, search_repos, list_issues, get_issue,
+//   create_issue, update_issue, add_issue_comment, list_pull_requests, get_pull_request,
+//   create_pull_request, list_commits, get_commit, list_branches, get_branch, list_releases,
+//   create_release, list_deployments, list_workflow_runs, get_workflow_run, get_file_contents,
+//   search_code
+// Combined coverage: 50+ tools (MCP: 50+ + REST: 22 - shared: ~14)
 //
 // Base URL: https://api.github.com
 // Auth: Bearer token (Personal Access Token or GitHub App installation token)
@@ -1048,7 +1070,9 @@ export class GitHubMCPServer {
   private async getFileContents(args: Record<string, unknown>): Promise<ToolResult> {
     const { owner, repo, path } = args as { owner: string; repo: string; path: string };
     if (!owner || !repo || !path) return { content: [{ type: 'text', text: 'owner, repo, and path are required' }], isError: true };
-    let url = `${this.r(owner, repo)}/contents/${path}`;
+    // path is a multi-segment URL path — encode each segment individually, preserve '/' separators
+    const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+    let url = `${this.r(owner, repo)}/contents/${encodedPath}`;
     if (args.ref) url += `?ref=${encodeURIComponent(args.ref as string)}`;
     return this.get(url);
   }

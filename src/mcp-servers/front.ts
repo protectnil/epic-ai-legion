@@ -4,15 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/zqushair/Frontapp-MCP — community-maintained, not vendor-published.
-// Our adapter covers: 18 tools (conversations, messages, comments, contacts, inboxes, teammates,
-//   tags, channels, teams, drafts, analytics). Community MCP covers fewer operations.
-// Recommendation: Use this adapter. Community MCP is not vendor-supported.
+// Official MCP: None found as of 2026-03-28 — no vendor-published MCP server exists.
+//   Community MCP: https://github.com/zqushair/Frontapp-MCP — not vendor-published, 17 stars,
+//   3 commits, no releases. Fails criteria 1 (not official) and criteria 2 (unknown maintenance date).
+// Our adapter covers: 18 tools. Community MCP: unknown tool count (not official; not evaluated).
+// Recommendation: use-rest-api — no official Front MCP server exists; REST adapter is authoritative.
 //
 // Base URL: https://api2.frontapp.com
 // Auth: Bearer token (API token from Front workspace settings)
+//   Format: Authorization: Bearer {token}
 // Docs: https://dev.frontapp.com/reference/introduction
-// Rate limits: Varies by endpoint; Core API: ~50 req/s per token
+// Rate limits: Varies by endpoint; Core API: ~50 req/s per token. Search endpoint: 40% of company rate limit.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

@@ -4,8 +4,12 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Google Cloud Translation MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28
+// No official Google Cloud Translation MCP server was found on GitHub, npm, or Google's managed MCP catalog.
+// Google's managed remote MCP servers (announced Dec 2025) cover BigQuery, Maps, GCE, GKE — not Translation.
+//
+// Our adapter covers: 10 tools. Vendor MCP covers: 0 tools (none available).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://translate.googleapis.com/v3
 // Auth: Bearer token (OAuth2 access token or service account token via Application Default Credentials)
@@ -47,11 +51,13 @@ export class GoogleTranslateMCPServer {
         'translate_text',
         'detect_language',
         'list_supported_languages',
+        'romanize_text',
         'batch_translate_text',
         'create_glossary',
         'get_glossary',
         'list_glossaries',
         'delete_glossary',
+        'update_glossary',
       ],
       description: 'Google Cloud Translation v3: translate text, detect languages, manage glossaries, and batch-translate documents across 100+ languages.',
       author: 'protectnil',
@@ -131,6 +137,28 @@ export class GoogleTranslateMCPServer {
               description: 'GCP location for the request (default: global)',
             },
           },
+        },
+      },
+      {
+        name: 'romanize_text',
+        description: 'Romanize text written in non-Latin scripts (e.g. Arabic, Chinese, Japanese, Korean) to Latin script with optional source language',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            contents: {
+              type: 'string',
+              description: 'Text to romanize. For multiple strings, separate with a pipe | character.',
+            },
+            source_language_code: {
+              type: 'string',
+              description: 'BCP-47 language code of the source text (optional — auto-detected if omitted)',
+            },
+            location: {
+              type: 'string',
+              description: 'GCP location for the request (default: global)',
+            },
+          },
+          required: ['contents'],
         },
       },
       {
@@ -254,6 +282,32 @@ export class GoogleTranslateMCPServer {
           required: ['glossary_id'],
         },
       },
+      {
+        name: 'update_glossary',
+        description: 'Update (patch) an existing translation glossary display name or input config. Returns a long-running operation.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            glossary_id: {
+              type: 'string',
+              description: 'ID of the glossary to update',
+            },
+            display_name: {
+              type: 'string',
+              description: 'New display name for the glossary',
+            },
+            input_gcs_uri: {
+              type: 'string',
+              description: 'GCS URI of a new glossary file to replace the existing entries (e.g. gs://my-bucket/glossary.csv)',
+            },
+            location: {
+              type: 'string',
+              description: 'GCP region where the glossary exists (default: us-central1)',
+            },
+          },
+          required: ['glossary_id'],
+        },
+      },
     ];
   }
 
@@ -266,6 +320,8 @@ export class GoogleTranslateMCPServer {
           return this.detectLanguage(args);
         case 'list_supported_languages':
           return this.listSupportedLanguages(args);
+        case 'romanize_text':
+          return this.romanizeText(args);
         case 'batch_translate_text':
           return this.batchTranslateText(args);
         case 'create_glossary':
@@ -276,6 +332,8 @@ export class GoogleTranslateMCPServer {
           return this.listGlossaries(args);
         case 'delete_glossary':
           return this.deleteGlossary(args);
+        case 'update_glossary':
+          return this.updateGlossary(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -516,6 +574,64 @@ export class GoogleTranslateMCPServer {
     const url = `${this.baseUrl}/${parent}/glossaries/${encodeURIComponent(args.glossary_id as string)}`;
 
     const response = await fetch(url, { method: 'DELETE', headers: this.authHeaders });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async romanizeText(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.contents) {
+      return { content: [{ type: 'text', text: 'contents is required' }], isError: true };
+    }
+
+    const location = (args.location as string) || 'global';
+    const parent = this.parentPath(location);
+    const rawContents = args.contents as string;
+    const contents = rawContents.includes('|') ? rawContents.split('|').map(s => s.trim()) : [rawContents];
+
+    const body: Record<string, unknown> = { contents };
+    if (args.source_language_code) body.sourceLanguageCode = args.source_language_code;
+
+    const response = await fetch(`${this.baseUrl}/${parent}:romanizeText`, {
+      method: 'POST',
+      headers: this.authHeaders,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
+    }
+
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+  }
+
+  private async updateGlossary(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.glossary_id) {
+      return { content: [{ type: 'text', text: 'glossary_id is required' }], isError: true };
+    }
+
+    const location = (args.location as string) || 'us-central1';
+    const parent = this.parentPath(location);
+    const glossaryName = `${parent}/glossaries/${encodeURIComponent(args.glossary_id as string)}`;
+
+    const body: Record<string, unknown> = { name: glossaryName };
+    if (args.display_name) body.displayName = args.display_name;
+    if (args.input_gcs_uri) {
+      body.inputConfig = { gcsSource: { inputUri: args.input_gcs_uri } };
+    }
+
+    const response = await fetch(`${this.baseUrl}/${glossaryName}`, {
+      method: 'PATCH',
+      headers: this.authHeaders,
+      body: JSON.stringify(body),
+    });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

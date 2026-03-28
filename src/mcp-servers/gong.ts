@@ -4,12 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Gong-published MCP server exists. Community repos found:
-//   - https://github.com/JustinBeckwith/gongio-mcp (Node.js, stdio, 5 tools, unmaintained)
-//   - https://github.com/cedricziel/gong-mcp (Rust, stdio+HTTP, ~8 tools, community)
+// Official MCP: Gong announced official MCP Server support on 2025-10-21 (gong.io press release).
+// No public GitHub repo or documented endpoint URL has been published as of 2026-03-28.
+// The announcement describes a vendor-hosted MCP Server that enables external AI agents to query
+// Gong directly, but no URL, tool list, or transport spec is publicly documented yet.
+// Community repos found (none meet all four criteria):
+//   - https://github.com/cedricziel/gong-mcp (Rust, stdio+HTTP, ~1 tool, community, 2 stars)
+//   - https://github.com/bgrgndzz/gong-mcp (Node.js, stdio, 6 tools, community)
 //   - https://github.com/kenazk/gong-mcp (Node.js, stdio, minimal, community)
-// None meet the criteria (10+ tools, official, actively maintained) for vendor MCP adoption.
+// Decision: use-rest-api — Official MCP has no public endpoint or documented tool list.
 // Recommendation: Use this REST adapter for full coverage.
 //
 // Base URL: https://api.gong.io/v2
@@ -189,17 +192,28 @@ export class GongMCPServer {
       },
       {
         name: 'get_call_stats',
-        description: 'Retrieve AI-generated content and analytics for calls: topics, action items, talk ratio, highlights, and key moments.',
+        description: 'Retrieve detailed call data including AI-generated content (topics, highlights, next steps, scorecards) for calls matching optional date range and call ID filters.',
         inputSchema: {
           type: 'object',
           properties: {
             callIds: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Array of Gong call IDs to retrieve AI content for (required)',
+              description: 'Filter to specific Gong call IDs',
+            },
+            fromDateTime: {
+              type: 'string',
+              description: 'ISO-8601 start of date range',
+            },
+            toDateTime: {
+              type: 'string',
+              description: 'ISO-8601 end of date range',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
             },
           },
-          required: ['callIds'],
         },
       },
       {
@@ -583,17 +597,21 @@ export class GongMCPServer {
   }
 
   private async getCallStats(args: Record<string, unknown>): Promise<ToolResult> {
-    const callIds = args.callIds as string[];
-    if (!callIds || callIds.length === 0) {
-      return { content: [{ type: 'text', text: 'callIds is required and must be a non-empty array' }], isError: true };
-    }
-    const response = await fetch(`${this.baseUrl}/calls/ai-content`, {
+    // NOTE: /v2/calls/ai-content no longer exists (removed 2024).
+    // AI content (topics, highlights, next steps) is retrieved via /v2/calls/extensive.
+    const filter: Record<string, unknown> = {};
+    if (args.callIds) filter.callIds = args.callIds;
+    if (args.fromDateTime) filter.fromDateTime = args.fromDateTime;
+    if (args.toDateTime) filter.toDateTime = args.toDateTime;
+    let url = `${this.baseUrl}/calls/extensive`;
+    if (args.cursor) url += `?cursor=${encodeURIComponent(args.cursor as string)}`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: this.headers,
-      body: JSON.stringify({ filter: { callIds } }),
+      body: JSON.stringify({ filter }),
     });
     if (!response.ok) {
-      return { content: [{ type: 'text', text: `Failed to get call AI content: HTTP ${response.status} ${response.statusText}` }], isError: true };
+      return { content: [{ type: 'text', text: `Failed to get call stats: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
@@ -763,9 +781,11 @@ export class GongMCPServer {
     if (!folderId) {
       return { content: [{ type: 'text', text: 'folderId is required' }], isError: true };
     }
-    const params = new URLSearchParams();
+    // Correct endpoint: GET /v2/library/folder-content?folderId=...
+    // NOT /v2/library/folders/{folderId}/calls (that path does not exist)
+    const params = new URLSearchParams({ folderId });
     if (args.cursor) params.set('cursor', args.cursor as string);
-    const url = `${this.baseUrl}/library/folders/${encodeURIComponent(folderId)}/calls${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${this.baseUrl}/library/folder-content?${params.toString()}`;
     const response = await fetch(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list library calls: HTTP ${response.status} ${response.statusText}` }], isError: true };

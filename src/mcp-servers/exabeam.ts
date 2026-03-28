@@ -4,19 +4,29 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/hagoodarzi/Exabeam-MCP — community-authored, not an official
-// Exabeam-maintained server. Not actively maintained. Build this adapter as the canonical
-// implementation using the verified Exabeam New-Scale Security Operations developer API.
-// Our adapter covers: 14 tools (core SOC operations). Vendor MCP covers: limited tools.
-// Recommendation: Use this adapter for production deployments.
+// Official MCP: https://developers.exabeam.com/exabeam/docs/exabeam-mcp-server-for-developers
+//   transport: SSE, auth: API key. Published by Exabeam (official). Maintained (updated ~2026-02).
+//   This is an "MCP for Developers" server — it exposes Exabeam's API documentation surface
+//   (browse endpoints, retrieve schemas, generate code snippets). It does NOT expose security
+//   operations tools (search events, manage cases, query UEBA data). Tool count: N/A — the server
+//   is a documentation assistant, not a security operations tool.
+// Our adapter covers: 14 tools (core SOC operations). Vendor MCP covers: API docs browsing only.
+// Recommendation: use-rest-api — the vendor MCP is a developer docs assistant, not a SOC tool.
+//   The MCP fails criterion 3 (10+ security operations tools). Our adapter is the authoritative
+//   integration for security operations use cases.
 //
 // Base URL: region-specific — user MUST supply their regional base URL.
-//   US West: https://api.us-west.exabeam.cloud
-//   EU West: https://api.eu-west.exabeam.cloud
-//   AP SE:   https://api.ap-southeast.exabeam.cloud
-// Auth: OAuth 2.0 Client Credentials — POST /auth/v1/token with client_id + client_secret
+//   US West:   https://api.us-west.exabeam.cloud
+//   US East:   https://api.us-east.exabeam.cloud
+//   Canada:    https://api.ca.exabeam.cloud
+//   Europe:    https://api.eu.exabeam.cloud
+//   Singapore: https://api.sg.exabeam.cloud
+//   Australia: https://api.au.exabeam.cloud
+//   Japan:     https://api.jp.exabeam.cloud
+// Auth: OAuth 2.0 Client Credentials — POST /auth/v1/token with JSON body
+//   {client_id, client_secret, grant_type: "client_credentials"}
 // Docs: https://developers.exabeam.com/exabeam/
-// Rate limits: Not publicly documented; use conservative retry with backoff
+// Rate limits: Auth API: 50 req/5 min per source IP. Public APIs: 100 req/min per source IP.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -616,17 +626,17 @@ export class ExabeamMCPServer {
   }
 
   private async listCases(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.status) params.set('status', args.status as string);
-    if (args.priority) params.set('priority', args.priority as string);
-    if (args.assignee) params.set('assignee', args.assignee as string);
-    if (args.limit) params.set('limit', String(args.limit));
-    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    const body: Record<string, unknown> = {};
+    if (args.status) body.status = args.status;
+    if (args.priority) body.priority = args.priority;
+    if (args.assignee) body.assignee = args.assignee;
+    if (args.limit) body.limit = args.limit;
+    if (args.offset !== undefined) body.offset = args.offset;
 
-    const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}/threat-center/api/v1/cases${qs}`, {
-      method: 'GET',
+    const response = await fetch(`${this.baseUrl}/threat-center/v1/search/cases`, {
+      method: 'POST',
       headers,
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -644,7 +654,7 @@ export class ExabeamMCPServer {
     }
 
     const response = await fetch(
-      `${this.baseUrl}/threat-center/api/v1/cases/${encodeURIComponent(caseId)}`,
+      `${this.baseUrl}/threat-center/v1/cases/${encodeURIComponent(caseId)}`,
       { method: 'GET', headers },
     );
 
@@ -669,8 +679,8 @@ export class ExabeamMCPServer {
     if (args.note) body.note = args.note;
 
     const response = await fetch(
-      `${this.baseUrl}/threat-center/api/v1/cases/${encodeURIComponent(caseId)}`,
-      { method: 'PATCH', headers, body: JSON.stringify(body) },
+      `${this.baseUrl}/threat-center/v1/cases/${encodeURIComponent(caseId)}`,
+      { method: 'POST', headers, body: JSON.stringify(body) },
     );
 
     if (!response.ok) {
@@ -682,19 +692,19 @@ export class ExabeamMCPServer {
   }
 
   private async listAlerts(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.status) params.set('status', args.status as string);
-    if (args.severity) params.set('severity', args.severity as string);
-    if (args.rule_name) params.set('ruleName', args.rule_name as string);
-    if (args.start_time) params.set('startTime', args.start_time as string);
-    if (args.end_time) params.set('endTime', args.end_time as string);
-    if (args.limit) params.set('limit', String(args.limit));
-    if (args.offset !== undefined) params.set('offset', String(args.offset));
+    const body: Record<string, unknown> = {};
+    if (args.status) body.status = args.status;
+    if (args.severity) body.severity = args.severity;
+    if (args.rule_name) body.ruleName = args.rule_name;
+    if (args.start_time) body.startTime = args.start_time;
+    if (args.end_time) body.endTime = args.end_time;
+    if (args.limit) body.limit = args.limit;
+    if (args.offset !== undefined) body.offset = args.offset;
 
-    const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}/threat-center/api/v1/alerts${qs}`, {
-      method: 'GET',
+    const response = await fetch(`${this.baseUrl}/threat-center/v1/search/alerts`, {
+      method: 'POST',
       headers,
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -712,7 +722,7 @@ export class ExabeamMCPServer {
     }
 
     const response = await fetch(
-      `${this.baseUrl}/threat-center/api/v1/alerts/${encodeURIComponent(alertId)}`,
+      `${this.baseUrl}/threat-center/v1/alerts/${encodeURIComponent(alertId)}`,
       { method: 'GET', headers },
     );
 

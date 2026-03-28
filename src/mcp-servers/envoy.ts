@@ -4,10 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Envoy workplace platform MCP server was found on GitHub or the Envoy developer portal.
-// (Note: Envoy AI Gateway has MCP support, but that is an entirely different product — a proxy/gateway,
-// not the Envoy workplace visitor and desk management SaaS at envoy.com.)
+// Official MCP: https://envoy.com/products/ai-for-envoy — transport: N/A (beta, not yet publicly released), auth: N/A
+// NOTE: Envoy (envoy.com) announced an MCP integration in beta as of 2026-03-28, accessible via "Register for beta trial"
+//   at envoy.com/products/ai-for-envoy. No published GitHub repo, npm package, or documented endpoint found.
+//   The beta is not an official released MCP server — it is a closed beta. The Envoy AI Gateway (envoyproxy.io)
+//   also supports MCP but is a separate product (an API gateway proxy), not the workplace SaaS.
+// Our adapter covers: 21 tools. Vendor MCP covers: 0 tools (beta, not released as of 2026-03-28).
+// Recommendation: use-rest-api — no released vendor MCP server; REST adapter is the only integration available.
+//   Re-evaluate when Envoy MCP exits beta. Document beta URL above for future contributors.
 //
 // Base URL: https://api.envoy.com/v1
 // Auth: API key passed as Bearer token in the Authorization header.

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FreshBooksMCPServer } from '../../src/mcp-servers/freshbooks.js';
 
 describe('FreshBooksMCPServer', () => {
-  const adapter = new FreshBooksMCPServer({ accessToken: 'test-token', accountId: 'test-id' });
+  const adapter = new FreshBooksMCPServer({ accessToken: 'test-token', accountId: 'test-account-id' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

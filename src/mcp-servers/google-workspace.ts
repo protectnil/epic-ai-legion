@@ -811,7 +811,7 @@ export class GoogleWorkspaceMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async getGmailMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -841,16 +841,16 @@ export class GoogleWorkspaceMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async createGmailDraft(args: Record<string, unknown>): Promise<ToolResult> {
-    // Build RFC 2822 email message
+    // Build RFC 2822 email message — header values must NOT be URL-encoded
     const lines: string[] = [
-      `To: ${encodeURIComponent(args.to as string)}`,
-      `Subject: ${encodeURIComponent(args.subject as string)}`,
+      `To: ${args.to as string}`,
+      `Subject: ${args.subject as string}`,
     ];
-    if (args.cc) lines.push(`Cc: ${encodeURIComponent(args.cc as string)}`);
+    if (args.cc) lines.push(`Cc: ${args.cc as string}`);
     lines.push('Content-Type: text/plain; charset=utf-8', '', args.body as string);
 
     const rawMessage = lines.join('\r\n');

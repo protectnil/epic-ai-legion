@@ -4,11 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Google Maps Platform MCP server was found on GitHub.
+// Official MCP: https://developers.google.com/maps/ai/grounding-lite/reference/mcp (Maps Grounding Lite)
+//   — transport: streamable-HTTP (Google-hosted), auth: API key (x-goog-api-key)
+//   — Announced 2025-12-10. Exposes only 3 tools: search_places, lookup_weather, compute_routes.
+//   — Fails criterion 3 (fewer than 10 tools). REST adapter is richer and required.
+//   — A second official MCP exists for documentation only (googlemaps/platform-ai — Code Assist toolkit);
+//     it grounds LLMs on Maps Platform docs and code samples, not on live Maps API calls.
+// Our adapter covers: 10 tools. Vendor MCP covers: 3 tools.
+// Recommendation: use-rest-api — vendor MCP exposes only 3 tools vs our 10; REST adapter is the richer integration.
 //
 // Base URL: https://maps.googleapis.com/maps/api  (Geocoding, Directions, Distance Matrix, Elevation, Time Zone)
-//           https://places.googleapis.com/v1       (Places API New)
+//           https://places.googleapis.com/v1       (Places API New — get_place_details, validate_address)
+//           https://addressvalidation.googleapis.com/v1  (Address Validation API)
 // Auth: API key passed as key query parameter (legacy APIs) or x-goog-api-key header (Places API New)
 // Docs: https://developers.google.com/maps/documentation
 // Rate limits: Geocoding: 50 req/s; Places: 600 req/min; Directions: 50 req/s (per project)
@@ -444,25 +451,6 @@ export class GoogleMapsMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async placesNewPost(path: string, body: Record<string, unknown>, fieldMask?: string): Promise<ToolResult> {
-    const headers: Record<string, string> = {
-      'x-goog-api-key': this.apiKey,
-      'Content-Type': 'application/json',
-    };
-    if (fieldMask) headers['X-Goog-FieldMask'] = fieldMask;
-
-    const response = await fetch(`${this.placesBaseUrl}/${path}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const errText = await response.text().catch(() => response.statusText);
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
-    }
-    const data = await response.json();
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
 
   private async geocode(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.address) return { content: [{ type: 'text', text: 'address is required' }], isError: true };
@@ -475,7 +463,7 @@ export class GoogleMapsMCPServer {
 
   private async reverseGeocode(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.lat === undefined || args.lng === undefined) return { content: [{ type: 'text', text: 'lat and lng are required' }], isError: true };
-    const params: Record<string, string> = { latlng: `${encodeURIComponent(args.lat as string)},${encodeURIComponent(args.lng as string)}` };
+    const params: Record<string, string> = { latlng: `${args.lat as number},${args.lng as number}` };
     if (args.result_type) params.result_type = args.result_type as string;
     if (args.location_type) params.location_type = args.location_type as string;
     if (args.language) params.language = args.language as string;
@@ -520,7 +508,7 @@ export class GoogleMapsMCPServer {
     };
     if (args.type) params.type = args.type as string;
     if (args.keyword) params.keyword = args.keyword as string;
-    if (args.min_rating) params.minprice = String(args.min_rating);
+    // min_rating has no equivalent parameter in the legacy Nearby Search API (minprice is price level 0-4, not rating)
     if (typeof args.open_now === 'boolean') params.opennow = String(args.open_now);
     if (args.language) params.language = args.language as string;
     return this.placesGet('nearbysearch', params);
@@ -539,13 +527,25 @@ export class GoogleMapsMCPServer {
 
   private async getPlaceDetails(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.place_id) return { content: [{ type: 'text', text: 'place_id is required' }], isError: true };
-    // Use Places API (New) for richer place details
-    const defaultFields = 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.regularOpeningHours,places.internationalPhoneNumber,places.websiteUri,places.types,places.priceLevel';
+    // Use Places API (New) GET /places/{place_id} for richer place details
+    const defaultFields = 'id,displayName,formattedAddress,location,rating,userRatingCount,regularOpeningHours,internationalPhoneNumber,websiteUri,types,priceLevel';
     const fieldMask = (args.fields as string) || defaultFields;
-    return this.placesNewPost('places:searchByText', {
-      textQuery: `place_id:${encodeURIComponent(args.place_id as string)}`,
-      languageCode: (args.language as string) || 'en',
-    }, fieldMask);
+    const headers: Record<string, string> = {
+      'x-goog-api-key': this.apiKey,
+      'Content-Type': 'application/json',
+      'X-Goog-FieldMask': fieldMask,
+    };
+    if (args.language) headers['Accept-Language'] = args.language as string;
+    const response = await fetch(
+      `${this.placesBaseUrl}/places/${encodeURIComponent(args.place_id as string)}`,
+      { method: 'GET', headers },
+    );
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async getElevation(args: Record<string, unknown>): Promise<ToolResult> {

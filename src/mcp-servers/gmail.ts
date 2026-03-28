@@ -5,11 +5,18 @@
  */
 
 // Official MCP: https://github.com/googleworkspace/cli — transport: stdio, auth: OAuth2
-// The official Google Workspace CLI (googleworkspace/cli, Apache-2.0, active 2026) exposes
-// Gmail and other Workspace services via `gws mcp -s gmail` over stdio. It covers 100+ tools
-// across all Workspace APIs, dynamically built from Google Discovery Service.
-// Recommendation: Use the Workspace CLI MCP for full coverage. Use this adapter for
-// air-gapped deployments or when only Gmail access is needed without full Workspace setup.
+// Vendor: Google (official). Last commit: 2026-03. Maintained: yes.
+// The official Google Workspace CLI (googleworkspace/cli, Apache-2.0) exposes Gmail and other
+// Workspace services via `gws mcp -s gmail` over stdio. Covers 100+ tools dynamically built
+// from Google Discovery Service (Drive, Docs, Calendar, Sheets, Chat, Gmail, etc.).
+// MCP tool count: 100+ (full Workspace surface). Our adapter covers: 20 tools (Gmail only).
+// Decision: use-both — MCP covers full Workspace; our adapter is the Gmail-scoped REST fallback.
+//   MCP-sourced (via gws mcp): all 100+ Workspace tools including Gmail
+//   REST-sourced (this adapter): list_messages, get_message, search_messages, send_message,
+//     reply_to_message, create_draft, list_drafts, get_draft, send_draft, delete_draft,
+//     trash_message, delete_message, modify_message_labels, list_threads, get_thread,
+//     trash_thread, modify_thread_labels, list_labels, create_label, get_profile
+//   Combined coverage: use vendor MCP for full Workspace; this adapter for air-gapped/Gmail-only.
 //
 // Base URL: https://gmail.googleapis.com/gmail/v1
 // Auth: OAuth2 Bearer token (scope: https://mail.google.com/ or gmail.modify / gmail.readonly)

@@ -48,10 +48,12 @@ export class GoogleDocumentAIMCPServer {
       ],
       toolNames: [
         'list_processors', 'get_processor', 'create_processor', 'delete_processor',
-        'enable_processor', 'disable_processor',
+        'enable_processor', 'disable_processor', 'set_default_processor_version',
         'list_processor_versions', 'get_processor_version',
+        'deploy_processor_version', 'undeploy_processor_version',
+        'list_processor_types',
         'process_document', 'batch_process_documents',
-        'get_operation', 'list_operations',
+        'get_operation', 'list_operations', 'cancel_operation',
       ],
       description: 'Google Document AI: manage processors and versions, process documents (OCR, form parsing, entity extraction), and run batch processing jobs.',
       author: 'protectnil',
@@ -310,6 +312,91 @@ export class GoogleDocumentAIMCPServer {
           },
         },
       },
+      {
+        name: 'cancel_operation',
+        description: 'Cancel a long-running Document AI batch processing operation that has not yet completed',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            operation_name: {
+              type: 'string',
+              description: 'Full operation resource name to cancel (e.g. projects/my-project/locations/us/operations/12345)',
+            },
+          },
+          required: ['operation_name'],
+        },
+      },
+      {
+        name: 'set_default_processor_version',
+        description: 'Set the default (active) version of a Document AI processor used for processing requests',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            processor_name: {
+              type: 'string',
+              description: 'Full processor resource name (e.g. projects/my-project/locations/us/processors/abc123)',
+            },
+            processor_version: {
+              type: 'string',
+              description: 'Full processor version resource name to set as default (e.g. projects/my-project/locations/us/processors/abc123/processorVersions/pretrained-v1)',
+            },
+          },
+          required: ['processor_name', 'processor_version'],
+        },
+      },
+      {
+        name: 'deploy_processor_version',
+        description: 'Deploy a Document AI processor version to make it available for processing requests',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            processor_version_name: {
+              type: 'string',
+              description: 'Full processor version resource name to deploy (e.g. projects/my-project/locations/us/processors/abc123/processorVersions/v1)',
+            },
+          },
+          required: ['processor_version_name'],
+        },
+      },
+      {
+        name: 'undeploy_processor_version',
+        description: 'Undeploy a Document AI processor version to stop it from serving processing requests',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            processor_version_name: {
+              type: 'string',
+              description: 'Full processor version resource name to undeploy (e.g. projects/my-project/locations/us/processors/abc123/processorVersions/v1)',
+            },
+          },
+          required: ['processor_version_name'],
+        },
+      },
+      {
+        name: 'list_processor_types',
+        description: 'List available Document AI processor types in a project and location (e.g. OCR_PROCESSOR, INVOICE_PROCESSOR, FORM_PARSER_PROCESSOR)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            project_id: {
+              type: 'string',
+              description: 'Google Cloud project ID (overrides constructor config)',
+            },
+            location: {
+              type: 'string',
+              description: 'Location to list processor types for: us or eu (default: us)',
+            },
+            page_size: {
+              type: 'number',
+              description: 'Maximum number of processor types to return (default: 50)',
+            },
+            page_token: {
+              type: 'string',
+              description: 'Pagination token from a previous response',
+            },
+          },
+        },
+      },
     ];
   }
 
@@ -340,6 +427,16 @@ export class GoogleDocumentAIMCPServer {
           return this.getOperation(args);
         case 'list_operations':
           return this.listOperations(args);
+        case 'cancel_operation':
+          return this.cancelOperation(args);
+        case 'set_default_processor_version':
+          return this.setDefaultProcessorVersion(args);
+        case 'deploy_processor_version':
+          return this.deployProcessorVersion(args);
+        case 'undeploy_processor_version':
+          return this.undeployProcessorVersion(args);
+        case 'list_processor_types':
+          return this.listProcessorTypes(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }

@@ -4,11 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Equifax MCP server was found on GitHub or the MCP registry.
+// A third-party listing exists in PipedreamHQ/awesome-mcp-servers but it is a
+// community-built integration, not an official Equifax-published server.
+// Our adapter covers: 10 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official Equifax MCP server exists.
 //
 // Base URL: https://api.equifax.com  (sandbox: https://api.sandbox.equifax.com)
-// Auth: OAuth2 client credentials — POST /oauth/token with client_id, client_secret, scope
+// Auth: OAuth2 client credentials — POST /v2/oauth/token with client_id, client_secret, scope
+//   in request body (application/x-www-form-urlencoded). Bearer token in Authorization header.
 // Docs: https://developer.equifax.com/documentation
 // Rate limits: Not publicly documented; production APIs require whitelisted IP addresses
 

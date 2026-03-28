@@ -4,19 +4,43 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/googleapis/gcloud-mcp — transport: stdio, auth: gcloud ADC
-// The official googleapis/gcloud-mcp (Apache-2.0, active 2026) exposes gcloud CLI commands,
-// Cloud Observability (Logging, Monitoring, Tracing), Cloud Storage, and Backup & DR via stdio.
-// It wraps gcloud CLI rather than direct REST, requiring gcloud installation at runtime.
-// Recommendation: Use googleapis/gcloud-mcp for full CLI coverage. Use this adapter for
-// air-gapped or serverless deployments that call GCP REST APIs directly without gcloud CLI.
+// Official MCP: Multiple official remote MCP servers announced Dec 2025 (transport: streamable-HTTP, auth: OAuth2/ADC)
+// Google now publishes per-service remote MCP servers at https://docs.cloud.google.com/mcp/supported-products
+// Relevant per-service remote MCPs:
+//   cloudresourcemanager.googleapis.com/mcp — 1 tool: search_projects
+//   compute.googleapis.com/mcp             — tools: list_instances, get_instance, stop_instance, reset_instance,
+//                                            list_machine_types, list_images, list_reservations, list_snapshots, etc.
+//   logging.googleapis.com/mcp             — tools: list_log_entries, list_log_names
+//   bigquery.googleapis.com/mcp            — BigQuery-specific tools (run_query, list_datasets, list_tables, etc.)
+//   run.googleapis.com/mcp                 — 3 tools: get_service, list_services, deploy_service_from_image
+//   container.googleapis.com/mcp           — tools: kube_api_resources, kube_get, list_clusters, get_cluster,
+//                                            list_operations, get_operation
+// No official remote MCP for: Cloud Storage, Cloud Functions, IAM (as of 2026-03-28)
+// Also: https://github.com/googleapis/gcloud-mcp (Apache-2.0, active 2026) — stdio, wraps gcloud CLI,
+//   requires gcloud installation at runtime; covers Logging, Monitoring, Storage, Backup/DR.
+//
+// Recommendation: use-both — the per-service remote MCPs (Compute, Logging, Cloud Run, GKE, BigQuery,
+// Resource Manager) expose operations our REST adapter also covers, but also expose unique tools
+// (stop_instance, reset_instance, deploy_service_from_image, kube_api_resources, kube_get).
+// Our REST adapter covers Cloud Storage, Cloud Functions, and IAM that have no remote MCP.
+// For air-gapped/serverless deployments without ADC setup, use this adapter for all services.
+//
+// Integration: use-both
+// MCP-sourced unique tools: stop_instance, reset_instance, list_machine_types, list_images,
+//   list_reservations, list_snapshots, deploy_service_from_image, kube_api_resources, kube_get,
+//   get_zone_operation, search_projects (replaces list_projects/get_project)
+// REST-sourced unique tools: list_buckets, list_bucket_objects, list_cloud_functions, get_cloud_function,
+//   list_service_accounts, list_iam_policies
+// REST-sourced shared (also in MCP): list_instances, get_instance, list_logs, list_cloud_run_services,
+//   get_cloud_run_service, list_gke_clusters, get_gke_cluster, list_bigquery_datasets, list_bigquery_tables,
+//   list_projects, get_project
 //
 // Multiple API base URLs (GCP has no single base):
 //   Cloud Resource Manager: https://cloudresourcemanager.googleapis.com/v3
 //   Compute Engine:         https://compute.googleapis.com/compute/v1
 //   Cloud Logging:          https://logging.googleapis.com/v2
 //   Cloud Storage:          https://storage.googleapis.com/storage/v1
-//   Cloud Run:              https://run.googleapis.com/v1
+//   Cloud Run:              https://run.googleapis.com/v2  (upgraded from v1; v2 uses location in path)
 //   Cloud Functions:        https://cloudfunctions.googleapis.com/v2
 //   BigQuery:               https://bigquery.googleapis.com/bigquery/v2
 //   IAM:                    https://iam.googleapis.com/v1
@@ -36,7 +60,7 @@ const CRM_BASE = 'https://cloudresourcemanager.googleapis.com/v3';
 const COMPUTE_BASE = 'https://compute.googleapis.com/compute/v1';
 const LOGGING_BASE = 'https://logging.googleapis.com/v2';
 const STORAGE_BASE = 'https://storage.googleapis.com/storage/v1';
-const RUN_BASE = 'https://run.googleapis.com/v1';
+const RUN_BASE = 'https://run.googleapis.com/v2';
 const FUNCTIONS_BASE = 'https://cloudfunctions.googleapis.com/v2';
 const BIGQUERY_BASE = 'https://bigquery.googleapis.com/bigquery/v2';
 const IAM_BASE = 'https://iam.googleapis.com/v1';
@@ -665,8 +689,9 @@ export class GoogleCloudMCPServer {
     if (!location) {
       return { content: [{ type: 'text', text: 'location is required (e.g., "us-central1" or "-" for all)' }], isError: true };
     }
+    // Cloud Run v2: GET /v2/projects/{project}/locations/{location}/services
     const response = await fetch(
-      `${RUN_BASE}/namespaces/${projectId}/services`,
+      `${RUN_BASE}/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/services`,
       { headers: this.headers },
     );
     if (!response.ok) {
@@ -683,8 +708,9 @@ export class GoogleCloudMCPServer {
     if (!location || !serviceName) {
       return { content: [{ type: 'text', text: 'location and serviceName are required' }], isError: true };
     }
+    // Cloud Run v2: GET /v2/projects/{project}/locations/{location}/services/{service}
     const response = await fetch(
-      `${RUN_BASE}/namespaces/${projectId}/services/${encodeURIComponent(serviceName)}`,
+      `${RUN_BASE}/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/services/${encodeURIComponent(serviceName)}`,
       { headers: this.headers },
     );
     if (!response.ok) {

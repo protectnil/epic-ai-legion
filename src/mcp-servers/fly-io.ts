@@ -4,11 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/superfly/flymcp — wraps flyctl CLI (not REST); 30 stars,
-//   last commit 2024. Transport: stdio. Our adapter targets the Machines REST API directly
-//   for headless/CI use cases and covers a broader set of operations.
-// Recommendation: Use this adapter for production automation. Use flymcp for interactive
-//   flyctl-style workflows.
+// Official MCP: https://github.com/superfly/flymcp — wraps flyctl CLI (not REST); ~30 stars,
+//   last commit 2024. Transport: stdio. Only 2 tools: fly-logs, fly-status. Fails 10-tool criterion.
+//   Decision: use-rest-api. Our adapter covers 20 tools via the Machines REST API directly
+//   for headless/CI use cases; the MCP is CLI-only and covers minimal surface.
+// Our adapter covers: 20 tools. Vendor MCP covers: 2 tools.
+// Recommendation: use-rest-api — flymcp has only 2 tools (fly-logs, fly-status); fails 10+ tool
+//   criterion. Our REST adapter provides complete Machines API coverage.
 //
 // Base URL: https://api.machines.dev  (internal: http://_api.internal:4280)
 // Auth: Bearer token — Authorization: Bearer <FLY_API_TOKEN>
@@ -41,12 +43,12 @@ export class FlyioMCPServer {
       toolNames: [
         'list_apps', 'create_app', 'get_app', 'delete_app',
         'list_machines', 'get_machine', 'create_machine', 'update_machine',
-        'start_machine', 'stop_machine', 'suspend_machine', 'restart_machine',
+        'start_machine', 'stop_machine', 'suspend_machine',
         'delete_machine', 'wait_for_machine',
         'list_volumes', 'get_volume', 'create_volume', 'update_volume',
         'delete_volume', 'extend_volume', 'list_volume_snapshots',
       ],
-      description: 'Manage Fly.io apps, Machines (VMs), and persistent volumes via the Machines REST API. Supports full lifecycle: create, update, start, stop, delete.',
+      description: 'Manage Fly.io apps, Machines (VMs), and persistent volumes via the Machines REST API. Supports full lifecycle: create, update, start, stop, suspend, delete.',
       author: 'protectnil',
     };
   }
@@ -293,32 +295,6 @@ export class FlyioMCPServer {
         },
       },
       {
-        name: 'restart_machine',
-        description: 'Restart a running or stopped Machine in place, equivalent to stop + start',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            app_name: {
-              type: 'string',
-              description: 'Name of the Fly.io app',
-            },
-            machine_id: {
-              type: 'string',
-              description: 'ID of the Machine to restart',
-            },
-            signal: {
-              type: 'string',
-              description: 'Signal to use when stopping before restart (default: SIGINT)',
-            },
-            timeout: {
-              type: 'number',
-              description: 'Seconds to wait for graceful stop before kill (default: 5)',
-            },
-          },
-          required: ['app_name', 'machine_id'],
-        },
-      },
-      {
         name: 'delete_machine',
         description: 'Permanently delete a Machine from a Fly.io app. Machine must be stopped first unless force=true.',
         inputSchema: {
@@ -534,7 +510,6 @@ export class FlyioMCPServer {
         case 'start_machine':     return await this.startMachine(args);
         case 'stop_machine':      return await this.stopMachine(args);
         case 'suspend_machine':   return await this.suspendMachine(args);
-        case 'restart_machine':   return await this.restartMachine(args);
         case 'delete_machine':    return await this.deleteMachine(args);
         case 'wait_for_machine':  return await this.waitForMachine(args);
         case 'list_volumes':      return await this.listVolumes(args);
@@ -684,16 +659,6 @@ export class FlyioMCPServer {
     const app = encodeURIComponent(args.app_name as string);
     const mid = encodeURIComponent(args.machine_id as string);
     return this.fetchJSON(`${this.baseUrl}/v1/apps/${app}/machines/${mid}/suspend`, { method: 'POST' });
-  }
-
-  private async restartMachine(args: Record<string, unknown>): Promise<ToolResult> {
-    const app = encodeURIComponent(args.app_name as string);
-    const mid = encodeURIComponent(args.machine_id as string);
-    const params = new URLSearchParams();
-    if (args.signal) params.set('signal', args.signal as string);
-    if (args.timeout) params.set('timeout', String(args.timeout));
-    const qs = params.toString();
-    return this.fetchJSON(`${this.baseUrl}/v1/apps/${app}/machines/${mid}/restart${qs ? '?' + qs : ''}`, { method: 'POST' });
   }
 
   private async deleteMachine(args: Record<string, unknown>): Promise<ToolResult> {

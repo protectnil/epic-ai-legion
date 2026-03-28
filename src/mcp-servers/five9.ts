@@ -4,17 +4,30 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Five9 MCP server was found on GitHub. The Five9 Developer Program
-// publishes sample code and starter kits but no MCP server implementation.
+// Official MCP: None found as of 2026-03-28
+// No official Five9 MCP server was found on GitHub, npmjs.com, or Five9's developer portal.
+// Five9 Developer Program publishes sample code and CRM SDK samples but no MCP server.
+//
+// IMPORTANT ARCHITECTURE NOTE: Five9 has a split API surface.
+//   - Agent/Supervisor REST API (https://app.five9.com/appsvcs/rs/svc):
+//       Covers session management (/auth/metadata), agent state, and supervisor real-time
+//       statistics (/supsvcs/rs/svc/supervisors/statistics/*). This is what this adapter
+//       uses. There are NO publicly documented REST endpoints for campaigns, skills,
+//       dispositions, users, IVR scripts, or call logs in this REST API.
+//   - Configuration Web Services (SOAP, api.five9.com/wsadmin/v[N]/AdminWebService?wsdl):
+//       All admin/config operations (users, campaigns, calling lists, skills, contact
+//       records, dispositions, IVR scripts, reporting) go through SOAP only.
+//       Last formally updated September 2021 (WSDL versions through v12).
+// Tools that target config-only operations are UNVERIFIED against the REST API.
+// Recommendation: use-rest-api for session/stats tools; SOAP for admin operations.
 //
 // Base URL: https://app.five9.com/appsvcs/rs/svc (agent/supervisor REST API)
 // Auth: Session-based — POST to /auth/metadata with Basic credentials, then use
 //       the returned host URL + session cookies for subsequent requests.
 //       For supervisor stats, the base path is /supsvcs/rs/svc.
 // Docs: https://webapps.five9.com/assets/files/for_customers/documentation/apis/vcc-agent+supervisor-rest-api-reference-guide.pdf
-// Rate limits: Configuration Web Services API has per-method call limits; VCC REST API
-//              rate limits are not publicly documented — Five9 recommends exponential backoff.
+//       SOAP: https://api.five9.com/wsadmin/v12/AdminWebService?wsdl
+// Rate limits: Not publicly documented — Five9 recommends exponential backoff.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

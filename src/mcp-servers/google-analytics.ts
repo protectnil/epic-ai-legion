@@ -4,13 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Google Analytics Data API MCP server was found on GitHub.
+// Official MCP: https://github.com/googleanalytics/google-analytics-mcp — transport: stdio, auth: OAuth2 / service account
+// Published by: googleanalytics org (official Google). Last release: v0.2.0 (Mar 11, 2026). Maintained.
+// MCP exposes 6 tools: get_account_summaries, get_property_details, list_google_ads_links,
+//   run_report, get_custom_dimensions_and_metrics, run_realtime_report.
+// Fails the 10+ tools criterion — does not meet full coverage threshold.
+// Our adapter covers: 7 tools. Vendor MCP covers: 6 tools.
+// Recommendation: use-rest-api — vendor MCP has only 6 tools and no batch/pivot/funnel/compatibility coverage.
 //
-// Base URL: https://analyticsdata.googleapis.com/v1beta
+// Base URL: https://analyticsdata.googleapis.com/v1beta (core reporting; runFunnelReport is v1alpha)
 // Auth: Bearer token (OAuth2 access token or service account token) in Authorization header
 // Docs: https://developers.google.com/analytics/devguides/reporting/data/v1
 // Rate limits: 10 requests/second per property; 50,000 requests/day per project (default quota)
+// NOTE: runFunnelReport uses v1alpha endpoint (POST /v1alpha/{property}:runFunnelReport), not v1beta.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -22,10 +28,12 @@ interface GoogleAnalyticsConfig {
 export class GoogleAnalyticsMCPServer {
   private readonly accessToken: string;
   private readonly baseUrl: string;
+  private readonly alphaBaseUrl: string;
 
   constructor(config: GoogleAnalyticsConfig) {
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://analyticsdata.googleapis.com/v1beta';
+    this.alphaBaseUrl = 'https://analyticsdata.googleapis.com/v1alpha';
   }
 
   static catalog() {
@@ -290,8 +298,9 @@ export class GoogleAnalyticsMCPServer {
       : text;
   }
 
-  private async gaPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+  private async gaPost(path: string, body: Record<string, unknown>, useAlpha = false): Promise<ToolResult> {
+    const base = useAlpha ? this.alphaBaseUrl : this.baseUrl;
+    const response = await fetch(`${base}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -407,6 +416,7 @@ export class GoogleAnalyticsMCPServer {
     };
     if (args.funnel_breakdown_dimension) body.funnelBreakdown = { breakdownDimension: args.funnel_breakdown_dimension };
     if (args.segment) body.userSegment = args.segment;
-    return this.gaPost(`/properties/${encodeURIComponent(args.property_id as string)}:runFunnelReport`, body);
+    // runFunnelReport is a v1alpha endpoint, not v1beta
+    return this.gaPost(`/properties/${encodeURIComponent(args.property_id as string)}:runFunnelReport`, body, true);
   }
 }

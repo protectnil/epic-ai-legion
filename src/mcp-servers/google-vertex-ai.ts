@@ -4,10 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28
 // No official Google-maintained general-purpose Vertex AI MCP server exists.
-// Community implementations: shariqriazz/vertex-ai-mcp-server (not official).
-// GoogleCloudPlatform/vertex-ai-creative-studio exists but is scoped to creative tools only.
+// Community implementations: shariqriazz/vertex-ai-mcp-server (not official — focused on coding assistance only).
+// GoogleCloudPlatform/vertex-ai-creative-studio exists but is scoped to creative/GenMedia tools only (not official MCP).
+// Google's managed remote MCP catalog (Dec 2025) includes BigQuery, Maps, GCE, GKE — not Vertex AI.
+//
+// Our adapter covers: 13 tools. Vendor MCP covers: 0 tools (no official MCP exists).
+// Recommendation: use-rest-api — no official MCP server exists for Vertex AI core APIs.
 //
 // Base URL: https://{location}-aiplatform.googleapis.com (regional; default: us-central1)
 // Auth: OAuth2 Bearer token (Google service account or user credentials)
@@ -417,7 +421,7 @@ export class GoogleVertexAIMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listModels(args: Record<string, unknown>): Promise<ToolResult> {
@@ -439,7 +443,7 @@ export class GoogleVertexAIMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async deleteModel(args: Record<string, unknown>): Promise<ToolResult> {
@@ -450,7 +454,7 @@ export class GoogleVertexAIMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
     }
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async listEndpoints(args: Record<string, unknown>): Promise<ToolResult> {

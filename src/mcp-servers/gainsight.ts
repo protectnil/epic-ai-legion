@@ -4,17 +4,30 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03. Pipedream hosts a Gainsight MCP but it is not
+// Official MCP: None found as of 2026-03-28. Pipedream hosts a Gainsight MCP but it is not
 // self-hostable and is not vendor-published. No official Gainsight MCP server on GitHub.
+// Our adapter covers: 13 tools. Vendor MCP covers: 0 tools (no official MCP).
+// Recommendation: use-rest-api — no official MCP exists.
 //
 // NOTE: Gainsight NXT uses per-API-type subdomains rather than a single tenant subdomain:
-//   Company/Relationship API → https://companyapi.gainsightcloud.com
-//   People API               → https://personapi.gainsightcloud.com
-//   Custom Object API        → https://customobjectapi.gainsightcloud.com
-//   Cockpit (CTAs) API       → https://{{tenant}}.gainsightcloud.com  (standard tenant subdomain)
-//   Success Plans API        → https://{{tenant}}.gainsightcloud.com  (standard tenant subdomain)
+//   Company/Relationship/Custom Object data APIs  → https://companyapi.gainsightcloud.com
+//   People API                                    → https://personapi.gainsightcloud.com
+//   Custom Object API                             → https://customobjectapi.gainsightcloud.com
+//   Cockpit (CTAs) API                            → https://{{tenant}}.gainsightcloud.com  (tenant subdomain)
+//   Success Plans API                             → https://{{tenant}}.gainsightcloud.com  (tenant subdomain)
 // Pass the full base URL for the API type you need via the domainUrl or tenantUrl config fields.
 // All requests use the `accesskey` header for authentication (key does not expire).
+//
+// Endpoint patterns (verified against Gainsight docs):
+//   Object metadata:    GET  /v1/meta/services/objects[/{name}/fields]  → domainUrl
+//   Object query:       POST /v1/data/objects/query/{ObjectName}        → domainUrl
+//   Object upsert:      PUT  /v1/data/objects/{ObjectName}?keys=...     → domainUrl
+//   Object delete:      DELETE /v1/data/objects/{ObjectName}/{GSID}     → domainUrl (per-record)
+//   CTA fetch:          POST /v2/cockpit/cta/                           → tenantUrl
+//   CTA create:         POST /v2/cockpit/cta/                           → tenantUrl
+//   CTA update/close:   PUT  /v2/cockpit/cta/                           → tenantUrl
+//   Success Plan fetch: POST /v2/successPlan/list/                      → tenantUrl
+//   Success Plan create:POST /v2/successPlan/                           → tenantUrl
 //
 // Base URL: Per-subdomain (see above)
 // Auth: accesskey header (not Bearer, not Basic — just "accesskey: {value}")
@@ -407,9 +420,9 @@ export class GainsightMCPServer {
     };
   }
 
-  private async dataPut(path: string, body: unknown): Promise<ToolResult> {
+  private async dataPost(path: string, body: unknown): Promise<ToolResult> {
     const response = await fetch(`${this.domainUrl}${path}`, {
-      method: 'PUT',
+      method: 'POST',
       headers: this.dataHeaders,
       body: JSON.stringify(body),
     });
@@ -427,31 +440,11 @@ export class GainsightMCPServer {
     };
   }
 
-  private async dataDelete(path: string, body: unknown): Promise<ToolResult> {
+  private async dataPut(path: string, body: unknown): Promise<ToolResult> {
     const response = await fetch(`${this.domainUrl}${path}`, {
-      method: 'DELETE',
+      method: 'PUT',
       headers: this.dataHeaders,
       body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const errText = await response.text().catch(() => response.statusText);
-      return {
-        content: [{ type: 'text', text: `Gainsight API error ${response.status}: ${errText}` }],
-        isError: true,
-      };
-    }
-    let data: unknown;
-    try { data = await response.json(); } catch { data = { success: true }; }
-    return {
-      content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
-      isError: false,
-    };
-  }
-
-  private async tenantGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.tenantUrl}${path}`, {
-      method: 'GET',
-      headers: this.dataHeaders,
     });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -487,9 +480,9 @@ export class GainsightMCPServer {
     };
   }
 
-  private async tenantPatch(path: string, body: unknown): Promise<ToolResult> {
+  private async tenantPut(path: string, body: unknown): Promise<ToolResult> {
     const response = await fetch(`${this.tenantUrl}${path}`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: this.dataHeaders,
       body: JSON.stringify(body),
     });
@@ -511,14 +504,16 @@ export class GainsightMCPServer {
   private async queryObject(args: Record<string, unknown>): Promise<ToolResult> {
     const objectName = args.object_name as string;
     if (!objectName) return { content: [{ type: 'text', text: 'object_name is required' }], isError: true };
-    const params = new URLSearchParams();
-    if (args.select) params.set('select', args.select as string);
-    if (args.filter) params.set('filter', args.filter as string);
-    if (args.order_by) params.set('orderby', args.order_by as string);
-    if (args.page) params.set('page', String(args.page));
-    if (args.page_size) params.set('pageSize', String(args.page_size));
-    const qs = params.toString() ? `?${params}` : '';
-    return this.dataGet(`/v1/data/objects/${encodeURIComponent(objectName)}${qs}`);
+    // Gainsight Company API: POST /v1/data/objects/query/{ObjectName} (not GET)
+    const body: Record<string, unknown> = {};
+    if (args.select) body.select = (args.select as string).split(',').map((f: string) => f.trim());
+    if (args.filter) body.where = args.filter;
+    if (args.order_by) body.orderBy = args.order_by;
+    const page = (args.page as number) ?? 1;
+    const pageSize = (args.page_size as number) ?? 100;
+    body.offset = (page - 1) * pageSize;
+    body.limit = pageSize;
+    return this.dataPost(`/v1/data/objects/query/${encodeURIComponent(objectName)}`, body);
   }
 
   private async upsertRecords(args: Record<string, unknown>): Promise<ToolResult> {
@@ -533,12 +528,29 @@ export class GainsightMCPServer {
   }
 
   private async deleteRecords(args: Record<string, unknown>): Promise<ToolResult> {
+    // Gainsight Company API: DELETE /v1/data/objects/{ObjectName}/{GSID} — one record per call
     const objectName = args.object_name as string;
     const ids = args.ids as string[];
     if (!objectName || !ids || !Array.isArray(ids) || ids.length === 0) {
       return { content: [{ type: 'text', text: 'object_name and ids are required' }], isError: true };
     }
-    return this.dataDelete(`/v1/data/objects/${encodeURIComponent(objectName)}`, { ids });
+    const results: unknown[] = [];
+    for (const gsid of ids) {
+      const response = await fetch(
+        `${this.domainUrl}/v1/data/objects/${encodeURIComponent(objectName)}/${encodeURIComponent(gsid)}`,
+        { method: 'DELETE', headers: this.dataHeaders },
+      );
+      if (!response.ok) {
+        const errText = await response.text().catch(() => response.statusText);
+        results.push({ gsid, success: false, error: `${response.status}: ${errText}` });
+      } else {
+        let data: unknown;
+        try { data = await response.json(); } catch { data = { success: true }; }
+        results.push({ gsid, success: true, result: data });
+      }
+    }
+    const text = this.truncate(JSON.stringify(results, null, 2));
+    return { content: [{ type: 'text', text }], isError: false };
   }
 
   private async getObjectMetadata(args: Record<string, unknown>): Promise<ToolResult> {
@@ -552,85 +564,107 @@ export class GainsightMCPServer {
   }
 
   private async listCtas(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.status) params.set('status', args.status as string);
-    if (args.cta_type) params.set('ctaType', args.cta_type as string);
-    if (args.assignee_gsid) params.set('assigneeId', args.assignee_gsid as string);
-    if (args.company_gsid) params.set('companyId', args.company_gsid as string);
-    if (args.page) params.set('page', String(args.page));
-    if (args.page_size) params.set('pageSize', String(args.page_size));
-    const qs = params.toString() ? `?${params}` : '';
-    return this.tenantGet(`/v1/data/cta${qs}`);
+    // Gainsight Cockpit CTA API: POST /v2/cockpit/cta/ to fetch CTAs
+    const body: Record<string, unknown> = { select: [] };
+    const conditions: unknown[] = [];
+    if (args.status) conditions.push({ name: 'Status', alias: 'Status', value: args.status, operator: 'EQ' });
+    if (args.cta_type) conditions.push({ name: 'CTA_Type__gc', alias: 'CTA_Type__gc', value: args.cta_type, operator: 'EQ' });
+    if (args.assignee_gsid) conditions.push({ name: 'OwnerId', alias: 'OwnerId', value: args.assignee_gsid, operator: 'EQ' });
+    if (args.company_gsid) conditions.push({ name: 'CompanyId', alias: 'CompanyId', value: args.company_gsid, operator: 'EQ' });
+    if (conditions.length > 0) body.where = { expression: { conditions } };
+    const page = (args.page as number) ?? 1;
+    const pageSize = (args.page_size as number) ?? 25;
+    body.paginationParameters = { page, size: pageSize };
+    return this.tenantPost(`/v2/cockpit/cta/`, body);
   }
 
   private async getCta(args: Record<string, unknown>): Promise<ToolResult> {
+    // Gainsight Cockpit CTA API: POST /v2/cockpit/cta/ with GSID filter
     const gsid = args.cta_gsid as string;
     if (!gsid) return { content: [{ type: 'text', text: 'cta_gsid is required' }], isError: true };
-    return this.tenantGet(`/v1/data/cta/${encodeURIComponent(gsid)}`);
+    const body = {
+      select: [],
+      where: { expression: { conditions: [{ name: 'Gsid', alias: 'Gsid', value: gsid, operator: 'EQ' }] } },
+    };
+    return this.tenantPost(`/v2/cockpit/cta/`, body);
   }
 
   private async createCta(args: Record<string, unknown>): Promise<ToolResult> {
+    // Gainsight Cockpit CTA API: POST /v2/cockpit/cta/ to create a CTA
     const name = args.name as string;
     const companyGsid = args.company_gsid as string;
     const ctaTypeName = args.cta_type_name as string;
     if (!name || !companyGsid || !ctaTypeName) {
       return { content: [{ type: 'text', text: 'name, company_gsid, and cta_type_name are required' }], isError: true };
     }
-    const body: Record<string, unknown> = { name, companyId: companyGsid, ctaTypeName };
-    if (args.assignee_gsid) body.assigneeId = args.assignee_gsid;
-    if (args.due_date) body.dueDate = args.due_date;
-    if (args.priority) body.priority = args.priority;
-    if (args.reason) body.reason = args.reason;
-    return this.tenantPost(`/v1/data/cta`, body);
+    const record: Record<string, unknown> = { name, companyId: companyGsid, ctaTypeName };
+    if (args.assignee_gsid) record.ownerId = args.assignee_gsid;
+    if (args.due_date) record.dueDate = args.due_date;
+    if (args.priority) record.priority = args.priority;
+    if (args.reason) record.reason = args.reason;
+    return this.tenantPost(`/v2/cockpit/cta/`, { upsert: { records: [record], keys: ['name', 'companyId'] } });
   }
 
   private async updateCta(args: Record<string, unknown>): Promise<ToolResult> {
+    // Gainsight Cockpit CTA API: PUT /v2/cockpit/cta/ to update a CTA
     const gsid = args.cta_gsid as string;
     if (!gsid) return { content: [{ type: 'text', text: 'cta_gsid is required' }], isError: true };
-    const body: Record<string, unknown> = {};
-    if (args.assignee_gsid) body.assigneeId = args.assignee_gsid;
-    if (args.due_date) body.dueDate = args.due_date;
-    if (args.priority) body.priority = args.priority;
-    if (args.status) body.status = args.status;
-    if (args.name) body.name = args.name;
-    return this.tenantPatch(`/v1/data/cta/${encodeURIComponent(gsid)}`, body);
+    const record: Record<string, unknown> = { Gsid: gsid };
+    if (args.assignee_gsid) record.ownerId = args.assignee_gsid;
+    if (args.due_date) record.dueDate = args.due_date;
+    if (args.priority) record.priority = args.priority;
+    if (args.status) record.status = args.status;
+    if (args.name) record.name = args.name;
+    const body = { records: [record] };
+    return this.tenantPut(`/v2/cockpit/cta/`, body);
   }
 
   private async closeCta(args: Record<string, unknown>): Promise<ToolResult> {
+    // Gainsight Cockpit CTA API: PUT /v2/cockpit/cta/ to close a CTA
     const gsid = args.cta_gsid as string;
     if (!gsid) return { content: [{ type: 'text', text: 'cta_gsid is required' }], isError: true };
-    const body: Record<string, unknown> = { status: 'Closed' };
-    if (args.close_reason) body.closeReason = args.close_reason;
-    return this.tenantPatch(`/v1/data/cta/${encodeURIComponent(gsid)}`, body);
+    const record: Record<string, unknown> = { Gsid: gsid, status: 'Closed' };
+    if (args.close_reason) record.reason = args.close_reason;
+    const body = { records: [record] };
+    return this.tenantPut(`/v2/cockpit/cta/`, body);
   }
 
   private async listSuccessPlans(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.company_gsid) params.set('companyId', args.company_gsid as string);
-    if (args.status) params.set('status', args.status as string);
-    if (args.page) params.set('page', String(args.page));
-    if (args.page_size) params.set('pageSize', String(args.page_size));
-    const qs = params.toString() ? `?${params}` : '';
-    return this.tenantGet(`/v1/data/successplan${qs}`);
+    // Gainsight Success Plan API: POST /v2/successPlan/list/ to fetch success plans
+    const body: Record<string, unknown> = { select: [] };
+    const conditions: unknown[] = [];
+    if (args.company_gsid) conditions.push({ name: 'CompanyId', alias: 'CompanyId', value: args.company_gsid, operator: 'EQ' });
+    if (args.status) conditions.push({ name: 'Status', alias: 'Status', value: args.status, operator: 'EQ' });
+    if (conditions.length > 0) body.where = { expression: { conditions } };
+    const page = (args.page as number) ?? 1;
+    const pageSize = (args.page_size as number) ?? 25;
+    body.paginationParameters = { page, size: pageSize };
+    return this.tenantPost(`/v2/successPlan/list/`, body);
   }
 
   private async getSuccessPlan(args: Record<string, unknown>): Promise<ToolResult> {
+    // Gainsight Success Plan API: POST /v2/successPlan/list/ with GSID filter
     const gsid = args.plan_gsid as string;
     if (!gsid) return { content: [{ type: 'text', text: 'plan_gsid is required' }], isError: true };
-    return this.tenantGet(`/v1/data/successplan/${encodeURIComponent(gsid)}`);
+    const body = {
+      select: [],
+      where: { expression: { conditions: [{ name: 'Gsid', alias: 'Gsid', value: gsid, operator: 'EQ' }] } },
+    };
+    return this.tenantPost(`/v2/successPlan/list/`, body);
   }
 
   private async createSuccessPlan(args: Record<string, unknown>): Promise<ToolResult> {
+    // Gainsight Success Plan API: POST /v2/successPlan/ to create a success plan
     const name = args.name as string;
     const companyGsid = args.company_gsid as string;
     if (!name || !companyGsid) {
       return { content: [{ type: 'text', text: 'name and company_gsid are required' }], isError: true };
     }
-    const body: Record<string, unknown> = { name, companyId: companyGsid };
-    if (args.template_id) body.templateId = args.template_id;
-    if (args.due_date) body.dueDate = args.due_date;
-    if (args.assignee_gsid) body.assigneeId = args.assignee_gsid;
-    return this.tenantPost(`/v1/data/successplan`, body);
+    const record: Record<string, unknown> = { Name: name, CompanyId: companyGsid };
+    if (args.template_id) record.templateId = args.template_id;
+    if (args.due_date) record.DueDate = args.due_date;
+    if (args.assignee_gsid) record.OwnerId = args.assignee_gsid;
+    return this.tenantPost(`/v2/successPlan/`, { records: [record] });
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {

@@ -5,17 +5,31 @@
  */
 
 // Official MCP: https://github.com/fivetran/fivetran-mcp — official Fivetran MCP server.
-// Actively maintained; ships 50+ tools covering the full Fivetran REST API including
-// connectors, destinations, transformations, users, and webhooks via stdio transport.
-// Our adapter covers: 18 tools (core connector, destination, user, and webhook operations).
-// Recommendation: Use the official MCP for full coverage. Use this adapter for air-gapped,
-// TypeScript-native, or lightweight deployments.
+//   Published by Fivetran (vendor). Last commit: 2026-03-24. Transport: stdio. Auth: API key.
+//   Actively maintained; ships 100+ tools covering the full Fivetran REST API including
+//   connections (30 tools), destinations (14), groups (11), transformations (10),
+//   transformation projects (6), users (17), teams (21), webhooks (7), external logging (6),
+//   hybrid agents (6), proxy agents (6), private links (5), system keys (6), roles (1),
+//   account (1), metadata (2), public metadata (1), HVR (1).
+// Our adapter covers: 18 tools (core connector/connection, destination, user, and webhook ops).
+// Vendor MCP covers: 100+ tools (full API surface including operations our adapter lacks).
+//
+// Integration: use-both
+//   The vendor MCP exposes 100+ tools; our adapter covers 18 tools, all of which are
+//   also present in the vendor MCP (shared coverage). The vendor MCP is a strict superset.
+//   However, this adapter provides an air-gapped, TypeScript-native, zero-Python-dependency
+//   alternative. Use the vendor MCP for full coverage; use this adapter for air-gapped
+//   or TypeScript-native deployments where installing Python+pip at runtime is not possible.
+// Recommendation: use-vendor-mcp for full coverage; use-rest-api for air-gapped deployments.
+//
+// NOTE: /connectors/ paths still work — Fivetran continues to support both /connectors
+//   and /connections paths after the Nov 2024 rename. No migration needed.
 //
 // Base URL: https://api.fivetran.com/v1
 // Auth: HTTP Basic — Base64-encode "api_key:api_secret" in the Authorization header.
 //   Both Scoped API keys and System keys are supported.
 // Docs: https://fivetran.com/docs/rest-api/api-reference
-// Rate limits: Not publicly documented; Fivetran applies per-account rate limits
+// Rate limits: Not publicly documented; Fivetran applies per-account rate limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -608,7 +622,7 @@ export class FivetranMCPServer {
     const err = this.ok(response, 'Failed to delete connector');
     if (err) return err;
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async syncConnector(args: Record<string, unknown>, h: Record<string, string>): Promise<ToolResult> {
@@ -658,7 +672,7 @@ export class FivetranMCPServer {
         }
       : raw;
 
-    return { content: [{ type: 'text', text: JSON.stringify(statusFields, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(statusFields, null, 2)) }], isError: false };
   }
 
   private async listDestinations(args: Record<string, unknown>, h: Record<string, string>): Promise<ToolResult> {
@@ -766,6 +780,6 @@ export class FivetranMCPServer {
     const err = this.ok(response, 'Failed to delete webhook');
     if (err) return err;
     const data = await response.json();
-    return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 }

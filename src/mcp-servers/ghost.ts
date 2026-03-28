@@ -4,13 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/MFYDev/ghost-mcp — transport: stdio, auth: Admin API key (JWT)
-// Community MCP (not by Ghost). Last commit Oct 2025. Covers ~15 tools.
-// Our adapter covers 18 tools with broader resource coverage.
-// Recommendation: Use this adapter for broader coverage or air-gapped deployments.
+// Official MCP: None found as of 2026-03-28 — Ghost Inc. has not published an official MCP server.
+// Community MCP: https://github.com/MFYDev/ghost-mcp — transport: stdio, auth: Admin API key (JWT).
+//   NOT published by Ghost. Community-maintained. Last commit Apr 20, 2025 (~11 months ago).
+//   Exposes ~35 tools (posts, pages, members, newsletters, offers, invites, roles, tags, tiers,
+//   users, webhooks — CRUD per resource). Fails criterion 1 (not vendor-official).
+// Our adapter covers: 18 tools. Community MCP covers: ~35 tools.
+// Recommendation: use-rest-api — no official MCP exists. Community MCP is not vendor-published.
+//   Our adapter covers the stable Admin API surface for integration use (posts, pages, tags,
+//   members, tiers, offers, site). Missing from our adapter vs stable API: /newsletters/,
+//   /users/, /images/, /themes/, /webhooks/ — out of scope for standard integration use case.
 //
-// Base URL: https://{your-ghost-domain}/ghost/api/admin (self-hosted or Ghost Pro)
-//           Ghost Pro admin domain follows the pattern: https://{site}.ghost.io/ghost/api/admin
+// Base URL: https://{your-ghost-domain} (caller provides full domain; adapter appends /ghost/api/admin)
 // Auth: JWT (HS256) signed with the Admin API key secret (hex-decoded to binary).
 //       Admin API key format: {id}:{secret} — split on colon.
 //       JWT header: { alg: "HS256", typ: "JWT", kid: id }
@@ -472,41 +477,41 @@ export class GhostMCPServer {
     try {
       switch (name) {
         case 'list_posts':
-          return this.listPosts(args);
+          return await this.listPosts(args);
         case 'get_post':
-          return this.getPost(args);
+          return await this.getPost(args);
         case 'create_post':
-          return this.createPost(args);
+          return await this.createPost(args);
         case 'update_post':
-          return this.updatePost(args);
+          return await this.updatePost(args);
         case 'delete_post':
-          return this.deletePost(args);
+          return await this.deletePost(args);
         case 'list_pages':
-          return this.listPages(args);
+          return await this.listPages(args);
         case 'get_page':
-          return this.getPage(args);
+          return await this.getPage(args);
         case 'create_page':
-          return this.createPage(args);
+          return await this.createPage(args);
         case 'update_page':
-          return this.updatePage(args);
+          return await this.updatePage(args);
         case 'list_tags':
-          return this.listTags(args);
+          return await this.listTags(args);
         case 'get_tag':
-          return this.getTag(args);
+          return await this.getTag(args);
         case 'create_tag':
-          return this.createTag(args);
+          return await this.createTag(args);
         case 'list_members':
-          return this.listMembers(args);
+          return await this.listMembers(args);
         case 'get_member':
-          return this.getMember(args);
+          return await this.getMember(args);
         case 'update_member':
-          return this.updateMember(args);
+          return await this.updateMember(args);
         case 'list_tiers':
-          return this.listTiers(args);
+          return await this.listTiers(args);
         case 'list_offers':
-          return this.listOffers(args);
+          return await this.listOffers(args);
         case 'get_site':
-          return this.getSite();
+          return await this.getSite();
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }

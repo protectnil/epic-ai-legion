@@ -4,12 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/GLips/Figma-Context-MCP — community-maintained server for
-// providing Figma design context to AI coding tools. Actively maintained (2025). Covers file
-// context extraction but not full API surface (webhooks, variables, team components, etc.).
-// Our adapter covers: 16 tools (full REST API surface including variables, webhooks, components).
-// Vendor MCP covers: design context extraction optimized for code generation.
-// Recommendation: Use Figma-Context-MCP for coding workflows. Use this adapter for full API access.
+// Official MCP: https://developers.figma.com/docs/figma-mcp-server/ — official Figma MCP server,
+// generally available as of 2025. Remote server (streamable-HTTP) at https://mcp.figma.com/mcp.
+// Auth: Figma OAuth2. Actively maintained by Figma. Exposes 16 tools (get_design_context,
+// get_variable_defs, get_code_connect_map, add_code_connect_map, get_screenshot,
+// create_design_system_rules, generate_figma_design, use_figma, generate_diagram,
+// create_new_file, search_design_system, get_metadata, get_figjam, get_code_connect_suggestions,
+// send_code_connect_mappings, whoami). Focused on design-context extraction and canvas write-back
+// for agentic coding workflows — does NOT cover REST API operations (webhooks, team components,
+// team styles, projects, file versions, image fills, image exports).
+// Our adapter covers: 16 tools (REST API surface). Vendor MCP covers: 16 tools (design context).
+// Integration: use-both — MCP has unique canvas/code-generation tools not in REST; REST adapter
+// covers webhooks, team browsing, image export, file history not in MCP.
 //
 // Base URL: https://api.figma.com/v1
 // Auth: Personal Access Token (PAT) via X-Figma-Token header, or OAuth2 Bearer token
@@ -744,7 +750,7 @@ export class FigmaMCPServer {
       return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/teams/${encodeURIComponent(teamId)}/webhooks`, {
+    const response = await fetch(`https://api.figma.com/v2/teams/${encodeURIComponent(teamId)}/webhooks`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -769,13 +775,14 @@ export class FigmaMCPServer {
 
     const body: Record<string, unknown> = {
       event_type: eventType,
-      team_id: teamId,
+      context: 'team',
+      context_id: teamId,
       endpoint,
       passcode,
     };
     if (args.description) body.description = args.description;
 
-    const response = await fetch(`${this.baseUrl}/webhooks`, {
+    const response = await fetch(`https://api.figma.com/v2/webhooks`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),

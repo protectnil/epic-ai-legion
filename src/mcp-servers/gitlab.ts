@@ -4,11 +4,26 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/zereight/gitlab-mcp — community-maintained, not vendor-published.
-// No official vendor MCP server found as of 2026-03. GitLab has not published an official MCP server.
+// Official MCP: https://docs.gitlab.com/user/gitlab_duo/model_context_protocol/mcp_server/
+//   Transport: streamable-HTTP (recommended) and stdio (via mcp-remote proxy). Auth: OAuth 2.0.
+//   Actively maintained by GitLab (vendor-official). Requires GitLab Duo subscription.
+//   GitLab official MCP covers: ~13 tools (get_mcp_server_version, create_issue, get_issue,
+//     create_merge_request, get_merge_request, get_merge_request_commits,
+//     get_merge_request_changes, create_workitem_note, get_workitem_notes, list_labels,
+//     manage_pipeline, list_jobs_for_pipeline, semantic_code_search).
 // Our adapter covers: 24 tools (projects, issues, MRs, pipelines, jobs, commits, branches,
-//   members, releases, tags, namespaces, runners, file contents, MR comments).
-// Recommendation: Use this adapter. No official GitLab MCP exists.
+//   members, releases, tags, file contents, MR comments).
+//
+// Integration: use-both
+//   MCP-sourced tools (1): [semantic_code_search]
+//   REST-sourced tools (24): [list_projects, get_project, search_projects, list_issues,
+//     get_issue, create_issue, update_issue, list_merge_requests, get_merge_request,
+//     create_merge_request, add_mr_note, list_pipelines, get_pipeline, cancel_pipeline,
+//     list_pipeline_jobs, get_job_log, list_commits, get_commit, list_branches, get_branch,
+//     list_releases, list_tags, get_file, list_members]
+//   Shared (covered by both, route through MCP): create_issue, get_issue,
+//     create_merge_request, get_merge_request, manage_pipeline (cancel_pipeline overlap)
+//   Combined coverage: 25 tools (MCP: 13 + REST: 24 - shared: ~5 = 25 unique)
 //
 // Base URL: https://gitlab.com/api/v4 (self-hosted: https://{host}/api/v4)
 // Auth: PRIVATE-TOKEN header (Personal Access Token or Project/Group Access Token)

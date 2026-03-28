@@ -4,15 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Eventbrite MCP server was found on GitHub or the MCP registry.
+// Official MCP: None found as of 2026-03-28
+// No official Eventbrite MCP server published by Eventbrite was found on GitHub or npmjs.com.
+// Several community forks exist (joshuachestang/eventbrite-mcp-server,
+// vishalsachdev/eventbrite-mcp, ibraheem4/eventbrite-mcp) — none are official or
+// actively maintained by Eventbrite. All are community-authored with limited tool counts (<5).
+// Our adapter covers: 18 tools. Vendor MCP covers: N/A (no official server).
+// Recommendation: use-rest-api — no official Eventbrite MCP server exists.
 //
 // Base URL: https://www.eventbriteapi.com/v3
 // Auth: Bearer token (private API token or OAuth2 access token) in Authorization header
 //   OAuth2 authorization: https://www.eventbrite.com/oauth/authorize
 //   OAuth2 token: https://www.eventbrite.com/oauth/token
 // Docs: https://www.eventbrite.com/platform/api
-// Rate limits: 5,000 requests/hour for standard API keys; free tier 500 req/day
+// Rate limits: ~2000 requests/hour (third-party sources; Eventbrite does not publicly
+//   document exact rate limits on their developer portal)
 
 import { ToolDefinition, ToolResult } from './types.js';
 

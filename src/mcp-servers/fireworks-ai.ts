@@ -4,15 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// Fireworks AI announced an OpenAI-compatible Responses API with MCP support (beta) in 2025,
-// but no standalone MCP server for managing the Fireworks platform was found on GitHub.
+// Official MCP: None found as of 2026-03-28.
+// Fireworks AI supports MCP as a CLIENT (Responses API can call external MCP servers) but
+// publishes no MCP server for managing the Fireworks platform.
+// Our adapter covers: 15 tools. Vendor MCP covers: 0 tools (N/A).
+// Recommendation: use-rest-api — no vendor MCP server exists.
 //
-// Base URL: https://api.fireworks.ai/inference/v1
-// Auth: Bearer token (Fireworks API key from https://app.fireworks.ai Settings → API Keys)
-// Docs: https://docs.fireworks.ai/
-// Rate limits: Varies by model and account tier; serverless models are rate-limited per account;
-//              dedicated deployments have custom limits per deployment
+// Base URL: https://api.fireworks.ai/inference/v1 (inference endpoints)
+//           https://api.fireworks.ai (account management endpoints — deployments, models, fine-tuning, datasets)
+// Auth: Bearer token (Fireworks API key from https://app.fireworks.ai/settings/users/api-keys)
+// Docs: https://docs.fireworks.ai/api-reference/introduction
+// Rate limits: Varies by model and account tier; not publicly documented per-endpoint
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -185,26 +187,30 @@ export class FireworksAIMCPServer {
       },
       {
         name: 'list_models',
-        description: 'List all publicly available models on Fireworks AI with capabilities, context length, and pricing',
+        description: 'List models available in the Fireworks AI account including custom and public models with metadata',
         inputSchema: {
           type: 'object',
           properties: {
             filter: {
               type: 'string',
-              description: 'Filter models by capability: chat, completion, embedding, image (default: all)',
+              description: 'Server-side filter expression (optional)',
+            },
+            page_token: {
+              type: 'string',
+              description: 'Pagination token from a previous response',
             },
           },
         },
       },
       {
         name: 'get_model',
-        description: 'Get detailed metadata for a specific Fireworks AI model including context window, pricing, and capabilities',
+        description: 'Get detailed metadata for a specific Fireworks AI model including context window and capabilities',
         inputSchema: {
           type: 'object',
           properties: {
             model_id: {
               type: 'string',
-              description: 'Full model ID (e.g. accounts/fireworks/models/llama-v3p1-70b-instruct)',
+              description: 'Full model resource name (e.g. accounts/fireworks/models/llama-v3p1-70b-instruct)',
             },
           },
           required: ['model_id'],
@@ -361,13 +367,13 @@ export class FireworksAIMCPServer {
       },
       {
         name: 'create_image',
-        description: 'Generate an image from a text prompt using a Fireworks AI image generation model',
+        description: 'Generate an image from a text prompt using a Fireworks AI image model via the workflow API (FLUX, SDXL, etc.)',
         inputSchema: {
           type: 'object',
           properties: {
             model: {
               type: 'string',
-              description: 'Image model ID (e.g. accounts/fireworks/models/stable-diffusion-xl-1024-v1-0)',
+              description: 'Full model ID (e.g. accounts/fireworks/models/flux-1-schnell-fp8 or accounts/fireworks/models/stable-diffusion-xl-1024-v1-0)',
             },
             prompt: {
               type: 'string',
@@ -377,29 +383,21 @@ export class FireworksAIMCPServer {
               type: 'string',
               description: 'Text describing what to avoid in the generated image (optional)',
             },
-            height: {
-              type: 'number',
-              description: 'Image height in pixels — must be a multiple of 8 (default: 1024)',
-            },
-            width: {
-              type: 'number',
-              description: 'Image width in pixels — must be a multiple of 8 (default: 1024)',
-            },
-            steps: {
-              type: 'number',
-              description: 'Number of diffusion steps (default: 30; range: 1–100)',
+            aspect_ratio: {
+              type: 'string',
+              description: 'Aspect ratio for FLUX models: 1:1, 16:9, 4:3, 3:2, etc. (default: 1:1)',
             },
             guidance_scale: {
               type: 'number',
-              description: 'Classifier-free guidance scale — how closely to follow the prompt (default: 7.0)',
+              description: 'Classifier-free guidance scale (default: 3.5 for FLUX; 7.0 for SDXL)',
+            },
+            num_inference_steps: {
+              type: 'number',
+              description: 'Number of denoising steps (default: 4 for FLUX schnell; 30 for SDXL)',
             },
             seed: {
               type: 'number',
-              description: 'Random seed for reproducible outputs (optional)',
-            },
-            n: {
-              type: 'number',
-              description: 'Number of images to generate (default: 1)',
+              description: 'Random seed for reproducible outputs — 0 for random (optional)',
             },
           },
           required: ['model', 'prompt'],
@@ -488,16 +486,6 @@ export class FireworksAIMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async fwGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { headers: this.headers });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ error: response.statusText }));
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${JSON.stringify(err)}` }], isError: true };
-    }
-    const data = await response.json();
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
 
   // Account-level API uses a different base path
   private get accountBase(): string {
@@ -569,32 +557,33 @@ export class FireworksAIMCPServer {
   }
 
   private async listModels(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {};
+    const params: Record<string, string> = { pageSize: '100' };
+    if (args.page_token) params.pageToken = args.page_token as string;
     if (args.filter) params.filter = args.filter as string;
-    return this.fwGet('/models', params);
+    return this.fwAccountGet(`/v1/accounts/${this.accountId}/models`, params);
   }
 
   private async getModel(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.model_id) return { content: [{ type: 'text', text: 'model_id is required' }], isError: true };
-    return this.fwGet(`/models/${encodeURIComponent(args.model_id as string)}`);
+    return this.fwAccountGet(`/v1/accounts/${this.accountId}/models/${encodeURIComponent(args.model_id as string)}`);
   }
 
   private async listDeployments(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = { pageSize: String((args.page_size as number) || 20) };
     if (args.page_token) params.pageToken = args.page_token as string;
-    return this.fwAccountGet(`/v1/accounts/${this.accountId}/deployedModels`, params);
+    return this.fwAccountGet(`/v1/accounts/${this.accountId}/deployments`, params);
   }
 
   private async getDeployment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.deployment_id) return { content: [{ type: 'text', text: 'deployment_id is required' }], isError: true };
-    return this.fwAccountGet(`/v1/accounts/${this.accountId}/deployedModels/${encodeURIComponent(args.deployment_id as string)}`);
+    return this.fwAccountGet(`/v1/accounts/${this.accountId}/deployments/${encodeURIComponent(args.deployment_id as string)}`);
   }
 
   private async listFineTuningJobs(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = { pageSize: String((args.page_size as number) || 20) };
     if (args.page_token) params.pageToken = args.page_token as string;
     if (args.status) params.filter = `status=${encodeURIComponent(args.status as string)}`;
-    return this.fwAccountGet(`/v1/accounts/${this.accountId}/fineTuningJobs`, params);
+    return this.fwAccountGet(`/v1/accounts/${this.accountId}/supervisedFineTuningJobs`, params);
   }
 
   private async createFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -602,7 +591,6 @@ export class FireworksAIMCPServer {
       return { content: [{ type: 'text', text: 'base_model, dataset_id, and output_model_id are required' }], isError: true };
     }
     const body: Record<string, unknown> = {
-      kind: 'default',
       baseModel: args.base_model,
       dataset: `accounts/${this.accountId}/datasets/${encodeURIComponent(args.dataset_id as string)}`,
       outputModel: args.output_model_id,
@@ -610,17 +598,17 @@ export class FireworksAIMCPServer {
     };
     if (args.learning_rate) body.learningRate = args.learning_rate;
     if (args.lora_rank !== undefined) body.loraRank = args.lora_rank;
-    return this.fwAccountPost(`/v1/accounts/${this.accountId}/fineTuningJobs`, body);
+    return this.fwAccountPost(`/v1/accounts/${this.accountId}/supervisedFineTuningJobs`, body);
   }
 
   private async getFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.fwAccountGet(`/v1/accounts/${this.accountId}/fineTuningJobs/${encodeURIComponent(args.job_id as string)}`);
+    return this.fwAccountGet(`/v1/accounts/${this.accountId}/supervisedFineTuningJobs/${encodeURIComponent(args.job_id as string)}`);
   }
 
   private async cancelFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.job_id) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    return this.fwAccountPost(`/v1/accounts/${this.accountId}/fineTuningJobs/${encodeURIComponent(args.job_id as string)}:cancel`, {});
+    return this.fwAccountPost(`/v1/accounts/${this.accountId}/supervisedFineTuningJobs/${encodeURIComponent(args.job_id as string)}:cancel`, {});
   }
 
   private async listDatasets(args: Record<string, unknown>): Promise<ToolResult> {
@@ -656,18 +644,17 @@ export class FireworksAIMCPServer {
 
   private async createImage(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.model || !args.prompt) return { content: [{ type: 'text', text: 'model and prompt are required' }], isError: true };
+    // Extract short model name from full model ID (e.g. accounts/fireworks/models/flux-1-schnell-fp8 → flux-1-schnell-fp8)
+    const modelShortName = (args.model as string).split('/').pop() ?? (args.model as string);
     const body: Record<string, unknown> = {
-      model: args.model,
       prompt: args.prompt,
-      height: (args.height as number) || 1024,
-      width: (args.width as number) || 1024,
-      steps: (args.steps as number) || 30,
-      guidance_scale: (args.guidance_scale as number) || 7.0,
-      n: (args.n as number) || 1,
     };
     if (args.negative_prompt) body.negative_prompt = args.negative_prompt;
+    if (args.aspect_ratio) body.aspect_ratio = args.aspect_ratio;
+    if (args.guidance_scale !== undefined) body.guidance_scale = args.guidance_scale;
+    if (args.num_inference_steps !== undefined) body.num_inference_steps = args.num_inference_steps;
     if (args.seed !== undefined) body.seed = args.seed;
-    return this.fwPost('/image_generation/accounts/fireworks/models/' + (args.model as string).split('/').pop(), body);
+    return this.fwPost(`/workflows/accounts/fireworks/models/${encodeURIComponent(modelShortName)}/text_to_image`, body);
   }
 
   private async listAccounts(): Promise<ToolResult> {

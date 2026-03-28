@@ -51,7 +51,7 @@ export class ExperianMCPServer {
       name: 'experian',
       displayName: 'Experian',
       version: '1.0.0',
-      category: 'finance',
+      category: 'finance' as const,
       keywords: [
         'experian', 'credit', 'credit score', 'credit report', 'credit bureau', 'business credit',
         'consumer credit', 'credit risk', 'fraud', 'identity verification', 'address validation',
@@ -73,7 +73,7 @@ export class ExperianMCPServer {
         'get_fico_score',
       ],
       description: 'Experian credit and business data: consumer and business credit reports, credit scores, FICO scores, identity and income verification, address validation, fraud detection.',
-      author: 'protectnil',
+      author: 'protectnil' as const,
     };
   }
 
@@ -541,9 +541,9 @@ export class ExperianMCPServer {
       throw new Error(`Experian OAuth2 token request failed: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as { access_token: string; expires_in: number };
+    const data = await response.json() as { access_token: string; expires_in: string | number };
     this.bearerToken = data.access_token;
-    this.tokenExpiry = now + (data.expires_in - 60) * 1000;
+    this.tokenExpiry = now + (Number(data.expires_in) - 60) * 1000;
     return this.bearerToken;
   }
 

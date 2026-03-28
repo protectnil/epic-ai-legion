@@ -4,13 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/GitGuardian/ggmcp — actively maintained, vendor-published.
-// Transport: stdio (Python subprocess). Auth: API token. Covers secret scanning, incidents,
-// honeytokens, and audit logs via the ggshield CLI under the hood.
-// Our adapter covers: 12 tools (incidents, honeytokens, sources, members, audit logs,
-//   custom tags, content scanning). Vendor MCP covers similar surface via subprocess.
-// Recommendation: Use vendor MCP for tight ggshield integration in dev environments.
-//   Use this adapter for air-gapped or containerized deployments without Python runtime.
+// Official MCP: https://github.com/GitGuardian/ggmcp — transport: stdio + HTTP/SSE, auth: OAuth/PAT.
+//   Vendor-published (GitGuardian Inc.). Last commit Mar 25, 2026 (actively maintained).
+//   Exposes 12 tools: scan_secrets, list_incidents, get_incident, list_repo_occurrences,
+//   remediate_incidents, find_current_source, list_sources, list_detectors,
+//   generate_honeytoken, list_honeytokens, list_users, get_member.
+//   Meets all 4 criteria (official, maintained, 10+ tools, stdio+HTTP transport).
+// Our adapter covers: 13 tools. Vendor MCP covers: 12 tools.
+// Integration: use-both
+//   MCP-only tools (not in our REST adapter): list_repo_occurrences, remediate_incidents,
+//     find_current_source, list_detectors.
+//   REST-only tools (not in vendor MCP): health_check, update_incident_status,
+//     scan_content (multiscan endpoint), list_audit_logs, list_custom_tags, create_custom_tag.
+//   Shared (both cover): list_secret_incidents, get_secret_incident, list_sources,
+//     list_honeytokens, get_honeytoken, create_honeytoken, list_members.
+// MCP-sourced tools (4): list_repo_occurrences, remediate_incidents, find_current_source, list_detectors
+// REST-sourced tools (9): health_check, list_secret_incidents, get_secret_incident,
+//   update_incident_status, scan_content, list_sources, list_honeytokens, get_honeytoken,
+//   create_honeytoken, list_members, list_audit_logs, list_custom_tags, create_custom_tag
+// Combined coverage: 17 tools (MCP: 12 + REST: 13 - shared: 8)
 //
 // Base URL (SaaS): https://api.gitguardian.com
 // Base URL (self-hosted): https://{your-instance}/api  (pass via baseUrl config)
@@ -124,7 +136,7 @@ export class GitGuardianMCPServer {
       },
       {
         name: 'update_incident_status',
-        description: 'Update the status or assignee of a secret incident — mark as RESOLVED, IGNORED (with reason), or ASSIGNED',
+        description: 'Change a secret incident status via action endpoint — resolve, ignore (with reason), assign (to email), or reopen',
         inputSchema: {
           type: 'object',
           properties: {
@@ -132,20 +144,20 @@ export class GitGuardianMCPServer {
               type: 'number',
               description: 'Numeric ID of the incident to update',
             },
-            status: {
+            action: {
               type: 'string',
-              description: 'New status: TRIGGERED, ASSIGNED, RESOLVED, IGNORED',
+              description: 'Action to perform: resolve, ignore, assign, reopen',
             },
             assignee_email: {
               type: 'string',
-              description: 'Email of team member to assign the incident to',
+              description: 'Email of team member to assign the incident to (required when action is assign)',
             },
             ignore_reason: {
               type: 'string',
-              description: 'Required when setting status to IGNORED: test_credential, low_risk, false_positive, other',
+              description: 'Required when action is ignore: test_credential, false_positive, low_risk, invalid',
             },
           },
-          required: ['incident_id'],
+          required: ['incident_id', 'action'],
         },
       },
       {
@@ -306,20 +318,20 @@ export class GitGuardianMCPServer {
       },
       {
         name: 'create_custom_tag',
-        description: 'Create a new custom tag for categorizing secret incidents in the workspace',
+        description: 'Create a new custom tag (key/value pair) for categorizing and filtering secret incidents in the workspace',
         inputSchema: {
           type: 'object',
           properties: {
-            name: {
+            key: {
               type: 'string',
-              description: 'Name of the custom tag (must be unique within the workspace)',
+              description: 'Tag key — identifies the category (e.g. "env", "team", "severity")',
             },
-            description: {
+            value: {
               type: 'string',
-              description: 'Optional description explaining the purpose of this tag',
+              description: 'Optional tag value — qualifier for the key (e.g. "prod", "security", "critical")',
             },
           },
-          required: ['name'],
+          required: ['key'],
         },
       },
     ];
@@ -398,11 +410,26 @@ export class GitGuardianMCPServer {
   private async updateIncidentStatus(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.incident_id as number;
     if (!id) return { content: [{ type: 'text', text: 'incident_id is required' }], isError: true };
-    const body: Record<string, unknown> = {};
-    if (args.status) body.status = args.status;
-    if (args.assignee_email) body.assignee_email = args.assignee_email;
-    if (args.ignore_reason) body.ignore_reason = args.ignore_reason;
-    return this.request(`/v1/incidents/secrets/${id}`, 'PATCH', body);
+    const action = (args.action as string | undefined)?.toLowerCase();
+    if (!action) return { content: [{ type: 'text', text: 'action is required: resolve, ignore, assign, or reopen' }], isError: true };
+    switch (action) {
+      case 'resolve':
+        return this.request(`/v1/incidents/secrets/${id}/resolve`, 'POST');
+      case 'ignore': {
+        const ignore_reason = args.ignore_reason as string | undefined;
+        if (!ignore_reason) return { content: [{ type: 'text', text: 'ignore_reason is required when action is ignore' }], isError: true };
+        return this.request(`/v1/incidents/secrets/${id}/ignore`, 'POST', { ignore_reason });
+      }
+      case 'assign': {
+        const assignee_email = args.assignee_email as string | undefined;
+        if (!assignee_email) return { content: [{ type: 'text', text: 'assignee_email is required when action is assign' }], isError: true };
+        return this.request(`/v1/incidents/secrets/${id}/assign`, 'POST', { assignee_email });
+      }
+      case 'reopen':
+        return this.request(`/v1/incidents/secrets/${id}/reopen`, 'POST');
+      default:
+        return { content: [{ type: 'text', text: `Unknown action: ${action}. Valid actions: resolve, ignore, assign, reopen` }], isError: true };
+    }
   }
 
   private async scanContent(args: Record<string, unknown>): Promise<ToolResult> {
@@ -474,10 +501,10 @@ export class GitGuardianMCPServer {
   }
 
   private async createCustomTag(args: Record<string, unknown>): Promise<ToolResult> {
-    const name = args.name as string;
-    if (!name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
-    const body: Record<string, unknown> = { name };
-    if (args.description) body.description = args.description;
+    const key = args.key as string;
+    if (!key) return { content: [{ type: 'text', text: 'key is required' }], isError: true };
+    const body: Record<string, unknown> = { key };
+    if (args.value !== undefined) body.value = args.value;
     return this.request('/v1/tags', 'POST', body);
   }
 

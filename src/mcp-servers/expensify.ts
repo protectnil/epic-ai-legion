@@ -14,7 +14,7 @@
 // Auth: partnerUserID + partnerUserSecret embedded in every requestJobDescription payload.
 //   Credentials obtained at: https://www.expensify.com/tools/integrations/
 // Docs: https://integrations.expensify.com/Integration-Server/doc/
-// Rate limits: 50 jobs per minute per partner account
+// Rate limits: 5 requests per 10 seconds, 20 requests per 60 seconds per partner account
 // Note: All operations use a single POST endpoint — the job type is specified in requestJobDescription.type
 
 import { ToolDefinition, ToolResult } from './types.js';

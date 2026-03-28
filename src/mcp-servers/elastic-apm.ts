@@ -6,17 +6,29 @@
 
 // Official MCP: https://github.com/elastic/mcp-server-elasticsearch — official Elastic MCP server
 //   targets Elasticsearch directly (transport: stdio/SSE/streamable-HTTP, auth: API key or Basic).
-//   Status: DEPRECATED as of Elastic 9.2.0+ (superseded by Elastic Agent Builder MCP endpoint).
-//   Tools: list_indices, get_mappings, search (3 tools only — no APM-specific coverage).
-//   No dedicated Elastic APM MCP server exists from Elastic as of 2026-03.
+//   Last release: v0.4.6 (Oct 24, 2025). Tools: list_indices, get_mappings, search, esql, get_shards
+//   (5 tools — Elasticsearch index/search only, no APM-specific coverage).
+//   No dedicated Elastic APM MCP server exists from Elastic as of 2026-03-28.
 // Our adapter: 14 tools targeting the Kibana APM REST API for full APM observability coverage.
-// Recommendation: Use this adapter for APM-specific operations. For raw index queries, use the
-//   elasticsearch adapter or Elastic Agent Builder endpoint.
+// Recommendation: use-rest-api — no official APM MCP server exists. The Elasticsearch MCP server
+//   exposes only 5 generic index/search tools with no APM coverage.
+//
+// IMPORTANT: Most Kibana APM UI endpoints live under /internal/apm/ (not /api/apm/).
+// Only these paths are public API (/api/apm/):
+//   POST /api/apm/services/{serviceName}/annotation
+//   GET  /api/apm/services/{serviceName}/annotation/search
+//   GET  /api/apm/settings/agent-configuration
+//   PUT  /api/apm/settings/agent-configuration
+//   DELETE /api/apm/settings/agent-configuration
+// All other APM UI paths (services list, transactions, errors, traces, service instances)
+// are /internal/apm/ routes. These are internal APIs — not covered by Kibana's public API SLA
+// and will be restricted in Kibana 9.0. Tools using these paths are marked accordingly.
 //
 // Base URL: https://{kibana-host}:{port}  (self-hosted) or Elastic Cloud Kibana URL
 // Auth: API key — "ApiKey {base64(id:api_key)}" or Basic — "Basic {base64(user:pass)}"
-// Docs: https://www.elastic.co/guide/en/kibana/current/apm-api.html
-//   https://www.elastic.co/docs/api/doc/kibana
+// Docs: https://www.elastic.co/docs/api/doc/kibana/group/endpoint-apm-annotations
+//   https://www.elastic.co/docs/api/doc/kibana/operation/operation-getagentconfigurations
+//   https://github.com/elastic/kibana/issues/152578 (internal APM route inventory)
 // Rate limits: Not publicly documented; governed by Elasticsearch cluster capacity
 // Note: All mutating requests require the kbn-xsrf: true header
 
@@ -511,7 +523,7 @@ export class ElasticAPMMCPServer {
     params.set('end', String(args.end));
     if (args.environment) params.set('environment', String(args.environment));
     if (extra) for (const [k, v] of Object.entries(extra)) params.set(k, v);
-    return `${this.kibanaUrl}/api/apm/services/${encodeURIComponent(service_name)}/${path}?${params}`;
+    return `${this.kibanaUrl}/internal/apm/services/${encodeURIComponent(service_name)}/${path}?${params}`;
   }
 
   private async listServices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -520,7 +532,7 @@ export class ElasticAPMMCPServer {
     }
     const params = new URLSearchParams({ start: String(args.start), end: String(args.end) });
     if (args.environment) params.set('environment', String(args.environment));
-    return this.kfetch(`${this.kibanaUrl}/api/apm/services?${params}`, { headers: this.getHeaders() });
+    return this.kfetch(`${this.kibanaUrl}/internal/apm/services?${params}`, { headers: this.getHeaders() });
   }
 
   private async getServiceDetails(args: Record<string, unknown>): Promise<ToolResult> {
@@ -583,7 +595,7 @@ export class ElasticAPMMCPServer {
     const params = new URLSearchParams({ start: String(args.start), end: String(args.end) });
     if (args.query) params.set('query', String(args.query));
     if (args.environment) params.set('environment', String(args.environment));
-    return this.kfetch(`${this.kibanaUrl}/api/apm/traces?${params}`, { headers: this.getHeaders() });
+    return this.kfetch(`${this.kibanaUrl}/internal/apm/traces/find?${params}`, { headers: this.getHeaders() });
   }
 
   private async getTrace(args: Record<string, unknown>): Promise<ToolResult> {
@@ -591,7 +603,7 @@ export class ElasticAPMMCPServer {
       return { content: [{ type: 'text', text: 'trace_id is required' }], isError: true };
     }
     return this.kfetch(
-      `${this.kibanaUrl}/api/apm/traces/${encodeURIComponent(String(args.trace_id))}`,
+      `${this.kibanaUrl}/internal/apm/traces/${encodeURIComponent(String(args.trace_id))}`,
       { headers: this.getHeaders() },
     );
   }
@@ -632,7 +644,7 @@ export class ElasticAPMMCPServer {
     if (args.end) params.set('end', String(args.end));
     if (args.environment) params.set('environment', String(args.environment));
     return this.kfetch(
-      `${this.kibanaUrl}/api/apm/services/${encodeURIComponent(String(args.service_name))}/annotation?${params}`,
+      `${this.kibanaUrl}/api/apm/services/${encodeURIComponent(String(args.service_name))}/annotation/search?${params}`,
       { headers: this.getHeaders() },
     );
   }

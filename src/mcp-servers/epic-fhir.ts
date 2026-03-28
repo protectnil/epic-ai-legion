@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Epic Systems MCP server was found on GitHub or the MCP registry.
 // Third-party FHIR MCP servers exist (github.com/wso2/fhir-mcp-server,
 // github.com/xSoVx/fhir-mcp) but none are official Epic-published servers.
@@ -12,11 +12,18 @@
 //
 // Base URL: https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4
 //   (Per-org override via baseUrl config — each Epic org has its own endpoint)
-// Auth: OAuth2 client credentials (backend system apps) or SMART on FHIR
-//   Token endpoint: {baseUrl}/../oauth2/token (resolved from .well-known/smart-configuration)
-//   Client ID + private key JWT or client secret depending on app registration
+// Auth: OAuth2 client credentials — Epic backend services use private key JWT assertion
+//   (client_assertion_type: urn:ietf:params:oauth:client-assertion-type:jwt-bearer).
+//   This adapter implements Basic auth with client_secret for older/sandbox configs.
+//   Production deployments using SMART Backend Services MUST use JWT-signed assertions
+//   with a registered RSA/EC public key — not a client_secret. See:
+//   https://fhir.epic.com/Documentation?docId=oauth2
+//   Token endpoint: https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token
+//   (per-org endpoint resolved from .well-known/smart-configuration)
 // Docs: https://fhir.epic.com/Documentation
-// Rate limits: Not publicly documented; Epic recommends back-off on 429 responses
+// Rate limits: Not publicly documented; Epic recommends exponential back-off on 429 responses
+// Our adapter covers: 23 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official Epic MCP server exists.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -633,7 +640,7 @@ export class EpicFhirMCPServer {
     if (!id) {
       return { content: [{ type: 'text', text: `${resourceType} ID is required` }], isError: true };
     }
-    return this.fhirGet(`${resourceType}/${id}`);
+    return this.fhirGet(`${resourceType}/${encodeURIComponent(id)}`);
   }
 
   private async getPatient(args: Record<string, unknown>): Promise<ToolResult> {

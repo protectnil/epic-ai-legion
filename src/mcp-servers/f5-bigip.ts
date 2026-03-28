@@ -4,10 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/czirakim/F5.MCP.server — transport: stdio, auth: basic credentials
-// Our adapter covers: 18 tools (LTM virtual servers, pools, nodes, iRules, WAF, monitors, SNAT, profiles).
-// Vendor MCP covers: ~4 tools (list, create, update, delete — generic only).
-// Recommendation: Use this adapter for full operational coverage. Vendor MCP is minimal.
+// Official MCP: None found as of 2026-03-28
+// No official F5 MCP server published by F5 Inc. was found on GitHub, npmjs.com, or the MCP registry.
+// Community MCP (NOT official): https://github.com/czirakim/F5.MCP.server — transport: stdio, auth: basic credentials
+//   Community server exposes 6 generic tools (list_tool, create_tool, update_tool, delete_tool, show_stats_tool,
+//   show_logs_tool) — all accept an object_type parameter rather than named per-resource tools. Fails the 10-tool
+//   threshold and is not published by F5. Decision: use-rest-api.
+// Our adapter covers: 18 tools (LTM virtual servers, pools, nodes, iRules, WAF, monitors).
 //
 // Base URL: https://{bigip-host}/mgmt  (no default — host is required per-device)
 // Auth: HTTP Basic (username:password) OR token-based via X-F5-Auth-Token header
@@ -575,8 +578,8 @@ export class F5BigIPMCPServer {
 
   private async listVirtualServers(args: Record<string, unknown>): Promise<ToolResult> {
     const partition = (args.partition as string) || this.partition;
-    const expand = args.expandSubcollections ? '?expandSubcollections=true' : '';
-    return this.f5Get(`/tm/ltm/virtual?$filter=partition+eq+${partition}${expand}`);
+    const expand = args.expandSubcollections ? '&expandSubcollections=true' : '';
+    return this.f5Get(`/tm/ltm/virtual?$filter=partition+eq+${encodeURIComponent(partition)}${expand}`);
   }
 
   private async getVirtualServer(args: Record<string, unknown>): Promise<ToolResult> {
@@ -619,7 +622,7 @@ export class F5BigIPMCPServer {
 
   private async listPools(args: Record<string, unknown>): Promise<ToolResult> {
     const partition = (args.partition as string) || this.partition;
-    return this.f5Get(`/tm/ltm/pool?$filter=partition+eq+${partition}`);
+    return this.f5Get(`/tm/ltm/pool?$filter=partition+eq+${encodeURIComponent(partition)}`);
   }
 
   private async getPool(args: Record<string, unknown>): Promise<ToolResult> {
@@ -687,18 +690,18 @@ export class F5BigIPMCPServer {
 
   private async listNodes(args: Record<string, unknown>): Promise<ToolResult> {
     const partition = (args.partition as string) || this.partition;
-    return this.f5Get(`/tm/ltm/node?$filter=partition+eq+${partition}`);
+    return this.f5Get(`/tm/ltm/node?$filter=partition+eq+${encodeURIComponent(partition)}`);
   }
 
   private async listIRules(args: Record<string, unknown>): Promise<ToolResult> {
     const partition = (args.partition as string) || this.partition;
-    return this.f5Get(`/tm/ltm/rule?$filter=partition+eq+${partition}`);
+    return this.f5Get(`/tm/ltm/rule?$filter=partition+eq+${encodeURIComponent(partition)}`);
   }
 
   private async listMonitors(args: Record<string, unknown>): Promise<ToolResult> {
     const type = (args.type as string) || 'http';
     const partition = (args.partition as string) || this.partition;
-    return this.f5Get(`/tm/ltm/monitor/${type}?$filter=partition+eq+${partition}`);
+    return this.f5Get(`/tm/ltm/monitor/${encodeURIComponent(type)}?$filter=partition+eq+${encodeURIComponent(partition)}`);
   }
 
   private async listWafPolicies(args: Record<string, unknown>): Promise<ToolResult> {

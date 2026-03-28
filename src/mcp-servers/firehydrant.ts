@@ -4,16 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/firehydrant/firehydrant-mcp — official, actively maintained
-// (last updated Feb 2026), published as an npm package and Claude Desktop Extension (.dxt).
-// Our adapter covers: 18 tools (core incident, retrospective, change, signals, service operations).
-// Vendor MCP covers: broader tool set via the official server.
-// Recommendation: Use the official MCP for full coverage. Use this adapter for air-gapped deployments.
+// Official MCP: https://github.com/firehydrant/firehydrant-mcp — transport: stdio, auth: API token
+// Published by FireHydrant, last updated Feb 24, 2026. Documents 4+ tools (incidents-list-incidents,
+// incidents-create-incident, alerts-list-alerts, retrospectives). Full tool list not publicly enumerated
+// in README; MCP wraps the full TypeScript SDK (350+ API operations).
+// Our adapter covers: 18 tools. Vendor MCP covers: breadth of SDK (exact count unconfirmed, likely 20+).
+// Recommendation: use-vendor-mcp for full coverage. Use this adapter for air-gapped deployments.
 //
 // Base URL: https://api.firehydrant.io/v1
 // Auth: Bearer token — bot token or user API key via Authorization: Bearer {token}
 // Docs: https://docs.firehydrant.com/reference/firehydrant-api
-// Rate limits: Applied per account; bot tokens act on behalf of a service account
+// Rate limits: Not publicly documented per-endpoint
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -398,13 +399,13 @@ export class FireHydrantMCPServer {
       },
       {
         name: 'list_on_call_schedules',
-        description: 'List on-call schedules configured in FireHydrant Signals for teams',
+        description: 'List on-call schedules for a specific FireHydrant team — returns rotations and current on-call members',
         inputSchema: {
           type: 'object',
           properties: {
             team_id: {
               type: 'string',
-              description: 'Filter schedules by team ID',
+              description: 'Team ID whose on-call schedules to list (required)',
             },
             page: {
               type: 'number',
@@ -415,6 +416,7 @@ export class FireHydrantMCPServer {
               description: 'Number of schedules per page (default: 20)',
             },
           },
+          required: ['team_id'],
         },
       },
       {
@@ -730,12 +732,14 @@ export class FireHydrantMCPServer {
   }
 
   private async listOnCallSchedules(args: Record<string, unknown>, h: Record<string, string>): Promise<ToolResult> {
+    const teamId = args.team_id as string;
+    if (!teamId) return { content: [{ type: 'text', text: 'team_id is required — FireHydrant on-call schedules are per team' }], isError: true };
+
     const params = new URLSearchParams();
-    if (args.team_id) params.set('team_id', args.team_id as string);
     if (args.page !== undefined) params.set('page', String(args.page));
     if (args.per_page !== undefined) params.set('per_page', String(args.per_page));
 
-    const response = await this.get(`/on_call_schedules${this.buildQs(params)}`, h);
+    const response = await this.get(`/teams/${encodeURIComponent(teamId)}/on_call_schedules${this.buildQs(params)}`, h);
     const err = this.ok(response, 'Failed to list on-call schedules');
     if (err) return err;
     return this.json(response);
@@ -747,7 +751,7 @@ export class FireHydrantMCPServer {
     if (args.page !== undefined) params.set('page', String(args.page));
     if (args.per_page !== undefined) params.set('per_page', String(args.per_page));
 
-    const response = await this.get(`/signals/alerts${this.buildQs(params)}`, h);
+    const response = await this.get(`/alerts${this.buildQs(params)}`, h);
     const err = this.ok(response, 'Failed to list Signals alerts');
     if (err) return err;
     return this.json(response);
@@ -757,7 +761,7 @@ export class FireHydrantMCPServer {
     const alertId = args.alert_id as string;
     if (!alertId) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
 
-    const response = await this.get(`/signals/alerts/${encodeURIComponent(alertId)}`, h);
+    const response = await this.get(`/alerts/${encodeURIComponent(alertId)}`, h);
     const err = this.ok(response, 'Failed to get Signals alert');
     if (err) return err;
     return this.json(response);

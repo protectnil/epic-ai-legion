@@ -4,8 +4,9 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 // No official Fauna MCP server was found on GitHub or in the Fauna documentation.
+// A community listing exists in awesome-mcp-servers but is not published by Fauna Inc.
 //
 // Base URL: https://db.fauna.com  (Core HTTP API — query and schema management)
 // Auth: Bearer token (Fauna secret key scoped to a database) in Authorization header

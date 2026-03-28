@@ -8,6 +8,7 @@
 // The official Google Workspace CLI (googleworkspace/cli, Apache-2.0, active 2026) exposes
 // Google Calendar and other Workspace services via `gws mcp -s calendar` over stdio.
 // It covers 100+ tools across all Workspace APIs, dynamically built from Google Discovery Service.
+// Our adapter covers: 16 tools (calendars, events, ACL, free/busy, settings, colors). Vendor MCP covers: 100+ tools.
 // Recommendation: Use the Workspace CLI MCP for full coverage. Use this adapter for
 // air-gapped deployments or when only Calendar access is needed without full Workspace setup.
 //

@@ -152,7 +152,7 @@ export class ExtraHopMCPServer {
           properties: {
             status: {
               type: 'string',
-              description: 'Filter by status: open, closed, acknowledged, new (default: open)',
+              description: 'Filter by status: open (null/unassigned), new, in_progress, closed, acknowledged (default: open)',
             },
             risk_score_min: {
               type: 'number',
@@ -207,7 +207,7 @@ export class ExtraHopMCPServer {
             },
             status: {
               type: 'string',
-              description: 'New status: acknowledged, closed, open',
+              description: 'New status: acknowledged, in_progress, closed, new (open detections have null status)',
             },
             assignee: {
               type: 'string',
@@ -624,8 +624,21 @@ export class ExtraHopMCPServer {
       offset: (args.offset as number) || 0,
       sort: [{ direction: 'desc', field: 'start_time' }],
     };
-    if (args.status) body.filter = { field: 'status', operator: '=', value: args.status === 'open' ? null : args.status };
-    if (args.risk_score_min) body.filter = { field: 'risk_score', operator: '>=', value: args.risk_score_min };
+    // Build filter rules — multiple criteria combined with 'and'
+    const rules: Record<string, unknown>[] = [];
+    if (args.status) {
+      // ExtraHop uses ".none" to match null (Open) status; other valid values: new, in_progress, closed, acknowledged
+      const statusValue = args.status === 'open' ? '.none' : args.status as string;
+      rules.push({ field: 'status', operator: '=', value: statusValue });
+    }
+    if (args.risk_score_min) {
+      rules.push({ field: 'risk_score', operator: '>=', value: args.risk_score_min });
+    }
+    if (rules.length === 1) {
+      body.filter = rules[0];
+    } else if (rules.length > 1) {
+      body.filter = { operator: 'and', rules };
+    }
     if (args.from) body.from = args.from;
     if (args.until) body.until = args.until;
     return this.ehPost('/detections/search', body);

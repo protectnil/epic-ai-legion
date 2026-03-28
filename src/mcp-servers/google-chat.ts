@@ -567,7 +567,7 @@ export class GoogleChatMCPServer {
     if (args.pageToken) params.pageToken = args.pageToken as string;
     if (typeof args.showDeleted === 'boolean') params.showDeleted = String(args.showDeleted);
     if (args.orderBy) params.orderBy = args.orderBy as string;
-    return this.get(`${encodeURIComponent(args.parent as string)}/messages`, params);
+    return this.get(`${args.parent as string}/messages`, params);
   }
 
   private async getMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -582,7 +582,7 @@ export class GoogleChatMCPServer {
     const params: Record<string, string> = {};
     if (args.messageReplyOption) params.messageReplyOption = args.messageReplyOption as string;
     if (args.requestId) params.requestId = args.requestId as string;
-    return this.post(`${encodeURIComponent(args.parent as string)}/messages`, body, Object.keys(params).length ? params : undefined);
+    return this.post(`${args.parent as string}/messages`, body, Object.keys(params).length ? params : undefined);
   }
 
   private async updateMessage(args: Record<string, unknown>): Promise<ToolResult> {
@@ -601,7 +601,7 @@ export class GoogleChatMCPServer {
     const params: Record<string, string> = { pageSize: String((args.pageSize as number) ?? 100) };
     if (args.filter) params.filter = args.filter as string;
     if (args.pageToken) params.pageToken = args.pageToken as string;
-    return this.get(`${encodeURIComponent(args.parent as string)}/members`, params);
+    return this.get(`${args.parent as string}/members`, params);
   }
 
   private async getMember(args: Record<string, unknown>): Promise<ToolResult> {
@@ -615,7 +615,7 @@ export class GoogleChatMCPServer {
       member: { name: args.member_name, type: 'HUMAN' },
       role: args.role ?? 'ROLE_MEMBER',
     };
-    return this.post(`${encodeURIComponent(args.parent as string)}/members`, body);
+    return this.post(`${args.parent as string}/members`, body);
   }
 
   private async deleteMember(args: Record<string, unknown>): Promise<ToolResult> {
@@ -628,12 +628,12 @@ export class GoogleChatMCPServer {
     const params: Record<string, string> = { pageSize: String((args.pageSize as number) ?? 25) };
     if (args.filter) params.filter = args.filter as string;
     if (args.pageToken) params.pageToken = args.pageToken as string;
-    return this.get(`${encodeURIComponent(args.parent as string)}/reactions`, params);
+    return this.get(`${args.parent as string}/reactions`, params);
   }
 
   private async createReaction(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.parent || !args.unicode) return { content: [{ type: 'text', text: 'parent and unicode are required' }], isError: true };
-    return this.post(`${encodeURIComponent(args.parent as string)}/reactions`, { emoji: { unicode: args.unicode } });
+    return this.post(`${args.parent as string}/reactions`, { emoji: { unicode: args.unicode } });
   }
 
   private async deleteReaction(args: Record<string, unknown>): Promise<ToolResult> {
@@ -648,6 +648,6 @@ export class GoogleChatMCPServer {
       pageSize: String((args.pageSize as number) ?? 25),
     };
     if (args.pageToken) params.pageToken = args.pageToken as string;
-    return this.get(`${encodeURIComponent(args.parent as string)}/spaceEvents`, params);
+    return this.get(`${args.parent as string}/spaceEvents`, params);
   }
 }

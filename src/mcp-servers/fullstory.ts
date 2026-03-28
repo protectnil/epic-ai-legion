@@ -4,16 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official FullStory MCP server was found on GitHub or npm.
+// Official MCP: Announced in beta by FullStory (https://www.fullstory.com/blog/fullstory-mcp/) — no public GitHub
+//   repo or npm package published as of 2026-03-28. Beta is vendor-hosted/invite-only; not publicly accessible.
+//   Transport: unknown (not yet publicly documented). MCP fails criteria 1 (no public repo/package).
+// Our adapter covers: 14 tools. Vendor MCP: tool count unknown (private beta).
+// Recommendation: use-rest-api — vendor MCP is not publicly available; REST adapter is the only accessible integration.
 //
 // Base URL: https://api.fullstory.com
-// Auth: API key via Authorization header as Basic base64(apiKey:) — the API key is
-//       the username; password is empty. Alternatively, some endpoints accept
-//       "Basic <base64(apiKey)>" directly.
+// Auth: API key via Authorization header as "Basic {YOUR_API_KEY}" — the raw API key is passed
+//       directly as the value (NOT base64 encoded). See https://developer.fullstory.com/server/authentication/
 // Docs: https://developer.fullstory.com/
-// Rate limits: Endpoint-specific; headers X-RateLimit-Limit and X-RateLimit-Remaining
-//              are returned. Server events endpoint: ~2.3 req/sec per org. 429 includes Retry-After.
+// Rate limits: Endpoint-specific; 429 response includes Retry-After header. Server events: quota per org/month.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -124,13 +125,17 @@ export class FullStoryMCPServer {
       },
       {
         name: 'list_sessions',
-        description: 'Retrieve a list of session replay URLs for a specific user by user ID',
+        description: 'Retrieve a list of session replay URLs for a specific user; uid or email is required, limit defaults to 20',
         inputSchema: {
           type: 'object',
           properties: {
             uid: {
               type: 'string',
-              description: 'Your application user ID to retrieve sessions for',
+              description: 'Your application user ID (as passed to FS.identify) — required if email not provided',
+            },
+            email: {
+              type: 'string',
+              description: 'User email address — required if uid not provided (URL-encoded automatically)',
             },
             limit: {
               type: 'number',
@@ -348,8 +353,9 @@ export class FullStoryMCPServer {
   }
 
   private get authHeader(): string {
-    // FullStory uses Basic auth with the API key as the username and empty password
-    return `Basic ${btoa(`${this.apiKey}:`)}`;
+    // FullStory auth: "Basic {YOUR_API_KEY}" — raw API key passed directly, NOT base64 encoded.
+    // See: https://developer.fullstory.com/server/authentication/
+    return `Basic ${this.apiKey}`;
   }
 
   private truncate(data: unknown): string {
@@ -434,12 +440,15 @@ export class FullStoryMCPServer {
   }
 
   private async listSessions(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.uid) {
-      return { content: [{ type: 'text', text: 'uid is required' }], isError: true };
+    if (!args.uid && !args.email) {
+      return { content: [{ type: 'text', text: 'uid or email is required' }], isError: true };
     }
-    const params = new URLSearchParams({ uid: args.uid as string });
+    // Correct path is /sessions/v2 (NOT /v2/sessions). See: https://developer.fullstory.com/anywhere/activation/ai-session-summary-api/
+    const params = new URLSearchParams();
+    if (args.uid) params.set('uid', args.uid as string);
+    if (args.email) params.set('email', encodeURIComponent(args.email as string));
     if (args.limit) params.set('limit', String(args.limit));
-    return this.apiGet(`/v2/sessions?${params.toString()}`);
+    return this.apiGet(`/sessions/v2?${params.toString()}`);
   }
 
   private async getSessionSummary(args: Record<string, unknown>): Promise<ToolResult> {

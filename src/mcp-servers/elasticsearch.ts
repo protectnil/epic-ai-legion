@@ -4,19 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/elastic/mcp-server-elasticsearch — official Elastic MCP server
-//   transport: stdio, SSE, streamable-HTTP. Auth: API key or Basic. Published on npm:
-//   @elastic/mcp-server-elasticsearch. Status: DEPRECATED as of Elastic 9.2.0+ (superseded
-//   by Elastic Agent Builder MCP endpoint available in Elasticsearch Serverless and 9.2+).
-//   Official MCP tools (3 only): list_indices, get_mappings, search.
-// Our adapter: 18 tools covering the full Elasticsearch REST API surface (8.x compatible).
-// Recommendation: Use Elastic Agent Builder endpoint for 9.2+ deployments. Use this adapter
-//   for Elasticsearch 8.x, air-gapped deployments, or when full index/cluster management is needed.
+// Official MCP: https://github.com/elastic/mcp-server-elasticsearch — transport: stdio, streamable-HTTP, auth: API key or Basic
+// NOTE: npm package @elastic/mcp-server-elasticsearch v0.3.1 is deprecated; current release is v0.4.6 (Oct 2025) via Docker.
+//   For Elasticsearch 9.2+ and Serverless, the hosted Elastic Agent Builder MCP endpoint supersedes the standalone server.
+//   Official MCP tools (5): list_indices, get_mappings, search, esql, get_shards — read-only, no write/management ops.
+// Our adapter covers: 18 tools (full CRUD + cluster management). Vendor MCP covers: 5 tools (read/search only).
+// Recommendation: use-both — Vendor MCP exposes esql and get_shards not in our REST adapter; our REST adapter covers
+//   write ops (index_document, update_document, delete_document, bulk, create_index, delete_index, put_mapping,
+//   update_index_settings, reindex) and cluster management not in the MCP. Use vendor MCP for read/search; REST adapter
+//   for all write and management operations.
 //
 // Base URL: https://{host}:{port}  (self-hosted) or Elastic Cloud endpoint URL
 // Auth: API key — "ApiKey {base64(id:api_key)}" or Basic — "Basic {base64(user:pass)}"
 // Docs: https://www.elastic.co/guide/en/elasticsearch/reference/8.19/rest-apis.html
-//   https://www.elastic.co/docs/api/doc/elasticsearch
+//   https://www.elastic.co/docs/api/doc/elasticsearch/v8/
 // Rate limits: Not externally documented; governed by cluster circuit breakers and thread pool capacity
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -759,10 +760,8 @@ export class ElasticsearchMCPServer {
     };
     if (args.query) (body.source as Record<string, unknown>).query = args.query;
     if (args.script) body.script = args.script;
-    const params = new URLSearchParams();
-    if (args.conflicts) params.set('conflicts', String(args.conflicts));
-    const qs = params.toString() ? `?${params}` : '';
-    return this.esfetch(`${this.baseUrl}/_reindex${qs}`, {
+    if (args.conflicts) body.conflicts = args.conflicts;
+    return this.esfetch(`${this.baseUrl}/_reindex`, {
       method: 'POST',
       body: JSON.stringify(body),
     });

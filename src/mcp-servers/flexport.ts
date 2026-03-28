@@ -4,14 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Flexport MCP server was found on GitHub or npm.
 //
 // Base URL: https://api.flexport.com
-// Auth: OAuth2 client credentials — POST /oauth/token with client_id/client_secret,
-//       returns a Bearer token (JWT) with 24-hour lifespan. Max 10 token requests/day.
-// Docs: https://apidocs.flexport.com/v2/ | https://developers.flexport.com/
+// Auth: OAuth2 client credentials — POST /oauth/token with JSON body:
+//       {client_id, client_secret, audience:"https://api.flexport.com", grant_type:"client_credentials"}
+//       Returns a Bearer token (JWT) with 24-hour lifespan. Max 10 token requests/day.
+// Docs: https://apidocs.flexport.com/v3/ | https://developers.flexport.com/
 // Rate limits: Not publicly documented; Flexport recommends exponential backoff on 429.
+// Note: create_purchase_order and update_purchase_order use API v3 (POST semantics).
+//       update_purchase_order is POST /v3/purchase_orders/{id} (full-replace), not PATCH.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -458,13 +461,14 @@ export class FlexportMCPServer {
     const response = await fetch(`${this.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
+      body: JSON.stringify({
         grant_type: 'client_credentials',
         client_id: this.clientId,
         client_secret: this.clientSecret,
-      }).toString(),
+        audience: this.baseUrl,
+      }),
     });
 
     if (!response.ok) {
@@ -502,14 +506,14 @@ export class FlexportMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+  private async apiPost(path: string, body: Record<string, unknown>, version = '2'): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        'Flexport-Version': '2',
+        'Flexport-Version': version,
       },
       body: JSON.stringify(body),
     });
@@ -520,23 +524,6 @@ export class FlexportMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async apiPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Flexport-Version': '2',
-      },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
-    }
-    const data = await response.json();
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
 
   private async listShipments(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
@@ -609,22 +596,24 @@ export class FlexportMCPServer {
     if (!args.name) {
       return { content: [{ type: 'text', text: 'name is required' }], isError: true };
     }
+    // Flexport v3 API: POST /v3/purchase_orders (create, or update if PO exists with same name)
     const body: Record<string, unknown> = { name: args.name };
     if (args.incoterm) body.incoterm = args.incoterm;
     if (args.expected_departure_date) body.expected_departure_date = args.expected_departure_date;
     if (args.buyer_entity_id) body.buyer = { id: args.buyer_entity_id };
     if (args.seller_entity_id) body.seller = { id: args.seller_entity_id };
-    return this.apiPost('/v2/purchase_orders', body);
+    return this.apiPost('/v3/purchase_orders', body, '3');
   }
 
   private async updatePurchaseOrder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.purchase_order_id) {
       return { content: [{ type: 'text', text: 'purchase_order_id is required' }], isError: true };
     }
+    // Flexport v3 API: update is a full-replace POST (not PATCH) to /v3/purchase_orders/{id}
     const body: Record<string, unknown> = {};
     if (args.status) body.status = args.status;
     if (args.expected_departure_date) body.expected_departure_date = args.expected_departure_date;
-    return this.apiPatch(`/v2/purchase_orders/${encodeURIComponent(args.purchase_order_id as string)}`, body);
+    return this.apiPost(`/v3/purchase_orders/${encodeURIComponent(args.purchase_order_id as string)}`, body, '3');
   }
 
   private async listDocuments(args: Record<string, unknown>): Promise<ToolResult> {

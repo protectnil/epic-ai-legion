@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Gladly MCP server found on GitHub or the Gladly developer portal.
 // Community integrations exist via Unified.to and Merge.dev but no first-party MCP.
 // Recommendation: Use this REST adapter. Evaluate vendor MCP if one is published.
@@ -12,7 +12,8 @@
 // Base URL: https://{organization}.gladly.com/api/v1
 // Auth: Basic auth — base64(email:apiToken) per developer.gladly.com
 // Docs: https://developer.gladly.com/rest/
-// Rate limits: Parse response headers; Gladly recommends back-off on rate limit signals.
+// Rate limits: 10 requests/second per method (GET, POST, PUT, PATCH, DELETE).
+//   Reports API: 10 requests/minute with 2 concurrent requests across the org.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -45,12 +46,11 @@ export class GladlyMCPServer {
       ],
       toolNames: [
         'get_organization',
-        'list_conversations',
         'get_conversation',
         'get_conversation_items',
-        'assign_conversation',
-        'close_conversation',
+        'update_conversation',
         'add_conversation_topic',
+        'add_conversation_note',
         'list_customers',
         'get_customer',
         'create_customer',
@@ -59,7 +59,6 @@ export class GladlyMCPServer {
         'list_agents',
         'get_agent',
         'list_inboxes',
-        'add_conversation_note',
       ],
       description: 'Gladly customer service platform: manage conversations, customers, agents, and inboxes. Search, triage, assign, and close support conversations.',
       author: 'protectnil' as const,
@@ -74,27 +73,6 @@ export class GladlyMCPServer {
         inputSchema: {
           type: 'object',
           properties: {},
-        },
-      },
-      {
-        name: 'list_conversations',
-        description: 'List customer conversations with optional filters for status and pagination cursor. Returns conversation metadata including assignee, topics, and inbox.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            status: {
-              type: 'string',
-              description: 'Filter by status: OPEN, RESOLVED (default: OPEN)',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of conversations to return (default: 50, max: 100)',
-            },
-            cursor: {
-              type: 'string',
-              description: 'Pagination cursor from a previous response',
-            },
-          },
         },
       },
       {
@@ -126,36 +104,26 @@ export class GladlyMCPServer {
         },
       },
       {
-        name: 'assign_conversation',
-        description: 'Assign a conversation to a specific agent or inbox for routing and ownership.',
+        name: 'update_conversation',
+        description: 'Update a Gladly conversation: reassign to an agent or inbox, change status (OPEN, WAITING, CLOSED), or both in a single PATCH call.',
         inputSchema: {
           type: 'object',
           properties: {
             conversation_id: {
               type: 'string',
-              description: 'Gladly conversation ID to assign',
+              description: 'Gladly conversation ID to update',
             },
             agent_id: {
               type: 'string',
-              description: 'Agent ID to assign the conversation to (omit to assign to inbox only)',
+              description: 'Agent ID to assign the conversation to (optional)',
             },
             inbox_id: {
               type: 'string',
-              description: 'Inbox ID to route the conversation to',
+              description: 'Inbox ID to route the conversation to (optional)',
             },
-          },
-          required: ['conversation_id'],
-        },
-      },
-      {
-        name: 'close_conversation',
-        description: 'Close (resolve) an open Gladly conversation, marking it as resolved.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            conversation_id: {
+            status: {
               type: 'string',
-              description: 'Gladly conversation ID to close',
+              description: 'New conversation status: OPEN, WAITING, or CLOSED (optional)',
             },
           },
           required: ['conversation_id'],
@@ -163,7 +131,7 @@ export class GladlyMCPServer {
       },
       {
         name: 'add_conversation_topic',
-        description: 'Add one or more topics (tags/labels) to a Gladly conversation for categorization and analysis.',
+        description: 'Add one or more topics to a Gladly conversation by topic ID. Use list_topics (Topics API) to retrieve valid topic IDs first.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -171,24 +139,24 @@ export class GladlyMCPServer {
               type: 'string',
               description: 'Gladly conversation ID',
             },
-            topics: {
+            topic_ids: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Array of topic names to add to the conversation',
+              description: 'Array of topic IDs to add to the conversation (topics already on the conversation are ignored)',
             },
           },
-          required: ['conversation_id', 'topics'],
+          required: ['conversation_id', 'topic_ids'],
         },
       },
       {
         name: 'list_customers',
-        description: 'List customers in the Gladly organization with optional pagination.',
+        description: 'List customer profiles in the Gladly organization. Returns up to 50 profiles sorted by most recently updated.',
         inputSchema: {
           type: 'object',
           properties: {
             limit: {
               type: 'number',
-              description: 'Maximum number of customers to return (default: 50)',
+              description: 'Maximum number of customers to return (default: 50, max: 50)',
             },
             cursor: {
               type: 'string',
@@ -268,17 +236,17 @@ export class GladlyMCPServer {
       },
       {
         name: 'search_customers',
-        description: 'Search Gladly customers by email address, phone number, or external customer ID.',
+        description: 'Find Gladly customer profiles by email, phone number (E.164 format), or external customer ID. Returns up to 50 profiles.',
         inputSchema: {
           type: 'object',
           properties: {
             email: {
               type: 'string',
-              description: 'Email address to search for',
+              description: 'Email address to search for (e.g. customer@email.net)',
             },
-            phone: {
+            phone_number: {
               type: 'string',
-              description: 'Phone number to search for',
+              description: 'Phone number in E.164 format to search for (e.g. +16505551987)',
             },
             external_customer_id: {
               type: 'string',
@@ -328,7 +296,7 @@ export class GladlyMCPServer {
       },
       {
         name: 'add_conversation_note',
-        description: 'Add an internal agent note to a Gladly conversation, visible only to agents and not to the customer.',
+        description: 'Add an internal agent note to a Gladly conversation. Notes are visible only to agents and not to the customer. Supports plain text or rich content.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -338,7 +306,7 @@ export class GladlyMCPServer {
             },
             body: {
               type: 'string',
-              description: 'Note body text (plain text)',
+              description: 'Note body text (plain text or constrained HTML rich content)',
             },
           },
           required: ['conversation_id', 'body'],
@@ -352,18 +320,16 @@ export class GladlyMCPServer {
       switch (name) {
         case 'get_organization':
           return await this.getOrganization();
-        case 'list_conversations':
-          return await this.listConversations(args);
         case 'get_conversation':
           return await this.getConversation(args);
         case 'get_conversation_items':
           return await this.getConversationItems(args);
-        case 'assign_conversation':
-          return await this.assignConversation(args);
-        case 'close_conversation':
-          return await this.closeConversation(args);
+        case 'update_conversation':
+          return await this.updateConversation(args);
         case 'add_conversation_topic':
           return await this.addConversationTopic(args);
+        case 'add_conversation_note':
+          return await this.addConversationNote(args);
         case 'list_customers':
           return await this.listCustomers(args);
         case 'get_customer':
@@ -380,8 +346,6 @@ export class GladlyMCPServer {
           return await this.getAgent(args);
         case 'list_inboxes':
           return await this.listInboxes();
-        case 'add_conversation_note':
-          return await this.addConversationNote(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -411,20 +375,6 @@ export class GladlyMCPServer {
     const response = await fetch(`${this.baseUrl}/organization`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get organization: ${response.status} ${response.statusText}` }], isError: true };
-    }
-    const data = await response.json();
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private async listConversations(args: Record<string, unknown>): Promise<ToolResult> {
-    const params = new URLSearchParams();
-    if (args.limit) params.set('limit', String(args.limit));
-    if (args.cursor) params.set('cursor', args.cursor as string);
-    if (args.status) params.set('status', args.status as string);
-    const url = `${this.baseUrl}/conversations${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `Failed to list conversations: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
@@ -462,54 +412,46 @@ export class GladlyMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async assignConversation(args: Record<string, unknown>): Promise<ToolResult> {
+  private async updateConversation(args: Record<string, unknown>): Promise<ToolResult> {
     const conversation_id = args.conversation_id as string;
     if (!conversation_id) {
       return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
     }
     const payload: Record<string, unknown> = {};
-    if (args.agent_id) payload.agentId = args.agent_id;
-    if (args.inbox_id) payload.inboxId = args.inbox_id;
+    if (args.agent_id || args.inbox_id) {
+      const assignee: Record<string, unknown> = {};
+      if (args.inbox_id) assignee.inboxId = args.inbox_id;
+      if (args.agent_id) assignee.agentId = args.agent_id;
+      payload.assignee = assignee;
+    }
+    if (args.status) {
+      payload.status = { value: args.status };
+    }
     const response = await fetch(
-      `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/assignee`,
+      `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}`,
       { method: 'PATCH', headers: this.headers, body: JSON.stringify(payload) },
     );
     if (!response.ok) {
-      return { content: [{ type: 'text', text: `Failed to assign conversation: ${response.status} ${response.statusText}` }], isError: true };
+      return { content: [{ type: 'text', text: `Failed to update conversation: ${response.status} ${response.statusText}` }], isError: true };
     }
     const data = await response.json().catch(() => ({ success: true }));
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async closeConversation(args: Record<string, unknown>): Promise<ToolResult> {
-    const conversation_id = args.conversation_id as string;
-    if (!conversation_id) {
-      return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
-    }
-    const response = await fetch(
-      `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/status`,
-      { method: 'PATCH', headers: this.headers, body: JSON.stringify({ status: 'RESOLVED' }) },
-    );
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `Failed to close conversation: ${response.status} ${response.statusText}` }], isError: true };
-    }
-    const data = await response.json().catch(() => ({ success: true, status: 'RESOLVED' }));
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
   private async addConversationTopic(args: Record<string, unknown>): Promise<ToolResult> {
     const conversation_id = args.conversation_id as string;
-    const topics = args.topics as string[];
-    if (!conversation_id || !topics || topics.length === 0) {
-      return { content: [{ type: 'text', text: 'conversation_id and topics are required' }], isError: true };
+    const topic_ids = args.topic_ids as string[];
+    if (!conversation_id || !topic_ids || topic_ids.length === 0) {
+      return { content: [{ type: 'text', text: 'conversation_id and topic_ids are required' }], isError: true };
     }
     const response = await fetch(
       `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/topics`,
-      { method: 'POST', headers: this.headers, body: JSON.stringify({ topics }) },
+      { method: 'POST', headers: this.headers, body: JSON.stringify({ topicIds: topic_ids }) },
     );
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to add topic: ${response.status} ${response.statusText}` }], isError: true };
     }
+    // 204 No Content on success
     const data = await response.json().catch(() => ({ success: true }));
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
@@ -518,7 +460,7 @@ export class GladlyMCPServer {
     const params = new URLSearchParams();
     if (args.limit) params.set('limit', String(args.limit));
     if (args.cursor) params.set('cursor', args.cursor as string);
-    const url = `${this.baseUrl}/customers${params.toString() ? '?' + params.toString() : ''}`;
+    const url = `${this.baseUrl}/customer-profiles${params.toString() ? '?' + params.toString() : ''}`;
     const response = await fetch(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list customers: ${response.status} ${response.statusText}` }], isError: true };
@@ -533,7 +475,7 @@ export class GladlyMCPServer {
       return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     }
     const response = await fetch(
-      `${this.baseUrl}/customers/${encodeURIComponent(customer_id)}`,
+      `${this.baseUrl}/customer-profiles/${encodeURIComponent(customer_id)}`,
       { method: 'GET', headers: this.headers },
     );
     if (!response.ok) {
@@ -549,7 +491,7 @@ export class GladlyMCPServer {
     if (args.email) payload.emails = [{ original: args.email }];
     if (args.phone) payload.phones = [{ original: args.phone }];
     if (args.external_customer_id) payload.externalCustomerId = args.external_customer_id;
-    const response = await fetch(`${this.baseUrl}/customers`, {
+    const response = await fetch(`${this.baseUrl}/customer-profiles`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -572,7 +514,7 @@ export class GladlyMCPServer {
     if (args.phone) payload.phones = [{ original: args.phone }];
     if (args.external_customer_id) payload.externalCustomerId = args.external_customer_id;
     const response = await fetch(
-      `${this.baseUrl}/customers/${encodeURIComponent(customer_id)}`,
+      `${this.baseUrl}/customer-profiles/${encodeURIComponent(customer_id)}`,
       { method: 'PATCH', headers: this.headers, body: JSON.stringify(payload) },
     );
     if (!response.ok) {
@@ -585,12 +527,12 @@ export class GladlyMCPServer {
   private async searchCustomers(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.email) params.set('email', args.email as string);
-    if (args.phone) params.set('phone', args.phone as string);
+    if (args.phone_number) params.set('phoneNumber', args.phone_number as string);
     if (args.external_customer_id) params.set('externalCustomerId', args.external_customer_id as string);
     if (!params.toString()) {
-      return { content: [{ type: 'text', text: 'At least one search parameter (email, phone, or external_customer_id) is required' }], isError: true };
+      return { content: [{ type: 'text', text: 'At least one search parameter (email, phone_number, or external_customer_id) is required' }], isError: true };
     }
-    const url = `${this.baseUrl}/customer-search?${params.toString()}`;
+    const url = `${this.baseUrl}/customer-profiles?${params.toString()}`;
     const response = await fetch(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to search customers: ${response.status} ${response.statusText}` }], isError: true };
@@ -645,7 +587,7 @@ export class GladlyMCPServer {
     }
     const response = await fetch(
       `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/notes`,
-      { method: 'POST', headers: this.headers, body: JSON.stringify({ body }) },
+      { method: 'POST', headers: this.headers, body: JSON.stringify({ content: { body } }) },
     );
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to add note: ${response.status} ${response.statusText}` }], isError: true };

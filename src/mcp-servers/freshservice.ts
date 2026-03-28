@@ -4,9 +4,12 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03. Freshworks has not published an official MCP server
-//   for Freshservice. effytech/freshservice_mcp (community, MIT) exists on GitHub but is not
-//   an official Freshworks product.
+// Official MCP: None found as of 2026-03-28. Freshworks has not published an official MCP server
+//   for Freshservice. Community implementations exist (effytech/freshservice_mcp — community, MIT,
+//   last commit Dec 2025; forterro/freshservice_mcp — community, MIT, 36 tools, stdio + SSE) but
+//   neither is an official Freshworks product. None qualify under the 4-criteria protocol gate.
+// Our adapter covers: 35 tools. Vendor MCP covers: 0 tools (no official server).
+// Recommendation: use-rest-api — no official MCP server exists.
 //
 // Base URL: https://{domain}/api/v2
 //   domain = full Freshservice hostname, e.g. mycompany.freshservice.com
@@ -14,7 +17,8 @@
 //   Authorization: Basic base64("<api_key>:X")
 //   (Username/password Basic auth was deprecated 2023-05-31; API key only.)
 // Docs: https://api.freshservice.com/
-// Rate limits: 1000 req/hour (Starter/Growth); 3000 req/hour (Pro); 5000 req/hour (Enterprise)
+// Rate limits: Starter: 100 req/min overall; Growth: 200 req/min; Pro: 400 req/min; Enterprise: 500 req/min
+//   Per-endpoint sub-limits apply (e.g., Create Ticket: 50/min Starter, 80/min Growth, 140/min Pro).
 
 import { ToolDefinition, ToolResult } from './types.js';
 

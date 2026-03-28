@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official FedEx MCP server was found on GitHub or the FedEx Developer Portal.
+// Official MCP: None found as of 2026-03-28.
+// No official FedEx MCP server published by FedEx was found on GitHub or the FedEx Developer Portal.
+// A "FedEx MCP Server" appears in the Pipedream/awesome-mcp-servers aggregator list but is a
+// Pipedream-hosted connector, not a vendor-published MCP server. Not eligible per protocol criteria.
 //
 // Base URL: https://apis.fedex.com  (production)
 // Auth: OAuth2 client credentials — POST /oauth/token with client_id and client_secret
@@ -699,7 +701,7 @@ export class FedExMCPServer {
     const body = {
       associatedAccountNumber: { value: this.accountNumber },
       originDetail: {
-        readyDateTimestamp: `${encodeURIComponent(args.pickup_date as string)}T${encodeURIComponent(args.ready_time as string)}:00`,
+        readyDateTimestamp: `${args.pickup_date as string}T${args.ready_time as string}:00`,
         customerCloseTime: args.company_close_time,
         pickupLocation: {
           address: {

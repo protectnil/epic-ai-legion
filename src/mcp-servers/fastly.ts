@@ -4,16 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/fastly/mcp — transport: stdio (wraps Fastly CLI), auth: CLI token
-// Our adapter covers: 22 tools (services, versions, domains, backends, purge, stats, ACLs, dictionaries, logging, TLS).
-// Vendor MCP covers: Fastly CLI surface (~100+ operations via CLI wrapping).
-// Recommendation: Use vendor MCP for full CLI surface. Use this adapter for direct REST API access
-//                 without CLI dependency (CI/CD, air-gapped, or minimal-footprint deployments).
+// Official MCP: https://github.com/fastly/mcp — transport: stdio/HTTP/SSE, auth: Fastly CLI token (wraps CLI)
+// Our adapter covers: 22 tools (direct REST API). Vendor MCP covers: 8 tools (CLI wrapper surface).
+// Vendor MCP fails the 10+ tools criterion (exposes only 8 meta-tools: fastly_list_commands,
+//   fastly_describe, fastly_execute, current_time, fastly_result_read, fastly_result_query,
+//   fastly_result_summary, fastly_result_list). Latest release: v0.1.9 (Sep 2025, within 6 months).
+// Recommendation: use-rest-api — vendor MCP wraps CLI with only 8 meta-tools (fails 10+ criterion).
+//   Our REST adapter provides direct, typed API access without CLI dependency.
+//   Note: if CLI-surface breadth is needed for non-CI use cases, supplement with vendor MCP.
 //
 // Base URL: https://api.fastly.com
 // Auth: Fastly-Key header (API token)
 // Docs: https://www.fastly.com/documentation/reference/api/
-// Rate limits: Read (GET/HEAD): 6,000 req/min; Write (POST/PUT/PATCH/DELETE): 1,000 req/hr per token
+// Rate limits: Read (GET/HEAD): 6,000 req/min; Single-URL and surrogate key purges: avg 100,000/hr per customer
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -749,9 +752,11 @@ export class FastlyMCPServer {
 
   private async purgeUrl(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.url) return { content: [{ type: 'text', text: 'url is required' }], isError: true };
+    // Fastly API: POST /purge/{cached_url} on api.fastly.com
+    // The URL path after /purge/ is the full URL to purge (including scheme).
     const headers: Record<string, string> = { ...this.headers };
     if (args.soft) headers['Fastly-Soft-Purge'] = '1';
-    const response = await fetch(args.url as string, { method: 'PURGE', headers });
+    const response = await fetch(`${this.baseUrl}/purge/${encodeURIComponent(args.url as string)}`, { method: 'POST', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Purge error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -761,9 +766,10 @@ export class FastlyMCPServer {
 
   private async purgeSurrogateKey(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.service_id || !args.surrogate_key) return { content: [{ type: 'text', text: 'service_id and surrogate_key are required' }], isError: true };
-    const headers: Record<string, string> = { ...this.headers, 'Surrogate-Key': args.surrogate_key as string };
+    // Fastly API: POST /service/{service_id}/purge/{surrogate_key} for a single key
+    const headers: Record<string, string> = { ...this.headers };
     if (args.soft) headers['Fastly-Soft-Purge'] = '1';
-    const response = await fetch(`${this.baseUrl}/service/${encodeURIComponent(args.service_id as string)}/purge`, { method: 'POST', headers });
+    const response = await fetch(`${this.baseUrl}/service/${encodeURIComponent(args.service_id as string)}/purge/${encodeURIComponent(args.surrogate_key as string)}`, { method: 'POST', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Purge error: ${response.status} ${response.statusText}` }], isError: true };
     }

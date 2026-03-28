@@ -4,15 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Google Ads MCP server was found on GitHub.
+// Official MCP: https://github.com/google-marketing-solutions/google_ads_mcp — transport: stdio, auth: OAuth2 / service account
+// Documented at: https://developers.google.com/google-ads/api/docs/developer-toolkit/mcp-server
+// Last release: v0.6.2 (Feb 26, 2026). Maintained. BUT exposes only 2 tools (list_accessible_customers, search).
+// Fails the 10+ tools criterion — does not meet full coverage threshold.
+// Our adapter covers: 21 tools. Vendor MCP covers: 2 tools.
+// Recommendation: use-rest-api — vendor MCP is read-only and exposes only 2 tools vs our 21. REST adapter is the primary integration.
 //
-// Base URL: https://googleads.googleapis.com/v19
+// Base URL: https://googleads.googleapis.com/v23
 // Auth: OAuth2 (access token via Authorization: Bearer header) + developer token (developer-token header)
 //       + optional login-customer-id header for manager account access
 // Docs: https://developers.google.com/google-ads/api/rest/overview
 // Rate limits: Varies by operation type; see per-method quota documentation.
 //              Standard Access: 15,000 operations/day. Basic Access: higher limits on approval.
+// NOTE: v19 was sunsetted February 2026. This adapter has been updated to v23 (current stable as of 2026-03-28).
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -33,7 +38,7 @@ export class GoogleAdsMCPServer {
     this.accessToken = config.accessToken;
     this.developerToken = config.developerToken;
     this.loginCustomerId = config.loginCustomerId;
-    this.baseUrl = config.baseUrl || 'https://googleads.googleapis.com/v19';
+    this.baseUrl = config.baseUrl || 'https://googleads.googleapis.com/v23';
   }
 
   static catalog() {

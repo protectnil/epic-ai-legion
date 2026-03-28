@@ -4,19 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://www.elastic.co/docs/solutions/search/mcp — Elastic MCP documentation
-//   covers Elasticsearch and Elastic Agent Builder (9.2.0+), not Security-specific tooling.
-//   Community: https://github.com/ggilligan12/kibana-mcp — community MCP for Kibana SecOps
-//   (not vendor-published, maintenance status unknown as of 2026-03).
-//   No official Elastic Security MCP server from Elastic as of 2026-03.
+// Official MCP: https://github.com/elastic/mcp-server-elasticsearch — official Elastic MCP server
+//   (transport: stdio/SSE/streamable-HTTP, auth: API key or Basic). Last release: v0.4.6 Oct 2025.
+//   Tools: list_indices, get_mappings, search, esql, get_shards (5 tools — Elasticsearch only,
+//   no Security detection rules, alerts, cases, or exception list coverage).
+//   Community: https://github.com/ggilligan12/kibana-mcp — Kibana SecOps community MCP
+//   (not vendor-published; maintenance status unknown as of 2026-03-28).
+//   No official Elastic Security MCP server from Elastic as of 2026-03-28.
 // Our adapter: 16 tools covering Kibana Detection Engine, alerts, cases, and exception lists.
-// Recommendation: Use this adapter for SIEM/SOC automation. For raw Elasticsearch queries,
-//   use the elasticsearch adapter.
+// Recommendation: use-rest-api — no official Security MCP server. The Elasticsearch MCP has
+//   5 generic tools with zero Security API coverage. Our REST adapter is the authoritative source.
 //
 // Base URL: https://{kibana-host}:{port}  (self-hosted) or Elastic Cloud Kibana URL
 // Auth: API key — "ApiKey {base64(id:api_key)}" or Basic — "Basic {base64(user:pass)}"
-// Docs: https://www.elastic.co/guide/en/security/8.19/security-apis.html
-//   https://www.elastic.co/docs/api/doc/kibana/group/endpoint-security-detections-api
+// Docs: https://www.elastic.co/docs/api/doc/kibana/group/endpoint-security-detections-api
+//   https://www.elastic.co/docs/api/doc/kibana/group/endpoint-cases
 // Rate limits: Not publicly documented; governed by cluster capacity
 // Note: All mutating requests require kbn-xsrf: true header
 // Note: Space-aware endpoints prefix paths with /s/{spaceId}; default space uses /api/... directly
