@@ -768,7 +768,7 @@ export class DigitalOceanMCPServer {
   private async getApp(args: Record<string, unknown>): Promise<ToolResult> {
     const appId = args.app_id as string;
     if (!appId) return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
-    return this.request(`/apps/${appId}`);
+    return this.request(`/apps/${encodeURIComponent(appId)}`);
   }
 
   private async createAppDeployment(args: Record<string, unknown>): Promise<ToolResult> {
@@ -776,7 +776,7 @@ export class DigitalOceanMCPServer {
     if (!appId) return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (typeof args.force_build === 'boolean') body.force_build = args.force_build;
-    return this.request(`/apps/${appId}/deployments`, { method: 'POST', body: JSON.stringify(body) });
+    return this.request(`/apps/${encodeURIComponent(appId)}/deployments`, { method: 'POST', body: JSON.stringify(body) });
   }
 
   private async listAppDeployments(args: Record<string, unknown>): Promise<ToolResult> {
@@ -784,7 +784,7 @@ export class DigitalOceanMCPServer {
     if (!appId) return { content: [{ type: 'text', text: 'app_id is required' }], isError: true };
     const page = (args.page as number) || 1;
     const perPage = (args.per_page as number) || 20;
-    return this.request(`/apps/${appId}/deployments?page=${page}&per_page=${perPage}`);
+    return this.request(`/apps/${encodeURIComponent(appId)}/deployments?page=${page}&per_page=${perPage}`);
   }
 
   private async listKubernetesClusters(args: Record<string, unknown>): Promise<ToolResult> {
@@ -796,7 +796,7 @@ export class DigitalOceanMCPServer {
   private async getKubernetesCluster(args: Record<string, unknown>): Promise<ToolResult> {
     const clusterId = args.cluster_id as string;
     if (!clusterId) return { content: [{ type: 'text', text: 'cluster_id is required' }], isError: true };
-    return this.request(`/kubernetes/clusters/${clusterId}`);
+    return this.request(`/kubernetes/clusters/${encodeURIComponent(clusterId)}`);
   }
 
   private async listDatabases(args: Record<string, unknown>): Promise<ToolResult> {
@@ -810,7 +810,7 @@ export class DigitalOceanMCPServer {
   private async getDatabaseCluster(args: Record<string, unknown>): Promise<ToolResult> {
     const databaseClusterId = args.database_cluster_id as string;
     if (!databaseClusterId) return { content: [{ type: 'text', text: 'database_cluster_id is required' }], isError: true };
-    return this.request(`/databases/${databaseClusterId}`);
+    return this.request(`/databases/${encodeURIComponent(databaseClusterId)}`);
   }
 
   private async listDomains(args: Record<string, unknown>): Promise<ToolResult> {

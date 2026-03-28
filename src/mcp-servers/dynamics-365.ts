@@ -4,10 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None — no Microsoft-published MCP server for Dynamics 365 CRM/Sales.
-// Community implementations exist (srikanth-paladugula/mcp-dynamics365-server, knowall-ai/mcp-business-central)
-// but none are vendor-published or actively maintained with 10+ tools.
-// microsoft/mcp catalog does not include a Dynamics 365 CRM entry as of 2026-03.
+// Official MCP: https://github.com/microsoft/mcp — Microsoft publishes two relevant MCP servers:
+//   1. Microsoft Dataverse MCP (microsoft/mcp catalog, "Microsoft Dataverse" entry) — transport: Local (stdio),
+//      auth: OAuth2/Microsoft Entra. Supports NL-to-query over business data (discover tables, run queries,
+//      retrieve/insert/update records, execute custom prompts). Tool count: not fully enumerated in public docs;
+//      focused on natural-language data access, not direct OData CRUD operations.
+//   2. Dynamics 365 Sales MCP (learn.microsoft.com/dynamics365/sales) — transport: Remote, auth: Entra/OAuth2.
+//      11 tools: get_lead_research, get_account_research, get_competitor_research, draft_outreach_email,
+//      get_engage_summary, get_lead_qualification_assessment, get_customer_updates, get_sales_record_summary,
+//      get_sales_lead_catchup, get_sales_account_catchup, get_sales_opportunity_catchup.
+//      These are AI-insight/research tools, NOT generic CRUD operations.
+// Decision: use-rest-api — neither vendor MCP covers generic OData CRUD (list/get/create/update/delete records,
+//   FetchXML queries) across arbitrary entity sets. Our adapter provides the direct CRUD surface that the
+//   vendor MCPs do not expose. Dataverse MCP is NL-over-data; Sales MCP is sales-insights only.
+//   Our adapter: 15 tools (direct OData CRUD + FetchXML). MCP-only: 11 sales-insight tools (no overlap).
+//   API-only: all 15 of our tools.
+// Our adapter covers: 15 tools. Vendor Dataverse MCP: undocumented tool count. Sales MCP: 11 insight tools.
 //
 // Base URL: https://{org}.crm.dynamics.com/api/data/v9.2
 // Regional variants: crm.dynamics.com (NA), crm4 (EU), crm5 (APAC), crm6 (OCE),
