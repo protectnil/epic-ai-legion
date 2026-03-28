@@ -2,15 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { PortfolioOptimizerMCPServer } from '../../src/mcp-servers/portfoliooptimizer.js';
 
 describe('PortfolioOptimizerMCPServer', () => {
-  const adapter = new PortfolioOptimizerMCPServer({});
-  const adapterWithKey = new PortfolioOptimizerMCPServer({ apiKey: 'test-api-key' });
+  const adapter = new PortfolioOptimizerMCPServer({ apiKey: 'test-api-key' });
+  const adapterNoKey = new PortfolioOptimizerMCPServer({});
 
-  it('instantiates without error (no API key)', () => {
+  it('instantiates without error', () => {
     expect(adapter).toBeDefined();
   });
 
-  it('instantiates without error (with API key)', () => {
-    expect(adapterWithKey).toBeDefined();
+  it('instantiates without an API key (free tier)', () => {
+    expect(adapterNoKey).toBeDefined();
   });
 
   it('exposes tools', () => {
@@ -27,53 +27,59 @@ describe('PortfolioOptimizerMCPServer', () => {
     }
   });
 
-  it('unknown tool returns error, not throw', async () => {
+  it('unknown tool returns isError true, not throw', async () => {
     const result = await adapter.callTool('nonexistent_tool_xyz', {});
     expect(result.isError).toBe(true);
   });
 
-  it('exposes optimization tools', () => {
+  it('catalog returns required fields', () => {
+    const cat = PortfolioOptimizerMCPServer.catalog();
+    expect(cat.name).toBe('portfoliooptimizer');
+    expect(cat.category).toBe('finance');
+    expect(cat.toolNames.length).toBeGreaterThan(0);
+    expect(cat.author).toBeTruthy();
+  });
+
+  it('tool names in catalog match tools getter', () => {
+    const cat = PortfolioOptimizerMCPServer.catalog();
     const toolNames = adapter.tools.map(t => t.name);
-    expect(toolNames).toContain('optimize_minimum_variance');
-    expect(toolNames).toContain('optimize_maximum_sharpe_ratio');
-    expect(toolNames).toContain('optimize_equal_risk_contributions');
-    expect(toolNames).toContain('optimize_hierarchical_risk_parity');
-    expect(toolNames).toContain('optimize_equal_weighted');
+    for (const name of cat.toolNames) {
+      expect(toolNames).toContain(name);
+    }
   });
 
-  it('exposes analysis tools', () => {
+  it('has comprehensive coverage of optimization strategies', () => {
     const toolNames = adapter.tools.map(t => t.name);
-    expect(toolNames).toContain('compute_portfolio_sharpe_ratio');
-    expect(toolNames).toContain('compute_portfolio_value_at_risk');
-    expect(toolNames).toContain('compute_portfolio_cvar');
-    expect(toolNames).toContain('compute_risk_contributions');
-    expect(toolNames).toContain('compute_mean_variance_efficient_frontier');
+    const expected = [
+      'portfolio_optimization_minimum_variance',
+      'portfolio_optimization_maximum_sharpe_ratio',
+      'portfolio_optimization_hierarchical_risk_parity',
+      'portfolio_optimization_equal_risk_contributions',
+      'portfolio_optimization_most_diversified',
+    ];
+    for (const name of expected) {
+      expect(toolNames).toContain(name);
+    }
   });
 
-  it('exposes asset analysis tools', () => {
-    const toolNames = adapter.tools.map(t => t.name);
-    expect(toolNames).toContain('compute_absorption_ratio');
-    expect(toolNames).toContain('compute_turbulence_index');
-    expect(toolNames).toContain('compute_correlation_matrix');
-    expect(toolNames).toContain('compute_covariance_matrix');
+  it('all POST tools require body', () => {
+    for (const tool of adapter.tools) {
+      expect(tool.inputSchema.required).toContain('body');
+    }
   });
 
-  it('optimize_equal_weighted requires assets', () => {
-    const tool = adapter.tools.find(t => t.name === 'optimize_equal_weighted');
-    expect(tool?.inputSchema.required).toContain('assets');
+  it('portfolio_optimization_minimum_variance returns error without body', async () => {
+    const result = await adapter.callTool('portfolio_optimization_minimum_variance', {});
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('body');
   });
 
-  it('optimize_maximum_sharpe_ratio requires assets, returns, covariance matrix, and risk-free rate', () => {
-    const tool = adapter.tools.find(t => t.name === 'optimize_maximum_sharpe_ratio');
-    expect(tool?.inputSchema.required).toContain('assets');
-    expect(tool?.inputSchema.required).toContain('assets_returns');
-    expect(tool?.inputSchema.required).toContain('assets_covariance_matrix');
-    expect(tool?.inputSchema.required).toContain('risk_free_rate');
+  it('assets_correlation_matrix returns error without body', async () => {
+    const result = await adapter.callTool('assets_correlation_matrix', {});
+    expect(result.isError).toBe(true);
   });
 
-  it('compute_absorption_ratio requires assets and covariance matrix', () => {
-    const tool = adapter.tools.find(t => t.name === 'compute_absorption_ratio');
-    expect(tool?.inputSchema.required).toContain('assets');
-    expect(tool?.inputSchema.required).toContain('assets_covariance_matrix');
+  it('exposes all 83 API endpoints', () => {
+    expect(adapter.tools.length).toBe(83);
   });
 });

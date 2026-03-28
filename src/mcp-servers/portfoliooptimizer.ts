@@ -5,21 +5,20 @@
  */
 
 // Official MCP: None found as of 2026-03
-// No official Portfolio Optimizer MCP server was found on GitHub or the vendor site.
+// No official Portfolio Optimizer MCP server was found on GitHub. We build a full REST wrapper
+// for complete API coverage.
 //
 // Base URL: https://api.portfoliooptimizer.io/v1
-// Auth: X-API-Key header (optional; API key required only for higher rate limits)
+// Auth: API key header (X-API-Key)
 // Docs: https://portfoliooptimizer.io/api/
-// Rate limits: Without API key: 1 req/second, 10 req/min. With key: higher limits per tier.
-// Note: All endpoints are HTTP POST with JSON request bodies. Computationally intensive —
-//       pass numeric arrays for assets, covariance matrices, and return series.
+// Spec: https://api.apis.guru/v2/specs/portfoliooptimizer.io/1.0.9/openapi.json
+// Category: finance
+// Rate limits: See portfoliooptimizer.io pricing — free tier included
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface PortfolioOptimizerConfig {
-  /** Optional Portfolio Optimizer API key (X-API-Key header) for higher rate limits */
   apiKey?: string;
-  /** Optional base URL override (default: https://api.portfoliooptimizer.io/v1) */
   baseUrl?: string;
 }
 
@@ -29,7 +28,7 @@ export class PortfolioOptimizerMCPServer {
 
   constructor(config: PortfolioOptimizerConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl ?? 'https://api.portfoliooptimizer.io/v1';
+    this.baseUrl = config.baseUrl || 'https://api.portfoliooptimizer.io/v1';
   }
 
   static catalog() {
@@ -39,476 +38,1032 @@ export class PortfolioOptimizerMCPServer {
       version: '1.0.0',
       category: 'finance',
       keywords: [
-        'portfoliooptimizer', 'portfolio', 'optimization', 'finance', 'investment',
-        'mean variance', 'sharpe ratio', 'risk', 'covariance', 'correlation',
-        'minimum variance', 'maximum return', 'diversification', 'rebalancing',
-        'risk parity', 'hierarchical', 'efficient frontier', 'volatility',
-        'value at risk', 'cvar', 'drawdown', 'alpha', 'beta', 'tracking error',
-        'equal weight', 'market cap', 'assets', 'returns', 'simulation',
+        'portfolio', 'optimization', 'finance', 'investment', 'asset allocation',
+        'mean-variance', 'sharpe ratio', 'risk', 'return', 'covariance', 'correlation',
+        'efficient frontier', 'rebalancing', 'diversification', 'volatility',
+        'portfolio analysis', 'quant', 'factor', 'minimum variance', 'maximum return',
       ],
       toolNames: [
-        'compute_absorption_ratio',
-        'compute_turbulence_index',
-        'compute_correlation_matrix',
-        'compute_denoised_correlation_matrix',
-        'compute_covariance_matrix',
-        'compute_asset_returns',
-        'compute_asset_volatility',
-        'compute_asset_variance',
-        'compute_portfolio_return',
-        'compute_portfolio_volatility',
-        'compute_portfolio_sharpe_ratio',
-        'compute_portfolio_value_at_risk',
-        'compute_portfolio_cvar',
-        'compute_portfolio_drawdowns',
-        'compute_portfolio_alpha',
-        'compute_portfolio_beta',
-        'compute_portfolio_tracking_error',
-        'compute_risk_contributions',
-        'compute_return_contributions',
-        'compute_mean_variance_efficient_frontier',
-        'optimize_equal_weighted',
-        'optimize_equal_risk_contributions',
-        'optimize_minimum_variance',
-        'optimize_maximum_sharpe_ratio',
-        'optimize_maximum_return',
-        'optimize_hierarchical_risk_parity',
-        'optimize_equal_volatility_weighted',
-        'optimize_inverse_variance_weighted',
-        'optimize_market_cap_weighted',
-        'optimize_most_diversified',
-        'optimize_mean_variance_efficient',
-        'simulate_portfolio_rebalancing',
-        'construct_random_portfolio',
+        // Assets - Analysis
+        'assets_absorption_ratio',
+        'assets_turbulence_index',
+        // Assets - Correlation
+        'assets_correlation_matrix',
+        'assets_correlation_matrix_bounds',
+        'assets_correlation_matrix_denoised',
+        'assets_correlation_matrix_distance',
+        'assets_correlation_matrix_effective_rank',
+        'assets_correlation_matrix_informativeness',
+        'assets_correlation_matrix_nearest',
+        'assets_correlation_matrix_random',
+        'assets_correlation_matrix_shrinkage',
+        'assets_correlation_matrix_theory_implied',
+        'assets_correlation_matrix_validation',
+        // Assets - Covariance
+        'assets_covariance_matrix',
+        'assets_covariance_matrix_effective_rank',
+        'assets_covariance_matrix_ewma',
+        'assets_covariance_matrix_validation',
+        // Assets - Statistics
+        'assets_kurtosis',
+        'assets_prices_adjusted',
+        'assets_prices_adjusted_forward',
+        'assets_returns',
+        'assets_returns_average',
+        'assets_returns_simulation_bootstrap',
+        'assets_skewness',
+        'assets_variance',
+        'assets_volatility',
+        // Factors
+        'factors_residualization',
+        // Portfolio - Analysis
+        'portfolio_analysis_alpha',
+        'portfolio_analysis_beta',
+        'portfolio_analysis_cvar',
+        'portfolio_analysis_contributions_return',
+        'portfolio_analysis_contributions_risk',
+        'portfolio_analysis_correlation_spectrum',
+        'portfolio_analysis_diversification_ratio',
+        'portfolio_analysis_drawdowns',
+        'portfolio_analysis_effective_number_of_bets',
+        'portfolio_analysis_factor_exposures',
+        'portfolio_analysis_efficient_frontier',
+        'portfolio_analysis_minimum_variance_frontier',
+        'portfolio_analysis_return',
+        'portfolio_analysis_returns_average',
+        'portfolio_analysis_sharpe_ratio',
+        'portfolio_analysis_sharpe_ratio_bias_adjusted',
+        'portfolio_analysis_sharpe_ratio_confidence_interval',
+        'portfolio_analysis_sharpe_ratio_probabilistic',
+        'portfolio_analysis_sharpe_ratio_minimum_track_record_length',
+        'portfolio_analysis_tracking_error',
+        'portfolio_analysis_ulcer_index',
+        'portfolio_analysis_ulcer_performance_index',
+        'portfolio_analysis_var',
+        'portfolio_analysis_volatility',
+        // Portfolio - Construction
+        'portfolio_construction_investable',
+        'portfolio_construction_mimicking',
+        'portfolio_construction_random',
+        // Portfolio - Optimization
+        'portfolio_optimization_equal_risk_contributions',
+        'portfolio_optimization_equal_sharpe_ratio_contributions',
+        'portfolio_optimization_equal_volatility_weighted',
+        'portfolio_optimization_equal_weighted',
+        'portfolio_optimization_hierarchical_risk_parity',
+        'portfolio_optimization_hierarchical_risk_parity_clustering',
+        'portfolio_optimization_inverse_variance_weighted',
+        'portfolio_optimization_inverse_volatility_weighted',
+        'portfolio_optimization_market_cap_weighted',
+        'portfolio_optimization_maximum_decorrelation',
+        'portfolio_optimization_maximum_return',
+        'portfolio_optimization_maximum_return_diversified',
+        'portfolio_optimization_maximum_return_subset_resampling',
+        'portfolio_optimization_maximum_sharpe_ratio',
+        'portfolio_optimization_maximum_sharpe_ratio_diversified',
+        'portfolio_optimization_maximum_sharpe_ratio_subset_resampling',
+        'portfolio_optimization_maximum_ulcer_performance_index',
+        'portfolio_optimization_mean_variance_efficient',
+        'portfolio_optimization_mean_variance_efficient_diversified',
+        'portfolio_optimization_mean_variance_efficient_subset_resampling',
+        'portfolio_optimization_minimum_correlation',
+        'portfolio_optimization_minimum_ulcer_index',
+        'portfolio_optimization_minimum_variance',
+        'portfolio_optimization_minimum_variance_diversified',
+        'portfolio_optimization_minimum_variance_subset_resampling',
+        'portfolio_optimization_most_diversified',
+        // Portfolio - Simulation
+        'portfolio_simulation_drift_weight_rebalancing',
+        'portfolio_simulation_fixed_weight_rebalancing',
+        'portfolio_simulation_random_weight_rebalancing',
       ],
-      description: 'Quantitative portfolio optimization and analysis: mean-variance optimization, risk parity, Sharpe ratio, VaR, CVaR, correlation/covariance matrices, efficient frontier, and portfolio simulation.',
+      description: 'Portfolio Optimizer API: quantitative portfolio analysis, optimization (mean-variance, Sharpe ratio, risk parity, hierarchical risk parity, and more), asset statistics (covariance, correlation, returns), and portfolio simulation/rebalancing.',
       author: 'protectnil',
     };
   }
 
   get tools(): ToolDefinition[] {
     return [
-      // ── Assets / Analysis ─────────────────────────────────────────────────
+      // ── Assets / Analysis ──────────────────────────────────────────────────
       {
-        name: 'compute_absorption_ratio',
-        description: 'Compute the absorption ratio for a universe of assets using a covariance matrix to measure systemic risk concentration',
+        name: 'assets_absorption_ratio',
+        description: 'Compute the absorption ratio for a set of assets — measures systemic risk by quantifying how much variance is explained by a small number of eigenvectors',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets in the universe (integer >= 2)' },
-            assets_covariance_matrix: {
-              type: 'array',
-              description: 'NxN covariance matrix as nested arrays: assets_covariance_matrix[i][j] = covariance between asset i and j',
-            },
-            eigenvectors_retained: { type: 'number', description: 'Number of eigenvectors to retain in the numerator; defaults to 1/5 of asset count' },
+            body: { type: 'object', description: 'Request body: assets (integer), assetsCovarianceMatrix (2D array)' },
           },
-          required: ['assets', 'assets_covariance_matrix'],
+          required: ['body'],
         },
       },
       {
-        name: 'compute_turbulence_index',
-        description: 'Compute the Mahalanobis distance turbulence index for a set of asset returns to detect market stress',
+        name: 'assets_turbulence_index',
+        description: 'Compute the turbulence index for assets — measures how unusual current asset returns are relative to historical patterns',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            assets_average_returns: { type: 'array', description: 'Array of average returns per asset (length N)' },
-            assets_returns: { type: 'array', description: 'Array of current period returns per asset (length N)' },
+            body: { type: 'object', description: 'Request body: assets, assetsAverageReturns (array), assetsCovarianceMatrix (2D array), assetsReturns (array)' },
           },
-          required: ['assets', 'assets_covariance_matrix', 'assets_average_returns', 'assets_returns'],
+          required: ['body'],
         },
       },
-
-      // ── Assets / Correlation & Covariance ─────────────────────────────────
+      // ── Assets / Correlation ────────────────────────────────────────────────
       {
-        name: 'compute_correlation_matrix',
-        description: 'Compute the Pearson correlation matrix from asset returns time series, with optional shrinkage or factor model',
+        name: 'assets_correlation_matrix',
+        description: 'Compute the sample correlation matrix for a set of assets from historical returns',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'array', description: 'Array of asset return series objects, each with a returns array' },
-            computation_method: { type: 'string', description: 'Computation method: pearson (default), spearman, kendall' },
+            body: { type: 'object', description: 'Request body: assets array with assetReturns arrays, OR assets count + assetsReturns matrix' },
           },
+          required: ['body'],
         },
       },
       {
-        name: 'compute_denoised_correlation_matrix',
-        description: 'Compute a denoised correlation matrix using random matrix theory to remove noise from financial data',
+        name: 'assets_correlation_matrix_bounds',
+        description: 'Compute lower and upper bounds of a correlation matrix given a partial set of known correlations',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_correlation_matrix: { type: 'array', description: 'NxN correlation matrix as nested arrays' },
-            assets_correlation_matrix_aspect_ratio: { type: 'number', description: 'Aspect ratio T/N where T = number of observations, N = number of assets' },
-            denoising_method: { type: 'string', description: 'Denoising method: eigenvalue-clipping (default), targeted-shrinkage' },
+            body: { type: 'object', description: 'Request body: assets (integer), assetsCorrelationMatrix (partial 2D array with nulls)' },
           },
-          required: ['assets', 'assets_correlation_matrix', 'assets_correlation_matrix_aspect_ratio'],
+          required: ['body'],
         },
       },
       {
-        name: 'compute_covariance_matrix',
-        description: 'Compute the covariance matrix from asset return time series, with optional shrinkage or exponential weighting',
+        name: 'assets_correlation_matrix_denoised',
+        description: 'Compute a denoised correlation matrix using random matrix theory to remove noise from the empirical correlation matrix',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'array', description: 'Array of asset objects, each with a returns array (time series)' },
-            computation_method: { type: 'string', description: 'Method: covariance (default), shrinkage-ledoit-wolf, shrinkage-oracle-approximating' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array)' },
           },
-        },
-      },
-
-      // ── Assets / Returns & Statistics ─────────────────────────────────────
-      {
-        name: 'compute_asset_returns',
-        description: 'Compute arithmetic or logarithmic returns from asset price time series',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            assets: { type: 'array', description: 'Array of asset objects, each with a prices array (price time series)' },
-            returns_type: { type: 'string', description: 'Returns type: arithmetic (default), logarithmic' },
-          },
-          required: ['assets'],
+          required: ['body'],
         },
       },
       {
-        name: 'compute_asset_volatility',
-        description: 'Compute annualized volatility (standard deviation of returns) for each asset from a return series',
+        name: 'assets_correlation_matrix_distance',
+        description: 'Compute a distance matrix from a correlation matrix, useful for hierarchical clustering of assets',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'array', description: 'Array of asset objects, each with a returns array' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array)' },
           },
+          required: ['body'],
         },
       },
       {
-        name: 'compute_asset_variance',
-        description: 'Compute variance of returns for each asset from a return series or covariance matrix diagonal',
+        name: 'assets_correlation_matrix_effective_rank',
+        description: 'Compute the effective rank of a correlation matrix — measures diversification potential across assets',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'array', description: 'Array of asset objects, each with a returns array' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array)' },
           },
-        },
-      },
-
-      // ── Portfolio Analysis ─────────────────────────────────────────────────
-      {
-        name: 'compute_portfolio_return',
-        description: 'Compute arithmetic return of one or more portfolios from asset weights and asset returns',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects, each with assets array (weights and returns)' },
-          },
+          required: ['body'],
         },
       },
       {
-        name: 'compute_portfolio_volatility',
-        description: 'Compute portfolio volatility (annualized standard deviation) from weights and covariance matrix',
+        name: 'assets_correlation_matrix_informativeness',
+        description: 'Compute the informativeness of a correlation matrix — quantifies how much information it contains relative to the identity matrix',
         inputSchema: {
           type: 'object',
           properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects, each with assets array and covariance matrix' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array)' },
           },
+          required: ['body'],
         },
       },
       {
-        name: 'compute_portfolio_sharpe_ratio',
-        description: 'Compute Sharpe ratio for one or more portfolios given asset weights, returns, and a risk-free rate',
+        name: 'assets_correlation_matrix_nearest',
+        description: 'Compute the nearest valid (positive semi-definite) correlation matrix to a given non-PSD matrix',
         inputSchema: {
           type: 'object',
           properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects with weights and return series' },
-            risk_free_rate: { type: 'number', description: 'Risk-free rate (annualized, e.g. 0.02 = 2%)' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array that may not be PSD)' },
           },
+          required: ['body'],
         },
       },
       {
-        name: 'compute_portfolio_value_at_risk',
-        description: 'Compute Value at Risk (VaR) for portfolios at a given confidence level from historical returns',
+        name: 'assets_correlation_matrix_random',
+        description: 'Generate a random valid correlation matrix with specified number of assets',
         inputSchema: {
           type: 'object',
           properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects with weights and return series' },
-            alpha: { type: 'number', description: 'VaR confidence level (e.g. 0.05 for 95% VaR, 0.01 for 99% VaR)' },
+            body: { type: 'object', description: 'Request body: assets (integer, minimum 2)' },
           },
-          required: ['portfolios', 'alpha'],
+          required: ['body'],
         },
       },
       {
-        name: 'compute_portfolio_cvar',
-        description: 'Compute Conditional Value at Risk (CVaR / Expected Shortfall) for portfolios at a given confidence level',
+        name: 'assets_correlation_matrix_shrinkage',
+        description: 'Apply shrinkage to a sample correlation matrix to improve estimation accuracy (Ledoit-Wolf or Oracle estimator)',
         inputSchema: {
           type: 'object',
           properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects with weights and return series' },
-            alpha: { type: 'number', description: 'CVaR confidence level (e.g. 0.05 for 95% CVaR)' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array), optional shrinkage parameters' },
           },
-          required: ['portfolios', 'alpha'],
+          required: ['body'],
         },
       },
       {
-        name: 'compute_portfolio_drawdowns',
-        description: 'Compute maximum drawdown and drawdown series for portfolios from portfolio return time series',
+        name: 'assets_correlation_matrix_theory_implied',
+        description: 'Compute a theory-implied correlation matrix based on a hierarchical tree structure of assets',
         inputSchema: {
           type: 'object',
           properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects, each with a portfolioReturns array (time series)' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array), assetsClustersHierarchyTree' },
           },
-          required: ['portfolios'],
+          required: ['body'],
         },
       },
       {
-        name: 'compute_portfolio_alpha',
-        description: 'Compute Jensen alpha for a portfolio relative to a benchmark from return series',
+        name: 'assets_correlation_matrix_validation',
+        description: 'Validate whether a given matrix is a valid correlation matrix (symmetric, diagonal 1s, all entries in [-1,1], PSD)',
         inputSchema: {
           type: 'object',
           properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects with returns and benchmark returns' },
-            risk_free_rate: { type: 'number', description: 'Risk-free rate (annualized)' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array)' },
           },
+          required: ['body'],
+        },
+      },
+      // ── Assets / Covariance ─────────────────────────────────────────────────
+      {
+        name: 'assets_covariance_matrix',
+        description: 'Compute the sample covariance matrix for a set of assets from historical returns',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets array with assetReturns, OR assets count + assetsReturns matrix' },
+          },
+          required: ['body'],
         },
       },
       {
-        name: 'compute_portfolio_beta',
-        description: 'Compute portfolio beta relative to a market benchmark from return time series',
+        name: 'assets_covariance_matrix_effective_rank',
+        description: 'Compute the effective rank of an assets covariance matrix',
         inputSchema: {
           type: 'object',
           properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects with returns' },
-            benchmark_returns: { type: 'array', description: 'Benchmark return series array (same length as portfolio returns)' },
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array)' },
           },
+          required: ['body'],
         },
       },
       {
-        name: 'compute_portfolio_tracking_error',
-        description: 'Compute tracking error (annualized standard deviation of excess returns) vs. a benchmark',
+        name: 'assets_covariance_matrix_ewma',
+        description: 'Compute an exponentially weighted moving average (EWMA) covariance matrix, giving more weight to recent observations',
         inputSchema: {
           type: 'object',
           properties: {
-            portfolios: { type: 'array', description: 'Array of portfolio objects with weight and return series' },
-            benchmark_returns: { type: 'array', description: 'Benchmark return series: benchmarkReturns[t] is return at time t' },
+            body: { type: 'object', description: 'Request body: assets array with assetReturns, optional decayFactor (lambda)' },
           },
-          required: ['portfolios', 'benchmark_returns'],
+          required: ['body'],
         },
       },
       {
-        name: 'compute_risk_contributions',
-        description: 'Compute marginal and percentage risk contributions of each asset to total portfolio risk',
+        name: 'assets_covariance_matrix_validation',
+        description: 'Validate whether a given matrix is a valid covariance matrix (symmetric, positive semi-definite)',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            portfolios: { type: 'array', description: 'Array of portfolio objects with asset weights' },
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array)' },
           },
-          required: ['assets', 'assets_covariance_matrix', 'portfolios'],
+          required: ['body'],
+        },
+      },
+      // ── Assets / Statistics ─────────────────────────────────────────────────
+      {
+        name: 'assets_kurtosis',
+        description: 'Compute the excess kurtosis of asset returns — measures fat-tail risk',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets array with assetReturns arrays' },
+          },
+          required: ['body'],
         },
       },
       {
-        name: 'compute_return_contributions',
-        description: 'Compute the return contribution of each asset position to total portfolio return',
+        name: 'assets_prices_adjusted',
+        description: 'Compute split- and dividend-adjusted asset prices from raw prices and corporate actions',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_returns: { type: 'array', description: 'Array of asset arithmetic returns (length N)' },
-            portfolios: { type: 'array', description: 'Array of portfolio objects with asset weights' },
+            body: { type: 'object', description: 'Request body: assets array with assetDividends, assetSplits, assetPrices arrays' },
           },
-          required: ['assets', 'assets_returns', 'portfolios'],
+          required: ['body'],
         },
       },
       {
-        name: 'compute_mean_variance_efficient_frontier',
-        description: 'Compute the mean-variance efficient frontier as a set of optimal risk-return portfolios',
+        name: 'assets_prices_adjusted_forward',
+        description: 'Compute forward-adjusted asset prices, anchored to the most recent price',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_returns: { type: 'array', description: 'Expected return for each asset (length N)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            portfolios: { type: 'number', description: 'Number of portfolios to compute on the frontier (default: 100)' },
-            constraints: { type: 'object', description: 'Optional weight constraints object (e.g. assetsWeights min/max bounds)' },
+            body: { type: 'object', description: 'Request body: assets array with assetDividends, assetSplits, assetPrices arrays' },
           },
-          required: ['assets', 'assets_returns', 'assets_covariance_matrix'],
-        },
-      },
-
-      // ── Portfolio Optimization ─────────────────────────────────────────────
-      {
-        name: 'optimize_equal_weighted',
-        description: 'Compute the equal-weighted (1/N) portfolio for a given number of assets',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 1)' },
-          },
-          required: ['assets'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_equal_risk_contributions',
-        description: 'Compute the equal risk contributions (risk parity) portfolio from a covariance matrix',
+        name: 'assets_returns',
+        description: 'Compute arithmetic (simple) returns from a time series of asset prices',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            constraints: { type: 'object', description: 'Optional weight constraints (min/max per asset or group)' },
+            body: { type: 'object', description: 'Request body: assets array with assetPrices arrays' },
           },
-          required: ['assets', 'assets_covariance_matrix'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_minimum_variance',
-        description: 'Compute the global minimum variance portfolio from a covariance matrix with optional constraints',
+        name: 'assets_returns_average',
+        description: 'Compute the arithmetic average return for each asset over a historical period',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            assets_returns: { type: 'array', description: 'Optional expected returns array (length N) for constrained optimization' },
-            constraints: { type: 'object', description: 'Optional weight constraints object' },
+            body: { type: 'object', description: 'Request body: assets array with assetReturns arrays' },
           },
-          required: ['assets', 'assets_covariance_matrix'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_maximum_sharpe_ratio',
-        description: 'Compute the maximum Sharpe ratio (tangency) portfolio from returns, covariance matrix, and risk-free rate',
+        name: 'assets_returns_simulation_bootstrap',
+        description: 'Simulate future asset returns using bootstrap resampling from historical returns',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_returns: { type: 'array', description: 'Expected return for each asset (length N)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            risk_free_rate: { type: 'number', description: 'Risk-free rate (e.g. 0.02 for 2%)' },
-            constraints: { type: 'object', description: 'Optional weight constraints object' },
+            body: { type: 'object', description: 'Request body: assets array with assetReturns, simulationsCount, simulationLength' },
           },
-          required: ['assets', 'assets_returns', 'assets_covariance_matrix', 'risk_free_rate'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_maximum_return',
-        description: 'Compute the maximum return portfolio given expected returns and optional volatility or weight constraints',
+        name: 'assets_skewness',
+        description: 'Compute the skewness of asset returns — measures asymmetry of the return distribution',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_returns: { type: 'array', description: 'Expected return for each asset (length N)' },
-            assets_covariance_matrix: { type: 'array', description: 'Optional NxN covariance matrix for variance constraints' },
-            constraints: { type: 'object', description: 'Optional weight or risk constraints object' },
+            body: { type: 'object', description: 'Request body: assets array with assetReturns arrays' },
           },
-          required: ['assets', 'assets_returns'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_hierarchical_risk_parity',
-        description: 'Compute the Hierarchical Risk Parity (HRP) portfolio using hierarchical clustering on a covariance matrix',
+        name: 'assets_variance',
+        description: 'Compute the variance of asset returns',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            clustering_method: { type: 'string', description: 'Hierarchical clustering linkage: ward (default), single, complete, average' },
-            clustering_ordering: { type: 'string', description: 'Leaf ordering method: optimal (default), inverse' },
-            constraints: { type: 'object', description: 'Optional weight constraints object' },
+            body: { type: 'object', description: 'Request body: assets array with assetReturns arrays' },
           },
-          required: ['assets', 'assets_covariance_matrix'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_equal_volatility_weighted',
-        description: 'Compute equal volatility weighted portfolio from per-asset volatilities (inverse-vol scaled to equal vol)',
+        name: 'assets_volatility',
+        description: 'Compute the volatility (standard deviation) of asset returns',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_volatilities: { type: 'array', description: 'Array of per-asset volatilities (length N)' },
+            body: { type: 'object', description: 'Request body: assets array with assetReturns arrays' },
           },
-          required: ['assets', 'assets_volatilities'],
+          required: ['body'],
+        },
+      },
+      // ── Factors ─────────────────────────────────────────────────────────────
+      {
+        name: 'factors_residualization',
+        description: 'Residualize asset returns against factor returns to remove systematic factor exposures',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets array with assetReturns, factors array with factorReturns' },
+          },
+          required: ['body'],
+        },
+      },
+      // ── Portfolio / Analysis ────────────────────────────────────────────────
+      {
+        name: 'portfolio_analysis_alpha',
+        description: 'Compute the portfolio alpha (excess return over a benchmark) using a factor model',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), benchmarkReturns (array)' },
+          },
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_inverse_variance_weighted',
-        description: 'Compute inverse variance weighted portfolio allocating proportionally to 1/variance per asset',
+        name: 'portfolio_analysis_beta',
+        description: 'Compute the portfolio beta (sensitivity to benchmark movements)',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_variances: { type: 'array', description: 'Array of per-asset variances (length N)' },
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), benchmarkReturns (array)' },
           },
-          required: ['assets', 'assets_variances'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_market_cap_weighted',
-        description: 'Compute market capitalization weighted portfolio from per-asset market capitalizations',
+        name: 'portfolio_analysis_cvar',
+        description: 'Compute the Conditional Value at Risk (CVaR / Expected Shortfall) of a portfolio',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_market_capitalizations: { type: 'array', description: 'Array of market capitalizations per asset (length N)' },
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), confidenceLevel (number, e.g. 0.95)' },
           },
-          required: ['assets', 'assets_market_capitalizations'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_most_diversified',
-        description: 'Compute the most diversified portfolio maximizing the diversification ratio from a covariance matrix',
+        name: 'portfolio_analysis_contributions_return',
+        description: 'Compute the return contribution of each asset in a portfolio',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            constraints: { type: 'object', description: 'Optional weight constraints object' },
+            body: { type: 'object', description: 'Request body: assets, assetsReturns (array), assetsWeights (array)' },
           },
-          required: ['assets', 'assets_covariance_matrix'],
+          required: ['body'],
         },
       },
       {
-        name: 'optimize_mean_variance_efficient',
-        description: 'Compute a mean-variance efficient portfolio satisfying specific return or risk constraints',
+        name: 'portfolio_analysis_contributions_risk',
+        description: 'Compute the risk contribution of each asset in a portfolio (marginal risk contribution)',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            assets_returns: { type: 'array', description: 'Expected return for each asset (length N)' },
-            assets_covariance_matrix: { type: 'array', description: 'NxN covariance matrix as nested arrays' },
-            constraints: { type: 'object', description: 'Constraints object specifying target return, risk, or weight bounds' },
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array), assetsWeights (array)' },
           },
-          required: ['assets', 'assets_returns', 'assets_covariance_matrix', 'constraints'],
+          required: ['body'],
         },
       },
-
-      // ── Portfolio Simulation ───────────────────────────────────────────────
       {
-        name: 'simulate_portfolio_rebalancing',
-        description: 'Simulate fixed-weight or drift-weight portfolio rebalancing over time from asset return series',
+        name: 'portfolio_analysis_correlation_spectrum',
+        description: 'Compute the correlation spectrum of a portfolio — eigenvalue distribution of the correlation matrix',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'array', description: 'Array of asset objects with return series' },
-            portfolios: { type: 'array', description: 'Array of portfolio objects specifying initial weights and rebalancing schedule' },
-            rebalancing_type: { type: 'string', description: 'Rebalancing type: fixed-weight (periodic), drift-weight (buy-and-hold), random-weight' },
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array)' },
           },
-          required: ['assets', 'portfolios'],
+          required: ['body'],
         },
       },
-
-      // ── Portfolio Construction ─────────────────────────────────────────────
       {
-        name: 'construct_random_portfolio',
-        description: 'Generate random portfolios uniformly distributed on the simplex, useful for Monte Carlo analysis',
+        name: 'portfolio_analysis_diversification_ratio',
+        description: 'Compute the diversification ratio of a portfolio — ratio of weighted average volatility to portfolio volatility',
         inputSchema: {
           type: 'object',
           properties: {
-            assets: { type: 'number', description: 'Number of assets (integer >= 2)' },
-            portfolios: { type: 'number', description: 'Number of random portfolios to generate (default: 1)' },
-            constraints: { type: 'object', description: 'Optional weight constraints (min/max bounds per asset)' },
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array), assetsWeights (array)' },
           },
-          required: ['assets'],
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_drawdowns',
+        description: 'Compute the drawdowns (peak-to-trough losses) of a portfolio over time',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioValues (array of portfolio value over time)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_effective_number_of_bets',
+        description: 'Compute the effective number of independent bets in a portfolio — measures true diversification',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array), assetsWeights (array)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_factor_exposures',
+        description: 'Compute the factor exposures (betas) of a portfolio to a set of risk factors',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), factors array with factorReturns' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_efficient_frontier',
+        description: 'Compute the mean-variance efficient frontier — set of portfolios maximizing return for each level of risk',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns (array), assetsCovarianceMatrix (2D array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_minimum_variance_frontier',
+        description: 'Compute the minimum variance frontier — set of portfolios with minimum variance for each level of return',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_return',
+        description: 'Compute the arithmetic return of a portfolio given asset weights and returns',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns (array), assetsWeights (array)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_returns_average',
+        description: 'Compute the average return of a portfolio over a historical period',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_sharpe_ratio',
+        description: 'Compute the Sharpe ratio of a portfolio — risk-adjusted return measure',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), riskFreeRate (number, annualized)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_sharpe_ratio_bias_adjusted',
+        description: 'Compute the bias-adjusted Sharpe ratio to correct for estimation bias in finite samples',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), riskFreeRate (number)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_sharpe_ratio_confidence_interval',
+        description: 'Compute the confidence interval for the Sharpe ratio estimate',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), riskFreeRate (number), confidenceLevel (number)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_sharpe_ratio_probabilistic',
+        description: 'Compute the probabilistic Sharpe ratio — probability that the true Sharpe ratio exceeds a benchmark',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), riskFreeRate (number), benchmarkSharpeRatio (number)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_sharpe_ratio_minimum_track_record_length',
+        description: 'Compute the minimum track record length needed to statistically validate a Sharpe ratio',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioSharpeRatio, portfolioReturnsSkewness, portfolioReturnsKurtosis, confidenceLevel, benchmarkSharpeRatio' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_tracking_error',
+        description: 'Compute the tracking error of a portfolio relative to a benchmark',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), benchmarkReturns (array)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_ulcer_index',
+        description: 'Compute the Ulcer Index — measures downside risk by penalizing deep and prolonged drawdowns',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioValues (array)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_ulcer_performance_index',
+        description: 'Compute the Ulcer Performance Index (UPI / Martin Ratio) — return-to-Ulcer-Index ratio',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), riskFreeRate (number)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_var',
+        description: 'Compute the Value at Risk (VaR) of a portfolio at a given confidence level',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), confidenceLevel (number, e.g. 0.95)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_analysis_volatility',
+        description: 'Compute the volatility (annualized standard deviation) of a portfolio',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: portfolioReturns (array), optional annualizationFactor' },
+          },
+          required: ['body'],
+        },
+      },
+      // ── Portfolio / Construction ─────────────────────────────────────────────
+      {
+        name: 'portfolio_construction_investable',
+        description: 'Round portfolio weights to comply with lot-size constraints while minimizing deviation from target weights',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsWeights (target weights), assetsPrices (array), portfolioValue (number)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_construction_mimicking',
+        description: 'Construct a sparse portfolio that mimics a target portfolio using fewer assets',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns, targetPortfolioWeights, optional number of assets in mimicking portfolio' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_construction_random',
+        description: 'Generate one or more random long-only portfolio weight vectors summing to 1',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets (integer), optional portfoliosCount, optional constraints (min/max weights per asset)' },
+          },
+          required: ['body'],
+        },
+      },
+      // ── Portfolio / Optimization ─────────────────────────────────────────────
+      {
+        name: 'portfolio_optimization_equal_risk_contributions',
+        description: 'Compute the equal risk contributions (ERC) portfolio where each asset contributes equally to total portfolio risk',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_equal_sharpe_ratio_contributions',
+        description: 'Compute the portfolio where each asset contributes equally to the total Sharpe ratio',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns (array), assetsCovarianceMatrix (2D array), riskFreeRate' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_equal_volatility_weighted',
+        description: 'Compute the equal volatility weighted portfolio — inverse of each asset\'s volatility as weight',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsVolatilities (array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_equal_weighted',
+        description: 'Compute the equal weighted (1/N) portfolio — uniform allocation across all assets',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets (integer)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_hierarchical_risk_parity',
+        description: 'Compute the hierarchical risk parity (HRP) portfolio using hierarchical clustering of assets',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array), optional assetsCorrelationMatrix, linkageMethod' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_hierarchical_risk_parity_clustering',
+        description: 'Compute the hierarchical clustering-based risk parity portfolio with explicit cluster assignments',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix, assetsClusters array' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_inverse_variance_weighted',
+        description: 'Compute the inverse variance weighted portfolio — weights proportional to 1/variance',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsVariances (array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_inverse_volatility_weighted',
+        description: 'Compute the inverse volatility weighted portfolio — weights proportional to 1/volatility',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsVolatilities (array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_market_cap_weighted',
+        description: 'Compute the market capitalization weighted portfolio — weights proportional to each asset\'s market cap',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsMarketCapitalizations (array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_maximum_decorrelation',
+        description: 'Compute the maximum decorrelation portfolio — minimizes average pairwise correlation between assets',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_maximum_return',
+        description: 'Compute the maximum return portfolio subject to a risk or weight constraint',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns (array), optional constraints (maxPortfolioVolatility, assetsWeights bounds)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_maximum_return_diversified',
+        description: 'Compute the diversified maximum return portfolio using subset resampling',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns, assetsCovarianceMatrix, optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_maximum_return_subset_resampling',
+        description: 'Compute the maximum return portfolio using subset resampling to improve robustness',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns, assetsCovarianceMatrix, subsetSize, subsetsNumber' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_maximum_sharpe_ratio',
+        description: 'Compute the maximum Sharpe ratio (tangency) portfolio — highest risk-adjusted return',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns (array), assetsCovarianceMatrix (2D array), riskFreeRate (number), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_maximum_sharpe_ratio_diversified',
+        description: 'Compute the diversified maximum Sharpe ratio portfolio',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns, assetsCovarianceMatrix, riskFreeRate, optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_maximum_sharpe_ratio_subset_resampling',
+        description: 'Compute the maximum Sharpe ratio portfolio using subset resampling for robustness',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns, assetsCovarianceMatrix, riskFreeRate, subsetSize, subsetsNumber' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_maximum_ulcer_performance_index',
+        description: 'Compute the portfolio that maximizes the Ulcer Performance Index (UPI)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns matrix (time x assets), riskFreeRate, optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_mean_variance_efficient',
+        description: 'Compute a mean-variance efficient portfolio for a specified target return or risk',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns (array), assetsCovarianceMatrix, targetPortfolioReturn or targetPortfolioVolatility' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_mean_variance_efficient_diversified',
+        description: 'Compute a diversified mean-variance efficient portfolio',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns, assetsCovarianceMatrix, targetPortfolioReturn or targetPortfolioVolatility' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_mean_variance_efficient_subset_resampling',
+        description: 'Compute a mean-variance efficient portfolio using subset resampling for improved out-of-sample performance',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns, assetsCovarianceMatrix, subsetSize, subsetsNumber, optional target' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_minimum_correlation',
+        description: 'Compute the minimum correlation portfolio — minimizes average pairwise asset correlation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCorrelationMatrix (2D array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_minimum_ulcer_index',
+        description: 'Compute the portfolio that minimizes the Ulcer Index (minimizes drawdown risk)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns matrix (time x assets), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_minimum_variance',
+        description: 'Compute the global minimum variance portfolio — lowest possible portfolio volatility',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array), optional constraints (min/max weights)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_minimum_variance_diversified',
+        description: 'Compute the diversified minimum variance portfolio using subset resampling',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix, optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_minimum_variance_subset_resampling',
+        description: 'Compute the minimum variance portfolio using subset resampling for out-of-sample robustness',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix, subsetSize, subsetsNumber' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_optimization_most_diversified',
+        description: 'Compute the most diversified portfolio — maximizes the diversification ratio',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsCovarianceMatrix (2D array), optional constraints' },
+          },
+          required: ['body'],
+        },
+      },
+      // ── Portfolio / Simulation ───────────────────────────────────────────────
+      {
+        name: 'portfolio_simulation_drift_weight_rebalancing',
+        description: 'Simulate portfolio value over time with drift-weight rebalancing (weights drift with returns between rebalancing dates)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns matrix, rebalancingDates (array of period indices), assetsWeights (array per rebalancing date)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_simulation_fixed_weight_rebalancing',
+        description: 'Simulate portfolio value over time with fixed-weight rebalancing (portfolio reset to target weights on each rebalancing date)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns matrix, rebalancingDates (array), assetsWeights (array)' },
+          },
+          required: ['body'],
+        },
+      },
+      {
+        name: 'portfolio_simulation_random_weight_rebalancing',
+        description: 'Simulate portfolio value over time using random weight rebalancing — Monte Carlo portfolio simulation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            body: { type: 'object', description: 'Request body: assets, assetsReturns matrix, rebalancingDates (array), portfoliosCount, optional constraints' },
+          },
+          required: ['body'],
         },
       },
     ];
@@ -516,46 +1071,106 @@ export class PortfolioOptimizerMCPServer {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      switch (name) {
-        case 'compute_absorption_ratio': return await this.post('/assets/analysis/absorption-ratio', this.buildAbsorptionRatioBody(args));
-        case 'compute_turbulence_index': return await this.post('/assets/analysis/turbulence-index', this.buildTurbulenceBody(args));
-        case 'compute_correlation_matrix': return await this.post('/assets/correlation/matrix', this.buildAssetsBody(args));
-        case 'compute_denoised_correlation_matrix': return await this.post('/assets/correlation/matrix/denoised', this.buildDenoisedCorrBody(args));
-        case 'compute_covariance_matrix': return await this.post('/assets/covariance/matrix', this.buildAssetsBody(args));
-        case 'compute_asset_returns': return await this.post('/assets/returns', this.buildAssetsBody(args));
-        case 'compute_asset_volatility': return await this.post('/assets/volatility', this.buildAssetsBody(args));
-        case 'compute_asset_variance': return await this.post('/assets/variance', this.buildAssetsBody(args));
-        case 'compute_portfolio_return': return await this.post('/portfolio/analysis/return', this.buildPortfoliosBody(args));
-        case 'compute_portfolio_volatility': return await this.post('/portfolio/analysis/volatility', this.buildPortfoliosBody(args));
-        case 'compute_portfolio_sharpe_ratio': return await this.post('/portfolio/analysis/sharpe-ratio', this.buildPortfoliosRfBody(args));
-        case 'compute_portfolio_value_at_risk': return await this.post('/portfolio/analysis/value-at-risk', this.buildVarBody(args));
-        case 'compute_portfolio_cvar': return await this.post('/portfolio/analysis/conditional-value-at-risk', this.buildVarBody(args));
-        case 'compute_portfolio_drawdowns': return await this.post('/portfolio/analysis/drawdowns', this.buildPortfoliosBody(args));
-        case 'compute_portfolio_alpha': return await this.post('/portfolio/analysis/alpha', this.buildPortfoliosRfBody(args));
-        case 'compute_portfolio_beta': return await this.post('/portfolio/analysis/beta', this.buildBetaBody(args));
-        case 'compute_portfolio_tracking_error': return await this.post('/portfolio/analysis/tracking-error', this.buildTrackingErrorBody(args));
-        case 'compute_risk_contributions': return await this.post('/portfolio/analysis/contributions/risk', this.buildRiskContribBody(args));
-        case 'compute_return_contributions': return await this.post('/portfolio/analysis/contributions/return', this.buildReturnContribBody(args));
-        case 'compute_mean_variance_efficient_frontier': return await this.post('/portfolio/analysis/mean-variance/efficient-frontier', this.buildEfficientFrontierBody(args));
-        case 'optimize_equal_weighted': return await this.post('/portfolio/optimization/equal-weighted', { assets: args.assets });
-        case 'optimize_equal_risk_contributions': return await this.post('/portfolio/optimization/equal-risk-contributions', this.buildErcBody(args));
-        case 'optimize_minimum_variance': return await this.post('/portfolio/optimization/minimum-variance', this.buildMinVarBody(args));
-        case 'optimize_maximum_sharpe_ratio': return await this.post('/portfolio/optimization/maximum-sharpe-ratio', this.buildMaxSharpeBody(args));
-        case 'optimize_maximum_return': return await this.post('/portfolio/optimization/maximum-return', this.buildMaxReturnBody(args));
-        case 'optimize_hierarchical_risk_parity': return await this.post('/portfolio/optimization/hierarchical-risk-parity', this.buildHrpBody(args));
-        case 'optimize_equal_volatility_weighted': return await this.post('/portfolio/optimization/equal-volatility-weighted', { assets: args.assets, assetsVolatilities: args.assets_volatilities });
-        case 'optimize_inverse_variance_weighted': return await this.post('/portfolio/optimization/inverse-variance-weighted', { assets: args.assets, assetsVariances: args.assets_variances });
-        case 'optimize_market_cap_weighted': return await this.post('/portfolio/optimization/market-capitalization-weighted', { assets: args.assets, assetsMarketCapitalizations: args.assets_market_capitalizations });
-        case 'optimize_most_diversified': return await this.post('/portfolio/optimization/most-diversified', this.buildErcBody(args));
-        case 'optimize_mean_variance_efficient': return await this.post('/portfolio/optimization/mean-variance-efficient', this.buildMeanVarEfficientBody(args));
-        case 'simulate_portfolio_rebalancing': return await this.simulateRebalancing(args);
-        case 'construct_random_portfolio': return await this.post('/portfolio/construction/random', this.buildRandomPortfolioBody(args));
-        default:
-          return {
-            content: [{ type: 'text', text: `Unknown tool: ${name}` }],
-            isError: true,
-          };
+      const routeMap: Record<string, string> = {
+        // Assets / Analysis
+        'assets_absorption_ratio':                                    '/assets/analysis/absorption-ratio',
+        'assets_turbulence_index':                                    '/assets/analysis/turbulence-index',
+        // Assets / Correlation
+        'assets_correlation_matrix':                                  '/assets/correlation/matrix',
+        'assets_correlation_matrix_bounds':                           '/assets/correlation/matrix/bounds',
+        'assets_correlation_matrix_denoised':                         '/assets/correlation/matrix/denoised',
+        'assets_correlation_matrix_distance':                         '/assets/correlation/matrix/distance',
+        'assets_correlation_matrix_effective_rank':                   '/assets/correlation/matrix/effective-rank',
+        'assets_correlation_matrix_informativeness':                  '/assets/correlation/matrix/informativeness',
+        'assets_correlation_matrix_nearest':                          '/assets/correlation/matrix/nearest',
+        'assets_correlation_matrix_random':                           '/assets/correlation/matrix/random',
+        'assets_correlation_matrix_shrinkage':                        '/assets/correlation/matrix/shrinkage',
+        'assets_correlation_matrix_theory_implied':                   '/assets/correlation/matrix/theory-implied',
+        'assets_correlation_matrix_validation':                       '/assets/correlation/matrix/validation',
+        // Assets / Covariance
+        'assets_covariance_matrix':                                   '/assets/covariance/matrix',
+        'assets_covariance_matrix_effective_rank':                    '/assets/covariance/matrix/effective-rank',
+        'assets_covariance_matrix_ewma':                              '/assets/covariance/matrix/exponentially-weighted',
+        'assets_covariance_matrix_validation':                        '/assets/covariance/matrix/validation',
+        // Assets / Statistics
+        'assets_kurtosis':                                            '/assets/kurtosis',
+        'assets_prices_adjusted':                                     '/assets/prices/adjusted',
+        'assets_prices_adjusted_forward':                             '/assets/prices/adjusted/forward',
+        'assets_returns':                                             '/assets/returns',
+        'assets_returns_average':                                     '/assets/returns/average',
+        'assets_returns_simulation_bootstrap':                        '/assets/returns/simulation/bootstrap',
+        'assets_skewness':                                            '/assets/skewness',
+        'assets_variance':                                            '/assets/variance',
+        'assets_volatility':                                          '/assets/volatility',
+        // Factors
+        'factors_residualization':                                    '/factors/residualization',
+        // Portfolio / Analysis
+        'portfolio_analysis_alpha':                                   '/portfolio/analysis/alpha',
+        'portfolio_analysis_beta':                                    '/portfolio/analysis/beta',
+        'portfolio_analysis_cvar':                                    '/portfolio/analysis/conditional-value-at-risk',
+        'portfolio_analysis_contributions_return':                    '/portfolio/analysis/contributions/return',
+        'portfolio_analysis_contributions_risk':                      '/portfolio/analysis/contributions/risk',
+        'portfolio_analysis_correlation_spectrum':                    '/portfolio/analysis/correlation-spectrum',
+        'portfolio_analysis_diversification_ratio':                   '/portfolio/analysis/diversification-ratio',
+        'portfolio_analysis_drawdowns':                               '/portfolio/analysis/drawdowns',
+        'portfolio_analysis_effective_number_of_bets':                '/portfolio/analysis/effective-number-of-bets',
+        'portfolio_analysis_factor_exposures':                        '/portfolio/analysis/factors/exposures',
+        'portfolio_analysis_efficient_frontier':                      '/portfolio/analysis/mean-variance/efficient-frontier',
+        'portfolio_analysis_minimum_variance_frontier':               '/portfolio/analysis/mean-variance/minimum-variance-frontier',
+        'portfolio_analysis_return':                                  '/portfolio/analysis/return',
+        'portfolio_analysis_returns_average':                         '/portfolio/analysis/returns/average',
+        'portfolio_analysis_sharpe_ratio':                            '/portfolio/analysis/sharpe-ratio',
+        'portfolio_analysis_sharpe_ratio_bias_adjusted':              '/portfolio/analysis/sharpe-ratio/bias-adjusted',
+        'portfolio_analysis_sharpe_ratio_confidence_interval':        '/portfolio/analysis/sharpe-ratio/confidence-interval',
+        'portfolio_analysis_sharpe_ratio_probabilistic':              '/portfolio/analysis/sharpe-ratio/probabilistic',
+        'portfolio_analysis_sharpe_ratio_minimum_track_record_length':'/portfolio/analysis/sharpe-ratio/probabilistic/minimum-track-record-length',
+        'portfolio_analysis_tracking_error':                          '/portfolio/analysis/tracking-error',
+        'portfolio_analysis_ulcer_index':                             '/portfolio/analysis/ulcer-index',
+        'portfolio_analysis_ulcer_performance_index':                 '/portfolio/analysis/ulcer-performance-index',
+        'portfolio_analysis_var':                                     '/portfolio/analysis/value-at-risk',
+        'portfolio_analysis_volatility':                              '/portfolio/analysis/volatility',
+        // Portfolio / Construction
+        'portfolio_construction_investable':                          '/portfolio/construction/investable',
+        'portfolio_construction_mimicking':                           '/portfolio/construction/mimicking',
+        'portfolio_construction_random':                              '/portfolio/construction/random',
+        // Portfolio / Optimization
+        'portfolio_optimization_equal_risk_contributions':            '/portfolio/optimization/equal-risk-contributions',
+        'portfolio_optimization_equal_sharpe_ratio_contributions':    '/portfolio/optimization/equal-sharpe-ratio-contributions',
+        'portfolio_optimization_equal_volatility_weighted':           '/portfolio/optimization/equal-volatility-weighted',
+        'portfolio_optimization_equal_weighted':                      '/portfolio/optimization/equal-weighted',
+        'portfolio_optimization_hierarchical_risk_parity':            '/portfolio/optimization/hierarchical-risk-parity',
+        'portfolio_optimization_hierarchical_risk_parity_clustering': '/portfolio/optimization/hierarchical-risk-parity/clustering-based',
+        'portfolio_optimization_inverse_variance_weighted':           '/portfolio/optimization/inverse-variance-weighted',
+        'portfolio_optimization_inverse_volatility_weighted':         '/portfolio/optimization/inverse-volatility-weighted',
+        'portfolio_optimization_market_cap_weighted':                 '/portfolio/optimization/market-capitalization-weighted',
+        'portfolio_optimization_maximum_decorrelation':               '/portfolio/optimization/maximum-decorrelation',
+        'portfolio_optimization_maximum_return':                      '/portfolio/optimization/maximum-return',
+        'portfolio_optimization_maximum_return_diversified':          '/portfolio/optimization/maximum-return/diversified',
+        'portfolio_optimization_maximum_return_subset_resampling':    '/portfolio/optimization/maximum-return/subset-resampling-based',
+        'portfolio_optimization_maximum_sharpe_ratio':                '/portfolio/optimization/maximum-sharpe-ratio',
+        'portfolio_optimization_maximum_sharpe_ratio_diversified':    '/portfolio/optimization/maximum-sharpe-ratio/diversified',
+        'portfolio_optimization_maximum_sharpe_ratio_subset_resampling': '/portfolio/optimization/maximum-sharpe-ratio/subset-resampling-based',
+        'portfolio_optimization_maximum_ulcer_performance_index':     '/portfolio/optimization/maximum-ulcer-performance-index',
+        'portfolio_optimization_mean_variance_efficient':             '/portfolio/optimization/mean-variance-efficient',
+        'portfolio_optimization_mean_variance_efficient_diversified': '/portfolio/optimization/mean-variance-efficient/diversified',
+        'portfolio_optimization_mean_variance_efficient_subset_resampling': '/portfolio/optimization/mean-variance-efficient/subset-resampling-based',
+        'portfolio_optimization_minimum_correlation':                 '/portfolio/optimization/minimum-correlation',
+        'portfolio_optimization_minimum_ulcer_index':                 '/portfolio/optimization/minimum-ulcer-index',
+        'portfolio_optimization_minimum_variance':                    '/portfolio/optimization/minimum-variance',
+        'portfolio_optimization_minimum_variance_diversified':        '/portfolio/optimization/minimum-variance/diversified',
+        'portfolio_optimization_minimum_variance_subset_resampling':  '/portfolio/optimization/minimum-variance/subset-resampling-based',
+        'portfolio_optimization_most_diversified':                    '/portfolio/optimization/most-diversified',
+        // Portfolio / Simulation
+        'portfolio_simulation_drift_weight_rebalancing':              '/portfolio/simulation/rebalancing/drift-weight',
+        'portfolio_simulation_fixed_weight_rebalancing':              '/portfolio/simulation/rebalancing/fixed-weight',
+        'portfolio_simulation_random_weight_rebalancing':             '/portfolio/simulation/rebalancing/random-weight',
+      };
+
+      const path = routeMap[name];
+      if (!path) {
+        return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
+      return this.postJson(path, args.body as Record<string, unknown>);
     } catch (error) {
       return {
         content: [{ type: 'text', text: `Tool execution failed: ${error instanceof Error ? error.message : String(error)}` }],
@@ -564,17 +1179,25 @@ export class PortfolioOptimizerMCPServer {
     }
   }
 
-  // ── Private: HTTP ─────────────────────────────────────────────────────────
+  // ── Private helpers ────────────────────────────────────────────────────────
 
-  private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
+    return text.length > 10_000
+      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
+      : text;
+  }
+
+  private async postJson(path: string, body: Record<string, unknown> | undefined): Promise<ToolResult> {
+    if (!body || typeof body !== 'object') {
+      return { content: [{ type: 'text', text: 'body object is required' }], isError: true };
+    }
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
     };
-    if (this.apiKey) {
-      headers['X-API-Key'] = this.apiKey;
-    }
+    if (this.apiKey) headers['X-API-Key'] = this.apiKey;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -583,206 +1206,13 @@ export class PortfolioOptimizerMCPServer {
     });
 
     if (!response.ok) {
-      const errText = await response.text().catch(() => '');
+      const errText = await response.text().catch(() => response.statusText);
       return {
-        content: [{ type: 'text', text: `API error ${response.status} ${response.statusText}: ${errText}` }],
+        content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }],
         isError: true,
       };
     }
-
     const data = await response.json();
-    const text = JSON.stringify(data, null, 2);
-    const truncated = text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-
-    return {
-      content: [{ type: 'text', text: truncated }],
-      isError: false,
-    };
-  }
-
-  // ── Private: Request body builders ───────────────────────────────────────
-
-  private buildAbsorptionRatioBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-    };
-    if (args.eigenvectors_retained !== undefined) {
-      body.assetsCovarianceMatrixEigenvectors = { eigenvectorsRetained: args.eigenvectors_retained };
-    }
-    return body;
-  }
-
-  private buildTurbulenceBody(args: Record<string, unknown>): Record<string, unknown> {
-    return {
-      assets: args.assets,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-      assetsAverageReturns: args.assets_average_returns,
-      assetsReturns: args.assets_returns,
-    };
-  }
-
-  private buildAssetsBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {};
-    if (args.assets !== undefined) body.assets = args.assets;
-    if (args.computation_method !== undefined) body.computationMethod = args.computation_method;
-    if (args.returns_type !== undefined) body.returnsType = args.returns_type;
-    return body;
-  }
-
-  private buildDenoisedCorrBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      assetsCorrelationMatrix: args.assets_correlation_matrix,
-      assetsCorrelationMatrixAspectRatio: args.assets_correlation_matrix_aspect_ratio,
-    };
-    if (args.denoising_method !== undefined) body.denoisingMethod = args.denoising_method;
-    return body;
-  }
-
-  private buildPortfoliosBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {};
-    if (args.portfolios !== undefined) body.portfolios = args.portfolios;
-    if (args.assets !== undefined) body.assets = args.assets;
-    return body;
-  }
-
-  private buildPortfoliosRfBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {};
-    if (args.portfolios !== undefined) body.portfolios = args.portfolios;
-    if (args.risk_free_rate !== undefined) body.riskFreeRate = args.risk_free_rate;
-    return body;
-  }
-
-  private buildVarBody(args: Record<string, unknown>): Record<string, unknown> {
-    return {
-      portfolios: args.portfolios,
-      alpha: args.alpha,
-    };
-  }
-
-  private buildBetaBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {};
-    if (args.portfolios !== undefined) body.portfolios = args.portfolios;
-    if (args.benchmark_returns !== undefined) body.benchmarkReturns = args.benchmark_returns;
-    return body;
-  }
-
-  private buildTrackingErrorBody(args: Record<string, unknown>): Record<string, unknown> {
-    return {
-      portfolios: args.portfolios,
-      benchmarkReturns: args.benchmark_returns,
-    };
-  }
-
-  private buildRiskContribBody(args: Record<string, unknown>): Record<string, unknown> {
-    return {
-      assets: args.assets,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-      portfolios: args.portfolios,
-    };
-  }
-
-  private buildReturnContribBody(args: Record<string, unknown>): Record<string, unknown> {
-    return {
-      assets: args.assets,
-      assetsReturns: args.assets_returns,
-      portfolios: args.portfolios,
-    };
-  }
-
-  private buildEfficientFrontierBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      assetsReturns: args.assets_returns,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-    };
-    if (args.portfolios !== undefined) body.portfolios = args.portfolios;
-    if (args.constraints !== undefined) body.constraints = args.constraints;
-    return body;
-  }
-
-  private buildErcBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-    };
-    if (args.constraints !== undefined) body.constraints = args.constraints;
-    return body;
-  }
-
-  private buildMinVarBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-    };
-    if (args.assets_returns !== undefined) body.assetsReturns = args.assets_returns;
-    if (args.constraints !== undefined) body.constraints = args.constraints;
-    return body;
-  }
-
-  private buildMaxSharpeBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      assetsReturns: args.assets_returns,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-      riskFreeRate: args.risk_free_rate,
-    };
-    if (args.constraints !== undefined) body.constraints = args.constraints;
-    return body;
-  }
-
-  private buildMaxReturnBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      assetsReturns: args.assets_returns,
-    };
-    if (args.assets_covariance_matrix !== undefined) body.assetsCovarianceMatrix = args.assets_covariance_matrix;
-    if (args.constraints !== undefined) body.constraints = args.constraints;
-    return body;
-  }
-
-  private buildHrpBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-    };
-    if (args.clustering_method !== undefined) body.clusteringMethod = args.clustering_method;
-    if (args.clustering_ordering !== undefined) body.clusteringOrdering = args.clustering_ordering;
-    if (args.constraints !== undefined) body.constraints = args.constraints;
-    return body;
-  }
-
-  private buildMeanVarEfficientBody(args: Record<string, unknown>): Record<string, unknown> {
-    return {
-      assets: args.assets,
-      assetsReturns: args.assets_returns,
-      assetsCovarianceMatrix: args.assets_covariance_matrix,
-      constraints: args.constraints,
-    };
-  }
-
-  private async simulateRebalancing(args: Record<string, unknown>): Promise<ToolResult> {
-    const rebalancingType = (args.rebalancing_type as string) ?? 'fixed-weight';
-    const pathMap: Record<string, string> = {
-      'fixed-weight': '/portfolio/simulation/rebalancing/fixed-weight',
-      'drift-weight': '/portfolio/simulation/rebalancing/drift-weight',
-      'random-weight': '/portfolio/simulation/rebalancing/random-weight',
-    };
-    const path = pathMap[rebalancingType] ?? '/portfolio/simulation/rebalancing/fixed-weight';
-    const body: Record<string, unknown> = {
-      assets: args.assets,
-      portfolios: args.portfolios,
-    };
-    return this.post(path, body);
-  }
-
-  private buildRandomPortfolioBody(args: Record<string, unknown>): Record<string, unknown> {
-    const body: Record<string, unknown> = { assets: args.assets };
-    if (args.portfolios !== undefined) body.portfolios = args.portfolios;
-    if (args.constraints !== undefined) body.constraints = args.constraints;
-    return body;
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 }

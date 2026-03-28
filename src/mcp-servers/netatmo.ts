@@ -5,21 +5,20 @@
  */
 
 // Official MCP: None found as of 2026-03
-// No official Netatmo MCP server was found on GitHub as of March 2026.
+// No official Netatmo MCP server was found on GitHub. We build a full REST wrapper
+// for complete Netatmo API coverage.
 //
 // Base URL: https://api.netatmo.net/api
-// Auth: OAuth2 authorization_code or password flow. Access token passed as Bearer in Authorization header.
-//   Scopes: read_station, read_thermostat, write_thermostat, read_camera, access_camera,
-//           write_camera, read_homecoach
-// Docs: https://dev.netatmo.com/apidocumentation
-// Rate limits: 500 requests per 10 seconds, 10,000 requests per hour per user
+// Auth: OAuth2 Bearer token (code flow or password flow)
+// Docs: https://dev.netatmo.com/dev/resources/technical/reference
+// Spec: https://api.apis.guru/v2/specs/netatmo.net/1.1.5/openapi.json
+// Category: iot
+// Rate limits: See Netatmo developer docs — typically 500 req/hour per user
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface NetatmoConfig {
-  /** OAuth2 access token obtained via Netatmo authorization flow */
   accessToken: string;
-  /** Base URL override (default: https://api.netatmo.net/api) */
   baseUrl?: string;
 }
 
@@ -29,7 +28,7 @@ export class NetatmoMCPServer {
 
   constructor(config: NetatmoConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl ?? 'https://api.netatmo.net/api';
+    this.baseUrl = config.baseUrl || 'https://api.netatmo.net/api';
   }
 
   static catalog() {
@@ -37,462 +36,45 @@ export class NetatmoMCPServer {
       name: 'netatmo',
       displayName: 'Netatmo',
       version: '1.0.0',
-      category: 'iot' as const,
+      category: 'iot',
       keywords: [
-        'netatmo', 'iot', 'weather', 'station', 'thermostat', 'camera', 'home', 'smart-home',
-        'temperature', 'humidity', 'co2', 'air-quality', 'schedule', 'heating', 'person',
-        'security', 'sensor', 'measurement', 'indoor', 'outdoor', 'homecoach',
+        'netatmo', 'iot', 'smart home', 'weather station', 'thermostat',
+        'home coach', 'air quality', 'temperature', 'humidity', 'co2',
+        'pressure', 'wind', 'rain', 'camera', 'security', 'presence',
+        'smart thermostat', 'schedule', 'webhook', 'energy',
       ],
       toolNames: [
-        'get_user',
-        'get_stations_data',
-        'get_homecoach_data',
-        'get_measure',
-        'get_public_data',
-        'get_device_list',
-        'get_thermostats_data',
-        'get_therm_state',
-        'set_therm_point',
-        'create_new_schedule',
-        'switch_schedule',
-        'sync_schedule',
-        'get_home_data',
-        'get_events_until',
-        'get_next_events',
-        'get_last_event_of',
-        'get_camera_picture',
-        'set_persons_away',
-        'set_persons_home',
         'add_webhook',
         'drop_webhook',
+        'create_new_schedule',
+        'get_device_list',
+        'get_camera_picture',
+        'get_events_until',
+        'get_home_coach_data',
+        'get_home_data',
+        'get_last_event_of',
+        'get_measure',
+        'get_next_events',
+        'get_public_data',
+        'get_stations_data',
+        'get_thermostats_data',
+        'get_therm_state',
+        'get_user',
         'get_partner_devices',
+        'set_persons_away',
+        'set_persons_home',
+        'set_therm_point',
+        'switch_schedule',
+        'sync_schedule',
       ],
-      description: 'Smart home IoT: read weather stations, thermostats, cameras, and air quality sensors; control heating schedules, set thermostat points, and manage home presence.',
-      author: 'protectnil' as const,
+      description: 'Netatmo smart home IoT API: read weather station data, manage thermostats and schedules, access home security cameras and events, query public weather data, and control presence detection.',
+      author: 'protectnil',
     };
   }
 
   get tools(): ToolDefinition[] {
     return [
-      // ── User ────────────────────────────────────────────────────────────────
-      {
-        name: 'get_user',
-        description: 'Get the profile and preferences of the authenticated Netatmo user',
-        inputSchema: { type: 'object', properties: {} },
-      },
-
-      // ── Weather Stations ─────────────────────────────────────────────────────
-      {
-        name: 'get_stations_data',
-        description: 'Get data from Netatmo weather stations including temperature, humidity, CO2, noise, and pressure readings',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the weather station to retrieve. Omit to retrieve all stations.',
-            },
-            get_favorites: {
-              type: 'boolean',
-              description: 'Whether to include favorite weather stations shared by others (default: false)',
-            },
-          },
-        },
-      },
-
-      // ── Home Coach ───────────────────────────────────────────────────────────
-      {
-        name: 'get_homecoach_data',
-        description: 'Get data from Netatmo Healthy Home Coach including CO2, humidity, noise, temperature, and health index',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the Home Coach device to retrieve. Omit to retrieve all Home Coach devices.',
-            },
-          },
-        },
-      },
-
-      // ── Measurements ─────────────────────────────────────────────────────────
-      {
-        name: 'get_measure',
-        description: 'Get historical measurements from a weather station or module at a specified time scale and type',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the weather station',
-            },
-            module_id: {
-              type: 'string',
-              description: 'MAC address of a specific module. Omit to get base station measurements.',
-            },
-            scale: {
-              type: 'string',
-              description: 'Time interval between measurements: max (real-time), 30min, 1hour, 3hours, 1day, 1week, 1month',
-            },
-            type: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'Measurement types to retrieve: Temperature, CO2, Humidity, Pressure, Noise, Rain, WindStrength, WindAngle, GustStrength, GustAngle, HealthIdx',
-            },
-            date_begin: {
-              type: 'number',
-              description: 'Start timestamp (Unix UTC) for measurements. Defaults to 24h ago.',
-            },
-            date_end: {
-              type: 'number',
-              description: 'End timestamp (Unix UTC) for measurements. Defaults to now.',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of measurements to return (default and max: 1024)',
-            },
-            optimize: {
-              type: 'boolean',
-              description: 'If true, returns compact array format suitable for mobile (default: false)',
-            },
-            real_time: {
-              type: 'boolean',
-              description: 'If true, returns the exact measurement timestamp rather than the aggregated interval start',
-            },
-          },
-          required: ['device_id', 'scale', 'type'],
-        },
-      },
-
-      // ── Public Weather Data ──────────────────────────────────────────────────
-      {
-        name: 'get_public_data',
-        description: 'Get weather data from public Netatmo stations within a geographic bounding box',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            lat_ne: {
-              type: 'number',
-              description: 'Latitude of the north-east corner of the bounding box',
-            },
-            lon_ne: {
-              type: 'number',
-              description: 'Longitude of the north-east corner of the bounding box',
-            },
-            lat_sw: {
-              type: 'number',
-              description: 'Latitude of the south-west corner of the bounding box',
-            },
-            lon_sw: {
-              type: 'number',
-              description: 'Longitude of the south-west corner of the bounding box',
-            },
-            required_data: {
-              type: 'string',
-              description: 'Filter stations by available measurement types: Temperature, Humidity, Pressure, Wind, Rain, CO2',
-            },
-            filter: {
-              type: 'boolean',
-              description: 'If true, exclude stations with abnormal data (default: false)',
-            },
-          },
-          required: ['lat_ne', 'lon_ne', 'lat_sw', 'lon_sw'],
-        },
-      },
-
-      // ── Device List ──────────────────────────────────────────────────────────
-      {
-        name: 'get_device_list',
-        description: 'Get the full list of devices associated with the user account, optionally filtered by app type',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            app_type: {
-              type: 'string',
-              description: 'Filter by application type: app_station (weather), app_thermostat (heating)',
-            },
-            device_id: {
-              type: 'string',
-              description: 'MAC address of a specific device to retrieve',
-            },
-            get_favorites: {
-              type: 'boolean',
-              description: 'Whether to include favorite devices shared by others (default: false)',
-            },
-          },
-        },
-      },
-
-      // ── Thermostats ──────────────────────────────────────────────────────────
-      {
-        name: 'get_thermostats_data',
-        description: 'Get current state and schedule data for Netatmo thermostat relays and thermostat modules',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat relay. Omit to retrieve all thermostats.',
-            },
-          },
-        },
-      },
-      {
-        name: 'get_therm_state',
-        description: 'Get the current setpoint, schedule, and measured temperature for a specific thermostat module',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat relay',
-            },
-            module_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat module',
-            },
-          },
-          required: ['device_id', 'module_id'],
-        },
-      },
-      {
-        name: 'set_therm_point',
-        description: 'Set the thermostat setpoint mode and temperature for a thermostat module',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat relay',
-            },
-            module_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat module',
-            },
-            setpoint_mode: {
-              type: 'string',
-              description: 'Setpoint mode: program (follow schedule), away, hg (frost guard), manual (fixed temperature), off, max',
-            },
-            setpoint_endtime: {
-              type: 'number',
-              description: 'Unix timestamp when manual or max setpoint expires (required for manual and max modes)',
-            },
-            setpoint_temp: {
-              type: 'number',
-              description: 'Target temperature in degrees Celsius (required for manual mode)',
-            },
-          },
-          required: ['device_id', 'module_id', 'setpoint_mode'],
-        },
-      },
-
-      // ── Thermostat Schedules ──────────────────────────────────────────────────
-      {
-        name: 'create_new_schedule',
-        description: 'Create a new heating schedule for a thermostat with defined time slots and temperature zones',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat relay',
-            },
-            module_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat module',
-            },
-            therm_program: {
-              type: 'object',
-              description: 'Schedule definition object with name, zones (temperature targets), and timetable (weekly slot assignments)',
-            },
-          },
-          required: ['device_id', 'module_id', 'therm_program'],
-        },
-      },
-      {
-        name: 'switch_schedule',
-        description: 'Switch the active heating schedule for a thermostat to a different existing schedule by ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat relay',
-            },
-            module_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat module',
-            },
-            schedule_id: {
-              type: 'string',
-              description: 'ID of the schedule to activate (obtain from get_thermostats_data)',
-            },
-          },
-          required: ['device_id', 'module_id', 'schedule_id'],
-        },
-      },
-      {
-        name: 'sync_schedule',
-        description: 'Update an existing heating schedule with new zone temperatures and timetable slots',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            device_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat relay',
-            },
-            module_id: {
-              type: 'string',
-              description: 'MAC address of the thermostat module',
-            },
-            therm_program: {
-              type: 'object',
-              description: 'Updated schedule definition with program_id, name, zones, and timetable',
-            },
-          },
-          required: ['device_id', 'module_id', 'therm_program'],
-        },
-      },
-
-      // ── Camera / Home Security ────────────────────────────────────────────────
-      {
-        name: 'get_home_data',
-        description: 'Get home security data including camera status, persons detected, and recent security events',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            home_id: {
-              type: 'string',
-              description: 'ID of the home to retrieve data for. Omit to retrieve all homes.',
-            },
-            size: {
-              type: 'number',
-              description: 'Number of recent events to include (default: 30)',
-            },
-          },
-        },
-      },
-      {
-        name: 'get_events_until',
-        description: 'Get all camera security events for a home up to a specific event ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            home_id: {
-              type: 'string',
-              description: 'ID of the home',
-            },
-            event_id: {
-              type: 'string',
-              description: 'Retrieve events that occurred before this event ID',
-            },
-          },
-          required: ['home_id', 'event_id'],
-        },
-      },
-      {
-        name: 'get_next_events',
-        description: 'Get camera security events for a home that occurred after a specific event ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            home_id: {
-              type: 'string',
-              description: 'ID of the home',
-            },
-            event_id: {
-              type: 'string',
-              description: 'Retrieve events that occurred after this event ID',
-            },
-            size: {
-              type: 'number',
-              description: 'Number of events to retrieve (default: 30)',
-            },
-          },
-          required: ['home_id', 'event_id'],
-        },
-      },
-      {
-        name: 'get_last_event_of',
-        description: 'Get the most recent camera event for a specific tracked person in a home',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            home_id: {
-              type: 'string',
-              description: 'ID of the home',
-            },
-            person_id: {
-              type: 'string',
-              description: 'ID of the person to retrieve the last event for',
-            },
-            offset: {
-              type: 'number',
-              description: 'Number of events to skip for pagination (default: 0)',
-            },
-          },
-          required: ['home_id', 'person_id'],
-        },
-      },
-      {
-        name: 'get_camera_picture',
-        description: 'Get a specific camera snapshot image by image ID and key from a security event',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            image_id: {
-              type: 'string',
-              description: 'Image ID obtained from a camera event',
-            },
-            key: {
-              type: 'string',
-              description: 'Access key for the image, obtained from a camera event',
-            },
-          },
-          required: ['image_id', 'key'],
-        },
-      },
-
-      // ── Presence / Persons ────────────────────────────────────────────────────
-      {
-        name: 'set_persons_away',
-        description: 'Mark one or all persons as away from home to update presence status and camera behavior',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            home_id: {
-              type: 'string',
-              description: 'ID of the home',
-            },
-            person_id: {
-              type: 'string',
-              description: 'ID of the specific person to mark as away. Omit to mark all persons as away.',
-            },
-          },
-          required: ['home_id'],
-        },
-      },
-      {
-        name: 'set_persons_home',
-        description: 'Mark one or more persons as home to update presence status and camera behavior',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            home_id: {
-              type: 'string',
-              description: 'ID of the home',
-            },
-            person_ids: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'List of person IDs to mark as home',
-            },
-          },
-          required: ['home_id', 'person_ids'],
-        },
-      },
-
-      // ── Webhooks ─────────────────────────────────────────────────────────────
+      // ── Webhooks ───────────────────────────────────────────────────────────
       {
         name: 'add_webhook',
         description: 'Register a webhook URL to receive real-time Netatmo event notifications for a specific app type',
@@ -501,11 +83,11 @@ export class NetatmoMCPServer {
           properties: {
             url: {
               type: 'string',
-              description: 'HTTPS URL to receive webhook POST notifications',
+              description: 'The HTTPS URL to send webhook event notifications to',
             },
             app_type: {
               type: 'string',
-              description: 'App type to receive events for: app_camera',
+              description: 'Netatmo app type for which to register the webhook (e.g., app_security)',
             },
           },
           required: ['url', 'app_type'],
@@ -513,24 +95,448 @@ export class NetatmoMCPServer {
       },
       {
         name: 'drop_webhook',
-        description: 'Unregister the current webhook for a Netatmo app type to stop receiving event notifications',
+        description: 'Unregister the previously registered webhook for a specific Netatmo app type',
         inputSchema: {
           type: 'object',
           properties: {
             app_type: {
               type: 'string',
-              description: 'App type whose webhook to remove: app_camera',
+              description: 'Netatmo app type for which to drop the webhook',
             },
           },
           required: ['app_type'],
         },
       },
-
-      // ── Partner ──────────────────────────────────────────────────────────────
+      // ── Thermostat ─────────────────────────────────────────────────────────
+      {
+        name: 'create_new_schedule',
+        description: 'Create a new thermostat heating schedule for a Netatmo thermostat module',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The thermostat device (relay) ID',
+            },
+            module_id: {
+              type: 'string',
+              description: 'The thermostat module ID',
+            },
+            name: {
+              type: 'string',
+              description: 'Name for the new schedule',
+            },
+            timetable: {
+              type: 'array',
+              description: 'Array of schedule slots defining temperature setpoints at different time offsets (m_offset from Monday 00:00)',
+            },
+            zones: {
+              type: 'array',
+              description: 'Array of temperature zones with id, name, and temp fields',
+            },
+          },
+          required: ['device_id', 'module_id'],
+        },
+      },
+      // ── Device / Data ──────────────────────────────────────────────────────
+      {
+        name: 'get_device_list',
+        description: 'Get the list of all Netatmo devices and their modules for a given app type',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            app_type: {
+              type: 'string',
+              description: 'Netatmo app type to filter devices (e.g., app_thermostat, app_station)',
+            },
+            device_id: {
+              type: 'string',
+              description: 'Optional specific device ID to retrieve',
+            },
+            get_favorites: {
+              type: 'boolean',
+              description: 'If true, include devices marked as favorites',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_camera_picture',
+        description: 'Get a picture snapshot from a Netatmo security camera by image ID and key',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            image_id: {
+              type: 'string',
+              description: 'The image ID from a camera event',
+            },
+            key: {
+              type: 'string',
+              description: 'The encryption key for the image',
+            },
+          },
+          required: ['image_id', 'key'],
+        },
+      },
+      {
+        name: 'get_events_until',
+        description: 'Get all Netatmo home security events up to and including a specific event ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            home_id: {
+              type: 'string',
+              description: 'The Netatmo home ID to retrieve events for',
+            },
+            event_id: {
+              type: 'string',
+              description: 'The oldest event ID — retrieve all events up to this event',
+            },
+          },
+          required: ['home_id', 'event_id'],
+        },
+      },
+      {
+        name: 'get_home_coach_data',
+        description: 'Get indoor air quality data from a Netatmo Home Coach device (CO2, temperature, humidity, noise, pressure)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'Optional Home Coach device ID to retrieve data for a specific device',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_home_data',
+        description: 'Get home security data including camera status, persons detected, and recent events',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            home_id: {
+              type: 'string',
+              description: 'Optional specific home ID to retrieve data for',
+            },
+            size: {
+              type: 'integer',
+              description: 'Number of events to return (default: 30)',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_last_event_of',
+        description: 'Get the most recent Netatmo home security event for a specific person',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            home_id: {
+              type: 'string',
+              description: 'The home ID to search for events in',
+            },
+            person_id: {
+              type: 'string',
+              description: 'The person ID to get the last event for',
+            },
+            offset: {
+              type: 'integer',
+              description: 'Optional offset for pagination',
+            },
+          },
+          required: ['home_id', 'person_id'],
+        },
+      },
+      {
+        name: 'get_measure',
+        description: 'Get historical measurements from a Netatmo weather station or thermostat module (temperature, humidity, CO2, pressure, etc.)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The main device (station or thermostat relay) ID',
+            },
+            module_id: {
+              type: 'string',
+              description: 'Optional module ID for an indoor/outdoor module or thermostat',
+            },
+            scale: {
+              type: 'string',
+              description: 'Time scale for measurements: 30min, 1hour, 3hours, 1day, 1week, 1month, or max',
+            },
+            type: {
+              type: 'array',
+              description: 'Array of measurement types to retrieve: Temperature, Humidity, CO2, Pressure, Noise, Rain, WindStrength, WindAngle, GustStrength, GustAngle, min_temp, max_temp, etc.',
+            },
+            date_begin: {
+              type: 'integer',
+              description: 'Start timestamp (Unix epoch) for the measurement range',
+            },
+            date_end: {
+              type: 'string',
+              description: 'End timestamp (Unix epoch) or "last" for the most recent measurement',
+            },
+            limit: {
+              type: 'integer',
+              description: 'Maximum number of measurements to return (max 1024)',
+            },
+            optimize: {
+              type: 'boolean',
+              description: 'If true, optimize data by returning compressed format',
+            },
+            real_time: {
+              type: 'boolean',
+              description: 'If true, return real-time measurements (only valid for 5min and 30min scales)',
+            },
+          },
+          required: ['device_id', 'scale', 'type'],
+        },
+      },
+      {
+        name: 'get_next_events',
+        description: 'Get the next page of Netatmo home security events after a specified event ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            home_id: {
+              type: 'string',
+              description: 'The home ID to retrieve events for',
+            },
+            event_id: {
+              type: 'string',
+              description: 'The most recent event ID already retrieved — fetch events after this ID',
+            },
+            size: {
+              type: 'integer',
+              description: 'Number of events to return (default: 30)',
+            },
+          },
+          required: ['home_id', 'event_id'],
+        },
+      },
+      {
+        name: 'get_public_data',
+        description: 'Get public Netatmo weather station data within a geographic bounding box (lat/lon NE and SW corners)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            lat_ne: {
+              type: 'number',
+              description: 'Latitude of the northeast corner of the bounding box',
+            },
+            lon_ne: {
+              type: 'number',
+              description: 'Longitude of the northeast corner of the bounding box',
+            },
+            lat_sw: {
+              type: 'number',
+              description: 'Latitude of the southwest corner of the bounding box',
+            },
+            lon_sw: {
+              type: 'number',
+              description: 'Longitude of the southwest corner of the bounding box',
+            },
+            required_data: {
+              type: 'array',
+              description: 'Optional array of data types to filter stations: temperature, humidity, pressure, wind, rain',
+            },
+            filter: {
+              type: 'boolean',
+              description: 'If true, filter out stations with abnormal data',
+            },
+          },
+          required: ['lat_ne', 'lon_ne', 'lat_sw', 'lon_sw'],
+        },
+      },
+      {
+        name: 'get_stations_data',
+        description: 'Get data from all Netatmo weather stations in the user\'s account (temperature, humidity, CO2, pressure, noise, rain, wind)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'Optional specific weather station device ID',
+            },
+            get_favorites: {
+              type: 'boolean',
+              description: 'If true, include weather stations marked as favorites',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_thermostats_data',
+        description: 'Get data from all Netatmo thermostat devices in the user\'s account (current temperature, setpoint, heating mode, schedule)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'Optional specific thermostat relay device ID',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_therm_state',
+        description: 'Get the current state of a Netatmo thermostat module (setpoint mode, temperature, heating status)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The thermostat relay device ID',
+            },
+            module_id: {
+              type: 'string',
+              description: 'The thermostat module ID',
+            },
+          },
+          required: ['device_id', 'module_id'],
+        },
+      },
+      {
+        name: 'get_user',
+        description: 'Get the Netatmo user account information (name, email, unit preferences, timezone)',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
       {
         name: 'get_partner_devices',
-        description: 'Get the list of devices associated with the developer partner application',
-        inputSchema: { type: 'object', properties: {} },
+        description: 'Get devices associated with a partner app in the Netatmo ecosystem',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      // ── Presence / Security ────────────────────────────────────────────────
+      {
+        name: 'set_persons_away',
+        description: 'Mark one or all persons in a Netatmo home as away, affecting camera motion detection and presence rules',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            home_id: {
+              type: 'string',
+              description: 'The home ID to update person presence for',
+            },
+            person_id: {
+              type: 'string',
+              description: 'Optional person ID to mark as away. If omitted, marks all persons as away.',
+            },
+          },
+          required: ['home_id'],
+        },
+      },
+      {
+        name: 'set_persons_home',
+        description: 'Mark one or more persons in a Netatmo home as home',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            home_id: {
+              type: 'string',
+              description: 'The home ID to update person presence for',
+            },
+            person_ids: {
+              type: 'string',
+              description: 'Comma-separated list of person IDs to mark as home',
+            },
+          },
+          required: ['home_id', 'person_ids'],
+        },
+      },
+      // ── Thermostat Control ─────────────────────────────────────────────────
+      {
+        name: 'set_therm_point',
+        description: 'Set the thermostat setpoint — change the heating mode (schedule, away, manual, HG frost-guard, off) or set a manual temperature',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The thermostat relay device ID',
+            },
+            module_id: {
+              type: 'string',
+              description: 'The thermostat module ID',
+            },
+            setpoint_mode: {
+              type: 'string',
+              description: 'Thermostat mode: program (follow schedule), away, hg (frost guard), manual, off, or max',
+            },
+            setpoint_endtime: {
+              type: 'integer',
+              description: 'Optional Unix timestamp when manual/away mode should end and resume the schedule',
+            },
+            setpoint_temp: {
+              type: 'number',
+              description: 'Manual temperature setpoint in Celsius (only used when setpoint_mode is manual)',
+            },
+          },
+          required: ['device_id', 'module_id', 'setpoint_mode'],
+        },
+      },
+      {
+        name: 'switch_schedule',
+        description: 'Switch the active heating schedule for a Netatmo thermostat module',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The thermostat relay device ID',
+            },
+            module_id: {
+              type: 'string',
+              description: 'The thermostat module ID',
+            },
+            schedule_id: {
+              type: 'string',
+              description: 'The ID of the schedule to activate',
+            },
+          },
+          required: ['device_id', 'module_id', 'schedule_id'],
+        },
+      },
+      {
+        name: 'sync_schedule',
+        description: 'Sync (update) an existing thermostat heating schedule with a new timetable and zone configuration',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The thermostat relay device ID',
+            },
+            module_id: {
+              type: 'string',
+              description: 'The thermostat module ID',
+            },
+            schedule_id: {
+              type: 'string',
+              description: 'The schedule ID to update',
+            },
+            name: {
+              type: 'string',
+              description: 'New name for the schedule',
+            },
+            timetable: {
+              type: 'array',
+              description: 'Updated array of timetable slots (m_offset from Monday 00:00 and zone_id)',
+            },
+            zones: {
+              type: 'array',
+              description: 'Updated array of zones with id, name, and temp fields',
+            },
+          },
+          required: ['device_id', 'module_id'],
+        },
       },
     ];
   }
@@ -538,28 +544,28 @@ export class NetatmoMCPServer {
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'get_user':             return await this.getUser();
-        case 'get_stations_data':    return await this.getStationsData(args);
-        case 'get_homecoach_data':   return await this.getHomecoachData(args);
-        case 'get_measure':          return await this.getMeasure(args);
-        case 'get_public_data':      return await this.getPublicData(args);
-        case 'get_device_list':      return await this.getDeviceList(args);
-        case 'get_thermostats_data': return await this.getThermostatsData(args);
-        case 'get_therm_state':      return await this.getThermState(args);
-        case 'set_therm_point':      return await this.setThermPoint(args);
-        case 'create_new_schedule':  return await this.createNewSchedule(args);
-        case 'switch_schedule':      return await this.switchSchedule(args);
-        case 'sync_schedule':        return await this.syncSchedule(args);
-        case 'get_home_data':        return await this.getHomeData(args);
-        case 'get_events_until':     return await this.getEventsUntil(args);
-        case 'get_next_events':      return await this.getNextEvents(args);
-        case 'get_last_event_of':    return await this.getLastEventOf(args);
-        case 'get_camera_picture':   return await this.getCameraPicture(args);
-        case 'set_persons_away':     return await this.setPersonsAway(args);
-        case 'set_persons_home':     return await this.setPersonsHome(args);
-        case 'add_webhook':          return await this.addWebhook(args);
-        case 'drop_webhook':         return await this.dropWebhook(args);
-        case 'get_partner_devices':  return await this.getPartnerDevices();
+        case 'add_webhook':          return this.get('/addwebhook', args);
+        case 'drop_webhook':         return this.get('/dropwebhook', args);
+        case 'create_new_schedule':  return this.post('/createnewschedule', args);
+        case 'get_device_list':      return this.get('/devicelist', args);
+        case 'get_camera_picture':   return this.get('/getcamerapicture', args);
+        case 'get_events_until':     return this.get('/geteventsuntil', args);
+        case 'get_home_coach_data':  return this.get('/gethomecoachsdata', args);
+        case 'get_home_data':        return this.get('/gethomedata', args);
+        case 'get_last_event_of':    return this.get('/getlasteventof', args);
+        case 'get_measure':          return this.get('/getmeasure', args);
+        case 'get_next_events':      return this.get('/getnextevents', args);
+        case 'get_public_data':      return this.get('/getpublicdata', args);
+        case 'get_stations_data':    return this.get('/getstationsdata', args);
+        case 'get_thermostats_data': return this.get('/getthermostatsdata', args);
+        case 'get_therm_state':      return this.get('/getthermstate', args);
+        case 'get_user':             return this.get('/getuser', {});
+        case 'get_partner_devices':  return this.get('/partnerdevices', {});
+        case 'set_persons_away':     return this.post('/setpersonsaway', args);
+        case 'set_persons_home':     return this.post('/setpersonshome', args);
+        case 'set_therm_point':      return this.post('/setthermpoint', args);
+        case 'switch_schedule':      return this.post('/switchschedule', args);
+        case 'sync_schedule':        return this.post('/syncschedule', args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -571,287 +577,75 @@ export class NetatmoMCPServer {
     }
   }
 
-  // ── Private helpers ─────────────────────────────────────────────────────────
+  // ── Private helpers ────────────────────────────────────────────────────────
 
-  private headers(): Record<string, string> {
-    return {
-      Authorization: `Bearer ${this.accessToken}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    };
+  private get authHeader(): string {
+    return `Bearer ${this.accessToken}`;
   }
 
-  private truncate(text: string): string {
+  private truncate(data: unknown): string {
+    const text = JSON.stringify(data, null, 2);
     return text.length > 10_000
       ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
       : text;
   }
 
-  private async fetchGet(endpoint: string, params: Record<string, unknown> = {}): Promise<ToolResult> {
-    const qs = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          qs.set(key, value.join(','));
-        } else {
-          qs.set(key, String(value));
-        }
+  private buildQueryString(params: Record<string, unknown>): string {
+    const parts: string[] = [];
+    for (const [k, v] of Object.entries(params)) {
+      if (v === undefined || v === null) continue;
+      if (Array.isArray(v)) {
+        parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(v.join(','))}`);
+      } else {
+        parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
       }
     }
-    const url = `${this.baseUrl}${endpoint}${qs.toString() ? '?' + qs.toString() : ''}`;
-    const response = await fetch(url, { headers: this.headers() });
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      data = { status: response.status, statusText: response.statusText };
-    }
-    const out = JSON.stringify(data, null, 2);
-    return {
-      content: [{ type: 'text', text: this.truncate(out) }],
-      isError: !response.ok,
-    };
+    return parts.length > 0 ? `?${parts.join('&')}` : '';
   }
 
-  private async fetchPost(endpoint: string, params: Record<string, unknown> = {}): Promise<ToolResult> {
-    const qs = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== null) {
-        if (typeof value === 'object') {
-          qs.set(key, JSON.stringify(value));
-        } else {
-          qs.set(key, String(value));
-        }
-      }
-    }
-    const url = `${this.baseUrl}${endpoint}?${qs.toString()}`;
-    const response = await fetch(url, { method: 'POST', headers: this.headers() });
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      data = { status: response.status, statusText: response.statusText };
-    }
-    const out = JSON.stringify(data, null, 2);
-    return {
-      content: [{ type: 'text', text: this.truncate(out) }],
-      isError: !response.ok,
-    };
-  }
-
-  private async getUser(): Promise<ToolResult> {
-    return this.fetchGet('/getuser');
-  }
-
-  private async getStationsData(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet('/getstationsdata', {
-      device_id: args.device_id,
-      get_favorites: args.get_favorites,
+  private async get(path: string, params: Record<string, unknown>): Promise<ToolResult> {
+    const qs = this.buildQueryString(params);
+    const url = `${this.baseUrl}${path}${qs}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: this.authHeader,
+        Accept: 'application/json',
+      },
     });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return {
+        content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }],
+        isError: true,
+      };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async getHomecoachData(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet('/gethomecoachsdata', { device_id: args.device_id });
-  }
-
-  private async getMeasure(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.device_id) {
-      return { content: [{ type: 'text', text: 'device_id is required' }], isError: true };
-    }
-    if (!args.scale) {
-      return { content: [{ type: 'text', text: 'scale is required' }], isError: true };
-    }
-    if (!args.type) {
-      return { content: [{ type: 'text', text: 'type is required' }], isError: true };
-    }
-    const typeVal = Array.isArray(args.type) ? (args.type as string[]).join(',') : String(args.type);
-    return this.fetchGet('/getmeasure', {
-      device_id: args.device_id,
-      module_id: args.module_id,
-      scale: args.scale,
-      type: typeVal,
-      date_begin: args.date_begin,
-      date_end: args.date_end,
-      limit: args.limit,
-      optimize: args.optimize,
-      real_time: args.real_time,
+  private async post(path: string, params: Record<string, unknown>): Promise<ToolResult> {
+    // Netatmo POST endpoints accept query parameters, not a JSON body
+    const qs = this.buildQueryString(params);
+    const url = `${this.baseUrl}${path}${qs}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: this.authHeader,
+        Accept: 'application/json',
+      },
     });
-  }
-
-  private async getPublicData(args: Record<string, unknown>): Promise<ToolResult> {
-    for (const field of ['lat_ne', 'lon_ne', 'lat_sw', 'lon_sw']) {
-      if (args[field] === undefined || args[field] === null) {
-        return { content: [{ type: 'text', text: `${field} is required` }], isError: true };
-      }
+    if (!response.ok) {
+      const errText = await response.text().catch(() => response.statusText);
+      return {
+        content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }],
+        isError: true,
+      };
     }
-    return this.fetchGet('/getpublicdata', {
-      lat_ne: args.lat_ne,
-      lon_ne: args.lon_ne,
-      lat_sw: args.lat_sw,
-      lon_sw: args.lon_sw,
-      required_data: args.required_data,
-      filter: args.filter,
-    });
-  }
-
-  private async getDeviceList(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet('/devicelist', {
-      app_type: args.app_type,
-      device_id: args.device_id,
-      get_favorites: args.get_favorites,
-    });
-  }
-
-  private async getThermostatsData(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet('/getthermostatsdata', { device_id: args.device_id });
-  }
-
-  private async getThermState(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.device_id || !args.module_id) {
-      return { content: [{ type: 'text', text: 'device_id and module_id are required' }], isError: true };
+    if (response.status === 204) {
+      return { content: [{ type: 'text', text: '{"success":true}' }], isError: false };
     }
-    return this.fetchGet('/getthermstate', {
-      device_id: args.device_id,
-      module_id: args.module_id,
-    });
-  }
-
-  private async setThermPoint(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.device_id || !args.module_id || !args.setpoint_mode) {
-      return { content: [{ type: 'text', text: 'device_id, module_id, and setpoint_mode are required' }], isError: true };
-    }
-    return this.fetchPost('/setthermpoint', {
-      device_id: args.device_id,
-      module_id: args.module_id,
-      setpoint_mode: args.setpoint_mode,
-      setpoint_endtime: args.setpoint_endtime,
-      setpoint_temp: args.setpoint_temp,
-    });
-  }
-
-  private async createNewSchedule(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.device_id || !args.module_id || !args.therm_program) {
-      return { content: [{ type: 'text', text: 'device_id, module_id, and therm_program are required' }], isError: true };
-    }
-    return this.fetchPost('/createnewschedule', {
-      device_id: args.device_id,
-      module_id: args.module_id,
-      therm_program: args.therm_program,
-    });
-  }
-
-  private async switchSchedule(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.device_id || !args.module_id || !args.schedule_id) {
-      return { content: [{ type: 'text', text: 'device_id, module_id, and schedule_id are required' }], isError: true };
-    }
-    return this.fetchPost('/switchschedule', {
-      device_id: args.device_id,
-      module_id: args.module_id,
-      schedule_id: args.schedule_id,
-    });
-  }
-
-  private async syncSchedule(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.device_id || !args.module_id || !args.therm_program) {
-      return { content: [{ type: 'text', text: 'device_id, module_id, and therm_program are required' }], isError: true };
-    }
-    return this.fetchPost('/syncschedule', {
-      device_id: args.device_id,
-      module_id: args.module_id,
-      therm_program: args.therm_program,
-    });
-  }
-
-  private async getHomeData(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.fetchGet('/gethomedata', {
-      home_id: args.home_id,
-      size: args.size,
-    });
-  }
-
-  private async getEventsUntil(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.home_id || !args.event_id) {
-      return { content: [{ type: 'text', text: 'home_id and event_id are required' }], isError: true };
-    }
-    return this.fetchGet('/geteventsuntil', {
-      home_id: args.home_id,
-      event_id: args.event_id,
-    });
-  }
-
-  private async getNextEvents(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.home_id || !args.event_id) {
-      return { content: [{ type: 'text', text: 'home_id and event_id are required' }], isError: true };
-    }
-    return this.fetchGet('/getnextevents', {
-      home_id: args.home_id,
-      event_id: args.event_id,
-      size: args.size,
-    });
-  }
-
-  private async getLastEventOf(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.home_id || !args.person_id) {
-      return { content: [{ type: 'text', text: 'home_id and person_id are required' }], isError: true };
-    }
-    return this.fetchGet('/getlasteventof', {
-      home_id: args.home_id,
-      person_id: args.person_id,
-      offset: args.offset,
-    });
-  }
-
-  private async getCameraPicture(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.image_id || !args.key) {
-      return { content: [{ type: 'text', text: 'image_id and key are required' }], isError: true };
-    }
-    return this.fetchGet('/getcamerapicture', {
-      image_id: args.image_id,
-      key: args.key,
-    });
-  }
-
-  private async setPersonsAway(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.home_id) {
-      return { content: [{ type: 'text', text: 'home_id is required' }], isError: true };
-    }
-    return this.fetchPost('/setpersonsaway', {
-      home_id: args.home_id,
-      person_id: args.person_id,
-    });
-  }
-
-  private async setPersonsHome(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.home_id || !args.person_ids) {
-      return { content: [{ type: 'text', text: 'home_id and person_ids are required' }], isError: true };
-    }
-    const ids = Array.isArray(args.person_ids)
-      ? (args.person_ids as string[]).join(',')
-      : String(args.person_ids);
-    return this.fetchPost('/setpersonshome', {
-      home_id: args.home_id,
-      person_ids: ids,
-    });
-  }
-
-  private async addWebhook(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.url || !args.app_type) {
-      return { content: [{ type: 'text', text: 'url and app_type are required' }], isError: true };
-    }
-    return this.fetchGet('/addwebhook', {
-      url: args.url,
-      app_type: args.app_type,
-    });
-  }
-
-  private async dropWebhook(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.app_type) {
-      return { content: [{ type: 'text', text: 'app_type is required' }], isError: true };
-    }
-    return this.fetchGet('/dropwebhook', { app_type: args.app_type });
-  }
-
-  private async getPartnerDevices(): Promise<ToolResult> {
-    return this.fetchGet('/partnerdevices');
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 }

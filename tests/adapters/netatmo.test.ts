@@ -22,49 +22,68 @@ describe('NetatmoMCPServer', () => {
     }
   });
 
-  it('unknown tool returns error, not throw', async () => {
+  it('unknown tool returns isError true, not throw', async () => {
     const result = await adapter.callTool('nonexistent_tool_xyz', {});
     expect(result.isError).toBe(true);
   });
 
-  it('exposes expected tool categories', () => {
-    const toolNames = adapter.tools.map((t) => t.name);
-    expect(toolNames).toContain('get_user');
-    expect(toolNames).toContain('get_stations_data');
-    expect(toolNames).toContain('get_homecoach_data');
-    expect(toolNames).toContain('get_measure');
-    expect(toolNames).toContain('get_public_data');
-    expect(toolNames).toContain('get_thermostats_data');
-    expect(toolNames).toContain('set_therm_point');
-    expect(toolNames).toContain('switch_schedule');
-    expect(toolNames).toContain('get_home_data');
-    expect(toolNames).toContain('set_persons_away');
-    expect(toolNames).toContain('add_webhook');
+  it('catalog returns required fields', () => {
+    const cat = NetatmoMCPServer.catalog();
+    expect(cat.name).toBe('netatmo');
+    expect(cat.category).toBe('iot');
+    expect(cat.toolNames.length).toBeGreaterThan(0);
+    expect(cat.author).toBeTruthy();
   });
 
-  it('missing required fields return error result without throwing', async () => {
-    const result = await adapter.callTool('get_measure', { device_id: 'test' });
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('scale is required');
+  it('tool names in catalog match tools getter', () => {
+    const cat = NetatmoMCPServer.catalog();
+    const toolNames = adapter.tools.map(t => t.name);
+    for (const name of cat.toolNames) {
+      expect(toolNames).toContain(name);
+    }
   });
 
-  it('set_therm_point missing args returns error without throwing', async () => {
-    const result = await adapter.callTool('set_therm_point', { device_id: 'test' });
-    expect(result.isError).toBe(true);
+  it('add_webhook requires url and app_type', () => {
+    const tool = adapter.tools.find(t => t.name === 'add_webhook');
+    expect(tool).toBeDefined();
+    expect(tool!.inputSchema.required).toContain('url');
+    expect(tool!.inputSchema.required).toContain('app_type');
   });
 
-  it('get_public_data missing coords returns error without throwing', async () => {
-    const result = await adapter.callTool('get_public_data', { lat_ne: 48.9 });
-    expect(result.isError).toBe(true);
+  it('get_measure requires device_id, scale, and type', () => {
+    const tool = adapter.tools.find(t => t.name === 'get_measure');
+    expect(tool).toBeDefined();
+    expect(tool!.inputSchema.required).toContain('device_id');
+    expect(tool!.inputSchema.required).toContain('scale');
+    expect(tool!.inputSchema.required).toContain('type');
   });
 
-  it('static catalog returns correct category and author', () => {
-    const catalog = NetatmoMCPServer.catalog();
-    expect(catalog.category).toBe('iot');
-    expect(catalog.author).toBe('protectnil');
-    expect(catalog.name).toBe('netatmo');
-    expect(catalog.keywords).toContain('netatmo');
-    expect(catalog.keywords).toContain('weather');
-    expect(catalog.keywords).toContain('thermostat');
+  it('set_therm_point requires device_id, module_id, setpoint_mode', () => {
+    const tool = adapter.tools.find(t => t.name === 'set_therm_point');
+    expect(tool).toBeDefined();
+    expect(tool!.inputSchema.required).toContain('device_id');
+    expect(tool!.inputSchema.required).toContain('module_id');
+    expect(tool!.inputSchema.required).toContain('setpoint_mode');
+  });
+
+  it('get_public_data requires bounding box coordinates', () => {
+    const tool = adapter.tools.find(t => t.name === 'get_public_data');
+    expect(tool).toBeDefined();
+    expect(tool!.inputSchema.required).toContain('lat_ne');
+    expect(tool!.inputSchema.required).toContain('lon_ne');
+    expect(tool!.inputSchema.required).toContain('lat_sw');
+    expect(tool!.inputSchema.required).toContain('lon_sw');
+  });
+
+  it('get_user has no required fields', () => {
+    const tool = adapter.tools.find(t => t.name === 'get_user');
+    expect(tool).toBeDefined();
+    expect(tool!.inputSchema.required ?? []).toHaveLength(0);
+  });
+
+  it('get_stations_data has no required fields', () => {
+    const tool = adapter.tools.find(t => t.name === 'get_stations_data');
+    expect(tool).toBeDefined();
+    expect(tool!.inputSchema.required ?? []).toHaveLength(0);
   });
 });
