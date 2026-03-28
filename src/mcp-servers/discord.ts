@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/v-fol/mcp-discord — community-maintained, not an official Discord release.
-//   Covers limited bot operations. No official discord/mcp-server exists as of 2026-03.
+// Official MCP: None found as of 2026-03-28. Discord Inc. has not published an official MCP server.
+//   Community servers exist (e.g. github.com/v-fol/mcp-discord, github.com/barryyip0625/mcp-discord,
+//   github.com/SaseQ/discord-mcp) but none are published by Discord and none meet the 4 criteria
+//   for vendor MCP preference (not official). Researched 2026-03-28.
 // Our adapter covers: 20 tools (guilds, channels, messages, members, roles, webhooks).
 //   Use this adapter for full bot-token REST API access.
 //
@@ -650,7 +652,7 @@ export class DiscordMCPServer {
   }
 
   private async pinMessage(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/pins/${encodeURIComponent(args.message_id as string)}`, { method: 'PUT' });
+    return this.request(`/channels/${encodeURIComponent(args.channel_id as string)}/messages/pins/${encodeURIComponent(args.message_id as string)}`, { method: 'PUT' });
   }
 
   private async addReaction(args: Record<string, unknown>): Promise<ToolResult> {

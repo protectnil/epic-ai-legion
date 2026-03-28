@@ -4,13 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Duck Creek Technologies MCP server was found on GitHub or the Duck Creek developer portal.
+// Official MCP: None found as of 2026-03-28
+// No official Duck Creek Technologies MCP server was found on GitHub, npm, or the Duck Creek developer portal.
 // Duck Creek Anywhere exposes tenant-scoped REST APIs for Policy, Billing, Claims, and Rating.
 // Each deployment runs at a carrier-specific subdomain: https://{tenant}.duckcreek.net
+// Our adapter covers: 19 tools.
 //
 // Base URL: https://{tenant}.duckcreek.net (tenant-scoped; set via config.baseUrl)
-// Auth: OAuth2 client credentials — POST /oauth2/token with client_id + client_secret
+// Auth: OAuth2 client credentials — POST /oauth2/token with client_id + client_secret (Basic auth)
 // Docs: https://www.duckcreek.com/product/anywhere-integration/
 // Rate limits: Not publicly documented; subject to tenant-level throttling agreements
 
@@ -663,7 +664,7 @@ export class DuckCreekMCPServer {
     };
     if (args.status) params.status = args.status as string;
     if (args.policy_id) params.policyId = args.policy_id as string;
-    if (args.loss_date_from) params.lossDatFrom = args.loss_date_from as string;
+    if (args.loss_date_from) params.lossDateFrom = args.loss_date_from as string;
     if (args.loss_date_to) params.lossDateTo = args.loss_date_to as string;
     return this.dcGet('/api/v1/claims', params);
   }

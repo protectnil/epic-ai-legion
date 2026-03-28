@@ -4,15 +4,36 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// A community server exists (github.com/riccardo-larosa/docebo-mcp-server) but is not officially
-// maintained by Docebo. No official Docebo MCP server found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// No official Docebo MCP server was found on GitHub. A community server exists
+// (github.com/riccardo-larosa/docebo-mcp-server) but is not officially maintained by Docebo.
+// Our adapter covers: 18 tools. Vendor MCP covers: 0 tools (none found).
+// Recommendation: use-rest-api
 //
 // Base URL: https://{subdomain}.docebosaas.com (tenant-specific; set via config)
 // Auth: OAuth2 client credentials — POST /oauth2/token with client_id and client_secret
-// Docs: https://help.docebo.com/hc/en-us/sections/360005441800-APIs
-//       https://doceboapi.docebosaas.com/api/docs
-// Rate limits: Not published. Tokens valid for 14 days. Refresh 60s before expiry.
+// Docs: https://help.docebo.com/hc/en-us/articles/23195635608594-Overview-of-API-services-and-endpoints
+//       https://doceboapi.docebosaas.com/api-browser/
+//       https://developer.docebo.com/docs/api-browser-technical-information
+// Rate limits: Not published. Tokens valid 14 days (expires_in); adapter refreshes 60s before expiry.
+//
+// Key verified endpoints:
+//   GET  /learn/v1/courses                        — list courses
+//   GET  /learn/v1/courses/{id}                   — get course
+//   POST /learn/v1/courses                        — create course
+//   PUT  /learn/v1/courses/{id}                   — update course
+//   DEL  /learn/v1/courses/{id}                   — delete course
+//   GET  /manage/v1/user                          — list users (note: singular "user")
+//   GET  /manage/v1/user/{id}                     — get user
+//   POST /manage/v1/user                          — create user
+//   PUT  /manage/v1/user/{id}                     — update user / deactivate
+//   POST /learn/v1/enrollments                    — enroll user(s) in course
+//   DEL  /learn/v1/enrollments/{id_course}/{id_user} — unenroll user
+//   GET  /learn/v1/lp                             — list learning plans
+//   GET  /learn/v1/lp/{id}                        — get learning plan
+//   GET  /learn/v1/certification                  — list certifications (no trailing 's')
+//   GET  /certification/v1/awards/users/{user_id} — get user certifications
+//   GET  /analytics/v1/reports                    — list reports
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -781,7 +802,8 @@ export class DoceboMCPServer {
       pageSize: String((args.page_size as number) || 20),
     };
     if (args.search_text) params.search_text = args.search_text as string;
-    return this.doceboGet('/learn/v1/certifications', params);
+    // Correct endpoint: /learn/v1/certification (no trailing 's') per doceboapi.docebosaas.com
+    return this.doceboGet('/learn/v1/certification', params);
   }
 
   private async getUserCertifications(args: Record<string, unknown>): Promise<ToolResult> {
@@ -790,7 +812,8 @@ export class DoceboMCPServer {
       page: String((args.page as number) || 1),
       pageSize: String((args.page_size as number) || 20),
     };
-    return this.doceboGet(`/learn/v1/certifications/user/${encodeURIComponent(args.user_id as string)}`, params);
+    // Correct endpoint: /certification/v1/awards/users/{user_id} per docebousandbox.docebosaas.com API explorer
+    return this.doceboGet(`/certification/v1/awards/users/${encodeURIComponent(args.user_id as string)}`, params);
   }
 
   private async getReports(args: Record<string, unknown>): Promise<ToolResult> {

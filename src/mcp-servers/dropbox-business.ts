@@ -4,11 +4,29 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/dropbox/mcp-server-dash — transport: stdio, auth: OAuth2
-// The official Dropbox Dash MCP server focuses on Dash search (file metadata + AI search).
-// It does NOT cover team member management, folder operations, sharing, or group management.
-// Our adapter covers: 18 tools (team members, files, folders, sharing, groups, events).
-// Recommendation: Use this adapter for team admin workflows. Use vendor MCP for Dash AI search.
+// Official MCP (1): https://github.com/dropbox/mcp-server-dash — transport: stdio, auth: OAuth2 (PKCE)
+//   Published by Dropbox Inc. (dropbox/mcp-server-dash). Last commit: Nov 3, 2025. Actively maintained.
+//   Tools (4): dash_get_auth_url, dash_authenticate, dash_company_search, dash_get_file_details
+//   Scope: Dropbox Dash AI search only — file content/metadata search across company content.
+//   This MCP does NOT cover team member management, folder operations, sharing, groups, or audit events.
+//
+// Official MCP (2): https://help.dropbox.com/integrations/connect-dropbox-mcp-server — transport: streamable-HTTP, auth: Bearer token
+//   Dropbox remote MCP server (beta as of 2026-03). Published by Dropbox.
+//   Tools (5): ListFolder, GetFileMetadata, GetFileContent, GetUsageAndQuota, Search
+//   Scope: Individual user file operations only — no team admin, members, groups, sharing management.
+//
+// Decision: use-both — Our REST adapter covers team admin operations (members, groups, sharing allowlists,
+//   team folders, events) that neither MCP exposes. Use Dash MCP for AI-powered content search.
+//   Use this adapter for all team administration workflows (team info, members CRUD, groups, audit log).
+//
+// Integration: use-both
+// MCP-sourced tools (Dash, 4): dash_get_auth_url, dash_authenticate, dash_company_search, dash_get_file_details
+// MCP-sourced tools (Remote, 5): ListFolder, GetFileMetadata, GetFileContent, GetUsageAndQuota, Search
+// REST-sourced tools (18): get_team_info, list_team_members, get_team_member, add_team_member,
+//   remove_team_member, list_files, get_file_metadata, search_files, create_folder, delete_file,
+//   move_file, copy_file, share_file, list_shared_links, create_shared_link, list_groups, get_group,
+//   list_team_events
+// Combined coverage: use REST adapter for team admin; MCP for AI search and user file access
 //
 // Base URL: https://api.dropboxapi.com/2 (RPC) / https://content.dropboxapi.com/2 (uploads/downloads)
 // Auth: Bearer access token (team access token with team_data.member and team_data.team scopes)
@@ -21,7 +39,6 @@ import { ToolDefinition, ToolResult } from './types.js';
 interface DropboxBusinessConfig {
   accessToken: string;
   baseUrl?: string;
-  contentBaseUrl?: string;
 }
 
 export class DropboxBusinessMCPServer {

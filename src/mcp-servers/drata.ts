@@ -4,11 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-//   No official drata/mcp-server exists. The Drata developer portal at
-//   https://developers.drata.com/ documents a public REST API (v1 stable, v2 beta).
+// Official MCP: https://drata.com/mcp (cloud-hosted, remotely managed) — transport: streamable-HTTP, auth: Bearer token
+//   Drata MCP is officially published by Drata Inc. (listed at modelcontextprotocol.io/servers and developers.drata.com).
+//   The MCP is a cloud-hosted managed server (no self-hosted option). Tool names are not publicly enumerated.
+//   Maintenance status: active as of 2026-03 (launched June 2025, continuously updated per vendor).
+//   Tool count: Not publicly documented — vendor states it provides compliance, risk, and monitoring data.
+//   Because exact tool names are not enumerable without an authenticated session, we cannot perform a
+//   complete overlap analysis. Our REST adapter is kept as an air-gapped fallback and for environments
+//   where the managed MCP endpoint is not accessible.
 // Our adapter covers: 18 tools (controls, evidence, personnel, vendors, risks,
 //   monitors, workspaces, users). Targets the Drata public REST API v1.
+// Recommendation: For customers with Drata MCP access, prefer the vendor MCP for natural-language GRC workflows.
+//   Use this REST adapter for air-gapped deployments, CI/CD automation, or when the managed MCP is unavailable.
 //
 // Base URL: https://public-api.drata.com/public/v1
 // Auth: Bearer token — Authorization: Bearer {apiKey} (generate in Drata Settings > API Keys)

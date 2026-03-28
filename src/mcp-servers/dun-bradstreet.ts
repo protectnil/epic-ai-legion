@@ -4,15 +4,19 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official D&B Direct+ MCP server was found on GitHub or the D&B developer portal.
-// Community scrapers exist on Apify but are not official and not maintained by D&B.
+// Official MCP: D&B publishes MCP servers via Databricks Marketplace (D&B.AI suite, announced 2025).
+//   Transport: streamable-HTTP (Databricks-hosted). Auth: Databricks credentials.
+//   NOTE: The D&B MCP is Databricks Marketplace-only — not a standalone GitHub/npm server accessible
+//   outside of Databricks. It does not satisfy criterion 1 (no public GitHub repo or npm package).
+//   Recommendation: use-rest-api. Document MCP for future evaluation if D&B publishes a standalone server.
+// Our adapter covers: 12 tools. Vendor MCP (Databricks): unknown tool count (not publicly enumerated).
 //
 // Base URL: https://plus.dnb.com
-// Auth: OAuth2 client credentials — POST /v2/token with consumer key + secret (Basic auth header)
-//       Access tokens expire after 24 hours; adapter refreshes 60 seconds early.
-// Docs: https://directplus.documentation.dnb.com/html/pages/UsingDplusAPIs.html
-//       https://developer.dnb.com/
+// Auth: OAuth2 client credentials — POST /v2/token, Authorization: Basic <base64(key:secret)>,
+//       Content-Type: application/json, body: {"grant_type":"client_credentials"}.
+//       Access tokens expire after 24 hours (expiresIn: 86400); adapter refreshes 60 seconds early.
+// Docs: https://directplus.documentation.dnb.com/
+//       https://docs.dnb.com/partner/en-US/plus/token/1.0/authentication
 // Rate limits: Not publicly documented; subject to contract entitlements
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -348,9 +352,9 @@ export class DunBradstreetMCPServer {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.consumerKey}:${this.consumerSecret}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: 'grant_type=client_credentials',
+      body: JSON.stringify({ grant_type: 'client_credentials' }),
     });
     if (!response.ok) {
       throw new Error(`OAuth2 token request failed: ${response.status} ${response.statusText}`);

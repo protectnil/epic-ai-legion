@@ -4,10 +4,12 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/digitalocean-labs/mcp-digitalocean — actively maintained by
-// DigitalOcean Labs. Transport: stdio. Auth: DIGITALOCEAN_API_TOKEN env var.
-// Vendor MCP covers: 60+ tools (full API surface including Droplets, Apps, Kubernetes, Databases,
-//   Spaces, Networking, Monitoring, Billing, Domains, Firewalls, Load Balancers, Volumes).
+// Official MCP: https://github.com/digitalocean-labs/mcp-digitalocean (npm: @digitalocean/mcp)
+//   Actively maintained by DigitalOcean Labs. Transport: stdio (local) + streamable-HTTP (remote).
+//   Auth: DIGITALOCEAN_API_TOKEN env var (local) or Authorization: Bearer header (remote).
+//   Remote MCP endpoints: apps.mcp.digitalocean.com, droplets.mcp.digitalocean.com, etc.
+//   Vendor MCP covers: 60+ tools across Accounts, Apps, DBaaS, DOKS, Droplets, Insights,
+//   Marketplace, Networking, Spaces (domains, firewalls, LBs, VPCs, CDN, reserved IPs).
 // Our adapter covers: 26 tools (core cloud operations for orchestration use cases).
 // Recommendation: Use vendor MCP for full coverage in development environments.
 //   Use this adapter for air-gapped or production deployments needing controlled tool surface.

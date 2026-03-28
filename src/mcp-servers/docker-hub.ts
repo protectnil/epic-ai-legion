@@ -4,13 +4,34 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-//   No official docker/mcp-server-hub exists. Community adapters are limited in scope.
-// Our adapter covers: 14 tools (repositories, tags, namespaces, organizations, access tokens,
-//   audit logs, search). Use this adapter for Docker Hub API v2 REST access.
+// Official MCP: https://github.com/docker/hub-mcp — transport: stdio and streamable-HTTP, auth: PAT token
+// Published by Docker Inc. (official). Actively maintained (2025). Exposes 13 tools.
+// Our adapter covers: 14 tools. Vendor MCP covers: 13 tools.
+// Recommendation: use-both — our adapter has tools not in the vendor MCP (delete_repository,
+//   delete_tag, list_organization_members, list_organization_groups, list_access_tokens,
+//   list_audit_logs, get_repository_vulnerabilities [UNVERIFIED — see note below]);
+//   vendor MCP has tools not in our adapter (checkRepository, checkRepositoryTag,
+//   dockerHardenedImages, getPersonalNamespace, listAllNamespacesMemberOf, updateRepositoryInfo).
+//
+// Integration: use-both
+// MCP-sourced tools (6): checkRepository, checkRepositoryTag, dockerHardenedImages,
+//   getPersonalNamespace, listAllNamespacesMemberOf, updateRepositoryInfo
+// REST-sourced tools (8): delete_repository, delete_tag, list_organization_members,
+//   list_organization_groups, list_access_tokens, list_audit_logs, get_tag,
+//   get_repository_vulnerabilities [UNVERIFIED]
+// Shared (6): list_repositories≈listRepositoriesByNamespace, get_repository≈getRepositoryInfo,
+//   create_repository≈createRepository, list_tags≈listRepositoryTags, get_tag≈getRepositoryTag,
+//   search_repositories≈search
+// Combined coverage: 14 REST + 6 MCP-only = 20 operations total
+//
+// NOTE on get_repository_vulnerabilities: the path
+//   /v2/repositories/{ns}/{repo}/tags/{tag}/vulnerabilities/ is NOT listed in the official
+//   Docker Hub API reference at docs.docker.com/reference/api/hub/latest/. Vulnerability data
+//   is available via Docker Scout (separate product/API), not the Hub REST API v2. This tool
+//   is marked UNVERIFIED and left in place as a fallback — callers should expect 404.
 //
 // Base URL: https://hub.docker.com/v2
-// Auth: Bearer token — Authorization: Bearer {token} (obtain via POST /users/login)
+// Auth: Bearer token — Authorization: Bearer {token} (obtain via POST /v2/users/login)
 // Docs: https://docs.docker.com/reference/api/hub/latest/
 // Rate limits: Not officially documented; aggressive polling may trigger 429 responses.
 
