@@ -4,12 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/Sentinel-One/purple-mcp — transport: stdio/sse/streamable-http, auth: API token
-// The Purple AI MCP is read-only: queries alerts, vulnerabilities, misconfigurations, inventory via Purple AI + PowerQueries.
-// It does NOT expose write operations (mitigate, quarantine, blocklist, exclusions, groups, sites).
+// Official MCP: https://github.com/Sentinel-One/purple-mcp — transport: stdio/SSE/streamable-HTTP, auth: API token
+// Last updated: 2026-03-10 (actively maintained). Published by Sentinel-One (verified GitHub org).
+// The Purple AI MCP exposes read-only query tools via Purple AI + PowerQueries (10+ tools):
+//   list_alerts, search_alerts, get_alert_notes, get_alert_history,
+//   list_vulnerabilities, search_vulnerabilities, get_vulnerability_notes, get_vulnerability_history,
+//   misconfiguration query tools, asset inventory tools, and Purple AI conversational tools.
+// It does NOT expose write operations (mitigate, quarantine, blocklist, exclusions, groups, sites, agents, threats).
 // Our adapter covers: 16 tools (full read/write operations via REST API v2.1).
-// Vendor MCP covers: read-only Purple AI queries (no REST CRUD surface).
-// Recommendation: Use this adapter for full operational coverage. Use Purple AI MCP for conversational threat analysis.
+// Integration: use-both — MCP has conversational Purple AI + PowerQuery tools our REST adapter lacks;
+//   our adapter has all write/action operations (mitigate, quarantine, exclusions, blocklist, agent moves) the MCP lacks.
+// MCP-sourced tools: alerts (list/search/notes/history), vulnerabilities (list/search/notes/history),
+//   misconfigurations, asset inventory queries, Purple AI conversational interface.
+// REST-sourced tools: list_threats, get_threat, mitigate_threat, list_agents, get_agent,
+//   quarantine_agent, unquarantine_agent, list_sites, get_site, list_groups, move_agents_to_group,
+//   list_activities, list_exclusions, create_exclusion, list_blocklist, add_to_blocklist.
 //
 // Base URL: https://{instance}.sentinelone.net/web/api/v2.1
 // Auth: ApiToken header — Authorization: ApiToken {token}
@@ -17,7 +26,6 @@
 // Rate limits: Varies by endpoint; generally 1,000 req/min per token on Enterprise plans
 
 import { ToolDefinition, ToolResult } from './types.js';
-import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface SentinelOneConfig {
   apiToken: string;
@@ -34,7 +42,7 @@ export class SentinelOneMCPServer {
     this.baseUrl = config.baseUrl || `https://${config.instance}.sentinelone.net/web/api/v2.1`;
   }
 
-  static catalog(): AdapterCatalogEntry {
+  static catalog() {
     return {
       name: 'sentinelone',
       displayName: 'SentinelOne',

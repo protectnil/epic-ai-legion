@@ -4,13 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/sonatype/dependency-management-mcp-server — focused on
-//   dependency intelligence and OSS health checks, NOT Nexus repository management.
-//   No official MCP server exists for Nexus repository administration.
+// Official MCP: None found as of 2026-03-28 for Nexus Repository Manager administration.
+//   https://github.com/sonatype/dependency-management-mcp-server exists but covers OSS dependency
+//   intelligence only — NOT Nexus repo management. Community MCP https://github.com/brianveltman/sonatype-mcp
+//   exists (npm: @brianveltman/sonatype-mcp) but is not published by Sonatype Inc.
 // Our adapter covers: 16 tools (repositories, components, assets, security, blob stores, tasks, routing rules).
-// Recommendation: Use this adapter for all Nexus Repository Manager operations.
+// Recommendation: use-rest-api — no official Sonatype MCP for repository administration.
 //
-// Base URL: https://nexus.example.com (self-hosted, no trailing slash)
+// Base URL: https://nexus.example.com (self-hosted, no trailing slash; no public SaaS base URL)
 // Auth: Basic authentication (username + password encoded as Base64)
 // Docs: https://help.sonatype.com/en/rest-apis.html
 // Rate limits: Not publicly documented; governed by instance configuration
@@ -191,7 +192,7 @@ export class SonatypeNexusMCPServer {
       },
       {
         name: 'get_blob_store',
-        description: 'Get configuration and quota details for a specific blob store by name',
+        description: 'Get quota status for a specific blob store by name — returns quota limit, used space, and whether quota is violated',
         inputSchema: {
           type: 'object',
           properties: {

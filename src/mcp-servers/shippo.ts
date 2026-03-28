@@ -4,8 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Shippo MCP server was found on GitHub or the Shippo developer portal.
+// Official MCP: https://docs.goshippo.com/docs/guides_general/mcpserver — transport: stdio, auth: ShippoToken header
+// Vendor publishes @shippo/shippo-mcp on npm. Latest: v2.0.8, published 2026-03-18 (10 days ago). Actively maintained.
+// MCP covers: addresses, shipments, rates, labels, tracking, carrier accounts, customs, orders, webhooks, batches,
+//             manifests, pickups, refunds, service groups, live rates — strictly more than our REST adapter.
+// Our adapter covers: 14 tools (core operations). Vendor MCP covers full API surface (20+ operations).
+// Recommendation: use-vendor-mcp — MCP is a strict superset of our REST adapter. Prefer vendor MCP for full coverage.
+//                 Keep this adapter for air-gapped deployments.
 //
 // Base URL: https://api.goshippo.com
 // Auth: Shippo token — Authorization: ShippoToken <token>

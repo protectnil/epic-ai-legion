@@ -4,9 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Microsoft MCP server for the Sentinel SecurityInsights API was found on GitHub.
-// (The Azure MCP server at github.com/Azure/azure-mcp covers broader Azure services but not Sentinel-specific operations.)
+// Official MCP: https://learn.microsoft.com/en-us/azure/sentinel/datalake/sentinel-mcp-overview — transport: streamable-HTTP, auth: Microsoft Entra ID
+// Microsoft publishes three hosted MCP tool collections (public preview, announced 2026):
+//   - Data exploration: search_tables, run_kql_query, list_sentinel_workspaces, analyze_user_entity, analyze_url_entity
+//   - Triage: ListIncidents, GetIncidentById, ListAlerts, RunAdvancedHuntingQuery, GetDefenderFileInfo,
+//             ListDefenderMachinesByVulnerability, ListDefenderVulnerabilitiesBySoftware (~7-10 tools)
+//   - Security Copilot agent creation (separate collection)
+// The MCP server is READ-ONLY and query-focused (Defender portal data lake). It does NOT expose:
+//   create/update/delete incidents, manage watchlists, manage bookmarks, manage alert rules, manage entities via CRUD.
+// Our adapter covers: 23 tools (full CRUD via SecurityInsights REST API — create/update/delete incidents,
+//   manage watchlists + items, bookmarks, entities, alert rules). These write operations are unique to our adapter.
+// Integration: use-both — MCP has data lake / Defender query tools our REST adapter lacks; our REST adapter
+//   has full CRUD write operations the MCP lacks.
+// MCP-sourced tools: data exploration (search_tables, run_kql_query, list_sentinel_workspaces, entity analyzers),
+//   triage queries (ListIncidents read-only, GetIncidentById, ListAlerts, RunAdvancedHuntingQuery, etc.)
+// REST-sourced tools: create_incident, update_incident, delete_incident, add_incident_comment,
+//   create_watchlist, upsert_watchlist_item, delete_watchlist_item, create_bookmark, list_alert_rules,
+//   get_alert_rule, and all remaining CRUD operations.
 //
 // Base URL: https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/
 //            providers/Microsoft.OperationalInsights/workspaces/{workspaceName}

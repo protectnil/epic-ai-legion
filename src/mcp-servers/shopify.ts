@@ -4,20 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://shopify.dev/docs/apps/build/devmcp — transport: streamable-http, auth: OAuth
-// Shopify ships a Dev MCP server at shopify.dev/docs/apps/build/devmcp for doc search and API schema exploration.
+// Official MCP: https://shopify.dev/docs/apps/build/devmcp — transport: stdio, auth: none (dev tool only)
+// Shopify ships a Dev MCP server (@shopify/dev-mcp) for developer tooling: doc search and GraphQL schema introspection only.
+// Tools: learn_shopify_api, introspect_admin_schema — NO Admin REST CRUD operations.
 // Shopify also exposes a Storefront MCP on every store at /api/mcp for read-only storefront queries (Summer '25).
-// Neither covers Admin REST CRUD operations (create/update orders, manage inventory, configure webhooks).
-// Our adapter covers: 18 tools (full Admin REST API surface — products, orders, customers, inventory, fulfillments, webhooks).
-// Recommendation: Use this adapter for Admin API operations. Use Storefront MCP for read-only storefront browsing.
+// Neither MCP covers Admin REST CRUD operations (create/update orders, manage inventory, configure webhooks).
+// Our adapter covers: 18 tools (Admin REST API surface — products, orders, customers, inventory, fulfillments, webhooks).
+// Recommendation: use-rest-api — Dev MCP fails criteria 3 (only 2 tools, not 10+). Our adapter is the correct Admin API integration.
 //
 // Base URL: https://{store}.myshopify.com/admin/api/2025-01
 // Auth: X-Shopify-Access-Token header (private app or custom app access token)
 // Docs: https://shopify.dev/docs/api/admin-rest
-// Rate limits: REST API bucket: 40 req/s leaky bucket per store; 2 req/s refill for Basic plans
+// Rate limits: 40 requests/min per app per store; replenishes at 2 req/s. 10x higher limit for Shopify Plus stores.
 
 import { ToolDefinition, ToolResult } from './types.js';
-import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface ShopifyConfig {
   store: string;
@@ -36,7 +36,7 @@ export class ShopifyMCPServer {
     this.baseUrl = config.baseUrl || `https://${config.store}.myshopify.com/admin/api/${version}`;
   }
 
-  static catalog(): AdapterCatalogEntry {
+  static catalog() {
     return {
       name: 'shopify',
       displayName: 'Shopify',

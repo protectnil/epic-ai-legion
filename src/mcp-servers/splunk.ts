@@ -4,11 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None from Splunk Inc. as of 2026-03.
-//   Community implementations exist (e.g. github.com/jpierson/mcp-splunk) but are not
-//   officially maintained by Splunk. No vendor-official MCP server found.
-// Our adapter covers: 14 tools (search, jobs, alerts, indexes, saved searches, KV Store,
-//   apps, users, roles) against the Splunk Enterprise/Cloud REST API on port 8089.
+// Official MCP: https://splunkbase.splunk.com/app/7931 — "Splunk MCP Server" by Splunk LLC.
+//   v1.0.5 released 2026-03-26. Transport: streamable-HTTP (https://{host}:8089/services/mcp).
+//   Auth: Bearer token. Maintained actively (Splunk Supported).
+//   Vendor MCP covers 10 core tools: splunk_run_query, splunk_get_info, splunk_get_indexes,
+//   splunk_get_index_info, splunk_get_metadata, splunk_get_user_info, splunk_get_user_list,
+//   splunk_get_kv_store_collections, splunk_get_knowledge_objects + 3 AI Assistant tools.
+// Our adapter covers: 14 tools. Vendor MCP covers: 10 core + 3 saia_ tools = 13 total.
+// Recommendation: use-both — each side has unique operations the other lacks.
+//   MCP-sourced tools (5 unique to MCP): splunk_get_info, splunk_get_metadata,
+//     splunk_get_user_info, splunk_get_user_list, splunk_get_knowledge_objects (full object types),
+//     saia_generate_spl, saia_explain_spl, saia_optimize_spl.
+//   REST-sourced tools (unique to our adapter): get_search_job_status, get_search_events,
+//     get_notable_events, run_saved_search, get_saved_search, query_kvstore_collection, list_apps.
+//   Shared operations (MCP preferred): create_search_job/splunk_run_query,
+//     list_indexes/splunk_get_indexes, get_index/splunk_get_index_info,
+//     list_saved_searches/splunk_get_knowledge_objects, list_alerts/splunk_get_knowledge_objects.
 //
 // Base URL: https://{host}:8089 (Splunk REST API management port)
 // Auth: Basic authentication (username + password) or Bearer token (Splunk auth token)

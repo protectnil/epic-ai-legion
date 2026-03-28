@@ -4,14 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official SEC EDGAR MCP server was found on GitHub. Community wrappers exist but are not
-// officially maintained by the SEC.
+// Official MCP: None found as of 2026-03-28
+// No official SEC EDGAR MCP server was found on GitHub. Community wrappers exist (e.g.
+// stefanoamorelli/sec-edgar-mcp) but are not published or endorsed by the U.S. SEC.
 //
 // Base URL: https://data.sec.gov
 // Auth: None required for public data APIs. User-Agent header is mandatory per SEC policy.
-// Docs: https://www.sec.gov/edgar/sec-api-documentation
+// Docs: https://www.sec.gov/search-filings/edgar-application-programming-interfaces
 // Rate limits: ~10 req/sec per SEC fair-use policy; bursting may trigger 403. Always set User-Agent.
+// Recommendation: use-rest-api — no official vendor MCP exists.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

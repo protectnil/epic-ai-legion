@@ -4,16 +4,26 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/getsentry/sentry-mcp — transport: streamable-http (remote), auth: OAuth
+// Official MCP: https://github.com/getsentry/sentry-mcp — transport: streamable-HTTP with SSE fallback, auth: OAuth
 // Sentry hosts a managed remote MCP server at https://mcp.sentry.dev with OAuth authentication.
-// Their MCP covers ~20 tools focused on read-only coding-assistant workflows (find issues, get details, search errors).
+// Vendor MCP covers 16+ tools: whoami, find_organizations, find_projects, find_issues, get_issue_details,
+//   find_releases, search_issues, search_events, create_project, update_issue, and others.
 // Our adapter covers: 15 tools including write operations (resolve, update, ignore, assign, create comments, manage releases).
-// Recommendation: Use vendor MCP for IDE/cursor integration. Use this adapter for full operational and write coverage.
+// Recommendation: use-both — MCP has semantic search tools (search_issues, search_events with AI translation) not
+//   exposed through the REST API. Our adapter covers write-heavy operations and release/deploy management not fully
+//   covered by the MCP. Use vendor MCP for IDE/coding-assistant workflows; use this adapter for operational automation.
+//
+// Integration: use-both
+// MCP-sourced tools (unique): search_issues (AI-powered semantic), search_events (AI-powered semantic), whoami, get_issue_details
+// REST-sourced tools: list_organizations, list_projects, list_teams, list_issues, get_issue, update_issue,
+//   list_events, get_event, list_releases, get_release, list_release_deploys, search_issues (basic query),
+//   list_project_alerts, list_team_members, create_project_note
+// Combined coverage: REST adapter provides 15 tools; vendor MCP provides 16+ with AI-assisted search
 //
 // Base URL: https://sentry.io/api/0
 // Auth: Bearer token — Authorization: Bearer {auth_token}
 // Docs: https://docs.sentry.io/api/
-// Rate limits: 100 req/s per organization (production), 3 req/s per org on free plans
+// Rate limits: Per-endpoint, per-caller fixed-window limits (not a single global rate). Polling discouraged; use webhooks.
 
 import { ToolDefinition, ToolResult } from './types.js';
 import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
@@ -143,12 +153,16 @@ export class SentryMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug (required by the Sentry API)',
+            },
             issue_id: {
               type: 'string',
               description: 'The Sentry issue ID (numeric) or short ID (e.g., PROJECT-123)',
             },
           },
-          required: ['issue_id'],
+          required: ['organization_slug', 'issue_id'],
         },
       },
       {
@@ -157,13 +171,17 @@ export class SentryMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug (required by the Sentry API)',
+            },
             issue_id: {
               type: 'string',
               description: 'The Sentry issue ID to update',
             },
             status: {
               type: 'string',
-              description: 'New status: resolved, unresolved, ignored',
+              description: 'New status: resolved, resolvedInNextRelease, unresolved, ignored',
             },
             assigned_to: {
               type: 'string',
@@ -174,7 +192,7 @@ export class SentryMCPServer {
               description: 'Ignore for this many minutes (used when status is ignored)',
             },
           },
-          required: ['issue_id'],
+          required: ['organization_slug', 'issue_id'],
         },
       },
       {
@@ -183,6 +201,10 @@ export class SentryMCPServer {
         inputSchema: {
           type: 'object',
           properties: {
+            organization_slug: {
+              type: 'string',
+              description: 'The organization slug (required by the Sentry API)',
+            },
             issue_id: {
               type: 'string',
               description: 'The Sentry issue ID',
@@ -196,7 +218,7 @@ export class SentryMCPServer {
               description: 'Pagination cursor from a previous response',
             },
           },
-          required: ['issue_id'],
+          required: ['organization_slug', 'issue_id'],
         },
       },
       {
@@ -490,18 +512,22 @@ export class SentryMCPServer {
   }
 
   private async getIssue(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
     const issueId = args.issue_id as string;
-    if (!issueId) {
-      return { content: [{ type: 'text', text: 'issue_id is required' }], isError: true };
+    if (!orgSlug || !issueId) {
+      return { content: [{ type: 'text', text: 'organization_slug and issue_id are required' }], isError: true };
     }
-    const data = await this.fetchJson(`${this.baseUrl}/issues/${encodeURIComponent(issueId)}/`);
+    const data = await this.fetchJson(
+      `${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/issues/${encodeURIComponent(issueId)}/`,
+    );
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async updateIssue(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
     const issueId = args.issue_id as string;
-    if (!issueId) {
-      return { content: [{ type: 'text', text: 'issue_id is required' }], isError: true };
+    if (!orgSlug || !issueId) {
+      return { content: [{ type: 'text', text: 'organization_slug and issue_id are required' }], isError: true };
     }
     const body: Record<string, unknown> = {};
     if (args.status) body['status'] = args.status;
@@ -510,21 +536,24 @@ export class SentryMCPServer {
       body['statusDetails'] = { ignoreDuration: args.ignore_duration };
     }
     const data = await this.fetchJson(
-      `${this.baseUrl}/issues/${encodeURIComponent(issueId)}/`,
+      `${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/issues/${encodeURIComponent(issueId)}/`,
       { method: 'PUT', body: JSON.stringify(body) },
     );
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
+    const orgSlug = args.organization_slug as string;
     const issueId = args.issue_id as string;
-    if (!issueId) {
-      return { content: [{ type: 'text', text: 'issue_id is required' }], isError: true };
+    if (!orgSlug || !issueId) {
+      return { content: [{ type: 'text', text: 'organization_slug and issue_id are required' }], isError: true };
     }
     const params = new URLSearchParams();
     params.set('limit', String((args.limit as number) ?? 25));
     if (args.cursor) params.set('cursor', args.cursor as string);
-    const data = await this.fetchJson(`${this.baseUrl}/issues/${encodeURIComponent(issueId)}/events/?${params}`);
+    const data = await this.fetchJson(
+      `${this.baseUrl}/organizations/${encodeURIComponent(orgSlug)}/issues/${encodeURIComponent(issueId)}/events/?${params}`,
+    );
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 

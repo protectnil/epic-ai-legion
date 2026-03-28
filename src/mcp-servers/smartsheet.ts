@@ -4,10 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/smartsheet-platform/smar-mcp — transport: stdio, auth: access token
+// Official MCP: https://github.com/smartsheet-platform/smar-mcp — transport: stdio, auth: Bearer access token
+// Published by smartsheet-platform (official Smartsheet GitHub org). Last commit: 2025-06-18. Actively maintained.
+// Vendor MCP covers: ~12 tools (get_sheet, get_sheet_version, get_cell_history, update_rows, add_rows,
+//   delete_rows, create_sheet, create_row_discussion, get_sheet_location, get_sheet_updates,
+//   get_comments, update_cell).
 // Our adapter covers: 22 tools (sheets, rows, columns, workspaces, reports, sharing, search, webhooks).
-// Vendor MCP covers: ~8 tools (sheets and rows only).
-// Recommendation: Use this adapter for full coverage. Use vendor MCP for minimal footprint.
+//
+// Integration: use-both
+// MCP-sourced tools (5 unique to MCP): [get_sheet_version, get_cell_history, get_sheet_updates,
+//   get_comments, create_row_discussion]
+// REST-sourced tools (17 unique to our adapter): [list_sheets, update_sheet, delete_sheet, get_columns,
+//   add_column, search_sheets, get_current_user, list_workspaces, get_workspace,
+//   create_sheet_in_workspace, list_reports, get_report, share_sheet, list_sheet_shares,
+//   list_webhooks, create_webhook, delete_webhook]
+// Shared tools (3, routed through MCP by default): [get_sheet, add_rows, update_rows, delete_rows, create_sheet]
+// Combined coverage: ~27 distinct capabilities (MCP: 12 + REST: 22 - shared: ~7)
 //
 // Base URL: https://api.smartsheet.com/2.0 (US); EU: https://api.smartsheet.eu/2.0; AU: https://api.smartsheet.au/2.0
 // Auth: Bearer access token in Authorization header — generate at app.smartsheet.com/b/account (Personal Settings > API Access)
@@ -730,7 +742,7 @@ export class SmartsheetMCPServer {
   private async searchSheets(args: Record<string, unknown>): Promise<ToolResult> {
     const query = args.query as string;
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
-    const params: Record<string, string> = { query: encodeURIComponent(query) };
+    const params: Record<string, string> = { query };
     if (args.scopes) params.scopes = args.scopes as string;
     if (args.sheetId) {
       return this.ssGet(`/sheets/${encodeURIComponent(args.sheetId as string)}/search`, params);

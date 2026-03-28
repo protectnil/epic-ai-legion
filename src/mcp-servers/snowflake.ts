@@ -4,10 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/Snowflake-Labs/mcp — transport: stdio, auth: OAuth / JWT keypair
-// Our adapter covers: 14 tools (SQL execution, statement management, schema exploration, warehouse ops).
-// Vendor MCP covers: ~8 tools (SQL execution + metadata). Our adapter adds warehouse management and cancel.
-// Recommendation: Use vendor MCP for full Cortex AI integration; use this adapter for programmatic SQL + warehouse ops.
+// Official MCP: https://github.com/Snowflake-Labs/mcp — transport: stdio/streamable-HTTP, auth: key-pair or PAT
+// The Snowflake-Labs MCP server is config-driven: tools are dynamically defined per deployment (Cortex Search,
+// Cortex Analyst, SQL execution, object management). It does not expose a fixed tool list — tools are
+// user-specified in a YAML config. Because the MCP tool set is variable and deployment-specific, a comparison
+// with a fixed count is not meaningful. Additionally, Snowflake maintains a second MCP offering:
+// the Snowflake-managed MCP server (https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-mcp)
+// which is a server-side object supporting Cortex Analyst, Cortex Search, Cortex Agents, and SQL execution tools.
+// Our adapter covers: 14 tools. MCP tools: variable (config-driven, no fixed count).
+// Recommendation: use-both — vendor MCP is preferred for Cortex AI (Analyst/Search/Agent) workflows;
+// this REST adapter covers programmatic SQL execution and schema/warehouse management for non-Cortex use cases.
+//
+// Integration: use-both
+// MCP-sourced tools: Cortex AI workflows (Cortex Analyst, Cortex Search, Cortex Agent, SQL execution via MCP)
+// REST-sourced tools (14): execute_statement, get_statement_status, cancel_statement, get_statement_partition,
+//   list_databases, list_schemas, list_tables, describe_table, list_warehouses, get_warehouse,
+//   suspend_warehouse, resume_warehouse, list_roles, list_columns
 //
 // Base URL: https://{account}.snowflakecomputing.com/api/v2
 // Auth: OAuth Bearer token (OAUTH) or key-pair JWT (KEYPAIR_JWT) — set via X-Snowflake-Authorization-Token-Type header

@@ -6,8 +6,19 @@
 
 // Official MCP: https://github.com/saucelabs/sauce-api-mcp — transport: stdio, auth: username + access key
 // Our adapter covers: 16 tools (jobs, builds, tunnels, devices, storage, accounts).
-// Vendor MCP covers: full Sauce Labs API (updated March 5, 2026).
-// Recommendation: Use vendor MCP for full API coverage. Use this adapter for air-gapped deployments.
+// Vendor MCP covers: 22 tools (get_account_info, lookup_users, get_user, lookup_teams, get_team,
+//   list_team_members, get_devices_status, get_specific_device, get_private_devices,
+//   get_recent_jobs, get_job_details, get_real_device_jobs, get_specific_real_device_job,
+//   get_specific_real_device_job_asset, lookup_builds, get_build, lookup_jobs_in_build,
+//   get_storage_files, get_storage_groups, get_storage_groups_settings,
+//   get_tunnels_for_user, get_tunnel_information).
+// Maintained: yes — v1.1.0 released 2026-03-05. Official vendor repo.
+// Recommendation: use-both — vendor MCP is read-only (no update_job, delete_job, delete_tunnel,
+//   upload_storage_file, delete_storage_file). Our REST adapter adds those write operations.
+//   MCP-sourced tools (22): account info, device listing, job read, build read, storage read, tunnel read.
+//   REST-sourced tools (7): update_job, delete_job, delete_tunnel, upload_storage_file,
+//     delete_storage_file, get_account_usage, list_teams.
+//   Combined coverage: ~29 tools (22 MCP + 16 REST - ~9 shared read operations).
 //
 // Base URL: https://api.us-west-1.saucelabs.com (US West); https://api.eu-central-1.saucelabs.com (EU)
 // Auth: HTTP Basic Auth — username:access_key
@@ -154,10 +165,14 @@ export class SauceLabsMCPServer {
       },
       {
         name: 'list_builds',
-        description: 'List test builds in the Sauce Labs account with optional status and date filters',
+        description: 'List test builds in the Sauce Labs account for a device source (rdc or vdc) with optional status and date filters',
         inputSchema: {
           type: 'object',
           properties: {
+            build_source: {
+              type: 'string',
+              description: 'Device type for the build: rdc (real device) or vdc (emulator/simulator). Required.',
+            },
             status: {
               type: 'string',
               description: 'Filter by build status: running, error, failed, passed, complete (default: all)',
@@ -179,20 +194,25 @@ export class SauceLabsMCPServer {
               description: 'Number of builds to skip for pagination (default: 0)',
             },
           },
+          required: ['build_source'],
         },
       },
       {
         name: 'get_build',
-        description: 'Get details for a specific Sauce Labs build including associated jobs and status summary',
+        description: 'Get details for a specific Sauce Labs build by device source and build ID, including associated jobs and status summary',
         inputSchema: {
           type: 'object',
           properties: {
+            build_source: {
+              type: 'string',
+              description: 'Device type for the build: rdc (real device) or vdc (emulator/simulator). Required.',
+            },
             build_id: {
               type: 'string',
               description: 'Build ID to retrieve',
             },
           },
-          required: ['build_id'],
+          required: ['build_source', 'build_id'],
         },
       },
       {
@@ -507,7 +527,8 @@ export class SauceLabsMCPServer {
   }
 
   private async listBuilds(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.apiGet(`/rest/v1/${this.username}/builds` + this.buildQs({
+    if (!args.build_source) return { content: [{ type: 'text', text: 'build_source is required (rdc or vdc)' }], isError: true };
+    return this.apiGet(`/v2/builds/${encodeURIComponent(args.build_source as string)}/` + this.buildQs({
       status: args.status as string,
       from: args.from as number,
       to: args.to as number,
@@ -517,8 +538,8 @@ export class SauceLabsMCPServer {
   }
 
   private async getBuild(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.build_id) return { content: [{ type: 'text', text: 'build_id is required' }], isError: true };
-    return this.apiGet(`/rest/v1/${this.username}/builds/${encodeURIComponent(args.build_id as string)}`);
+    if (!args.build_source || !args.build_id) return { content: [{ type: 'text', text: 'build_source and build_id are required' }], isError: true };
+    return this.apiGet(`/v2/builds/${encodeURIComponent(args.build_source as string)}/${encodeURIComponent(args.build_id as string)}/`);
   }
 
   private async listTunnels(args: Record<string, unknown>): Promise<ToolResult> {

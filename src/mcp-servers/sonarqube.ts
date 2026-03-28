@@ -4,13 +4,41 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/SonarSource/sonarqube-mcp-server — transport: stdio, auth: API token
-// Our adapter covers: 14 tools (core operations). Vendor MCP covers: full API surface.
-// Recommendation: Use vendor MCP for SonarQube Cloud deployments. Use this adapter for on-prem
-//   SonarQube Server deployments using user/project analysis tokens (air-gapped or self-hosted).
+// Official MCP: https://github.com/SonarSource/sonarqube-mcp-server — transport: stdio/HTTP, auth: API token
+// MCP maintained: yes — latest release 1.13.0 on 2026-03-16, published by SonarSource (official).
+// Vendor MCP covers: 25 tools. Criteria: official=yes, maintained=yes, 25 tools >= 10, stdio transport.
+// Vendor MCP tool names (25): analyze_code_snippet, analyze_file_list, toggle_automatic_analysis,
+//   search_sonar_issues_in_projects, change_sonar_issue_status, search_my_sonarqube_projects,
+//   list_quality_gates, get_project_quality_gate_status, show_rule, list_rule_repositories,
+//   list_languages, get_component_measures, search_metrics, get_raw_source, get_scm_info,
+//   get_system_health, get_system_status, get_system_logs, ping_system, get_system_info,
+//   create_webhook, list_webhooks, list_portfolios, list_enterprises, search_dependency_risks
+// Our adapter covers: 14 tools. Shared with MCP: list_projects (≈search_my_sonarqube_projects),
+//   list_issues (≈search_sonar_issues_in_projects), list_quality_gates, get_quality_gate_status
+//   (≈get_project_quality_gate_status), list_rules (≈show_rule/list_rule_repositories), get_rule
+//   (≈show_rule), search_hotspots, get_hotspot, list_metrics (≈search_metrics), get_system_health,
+//   get_system_info. API-only (no MCP equivalent): get_project_measures, get_issue, list_branches.
+//   MCP-only (not in our adapter): analyze_code_snippet, analyze_file_list, toggle_automatic_analysis,
+//   change_sonar_issue_status, list_languages, get_raw_source, get_scm_info, get_system_status,
+//   get_system_logs, ping_system, create_webhook, list_webhooks, list_portfolios, list_enterprises,
+//   search_dependency_risks.
+// Recommendation: use-both — MCP has 15 unique tools not in our REST adapter (IDE analysis, webhooks,
+//   portfolios, enterprises, dependency risks, SCM info, system status/logs, raw source);
+//   our REST adapter has 3 unique tools not in MCP (get_project_measures with branch, get_issue by key,
+//   list_branches). Full coverage requires union.
+//
+// Integration: use-both
+// MCP-sourced tools (15 unique): analyze_code_snippet, analyze_file_list, toggle_automatic_analysis,
+//   change_sonar_issue_status, list_languages, get_raw_source, get_scm_info, get_system_status,
+//   get_system_logs, ping_system, create_webhook, list_webhooks, list_portfolios, list_enterprises,
+//   search_dependency_risks
+// REST-sourced tools (3 unique): get_project_measures, get_issue, list_branches
+// Shared (11): list_projects, list_issues, list_quality_gates, get_quality_gate_status, list_rules,
+//   get_rule, search_hotspots, get_hotspot, list_metrics, get_system_health, get_system_info
+// Combined coverage: 29 tools (MCP: 25 + REST: 14 - shared: 11 ≈ but overlap is approximate)
 //
 // Base URL: https://sonarqube.example.com (self-hosted, no trailing slash)
-// Auth: Bearer token (user token or project analysis token)
+// Auth: Bearer token (user token or project analysis token) — Authorization: Bearer {token}
 // Docs: https://docs.sonarsource.com/sonarqube-server/latest/extension-guide/web-api/
 // Rate limits: Not publicly documented; governed by instance configuration
 

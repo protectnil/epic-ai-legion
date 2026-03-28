@@ -4,10 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/snyk/studio-mcp — transport: stdio, auth: Snyk CLI + token
+// Official MCP: https://github.com/snyk/snyk (Snyk CLI, `snyk mcp` subcommand) — transport: stdio, auth: Snyk CLI token
+// The Snyk MCP server is part of the Snyk CLI (not a standalone repo). It backs scans via the CLI itself.
+// Vendor MCP tools (~10): snyk_auth, snyk_auth_status, snyk_logout, snyk_version, snyk_code_scan,
+//   snyk_sca_scan (open source SCA), snyk_container_scan, snyk_iac_scan, snyk_sbom_scan, snyk_aibom
+// MCP maintained: yes — part of Snyk CLI, actively maintained as of 2026-03.
 // Our adapter covers: 16 tools (orgs, projects, issues, targets, ignores, SBOM, audit logs).
-// Vendor MCP covers: 11 tools (requires Snyk CLI installation; backs scans via CLI).
-// Recommendation: Use this adapter for programmatic REST API access without CLI. Use vendor MCP for scan-backed results.
+// Recommendation: use-both — vendor MCP provides scan-execution tools (snyk_code_scan, snyk_sca_scan,
+//   snyk_iac_scan, snyk_container_scan) that are CLI-backed and not available in the REST API;
+//   this REST adapter covers org/project/issue management, ignores, SBOM retrieval, and audit logs
+//   not available through the CLI-based MCP. Full coverage requires union of both.
+//
+// Integration: use-both
+// MCP-sourced tools (~10): snyk_auth, snyk_auth_status, snyk_logout, snyk_version, snyk_code_scan,
+//   snyk_sca_scan, snyk_container_scan, snyk_iac_scan, snyk_sbom_scan, snyk_aibom
+// REST-sourced tools (16): list_orgs, list_projects, get_project, update_project, delete_project,
+//   list_issues, get_issue, list_targets, list_package_issues, list_ignores, create_ignore, delete_ignore,
+//   get_project_sbom, create_sbom_test, get_sbom_test_result, list_audit_logs
 //
 // Base URL: https://api.snyk.io (SNYK-US-01); EU: https://api.eu.snyk.io; AU: https://api.au.snyk.io
 // Auth: Header "Authorization: token {API_TOKEN}" — generate at app.snyk.io/account
@@ -291,6 +304,10 @@ export class SnykMCPServer {
             reason_type: {
               type: 'string',
               description: 'Reason type: not-vulnerable, wont-fix, temporary-ignore (default: wont-fix)',
+            },
+            ignore_path: {
+              type: 'string',
+              description: 'Dependency path to ignore — use * to ignore all paths (default: *)',
             },
             disregard_if_fixable: {
               type: 'boolean',
@@ -661,6 +678,7 @@ export class SnykMCPServer {
       return { content: [{ type: 'text', text: 'org_id, project_id, and issue_id are required' }], isError: true };
     }
     const ignoreEntry: Record<string, unknown> = {
+      ignorePath: (args.ignore_path as string) || '*',
       reason: (args.reason as string) || '',
       reasonType: (args.reason_type as string) || 'wont-fix',
       disregardIfFixable: (args.disregard_if_fixable as boolean) ?? false,
@@ -671,7 +689,7 @@ export class SnykMCPServer {
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify([ignoreEntry]),
+      body: JSON.stringify(ignoreEntry),
     });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

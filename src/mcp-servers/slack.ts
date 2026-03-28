@@ -4,9 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/modelcontextprotocol/servers/tree/main/src/slack — transport: stdio, auth: Bot Token
-// Our adapter covers: 20 tools (core messaging + channel management). Vendor MCP covers: ~10 tools.
-// Recommendation: Use this adapter for broader coverage. Use vendor MCP for minimal footprint deployments.
+// Official MCP: https://mcp.slack.com — transport: streamable-HTTP, auth: OAuth 2.0 (user token, xoxp-*)
+// Vendor MCP announced 2026-02-17. Old archived reference: https://github.com/modelcontextprotocol/servers/tree/main/src/slack (stdio, archived).
+// Vendor MCP covers: 10 tools (search, messaging, canvas, user profile).
+// Our adapter covers: 20 tools (channel management, messaging, reactions, pins, bookmarks, users).
+//
+// Integration: use-both
+// MCP-sourced tools (4 unique to MCP): [search_messages_and_files, create_canvas, update_canvas, read_canvas]
+// REST-sourced tools (14 unique to our adapter): [list_channels, get_channel_info, create_channel, archive_channel,
+//   invite_to_channel, update_message, delete_message, add_reaction, remove_reaction, get_reactions,
+//   list_users, get_user_info, get_user_by_email, pin_message, list_pins, list_bookmarks]
+// Shared tools (6, routed through MCP by default): [post_message, search_messages (as search_messages_and_files),
+//   list_messages (as read_channel), get_thread_replies (as read_thread), get_user_info (as read_user_profile),
+//   search_messages (as search_channels)]
+// Combined coverage: 24 distinct capabilities (MCP: 10 + REST: 20 - shared: ~6)
 //
 // Base URL: https://slack.com/api
 // Auth: Bearer bot token (xoxb-*) or user token (xoxp-*) in Authorization header

@@ -4,12 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
+// Official MCP: None found as of 2026-03-28.
 // No official Securonix MCP server was found on GitHub or the Securonix documentation portal.
+// Recommendation: use-rest-api — no official vendor MCP exists.
 //
 // Base URL: https://{tenant}.securonix.net (cloud) — must be supplied by the user; no default.
 // Auth: Token-based. GET /ws/token/generate with username/password/validity headers returns a plain-text token.
-//       The token is passed as a query parameter (token=...) on all subsequent requests.
+//       The token is passed as a 'token' request header on all subsequent requests.
 // Docs: https://documentation.securonix.com/bundle/securonix-cloud-user-guide/page/content/rest-api-categories.htm
 // Rate limits: Not publicly documented. Tenant-specific limits apply.
 
@@ -457,17 +458,24 @@ export class SecuronixMCPServer {
     body?: Record<string, unknown>,
   ): Promise<ToolResult> {
     const token = await this.ensureToken();
-    const params = new URLSearchParams({ token });
+    const params = new URLSearchParams();
     if (extraParams) {
       for (const [k, v] of Object.entries(extraParams)) {
         params.set(k, v);
       }
     }
 
-    const url = `${this.baseUrl}/ws${path}?${params.toString()}`;
+    const qs = params.toString();
+    const url = `${this.baseUrl}/ws${path}${qs ? '?' + qs : ''}`;
+    const headers: Record<string, string> = {
+      'token': token,
+    };
+    if (body) {
+      headers['Content-Type'] = 'application/json';
+    }
     const response = await fetch(url, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 

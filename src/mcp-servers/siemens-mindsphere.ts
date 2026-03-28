@@ -10,7 +10,8 @@
 // Base URL: https://gateway.eu1.mindsphere.io (default; configurable per tenant/region)
 //   Regions: eu1 (Europe), us1 (North America), cn1 (China)
 // Auth: OAuth2 client credentials — POST /api/technicaltokenmanager/v3/oauth/token
-//       Authorization: Basic base64(clientId:clientSecret), body: grant_type=client_credentials
+//       Header: X-SPACE-AUTH-KEY: Bearer base64(clientId:clientSecret), Content-Type: application/json
+//       Body (JSON): { grant_type, appName, appVersion, hostTenant, userTenant }
 //       Tokens expire in 30 minutes; refreshed 60s early per protocol.
 // Docs: https://documentation.mindsphere.io/MindSphere/apis/index.html
 // Rate limits: Varies by API. Consult tenant-specific documentation.
@@ -375,17 +376,16 @@ export class SiemensMindSphereMCPServer {
     const response = await fetch(`${this.baseUrl}/api/technicaltokenmanager/v3/oauth/token`, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-SPACE-AUTH-KEY': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
+        'Content-Type': 'application/json',
+        'X-SPACE-AUTH-KEY': `Bearer ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
       },
-      body: new URLSearchParams({
+      body: JSON.stringify({
         grant_type: 'client_credentials',
         appName: this.clientId,
         appVersion: '1.0',
         hostTenant: this.tenant,
         userTenant: this.tenant,
-      }).toString(),
+      }),
     });
 
     if (!response.ok) {

@@ -4,15 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://mcp.semrush.com/v1/mcp — transport: streamable-HTTP, auth: Semrush OAuth account
+// Official MCP: https://mcp.semrush.com/v1/mcp — transport: streamable-HTTP, auth: OAuth2 or API key
 // Our adapter covers: 14 tools (domain, keyword, backlink, traffic analytics via REST).
-// Vendor MCP covers: hosted endpoint, no self-hosted option, requires browser-based OAuth.
-// Recommendation: Use official MCP for interactive sessions. Use this adapter for server-side/API-key automation.
+// Vendor MCP covers: 3 tools only (semrush_report, semrush_report_list, semrush_report_schema) — fails 10+ tool criterion.
+// Recommendation: use-rest-api — vendor MCP exposes only 3 generic report tools, well below the 10-tool threshold.
+//   Our REST adapter provides 14 specific, individually-named tools with typed parameters.
 //
-// Base URL: https://api.semrush.com
+// Base URL: https://api.semrush.com (analytics/domain/keyword); https://api.semrush.com/analytics/v1/ (backlinks)
 // Auth: API key passed as query parameter: key=API_KEY
 // Docs: https://developer.semrush.com/api/
-// Rate limits: Depends on subscription. Requests consume API units. Monitor X-RateLimit-* headers.
+// Rate limits: Depends on subscription. Requests consume API units. No hard RPS limit documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

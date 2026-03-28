@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SentinelMCPServer } from '../../src/mcp-servers/sentinel.js';
 
 describe('SentinelMCPServer', () => {
-  const adapter = new SentinelMCPServer({ subscriptionId: '00000000-0000-0000-0000-000000000000', resourceGroup: 'test-rg', workspaceName: 'test-ws', accessToken: 'test-token' });
+  const adapter = new SentinelMCPServer({ subscriptionId: '00000000-0000-0000-0000-000000000000', resourceGroup: 'test-rg', workspaceName: 'test-ws', bearerToken: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

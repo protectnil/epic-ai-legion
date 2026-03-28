@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SemanticScholarMCPServer } from '../../src/mcp-servers/semantic-scholar.js';
 
 describe('SemanticScholarMCPServer', () => {
-  const adapter = new SemanticScholarMCPServer({ apiToken: 'test-token' });
+  const adapter = new SemanticScholarMCPServer({});
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

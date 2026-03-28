@@ -4,8 +4,9 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Snipe-IT MCP server was found on GitHub. Microsoft has an API cookbook but no MCP.
+// Official MCP: None found as of 2026-03-28
+// No official Snipe-IT MCP server was found on GitHub. Community servers exist (e.g., jameshgordy/snipeit-mcp,
+// Wil-Collier/snipeit-mcp) but none are published by Grokability (the Snipe-IT vendor). Not official.
 //
 // Base URL: https://<your-domain>/api/v1  (self-hosted — must be configured per deployment)
 // Auth: Bearer token — Authorization: Bearer <api_token>

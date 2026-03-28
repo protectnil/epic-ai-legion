@@ -4,9 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03.
-// No official Scale AI MCP server for the data labeling platform was found on GitHub.
+// Official MCP: None found as of 2026-03-28.
+// No official Scale AI MCP server for the data labeling/annotation platform was found on GitHub.
 // The scaleapi/mcp-atlas repo is an unrelated MCP registry utility, not a labeling-platform MCP server.
+// Recommendation: use-rest-api
 //
 // Base URL: https://api.scale.com/v1
 // Auth: HTTP Basic — API key as username, empty password: Authorization: Basic base64(apiKey:)

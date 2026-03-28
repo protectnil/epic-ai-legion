@@ -5,9 +5,16 @@
  */
 
 // Official MCP: https://github.com/secureframe/secureframe-mcp-server — transport: stdio, auth: API Key + Secret
-// Our adapter covers: 12 tools (controls, tests, vendors, personnel, evidence, frameworks).
-// Vendor MCP covers: 11 read-only tools. Both are broadly equivalent.
-// Recommendation: Use vendor MCP for quick setup. Use this adapter for air-gapped or REST-only deployments.
+// Our adapter covers: 12 tools. Vendor MCP covers: 11 read-only tools.
+// Recommendation: use-both — each side has unique tools the other does not cover.
+//
+// Integration: use-both
+// MCP-sourced tools (7): list_users, list_devices, list_user_accounts, list_tprm_vendors,
+//   list_repositories, list_integration_connections, list_repository_framework_scopes
+// REST-sourced tools (8): get_control, get_test, get_vendor, get_personnel_member,
+//   list_evidence, list_integrations, get_compliance_summary, list_personnel
+// Shared tools (4): list_controls, list_tests, list_vendors, list_frameworks
+// Combined coverage: 19 tools (MCP: 11 + REST: 12 - shared: 4)
 //
 // Base URL: https://api.secureframe.com
 // Auth: API Key + Secret — Authorization header: "API_KEY API_SECRET"

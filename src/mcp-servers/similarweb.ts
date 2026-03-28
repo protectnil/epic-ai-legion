@@ -4,11 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Similarweb MCP server was found on GitHub or developers.similarweb.com.
+// Official MCP: https://mcp.similarweb.com/ — transport: streamable-HTTP (vendor-hosted), auth: api-key header
+// Our adapter covers: 12 tools (REST API v1 website traffic operations). Vendor MCP covers: 10+ tools
+//   (Traffic and Engagement, Traffic Sources, Website Rank, Subdomains, Deduplicated Audience, Leading Folders,
+//   Popular Pages, PPC Spend, SERP Players, SERP Clicks, plus app metrics).
+// Recommendation: use-both — vendor MCP (https://mcp.similarweb.com/) exposes app metrics and SERP tools
+//   not in our REST adapter; our REST adapter exposes global-rank, country-rank, category-rank, referrals,
+//   organic-search-keywords, paid-search-keywords, top-sites endpoints not confirmed in vendor MCP.
+//   Use vendor MCP for primary integration; use this adapter for air-gapped deployments and REST-only tools.
+//   MCP-sourced tools (confirmed): Traffic and Engagement, Traffic Sources, Website Rank, Subdomains,
+//   Deduplicated Audience, Leading Folders, Popular Pages, PPC Spend, SERP Players, SERP Clicks.
+//   REST-sourced tools (12): get_total_visits, get_desktop_visits, get_mobile_visits, get_global_rank,
+//   get_country_rank, get_category_rank, get_traffic_sources, get_referrals, get_organic_search_keywords,
+//   get_paid_search_keywords, get_audience_geography, get_top_sites.
 //
 // Base URL: https://api.similarweb.com/v1
-// Auth: API key as query parameter: api_key=YOUR_API_KEY
+// Auth: REST API v1 — api_key as query parameter (api_key=YOUR_KEY). Vendor MCP uses api-key HTTP header.
 // Docs: https://developers.similarweb.com/docs/similarweb-web-traffic-api
 // Rate limits: 10 requests/second. Returns HTTP 429 when exceeded. Enterprise customers
 //              may negotiate higher limits with their account manager.

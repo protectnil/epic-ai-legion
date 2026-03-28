@@ -4,8 +4,9 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official ShipStation MCP server was found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// No official ShipStation MCP server found. CData publishes a community read-only MCP (github.com/CDataSoftware/shipstation-mcp-server-by-cdata)
+// but it is a third-party JDBC wrapper, not officially maintained by ShipStation/Auctane. Fails criteria 1 and 2.
 //
 // Base URL: https://ssapi.shipstation.com
 // Auth: Basic auth — Authorization: Basic base64(apiKey:apiSecret)

@@ -4,14 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/useshortcut/mcp-server-shortcut — transport: stdio, auth: API token or OAuth
-// Our adapter covers: 20 tools (full core operations). Vendor MCP covers: 12+ tools.
-// Recommendation: Use this adapter for API-token / air-gapped deployments; use vendor MCP for OAuth hosted flow.
+// Official MCP: https://github.com/useshortcut/mcp-server-shortcut — transport: streamable-HTTP (hosted) + stdio (local), auth: OAuth or API token
+// Our adapter covers: 20 tools (core CRUD operations). Vendor MCP covers: 40+ tools (stories, epics, iterations,
+//   labels, custom-fields, objectives, teams, projects, workflows, documents — full API surface).
+// Recommendation: use-both — vendor MCP exposes 40+ tools with full coverage including documents, teams,
+//   custom-fields, and file-upload tools our REST adapter does not cover. Our adapter provides air-gapped
+//   fallback and API-token deployments without OAuth. REST-sourced tools (20): get_current_member, list_members,
+//   search_stories, get_story, create_story, update_story, delete_story, create_story_comment, list_epics,
+//   get_epic, create_epic, update_epic, list_epic_stories, list_workflows, list_iterations, get_iteration,
+//   list_labels, create_label, list_objectives, search_epics.
 //
 // Base URL: https://api.app.shortcut.com/api/v3
 // Auth: Header "Shortcut-Token: {token}" — generate at https://app.shortcut.com/settings/account/api-tokens
 // Docs: https://developer.shortcut.com/api/rest/v3
-// Rate limits: Not publicly documented; implement backoff on 429 responses
+// Rate limits: 200 requests/minute. Returns HTTP 429 when exceeded.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
