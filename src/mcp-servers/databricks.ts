@@ -4,15 +4,22 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/databrickslabs/mcp — actively maintained by Databricks Labs.
-// That server provides deep Unity Catalog and workspace integration. This adapter serves the
-// PAT/OAuth2 use case for self-hosted or air-gapped deployments without the Python runtime
-// dependency that databrickslabs/mcp requires.
+// Official MCP: https://github.com/databrickslabs/mcp — transport: stdio, maintained by Databricks Labs (active as of 2025-06).
+// That server exposes Unity Catalog metadata (Genie spaces, UC functions, vector search) — NOT cluster/job/SQL/DBFS operations.
+// Our adapter covers REST API operations (clusters, jobs, SQL, warehouses, secrets, DBFS, notebooks) which the Labs MCP does not expose.
+// Our adapter covers: 21 tools. Vendor MCP covers: Unity Catalog + Genie tools (different domain).
+// Recommendation: use-both — databrickslabs/mcp handles UC/Genie; this adapter handles cluster/job/SQL/DBFS lifecycle management.
+// Integration: use-both
+// MCP-sourced tools: Unity Catalog metadata, Genie space queries, vector search (use databrickslabs/mcp for these)
+// REST-sourced tools (21): list_clusters, get_cluster, start_cluster, terminate_cluster, list_jobs, get_job, run_job,
+//   list_job_runs, get_job_run, cancel_job_run, execute_sql, get_sql_statement_result, list_warehouses, get_warehouse,
+//   list_secrets_scopes, list_secrets, list_instance_pools, get_instance_pool, dbfs_list, dbfs_get_status, list_notebooks
 //
 // Base URL: https://{workspace-host}  (e.g. https://dbc-a1b2345c-d6e7.cloud.databricks.com)
 // Auth: Bearer token — personal access token (PAT) or short-lived OAuth2 access token
 // Docs: https://docs.databricks.com/api/workspace/introduction
-// Rate limits: Not publicly documented; varies by workspace size and API endpoint
+// Rate limits: DBFS API 30 req/s | Jobs API /list /get /create 20 req/s | Secrets API 1,100 req/min |
+//   Workspace API /list 60 req/s | Permissions API GET 100 req/s. Returns HTTP 429 on excess.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

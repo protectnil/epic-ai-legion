@@ -5,17 +5,38 @@
  */
 
 // Official MCP: https://github.com/CrowdStrike/falcon-mcp — transport: stdio, auth: OAuth2 client credentials
-//   Vendor-official, actively maintained (2025), 20+ tools covering detections, incidents, threat intel,
-//   CSPM, Kubernetes, IOA, and NGSIEM. Highly recommended for full coverage.
-// Our adapter covers: 18 tools (core SOC operations). Vendor MCP covers: 20+ tools (full platform).
-// Recommendation: Use the vendor MCP for full Next-Gen SIEM and cloud security coverage.
-//   Use this adapter for air-gapped or custom deployments requiring direct REST API access.
+//   Vendor-official (CrowdStrike/falcon-mcp), actively maintained (latest release v0.8.0 on 2026-03-09).
+//   Exposes 33 tools across detections, hosts, incidents, cloud security, identity protection, IOC,
+//   Intel, NGSIEM, Spotlight, and more. Highly recommended for full coverage.
+// Our adapter covers: 18 tools (core SOC operations — detections, hosts, incidents, host groups,
+//   prevention policies, IOC, vulnerabilities). Vendor MCP covers: 33 tools (full platform).
+// Recommendation: use-both — vendor MCP has unique tools our adapter does not cover (cloud security,
+//   Intel, NGSIEM, Firewall Management, Scheduled Reports, Sensor Usage, Serverless, Discover).
+//   Our adapter has unique tools the vendor MCP does not expose individually (list_host_groups,
+//   get_host_group, list_host_group_members, list_prevention_policies, get_prevention_policy,
+//   quarantine_host, lift_quarantine, create_ioc, delete_ioc, list_vulnerabilities via combined endpoint).
+// Integration: use-both
+//   MCP-sourced tools (15): falcon_check_connectivity, falcon_list_enabled_modules, falcon_list_modules,
+//     falcon_search_kubernetes_containers, falcon_count_kubernetes_containers, falcon_search_images_vulnerabilities,
+//     falcon_search_detections, falcon_get_detection_details, falcon_search_applications,
+//     falcon_search_unmanaged_assets, falcon_show_crowd_score, falcon_search_incidents,
+//     falcon_get_incident_details, falcon_search_behaviors, falcon_get_behavior_details,
+//     search_ngsiem, falcon_search_actors, falcon_search_indicators, falcon_search_reports,
+//     falcon_get_mitre_report, falcon_search_iocs, falcon_search_sensor_usage,
+//     falcon_search_scheduled_reports, falcon_search_report_executions, falcon_download_report_execution,
+//     falcon_search_serverless_vulnerabilities, falcon_search_vulnerabilities, idp_investigate_entity,
+//     falcon_add_ioc, falcon_remove_iocs, falcon_launch_scheduled_report
+//   REST-sourced tools (18): list_detections, get_detection, update_detection, search_hosts,
+//     get_host_detail, quarantine_host, lift_quarantine, search_incidents, get_incident,
+//     list_host_groups, get_host_group, list_host_group_members, list_prevention_policies,
+//     get_prevention_policy, search_iocs, create_ioc, delete_ioc, list_vulnerabilities
+//   Combined coverage: union of both (FederationManager routes MCP-shared tools through vendor MCP)
 //
 // Base URL: https://api.crowdstrike.com (US-1), https://api.us-2.crowdstrike.com (US-2),
 //           https://api.eu-1.crowdstrike.com (EU-1), https://api.laggar.gcw.crowdstrike.com (Gov)
-// Auth: OAuth2 client credentials — POST /oauth2/token, Basic auth with clientId:clientSecret
-// Docs: https://falcon.crowdstrike.com/documentation/page/a2a7fc0e/crowdstrike-oauth2-based-apis
-// Rate limits: Varies by endpoint; default 6000 req/min per token; /detects ~6000/min
+// Auth: OAuth2 client credentials — POST /oauth2/token with client_id + client_secret in form body
+// Docs: https://www.falconpy.io/Operations/All-Operations.html
+// Rate limits: Varies by endpoint; default 6000 req/min per token
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -70,11 +91,12 @@ export class CrowdStrikeMCPServer {
 
     const response = await fetch(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
-      headers: {
-        Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'grant_type=client_credentials',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+        grant_type: 'client_credentials',
+      }).toString(),
     });
 
     if (!response.ok) {

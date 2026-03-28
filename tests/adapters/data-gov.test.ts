@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DataGovMCPServer } from '../../src/mcp-servers/data-gov.js';
 
 describe('DataGovMCPServer', () => {
-  const adapter = new DataGovMCPServer({ apiToken: 'test-token' });
+  const adapter = new DataGovMCPServer({ apiKey: 'test-token' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

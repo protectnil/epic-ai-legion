@@ -5,19 +5,35 @@
  */
 
 // Official MCP: https://github.com/CrowdStrike/falcon-mcp — transport: stdio, auth: OAuth2 client credentials
-//   Vendor-official (CrowdStrike/falcon-mcp), actively maintained (2025). Covers broader Falcon platform.
-//   Identity Protection GraphQL is not a dedicated module in falcon-mcp; this adapter provides direct
-//   REST + GraphQL coverage for Falcon Identity Threat Detection (ITD).
-// Our adapter covers: 12 tools (full identity protection surface).
-// Recommendation: Use the vendor falcon-mcp for general Falcon platform operations.
-//   Use this adapter when dedicated identity threat detection coverage is required.
+//   Vendor-official (CrowdStrike/falcon-mcp), actively maintained (latest release v0.8.0 on 2026-03-09).
+//   The falcon-mcp Identity Protection module exposes 1 tool: idp_investigate_entity (entity investigation).
+//   This adapter provides 12 tools with broader REST coverage of Identity Threat Detection endpoints
+//   and Zero Trust Assessment — operations the vendor MCP does not expose individually.
+// Our adapter covers: 12 tools (identity detections, entities, entity timeline, compromised credentials,
+//   lateral movement, ZTA scores/assessments, GraphQL, identity incidents).
+// Vendor MCP identity tools: 1 (idp_investigate_entity — broad entity investigation via GraphQL).
+// Recommendation: use-both — vendor MCP idp_investigate_entity provides richer entity investigation
+//   via GraphQL internally; our adapter covers ZTA and discrete REST operations not in vendor MCP.
+// Integration: use-both
+//   MCP-sourced tools (1): idp_investigate_entity
+//   REST-sourced tools (12): list_identity_detections, get_identity_detection, update_identity_detection,
+//     list_identity_entities, get_identity_entity, get_entity_timeline, search_compromised_credentials,
+//     get_lateral_movement, get_zta_score, list_zta_assessments, query_identity_graphql, list_identity_incidents
 //
 // Base URL: https://api.crowdstrike.com (US-1), https://api.us-2.crowdstrike.com (US-2)
 // Auth: OAuth2 client credentials — POST /oauth2/token with client_id + client_secret form body
-//   Required scopes: Identity Protection Entities (READ), Zero Trust Assessment (READ)
+//   Required scopes: Identity Protection Entities (READ), Identity Protection Detections (READ),
+//   Identity Protection Timeline (READ), Identity Protection Assessment (READ),
+//   Identity Protection GraphQL (WRITE), Zero Trust Assessment (READ)
 // Docs: https://www.falconpy.io/Service-Collections/Identity-Protection.html
-//       https://github.com/CrowdStrike/crimson-falcon/blob/main/docs/IdentityProtection.md
+//       https://www.falconpy.io/Service-Collections/Zero-Trust-Assessment.html
 // Rate limits: Shared with Falcon platform; typically 6000 req/min per token
+// NOTE: Several identity-protection/* REST endpoints (queries/detections, entities/detections/GET,
+//   queries/entities, entities/entities/GET, queries/incidents, combined/timeline, combined/graphql,
+//   queries/compromised-credentials, combined/lateral-movement) are confirmed in usage by third-party
+//   integrations (D3 SOAR, Query.ai) but are not fully documented in public FalconPy reference.
+//   ZTA endpoints (/zero-trust-assessment/entities/assessments/v1 and /queries/assessments/v1) are
+//   confirmed in FalconPy Zero Trust Assessment docs.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

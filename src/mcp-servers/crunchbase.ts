@@ -4,13 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Crunchbase MCP server was found on GitHub or the MCP registry.
+// A community server (github.com/Cyreslab-AI/crunchbase-mcp-server) exists but is not official,
+// has only ~5 tools (search_companies, get_company, get_funding_rounds, get_acquisitions, search_people),
+// and has no recent maintenance activity. Decision: use-rest-api.
 //
-// Base URL: https://api.crunchbase.com/v4/data
+// Base URL: https://api.crunchbase.com/api/v4/data
 // Auth: API key passed as query parameter `user_key` or header `X-cb-user-key`
 // Docs: https://data.crunchbase.com/docs/using-the-api
-// Rate limits: Varies by plan; Basic tier allows limited calls/day. Enterprise tier unlocks full access.
+// Rate limits: 200 calls per minute (all plans)
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -25,7 +28,7 @@ export class CrunchbaseMCPServer {
 
   constructor(config: CrunchbaseConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || 'https://api.crunchbase.com/v4/data';
+    this.baseUrl = config.baseUrl || 'https://api.crunchbase.com/api/v4/data';
   }
 
   static catalog() {

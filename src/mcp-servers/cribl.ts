@@ -4,17 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/pebbletek/cribl-mcp — transport: stdio, auth: bearer token
-//   Community-maintained (not vendor-official); ~10 tools; last commit within 6 months.
-//   Our adapter covers more tools and supports on-prem bearer-token deployments.
-// Recommendation: Use this adapter for full coverage and air-gapped or on-prem deployments.
+// Official MCP: https://docs.cribl.io/copilot/cribl-mcp-server/ — transport: streamable-HTTP (port 3030), auth: X-API-Key header
+//   Vendor-official (Cribl Inc.); 7 tools (cribl_getSystemMetrics, cribl_listWorkerGroups, cribl_getSources,
+//   cribl_getDestinations, cribl_listDatasets, cribl_getSavedSearches, cribl_runSearchQuery).
+//   Fails the 10+ tools threshold — does NOT qualify for use-vendor-mcp.
+//   Community MCP also exists: https://github.com/pebbletek/cribl-mcp — stdio, 8 tools, last release Apr 2025.
+// Our adapter covers: 24 tools (full pipeline, route, source, destination, lookup, pack, version, search coverage).
+// Recommendation: use-rest-api — official MCP has only 7 tools (threshold is 10+); REST adapter provides broader coverage.
 //
 // Base URL: https://{workspaceName}-{organizationId}.cribl.cloud  (Cribl.Cloud)
 //           https://cribl.example.com:9000                         (on-prem)
 //   Adapter appends /api/v1 automatically.
 // Auth: OAuth2 client credentials (Cribl.Cloud: POST https://login.cribl.cloud/oauth/token)
 //       OR pre-obtained Bearer token (on-prem via /api/v1/auth/login)
-// Docs: https://docs.cribl.io/api-reference/
+// Docs: https://docs.cribl.io/cribl-as-code/api-reference/
 // Rate limits: Not officially published; Cribl.Cloud enforces per-workspace throttling
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -64,7 +67,7 @@ export class CriblMCPServer {
       toolNames: [
         'list_worker_groups', 'get_worker_group', 'list_workers',
         'list_pipelines', 'get_pipeline', 'create_pipeline', 'update_pipeline', 'delete_pipeline',
-        'list_routes', 'get_routes', 'update_routes',
+        'get_routes', 'update_routes',
         'list_sources', 'get_source',
         'list_destinations', 'get_destination',
         'list_lookups', 'get_lookup',
@@ -237,19 +240,8 @@ export class CriblMCPServer {
         },
       },
       {
-        name: 'list_routes',
-        description: 'List all routing rules for a Worker Group showing source-to-pipeline-to-destination mappings',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            group: { type: 'string', description: 'Worker Group or Fleet name' },
-          },
-          required: ['group'],
-        },
-      },
-      {
         name: 'get_routes',
-        description: 'Get the full routes configuration object for a Worker Group in order',
+        description: 'Get the full routes configuration object for a Worker Group, showing all routing rules in order',
         inputSchema: {
           type: 'object',
           properties: {
@@ -467,8 +459,6 @@ export class CriblMCPServer {
           return this.updatePipeline(args);
         case 'delete_pipeline':
           return this.deletePipeline(args);
-        case 'list_routes':
-          return this.listRoutes(args);
         case 'get_routes':
           return this.getRoutes(args);
         case 'update_routes':
@@ -564,12 +554,6 @@ export class CriblMCPServer {
     return this.request('DELETE', `/m/${encodeURIComponent(group)}/pipelines/${encodeURIComponent(pipelineId)}`);
   }
 
-  private async listRoutes(args: Record<string, unknown>): Promise<ToolResult> {
-    const group = args.group as string;
-    if (!group) return { content: [{ type: 'text', text: 'group is required' }], isError: true };
-    return this.request('GET', `/m/${encodeURIComponent(group)}/routes`);
-  }
-
   private async getRoutes(args: Record<string, unknown>): Promise<ToolResult> {
     const group = args.group as string;
     if (!group) return { content: [{ type: 'text', text: 'group is required' }], isError: true };
@@ -580,7 +564,7 @@ export class CriblMCPServer {
     const group = args.group as string;
     const routes = args.routes as unknown[];
     if (!group || !routes) return { content: [{ type: 'text', text: 'group and routes are required' }], isError: true };
-    return this.request('POST', `/m/${encodeURIComponent(group)}/routes`, { routes });
+    return this.request('PATCH', `/m/${encodeURIComponent(group)}/routes`, { routes });
   }
 
   private async listSources(args: Record<string, unknown>): Promise<ToolResult> {

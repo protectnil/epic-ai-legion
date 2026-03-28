@@ -4,15 +4,21 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://support.crowdin.com/crowdin-mcp-server/ — transport: stdio, auth: Personal Access Token
-// Our adapter covers: 20 tools (projects, files, translations, branches, glossaries, TM, reports, users).
-// Vendor MCP covers: core project and translation operations.
-// Recommendation: Use this adapter for broader API coverage. Use vendor MCP for minimal footprint deployments.
+// Official MCP: https://store.crowdin.com/crowdin-mcp-server — transport: streamable-HTTP (hosted service), auth: Bearer Personal Access Token
+//   Vendor-official (Crowdin); 200+ tools across role-based tool sets (project-manager, developer, translator, asset-manager, admin).
+//   Actively maintained (hosted SaaS, no stale commits concern). Meets all 4 MCP criteria.
+//   MCP covers all operations our REST adapter covers, plus many more (branches, labels, TM, reports, webhooks, builds, users, approvals).
+// Our adapter covers: 20 tools (projects, files, strings, translations, languages, members, glossaries).
+// Integration: use-both — MCP has 200+ tools including many not in our REST adapter; REST adapter provides fallback for air-gapped deployments.
+// MCP-sourced tools (200+): branches, labels, translation memory, reports, webhooks, builds, approvals, screenshots, and all REST adapter tools.
+// REST-sourced tools (20): list_projects, get_project, create_project, update_project, delete_project, list_project_files, get_file,
+//   add_file, update_file, delete_file, list_strings, get_string, add_string, update_string, list_translations, get_translation,
+//   list_languages, list_project_members, list_glossaries, get_glossary.
 //
 // Base URL: https://api.crowdin.com/api/v2  (Crowdin Cloud)
 //           https://{organization}.api.crowdin.com/api/v2  (Crowdin Enterprise)
 // Auth: Bearer token using a Personal Access Token from Crowdin Account Settings → API & SSO
-// Docs: https://support.crowdin.com/developer/api/v2/
+// Docs: https://support.crowdin.com/developer/api/
 // Rate limits: Not publicly documented; apply exponential backoff on 429 responses
 
 import { ToolDefinition, ToolResult } from './types.js';

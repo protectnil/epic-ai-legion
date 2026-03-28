@@ -4,17 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official CoStar MCP server was found on GitHub.
+// Official MCP: None found as of 2026-03-28
+// No official CoStar MCP server was found on GitHub, npm, or CoStar's developer pages.
 //
 // Base URL: https://api.costar.com  (enterprise partner access only — endpoint paths are contract-specific)
 // Auth: API key passed as X-Api-Key header (enterprise partner credentials)
-// Docs: https://www.costar.com — API access is restricted to authorized enterprise partners via negotiated contract
+// Docs: https://www.costar.com — CoStar does NOT offer a public developer API. Access requires a
+//   signed enterprise partnership agreement with CoStar Group. No public API reference exists.
+//   Endpoint paths in this adapter are unverified — confirm all paths with your CoStar account team.
 // Rate limits: Not publicly documented; governed by individual partner agreements
 //
-// IMPORTANT: CoStar does NOT offer a public developer API. Access requires a signed enterprise
-// partnership agreement with CoStar Group. This adapter targets partners who have been issued
-// API credentials. Base URL and endpoint paths should be confirmed with your CoStar account team.
+// IMPORTANT: This adapter is UNVERIFIED. CoStar's API is contract-gated with no public documentation.
+// The endpoint paths (/v1/properties, /v1/leases, etc.) are reasonable conventions but cannot be
+// confirmed without access to CoStar's partner API docs. This adapter should be treated as a
+// template — CoStar partners must verify and correct all paths before use.
 
 import { ToolDefinition, ToolResult } from './types.js';
 

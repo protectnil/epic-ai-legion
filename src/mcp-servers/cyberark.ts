@@ -4,10 +4,14 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found for CyberArk PAM (PVWA REST API) as of 2026-03
-//   CyberArk's official MCP server (docs.cyberark.com/sca) covers Secure Cloud Access — not PAM/PVWA.
-//   Community adapter: https://github.com/aaearon/mcp-privilege-cloud (8 tools, Privilege Cloud only).
-//   Neither covers self-hosted PVWA REST API with full privileged account operations.
+// Official MCP: None found for CyberArk PAM (self-hosted PVWA REST API) as of 2026-03-28
+//   Community adapter: https://github.com/aaearon/mcp-privilege-cloud (53 tools, Privilege Cloud only,
+//   transport: stdio + streamable-HTTP, auth: OAuth2, actively maintained as of 2026-03) — covers
+//   Privilege Cloud only, NOT self-hosted PVWA. Does not expose access request confirm/reject or session
+//   recordings. Our adapter targets self-hosted PVWA with full PAM operations.
+// Our adapter covers: 23 tools. Vendor MCP covers: 53 tools (Privilege Cloud only).
+// Recommendation: use-rest-api — community MCP covers Privilege Cloud only; our adapter targets
+//   self-hosted PVWA and includes operations (access requests, session recordings) absent from that MCP.
 //
 // Base URL: https://{pvwa-host}/PasswordVault/API  (self-hosted PVWA)
 //           https://{tenant}.privilegecloud.cyberark.com/PasswordVault/API  (Privilege Cloud)
@@ -405,13 +409,13 @@ export class CyberArkMCPServer {
       },
       {
         name: 'list_pending_requests',
-        description: 'List pending privileged access requests awaiting approval with optional filter for requester and safe',
+        description: 'List privileged access requests via PVWA REST API — IncomingRequests (default) for requests awaiting your approval, or MyRequests for your own submitted requests',
         inputSchema: {
           type: 'object',
           properties: {
             filter: {
               type: 'string',
-              description: 'Filter for pending requests: MyRequests, IncomingRequests (default: IncomingRequests)',
+              description: 'Which request queue to retrieve: IncomingRequests (requests pending your approval, default) or MyRequests (your own submitted requests)',
             },
           },
         },
@@ -685,7 +689,12 @@ export class CyberArkMCPServer {
 
   private async listPendingRequests(args: Record<string, unknown>): Promise<ToolResult> {
     const filter = (args.filter as string) ?? 'IncomingRequests';
-    return this.request('GET', `/MyRequests?filter=${encodeURIComponent(filter)}`);
+    // IncomingRequests are requests awaiting the current user's approval; MyRequests are the user's own requests
+    let url = '/IncomingRequests';
+    if (filter === 'MyRequests') {
+      url = '/MyRequests';
+    }
+    return this.request('GET', url);
   }
 
   private async confirmRequest(args: Record<string, unknown>): Promise<ToolResult> {
@@ -693,7 +702,7 @@ export class CyberArkMCPServer {
     if (!requestId) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.reason) body.Reason = args.reason;
-    return this.request('POST', `/MyRequests/${encodeURIComponent(requestId)}/Confirm`, body);
+    return this.request('POST', `/IncomingRequests/${encodeURIComponent(requestId)}/confirm`, body);
   }
 
   private async rejectRequest(args: Record<string, unknown>): Promise<ToolResult> {
@@ -701,7 +710,7 @@ export class CyberArkMCPServer {
     if (!requestId) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.reason) body.Reason = args.reason;
-    return this.request('POST', `/MyRequests/${encodeURIComponent(requestId)}/Reject`, body);
+    return this.request('POST', `/IncomingRequests/${encodeURIComponent(requestId)}/reject`, body);
   }
 
   private async getSessionRecordings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -719,6 +728,6 @@ export class CyberArkMCPServer {
   private async getRecordingActivities(args: Record<string, unknown>): Promise<ToolResult> {
     const recordingId = args.recording_id as string;
     if (!recordingId) return { content: [{ type: 'text', text: 'recording_id is required' }], isError: true };
-    return this.request('GET', `/Recordings/${encodeURIComponent(recordingId)}/Activities`);
+    return this.request('GET', `/Recordings/${encodeURIComponent(recordingId)}/activities`);
   }
 }

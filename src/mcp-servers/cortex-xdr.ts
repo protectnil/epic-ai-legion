@@ -4,19 +4,25 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Palo Alto / Cortex XDR MCP server was found on GitHub.
-// Community Python client: https://github.com/ebarti/cortex-xdr-client (REST wrapper, not MCP)
+// Official MCP: https://docs-cortex.paloaltonetworks.com/r/Cortex-XSIAM/Cortex-XSIAM-3.x-Documentation/Install-the-Cortex-MCP-server
+//   Palo Alto Networks published an official Cortex MCP server (open beta, Dec 2025). It covers
+//   Cortex XSIAM, XDR, and Cloud — issues, cases, assets, endpoints, compliance, tenant metadata.
+//   Transport: stdio (local install). Auth: Cortex API token. Tool count: not fully enumerable
+//   without authenticated access; blog lists issues/cases/assets/endpoints/compliance as prebuilt tools.
+//   Recommendation: use-rest-api — the official Cortex MCP targets XSIAM broadly and requires
+//   tenant authentication to enumerate tools; tool count unverifiable as <10 confirmed prebuilt tools
+//   for XDR-specific operations. Our REST adapter covers 23 verified XDR-specific operations.
+//   Re-evaluate use-both if Palo Alto publishes a full XDR tool manifest.
 //
 // Base URL: https://api-{fqdn}/public_api/v1
 //   The FQDN is tenant-specific, assigned when the API key is created in the Cortex XDR console.
 //   Example: api-example.xdr.us.paloaltonetworks.com
-// Auth: Custom HMAC-SHA256 signature. Two modes selected at key-generation time:
-//   Standard: Authorization = SHA256(apiKey + NUL*64 + timestampMs)
-//             Headers: x-xdr-auth-id, x-xdr-timestamp, Authorization
-//   Advanced: nonce = 64 random bytes (hex), Authorization = SHA256(apiKey + nonce + timestampMs)
+// Auth: Two modes selected at key-generation time:
+//   Standard: Authorization = {raw API key} (no hashing)
+//             Headers: x-xdr-auth-id, Authorization
+//   Advanced: nonce = 64-char alphanumeric random string, Authorization = SHA256(apiKey + nonce + timestampMs)
 //             Headers: x-xdr-auth-id, x-xdr-timestamp, x-xdr-nonce, Authorization
-// Docs: https://docs-cortex.paloaltonetworks.com/r/Cortex-XDR/Cortex-XDR-API-Reference/APIs-Overview
+// Docs: https://cortex-panw.stoplight.io/docs/cortex-xdr/3u3j0e7hcx8t1-get-started-with-cortex-xdr-ap-is
 // Rate limits: Not officially published; recommended 10 req/s per API key
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -72,29 +78,29 @@ export class CortexXDRMCPServer {
 
   private buildHeaders(): Record<string, string> {
     const timestamp = String(Date.now());
-    let authValue: string;
-    const extraHeaders: Record<string, string> = {};
 
     if (this.advancedAuth) {
-      const nonce = randomBytes(64).toString('hex');
-      authValue = createHash('sha256')
+      // Advanced: Authorization = SHA256(apiKey + nonce + timestampMs)
+      // nonce is a 64-char alphanumeric random string per Cortex XDR docs
+      const nonce = randomBytes(32).toString('hex'); // 64 hex chars
+      const authValue = createHash('sha256')
         .update(this.apiKey + nonce + timestamp)
         .digest('hex');
-      extraHeaders['x-xdr-nonce'] = nonce;
+      return {
+        'x-xdr-auth-id': this.apiKeyId,
+        'x-xdr-timestamp': timestamp,
+        'x-xdr-nonce': nonce,
+        Authorization: authValue,
+        'Content-Type': 'application/json',
+      };
     } else {
-      const padding = '\x00'.repeat(64);
-      authValue = createHash('sha256')
-        .update(this.apiKey + padding + timestamp)
-        .digest('hex');
+      // Standard: Authorization = raw API key (no hashing)
+      return {
+        'x-xdr-auth-id': this.apiKeyId,
+        Authorization: this.apiKey,
+        'Content-Type': 'application/json',
+      };
     }
-
-    return {
-      'x-xdr-auth-id': this.apiKeyId,
-      'x-xdr-timestamp': timestamp,
-      ...extraHeaders,
-      Authorization: authValue,
-      'Content-Type': 'application/json',
-    };
   }
 
   private truncate(data: unknown): string {

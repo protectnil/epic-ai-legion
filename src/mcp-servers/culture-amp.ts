@@ -4,15 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Culture Amp MCP server was found on GitHub or the MCP registry.
 //
 // Base URL: https://api.cultureamp.com/v1
-// Auth: OAuth2 client credentials flow — token endpoint: https://api.cultureamp.com/v1/oauth2/token
+// Auth: OAuth2 client credentials flow — token endpoint: https://api.cultureamp.com/oauth2/token
+//   (tokenUrl is /oauth2/token per OpenAPI spec, relative to root host not /v1 base)
+//   client_id and client_secret may be passed in body or as Basic auth header (both valid per docs)
 // Docs: https://docs.api.cultureamp.com/docs/resources-getting-started
+// API Spec: https://api.cultureamp.com/spec
 // Rate limits: Not publicly documented; apply reasonable backoff on 429 responses.
-// Note: The legacy Survey API (https://api.cultureamp.com/v1/surveys) was deprecated Feb 2026.
-//       Use the Reporting API for survey/response data.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -140,7 +141,7 @@ export class CultureAmpMCPServer {
       },
       {
         name: 'list_survey_responses',
-        description: 'List completed responses for a survey via the Reporting API, with pagination support for large response sets',
+        description: 'List completed survey responses for a specific survey, with pagination support for large response sets',
         inputSchema: {
           type: 'object',
           properties: {
@@ -150,14 +151,120 @@ export class CultureAmpMCPServer {
             },
             cursor: {
               type: 'string',
-              description: 'Pagination cursor from a previous response (responses are paginated at 1000 per page)',
-            },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of responses per page (default: 1000, max: 1000)',
+              description: 'Pagination cursor from a previous response',
             },
           },
           required: ['survey_id'],
+        },
+      },
+      {
+        name: 'get_survey_response',
+        description: 'Retrieve a single survey response by its response ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            response_id: {
+              type: 'string',
+              description: 'Unique survey response ID',
+            },
+          },
+          required: ['response_id'],
+        },
+      },
+      {
+        name: 'list_survey_questions',
+        description: 'List all questions for a specific Culture Amp survey by survey ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            survey_id: {
+              type: 'string',
+              description: 'Unique Culture Amp survey ID to retrieve questions for',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['survey_id'],
+        },
+      },
+      {
+        name: 'get_survey_question',
+        description: 'Retrieve details for a specific Culture Amp survey question by question ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            question_id: {
+              type: 'string',
+              description: 'Unique survey question ID',
+            },
+          },
+          required: ['question_id'],
+        },
+      },
+      {
+        name: 'list_survey_factors',
+        description: 'List all factors (question groupings) for a specific Culture Amp survey by survey ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            survey_id: {
+              type: 'string',
+              description: 'Unique Culture Amp survey ID to retrieve factors for',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['survey_id'],
+        },
+      },
+      {
+        name: 'get_survey_factor',
+        description: 'Retrieve details for a specific Culture Amp survey factor by factor ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            factor_id: {
+              type: 'string',
+              description: 'Unique survey factor ID',
+            },
+          },
+          required: ['factor_id'],
+        },
+      },
+      {
+        name: 'list_survey_sections',
+        description: 'List all sections for a specific Culture Amp survey by survey ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            survey_id: {
+              type: 'string',
+              description: 'Unique Culture Amp survey ID to retrieve sections for',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['survey_id'],
+        },
+      },
+      {
+        name: 'get_survey_section',
+        description: 'Retrieve details for a specific Culture Amp survey section by section ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            section_id: {
+              type: 'string',
+              description: 'Unique survey section ID',
+            },
+          },
+          required: ['section_id'],
         },
       },
       {
@@ -168,7 +275,7 @@ export class CultureAmpMCPServer {
           properties: {
             status: {
               type: 'string',
-              description: 'Filter cycles by status: active, completed, draft (default: no filter)',
+              description: 'Filter cycles by status: active, closed, ready (default: no filter)',
             },
             cursor: {
               type: 'string',
@@ -196,33 +303,66 @@ export class CultureAmpMCPServer {
         },
       },
       {
-        name: 'list_performance_reviews',
-        description: 'List performance reviews (evaluations) within a specific cycle, with employee and reviewer details',
+        name: 'list_manager_reviews_by_cycle',
+        description: 'List manager reviews (performance evaluations) within a specific performance cycle by cycle ID',
         inputSchema: {
           type: 'object',
           properties: {
             cycle_id: {
               type: 'string',
-              description: 'Unique performance cycle ID to retrieve reviews from',
-            },
-            employee_id: {
-              type: 'string',
-              description: 'Filter reviews for a specific employee by their ID',
-            },
-            status: {
-              type: 'string',
-              description: 'Filter by review status: pending, in_progress, completed (default: no filter)',
+              description: 'Unique performance cycle ID to retrieve manager reviews from',
             },
             cursor: {
               type: 'string',
               description: 'Pagination cursor from a previous response',
             },
-            limit: {
-              type: 'number',
-              description: 'Maximum number of reviews to return per page (default: 100)',
-            },
           },
           required: ['cycle_id'],
+        },
+      },
+      {
+        name: 'list_manager_reviews',
+        description: 'List all manager reviews across all performance cycles in the Culture Amp account',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_manager_review',
+        description: 'Retrieve details for a specific Culture Amp manager review by review ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            review_id: {
+              type: 'string',
+              description: 'Unique manager review ID',
+            },
+          },
+          required: ['review_id'],
+        },
+      },
+      {
+        name: 'list_manager_reviews_by_employee',
+        description: 'List all manager reviews for a specific employee across all performance cycles',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            employee_id: {
+              type: 'string',
+              description: 'Unique Culture Amp employee ID to retrieve manager reviews for',
+            },
+            cursor: {
+              type: 'string',
+              description: 'Pagination cursor from a previous response',
+            },
+          },
+          required: ['employee_id'],
         },
       },
     ];
@@ -247,8 +387,28 @@ export class CultureAmpMCPServer {
           return this.listPerformanceCycles(args);
         case 'get_performance_cycle':
           return this.getPerformanceCycle(args);
-        case 'list_performance_reviews':
-          return this.listPerformanceReviews(args);
+        case 'list_manager_reviews_by_cycle':
+          return this.listManagerReviewsByCycle(args);
+        case 'list_manager_reviews':
+          return this.listManagerReviews(args);
+        case 'get_manager_review':
+          return this.getManagerReview(args);
+        case 'list_manager_reviews_by_employee':
+          return this.listManagerReviewsByEmployee(args);
+        case 'get_survey_response':
+          return this.getSurveyResponse(args);
+        case 'list_survey_questions':
+          return this.listSurveyQuestions(args);
+        case 'get_survey_question':
+          return this.getSurveyQuestion(args);
+        case 'list_survey_factors':
+          return this.listSurveyFactors(args);
+        case 'get_survey_factor':
+          return this.getSurveyFactor(args);
+        case 'list_survey_sections':
+          return this.listSurveySections(args);
+        case 'get_survey_section':
+          return this.getSurveySection(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
