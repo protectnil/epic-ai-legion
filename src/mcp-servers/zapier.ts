@@ -5,31 +5,51 @@
  */
 
 // Official MCP: https://github.com/zapier/zapier-mcp — transport: streamable-HTTP (https://mcp.zapier.com), auth: API key
-// The Zapier MCP server exposes 8,000+ app actions as dynamic tools via mcp.zapier.com.
-// Our adapter covers: 14 tools (NLA AI Actions API — list and execute preconfigured actions, plus Zap management).
-// Recommendation: Use vendor MCP (mcp.zapier.com) for direct access to all 8,000+ app integrations as real MCP tools.
-//   Use this adapter for programmatic Zap and AI Action management in air-gapped / REST-only environments.
+// The Zapier MCP server exposes 8,000+ app actions as dynamic tools via mcp.zapier.com. Actively maintained (2025-2026).
+// Our adapter covers: 14 tools — 4 NLA AI Actions tools (verified) + 10 Zap management tools (UNVERIFIED — see below).
+// Recommendation: use-both — MCP covers all 8,000+ app integrations dynamically. Our adapter covers
+//   Zap/AI-Action management operations not available in the MCP. See overlap analysis in audit record.
+//
+// ⚠️  AUTH NOTE: Two separate APIs with DIFFERENT auth schemes:
+//   NLA AI Actions API (nla.zapier.com/api/v1): x-api-key header (API key from nla.zapier.com)
+//   Zap Management API (api.zapier.com/v1): Authorization: Bearer <oauth_token> (OAuth2 — requires zapier OAuth)
+//   This adapter currently uses x-api-key for BOTH, which is WRONG for the Zap management tools.
+//   Fix: ZapierConfig must accept separate apiKey (NLA) and zapOAuthToken (Zap management).
+//
+// ⚠️  ZAP MANAGEMENT TOOLS: Only GET /v1/zaps is documented in Zapier's Partner API.
+//   enable_zap, disable_zap, list_zap_runs, get_zap_run, replay_zap_run, list_folders,
+//   get_app_info, list_apps — these endpoints are NOT verified from official Zapier docs.
+//   Marked UNVERIFIED pending Zapier confirming these endpoints exist.
 //
 // Base URL: https://nla.zapier.com/api/v1 (AI Actions / NLA), https://api.zapier.com/v1 (Zap management)
-// Auth: Bearer token (API key from nla.zapier.com or Zapier developer dashboard)
-// Docs: https://docs.zapier.com/mcp/home | https://nla.zapier.com/docs/using-the-api
+// Auth: x-api-key (NLA API) | Authorization: Bearer <token> (Zap management Partner API — OAuth2 required)
+// Docs: https://docs.zapier.com/mcp/home | https://nla.zapier.com/docs/using-the-api | https://docs.zapier.com/powered-by-zapier/api-reference
 // Rate limits: Not publicly documented; governed by Zapier plan limits
 
 import { ToolDefinition, ToolResult } from './types.js';
 
 interface ZapierConfig {
+  /** API key for the NLA AI Actions API (from nla.zapier.com). Uses x-api-key header. */
   apiKey: string;
+  /**
+   * OAuth2 Bearer token for the Zap management Partner API (api.zapier.com/v1).
+   * Requires OAuth2 with 'zap' scope via Zapier's Partner OAuth flow.
+   * If not provided, Zap management tools will return an auth error.
+   */
+  zapOAuthToken?: string;
   nlaBaseUrl?: string;
   zapBaseUrl?: string;
 }
 
 export class ZapierMCPServer {
   private readonly apiKey: string;
+  private readonly zapOAuthToken: string | undefined;
   private readonly nlaBaseUrl: string;
   private readonly zapBaseUrl: string;
 
   constructor(config: ZapierConfig) {
     this.apiKey = config.apiKey;
+    this.zapOAuthToken = config.zapOAuthToken;
     this.nlaBaseUrl = config.nlaBaseUrl || 'https://nla.zapier.com/api/v1';
     this.zapBaseUrl = config.zapBaseUrl || 'https://api.zapier.com/v1';
   }
@@ -251,9 +271,16 @@ export class ZapierMCPServer {
     }
   }
 
-  private get headers(): Record<string, string> {
+  private get nlaHeaders(): Record<string, string> {
     return {
       'x-api-key': this.apiKey,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private get zapHeaders(): Record<string, string> {
+    return {
+      'Authorization': `Bearer ${this.zapOAuthToken ?? ''}`,
       'Content-Type': 'application/json',
     };
   }
@@ -265,7 +292,7 @@ export class ZapierMCPServer {
 
   private async nlaGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.nlaBaseUrl}${path}${qs}`, { headers: this.headers });
+    const response = await fetch(`${this.nlaBaseUrl}${path}${qs}`, { headers: this.nlaHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -276,7 +303,7 @@ export class ZapierMCPServer {
   private async nlaPost(path: string, body: unknown): Promise<ToolResult> {
     const response = await fetch(`${this.nlaBaseUrl}${path}`, {
       method: 'POST',
-      headers: this.headers,
+      headers: this.nlaHeaders,
       body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -287,8 +314,11 @@ export class ZapierMCPServer {
   }
 
   private async zapGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
+    if (!this.zapOAuthToken) {
+      return { content: [{ type: 'text', text: 'Zap management tools require zapOAuthToken (OAuth2 Bearer). Provide zapOAuthToken in config.' }], isError: true };
+    }
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.zapBaseUrl}${path}${qs}`, { headers: this.headers });
+    const response = await fetch(`${this.zapBaseUrl}${path}${qs}`, { headers: this.zapHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -297,9 +327,12 @@ export class ZapierMCPServer {
   }
 
   private async zapPost(path: string, body?: unknown): Promise<ToolResult> {
+    if (!this.zapOAuthToken) {
+      return { content: [{ type: 'text', text: 'Zap management tools require zapOAuthToken (OAuth2 Bearer). Provide zapOAuthToken in config.' }], isError: true };
+    }
     const response = await fetch(`${this.zapBaseUrl}${path}`, {
       method: 'POST',
-      headers: this.headers,
+      headers: this.zapHeaders,
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!response.ok) {

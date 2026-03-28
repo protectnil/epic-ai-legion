@@ -7,8 +7,8 @@
 // Official MCP: https://github.com/CDataSoftware/zuora-mcp-server-by-cdata — read-only JDBC
 //   wrapper by CData (not an official Zuora MCP server). No official Zuora MCP server found
 //   as of 2026-03.
-// Our adapter covers: 18 tools (accounts, subscriptions, orders, invoices, credit memos,
-//   payments, refunds, payment methods, products, ZOQL query).
+// Our adapter covers: 19 tools (accounts, subscriptions, orders, invoices, credit memos,
+//   payments, refunds, products, ZOQL query).
 // Recommendation: Use this adapter for full REST CRUD. The CData MCP server is read-only.
 //
 // Base URL: https://rest.zuora.com (US Production)

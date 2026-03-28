@@ -511,8 +511,10 @@ export class USPSMCPServer {
   private async lookupZipCode(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.city || !args.state) return { content: [{ type: 'text', text: 'city and state are required' }], isError: true };
     const token = await this.getOrRefreshToken();
+    // /addresses/v3/zipcode returns ZIP codes for a city+state. /addresses/v3/city-state is the
+    // reverse operation (ZIP→city/state) and is used by get_city_state. USPS Addresses API v3.
     const params = new URLSearchParams({ city: args.city as string, state: args.state as string });
-    return this.uspsGet(`/addresses/v3/city-state?${params.toString()}`, token);
+    return this.uspsGet(`/addresses/v3/zipcode?${params.toString()}`, token);
   }
 
   private async getCityState(args: Record<string, unknown>): Promise<ToolResult> {

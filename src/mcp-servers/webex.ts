@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Cisco Webex MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28 — community repo exists but not from official Cisco org.
+// Community MCP (NOT official): https://github.com/WebexSamples/webex-messaging-mcp-server —
+//   52 tools, last commit 2025-10-29. WebexSamples is a Cisco samples org, NOT the Cisco vendor org.
+//   Fails the "published by the vendor themselves" criterion. Use this REST adapter as primary.
 //
 // Base URL: https://webexapis.com/v1
 // Auth: OAuth2 Bearer token (personal access token or Integration OAuth token). Access tokens valid 14 days; refresh tokens valid 90 days.

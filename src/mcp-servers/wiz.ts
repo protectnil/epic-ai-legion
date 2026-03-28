@@ -4,12 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://www.wiz.io/blog/introducing-mcp-server-for-wiz — currently in preview for
-//   Wiz customers only; available via the Wiz integration portal (not a public GitHub repo).
-//   Transport: streamable-HTTP (hosted). Auth: service account client credentials.
-//   Tool count: not publicly disclosed (preview). Last updated: Feb 2026.
-// Recommendation: Use vendor MCP once GA for full Wiz platform coverage. Use this adapter for
-//   programmatic/air-gapped access via the GraphQL API in the interim.
+// Official MCP: https://www.wiz.io/blog/introducing-mcp-server-for-wiz
+//   Now available on AWS Marketplace (v0.1.1, container image) — no longer preview-only.
+//   URL: https://aws.amazon.com/marketplace/pp/prodview-nlyysa5n2s7h6
+//   Transport: streamable-HTTP (hosted, Wiz-managed). Auth: service account client credentials.
+//   Tool count: not publicly disclosed in docs. Last updated: available on AWS Marketplace as of 2026-03.
+//   Status: Official (published by Wiz Inc.), actively maintained.
+//   Fails criterion 3 (tool count not publicly confirmed as 10+); keep REST adapter as primary.
+// Recommendation: Use this adapter for programmatic GraphQL access. Evaluate vendor MCP once
+//   tool surface is publicly documented and confirmed ≥10 tools.
 //
 // Base URL: https://api.<TENANT_DATA_CENTER>.app.wiz.io/graphql (tenant-specific)
 //   Example: https://api.us1.app.wiz.io/graphql

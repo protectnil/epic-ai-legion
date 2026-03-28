@@ -4,13 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/dipsylala/veracode-mcp — transport: stdio, auth: API ID + key (HMAC)
+// Official MCP: None found as of 2026-03-28 — no official Veracode MCP server published by Veracode Inc.
+// Community MCP: https://github.com/dipsylala/veracode-mcp — transport: stdio, auth: API ID + key (HMAC)
+//   Community-maintained (not official Veracode Inc.). Last commit: Mar 7, 2026. ~3 tools: api-health,
+//   get-static-findings, get-dynamic-findings. Does NOT meet 10-tool threshold for use-vendor-mcp.
 // Our adapter covers: 14 tools (applications, findings, sandboxes, policies, dynamic analyses,
 //   SCA workspaces and projects, pipeline scan findings, identity users/teams, mitigations, reports).
-// Vendor MCP covers: ~15 tools (alpha, wraps Veracode CLI for pipeline scans). Our adapter targets
-//   the Veracode Platform REST API directly with HMAC-SHA-256 signing — no local CLI dependency.
-// Recommendation: Use this adapter for CI/CD and server-side integrations. Vendor MCP useful for
-//   developer workstations where the Veracode CLI is already installed.
+// Recommendation: use-rest-api — no official vendor MCP exists; community MCP has only 3 tools vs our 14.
 //
 // Base URLs:
 //   Commercial (US): https://api.veracode.com  (default)
@@ -63,7 +63,7 @@ function buildVeracodeAuthHeader(
   return `VERACODE-HMAC-SHA-256 id=${apiId},ts=${ts},nonce=${nonce},sig=${sig}`;
 }
 
-export class VericodeMCPServer {
+export class VeracodeMCPServer {
   private readonly apiId: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;

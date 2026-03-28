@@ -4,12 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/tomtom-international/tomtom-mcp — transport: stdio, auth: API key
-// TomTom publishes an official MCP server with actively maintained open-source code (launched 2025).
-// It covers tools: tomtom-geocode, tomtom-reverse-geocode, tomtom-routing, tomtom-traffic,
-//   tomtom-search, tomtom-dynamic-map, and Orbis-exclusive tools (ev-routing, area-search, etc.)
-// Recommendation: Use the vendor MCP for full coverage via stdio transport.
-//   Use this adapter for air-gapped deployments or when REST API access is preferred.
+// Official MCP: https://github.com/tomtom-international/tomtom-mcp — transport: stdio + remote streamable-HTTP (https://mcp.tomtom.com/maps), auth: API key
+// TomTom publishes an official MCP server (tomtom-international/tomtom-mcp, launched July 2025, actively maintained).
+// TomTom Maps backend tools (10): tomtom-geocode, tomtom-reverse-geocode, tomtom-fuzzy-search,
+//   tomtom-poi-search, tomtom-nearby-search, tomtom-calculate-route, tomtom-waypoint-optimize,
+//   tomtom-calculate-reachable-range, tomtom-traffic-incidents, tomtom-static-image, tomtom-map-tile
+// Orbis Maps backend adds: tomtom-ev-routing, tomtom-ev-search, tomtom-search-along-route,
+//   tomtom-area-search, tomtom-data-viz (interactive map visualization)
+// Our adapter covers: 10 tools (REST). Vendor MCP covers: 11+ tools (TomTom Maps) + Orbis extras.
+// Recommendation: use-both — MCP covers geocode/reverse/fuzzy-search/nearby-search/ev-routing/area-search/data-viz
+//   not replicated in this REST adapter. Our REST adapter covers batch_geocode/search_along_route which
+//   the base MCP Maps backend does not expose. Full coverage requires union of both.
+// Integration: use-both
+// MCP-sourced tools (7): tomtom-geocode, tomtom-reverse-geocode, tomtom-fuzzy-search, tomtom-poi-search,
+//   tomtom-nearby-search, tomtom-calculate-route, tomtom-calculate-reachable-range,
+//   tomtom-traffic-incidents, tomtom-static-image, tomtom-map-tile (+ Orbis: ev-routing, ev-search, area-search, data-viz)
+// REST-sourced tools (2 unique): batch_geocode, search_along_route (not in MCP Maps backend)
+// Combined coverage: 12+ tools (MCP: 10+ + REST unique: 2)
 //
 // Base URL: https://api.tomtom.com
 // Auth: API key passed as query parameter: ?key={API_KEY}
@@ -457,10 +468,12 @@ export class TomTomMCPServer {
 
   private async getTrafficIncidents(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.bounding_box) return { content: [{ type: 'text', text: 'bounding_box is required' }], isError: true };
-    const params: Record<string, string> = {};
+    const params: Record<string, string> = {
+      bbox: args.bounding_box as string,
+    };
     if (args.language) params.language = args.language as string;
     if (args.category_filter) params.categoryFilter = args.category_filter as string;
-    return this.ttGet(`/traffic/services/5/incidentDetails/s3/${encodeURIComponent(args.bounding_box as string)}/100/-1/json`, params);
+    return this.ttGet('/traffic/services/5/incidentDetails', params);
   }
 
   private async getTrafficFlow(args: Record<string, unknown>): Promise<ToolResult> {

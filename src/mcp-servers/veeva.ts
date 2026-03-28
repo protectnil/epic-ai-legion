@@ -42,7 +42,7 @@ export class VeevaMCPServer {
       name: 'veeva',
       displayName: 'Veeva Vault',
       version: '1.0.0',
-      category: 'misc',
+      category: 'misc' as const,
       keywords: ['veeva', 'vault', 'life sciences', 'pharma', 'clinical', 'regulatory', 'document', 'content', 'submission', 'validation', 'quality', 'ctms'],
       toolNames: [
         'list_documents', 'get_document', 'search_documents', 'download_document',
@@ -52,7 +52,7 @@ export class VeevaMCPServer {
         'list_picklists', 'get_vault_info',
       ],
       description: 'Veeva Vault life sciences content platform: manage regulatory documents, search and download vault content, create and update object records, and run VQL queries for clinical and quality workflows.',
-      author: 'protectnil',
+      author: 'protectnil' as const,
     };
   }
 

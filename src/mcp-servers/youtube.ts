@@ -4,9 +4,9 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Google/YouTube MCP server was found on GitHub or npm as of March 2026.
-// Community tools exist but are unmaintained.
+// Official MCP: None found as of 2026-03-28
+// No official Google/YouTube MCP server was found on GitHub or npm as of 2026-03-28.
+// Community forks exist (github.com/ZubeidHendricks/youtube-mcp-server) but are not published by Google/YouTube.
 //
 // Base URL: https://www.googleapis.com/youtube/v3
 // Auth: API key (read-only public data) OR OAuth2 Bearer token (user data, write operations)

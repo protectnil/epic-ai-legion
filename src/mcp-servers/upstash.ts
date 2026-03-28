@@ -4,8 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Upstash MCP server was found on GitHub or npm.
+// Official MCP: https://github.com/upstash/mcp-server — transport: stdio + streamable-HTTP, auth: UPSTASH_REDIS_REST_URL/TOKEN
+// Our adapter covers: 15 tools. Vendor MCP covers: 15 Redis tools.
+// Recommendation: use-both — MCP covers Redis execution (run_single_redis_command,
+//   run_multiple_redis_commands, create_backup, restore_backup, list_backups, set_daily_backup,
+//   update_regions) which our adapter does NOT have. Our adapter covers Kafka and QStash
+//   (list_kafka_clusters, get_kafka_cluster, create_kafka_cluster, list_kafka_topics,
+//   create_kafka_topic, delete_kafka_topic, list_qstash_endpoints, get_qstash_dlq, purge_qstash_dlq)
+//   which the vendor MCP does NOT have. Full coverage requires union.
+// Integration: use-both
+// MCP-sourced tools (7 unique): run_single_redis_command, run_multiple_redis_commands,
+//   create_backup, restore_backup, list_backups, set_daily_backup, update_regions
+// REST-sourced tools (9 unique): list_kafka_clusters, get_kafka_cluster, create_kafka_cluster,
+//   list_kafka_topics, create_kafka_topic, delete_kafka_topic,
+//   list_qstash_endpoints, get_qstash_dlq, purge_qstash_dlq
+// Shared (6 tools): list_redis_databases, get_redis_database, create_redis_database,
+//   delete_redis_database, reset_redis_password, get_redis_stats
+// MCP npm: @upstash/mcp-server v0.2.2 (last publish March 2026 — actively maintained)
 //
 // Base URL: https://api.upstash.com/v2
 // Auth: HTTP Basic — email:api_key (management API). Per-database REST uses UPSTASH_REDIS_REST_TOKEN as Bearer.
@@ -369,7 +384,7 @@ export class UpstashMCPServer {
   }
 
   private async listRedisDatabases(): Promise<ToolResult> {
-    return this.apiGet('/redis/database');
+    return this.apiGet('/redis/databases');
   }
 
   private async getRedisDatabase(args: Record<string, unknown>): Promise<ToolResult> {

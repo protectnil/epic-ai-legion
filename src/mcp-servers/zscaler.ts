@@ -4,13 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/zscaler/zscaler-mcp-server — transport: stdio,
-//   auth: OneAPI OAuth2 or Legacy ZIA/ZPA API credentials, 150+ tools (ZIA + ZPA + ZDX + ZCC).
-//   Currently in public preview; production deployments not yet recommended by Zscaler.
+// Official MCP: https://github.com/zscaler/zscaler-mcp-server — transport: stdio/SSE/streamable-HTTP,
+//   auth: OneAPI OAuth2 or Legacy ZIA/ZPA API credentials. Last release: v0.6.1 (2025-12-16).
+//   281 tools across all services: ZIA (106), ZPA (88), ZDX (31), ZTW (19), Z-Insights (16),
+//   ZIdentity (10), EASM (7), ZCC (4). Currently in public preview; production deployments not
+//   yet recommended by Zscaler. All write operations require --enable-write-tools flag.
 // Our adapter covers: 14 tools (ZIA core operations: users, groups, URL filtering, firewall,
 //   DLP, sandbox, locations, URL categories, admin audit logs, activate changes).
 // Recommendation: Use vendor MCP for full ZIA+ZPA+ZDX coverage when stable. Use this adapter
-//   for air-gapped deployments or when only ZIA REST is available.
+//   for air-gapped deployments or when only ZIA REST is available. MCP is use-rest-api for now
+//   due to public preview status (criterion 2 of the MCP adoption criteria: not production-ready).
 //
 // Base URL: https://$zsapi.<ZscalerCloudName>/api/v1  (e.g. https://zsapi.zscaler.net/api/v1)
 //   Pass the full base URL including cloud name via config.baseUrl.

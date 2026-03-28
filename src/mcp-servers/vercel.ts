@@ -4,13 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://vercel.com/docs/agent-resources/vercel-mcp — hosted at https://mcp.vercel.com
-//   Transport: streamable-HTTP, Auth: OAuth2 user token via Vercel CLI
-//   Tools: docs search, team/project/deployment management (read-only at launch, March 2026)
-// Our adapter covers: 20 tools (projects, deployments, domains, env variables, DNS records,
-//   teams, deployment checks, aliases, logs, edge config). Broader write coverage than vendor MCP.
-// Recommendation: Use vendor MCP for doc search + read-only exploration.
-//   Use this adapter for full CRUD automation, CI/CD pipelines, and server-side management.
+// Official MCP: https://mcp.vercel.com — docs: https://vercel.com/docs/agent-resources/vercel-mcp
+//   Transport: streamable-HTTP, Auth: OAuth2 user token. Status: Beta (all plans), March 2026.
+//   MCP tools (verified): search_documentation, list_teams, list_projects, get_project,
+//     list_deployments, get_deployment, get_deployment_logs, get_runtime_logs,
+//     check_domain_availability_and_price, buy_domain (10+ tools, meets all 4 criteria).
+// Our adapter covers: 20 tools (projects, deployments, domains, env variables, DNS records, teams, logs).
+// Integration: use-both
+//   MCP-only tools (not in our REST adapter): search_documentation, check_domain_availability_and_price,
+//     buy_domain, get_runtime_logs
+//   REST-only tools (not in vendor MCP, write operations): create_project, update_project, delete_project,
+//     cancel_deployment, add_domain, remove_domain, create_env_var, update_env_var, delete_env_var,
+//     list_env_vars, create_dns_record, delete_dns_record, list_dns_records, list_domains, list_team_members
+//   Shared (both MCP and REST): list_projects, get_project, list_deployments, get_deployment, get_deployment_logs
+// Combined coverage: 24 tools (REST: 20 + MCP-only: 4; shared tools routed through MCP per FederationManager)
 //
 // Base URL: https://api.vercel.com
 // Auth: Bearer token (Vercel personal access token or OAuth2 user token)

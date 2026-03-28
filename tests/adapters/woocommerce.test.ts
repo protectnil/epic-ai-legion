@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { WooCommerceMCPServer } from '../../src/mcp-servers/woocommerce.js';
 
 describe('WooCommerceMCPServer', () => {
-  const adapter = new WooCommerceMCPServer({ storeUrl: 'https://test.example.com', consumerKey: 'test-key', consumerSecret: 'test-secret' });
+  const adapter = new WooCommerceMCPServer({
+    storeUrl: 'https://example.com',
+    consumerKey: 'ck_test',
+    consumerSecret: 'cs_test',
+  });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

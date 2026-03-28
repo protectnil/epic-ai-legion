@@ -4,9 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// Multiple community implementations exist (Mgabr90/zoho-mcp-server, ampcome-mcps/zoho-crm-mcp)
-// but none are official Zoho-published MCP servers as of March 2026.
+// Official MCP: None found as of 2026-03-28
+// Multiple community implementations exist (Mgabr90/zoho-mcp-server, ampcome-mcps/zoho-crm-mcp,
+// CDataSoftware/zoho-crm-mcp-server-by-cdata) but none are official Zoho-published MCP servers.
+// Zoho MCP (zoho.com/mcp) is a Zoho-hosted MCP platform for all Zoho products (CRM, Desk, etc.)
+// but does not publish a standalone open-source CRM MCP server.
 //
 // Base URL: https://www.zohoapis.com/crm/v8 (US region default)
 // Regional alternatives:
@@ -434,10 +436,16 @@ export class ZohoCRMMCPServer {
       // ── Pipelines ────────────────────────────────────────────────────────────
       {
         name: 'list_pipelines',
-        description: 'List all sales pipelines defined in the Zoho CRM Deals module, including stages and probabilities.',
+        description: 'List all sales pipelines for a specific Deals module layout in Zoho CRM, including stages and probabilities.',
         inputSchema: {
           type: 'object',
-          properties: {},
+          properties: {
+            layout_id: {
+              type: 'string',
+              description: 'The unique ID of the Deals module layout to fetch pipelines for. Required by Zoho CRM API. Use get_module to retrieve layout IDs.',
+            },
+          },
+          required: ['layout_id'],
         },
       },
       // ── Users ────────────────────────────────────────────────────────────────
@@ -483,7 +491,7 @@ export class ZohoCRMMCPServer {
         case 'list_tags':           return await this.listTags(args);
         case 'create_tag':          return await this.createTag(args);
         case 'add_tags_to_record':  return await this.addTagsToRecord(args);
-        case 'list_pipelines':      return await this.listPipelines();
+        case 'list_pipelines':      return await this.listPipelines(args);
         case 'list_users':          return await this.listUsers(args);
         default:
           return {
@@ -692,9 +700,10 @@ export class ZohoCRMMCPServer {
     if (!module || !name) {
       return { content: [{ type: 'text', text: 'module and name are required' }], isError: true };
     }
-    return this.request('POST', '/settings/tags', {
+    // module is a required QUERY parameter per Zoho CRM API v8 docs
+    const params = new URLSearchParams({ module });
+    return this.request('POST', `/settings/tags?${params.toString()}`, {
       tags: [{ name }],
-      module,
     });
   }
 
@@ -705,12 +714,20 @@ export class ZohoCRMMCPServer {
     if (!module || !recordId || !tagNames || !tagNames.length) {
       return { content: [{ type: 'text', text: 'module, record_id, and tag_names are required' }], isError: true };
     }
-    const params = new URLSearchParams({ tag_names: tagNames.join(',') });
-    return this.request('POST', `/${encodeURIComponent(module)}/${encodeURIComponent(recordId)}/actions/add_tags?${params.toString()}`);
+    // Tags are passed as a JSON body with a "tags" array per Zoho CRM API v8 docs
+    const body = {
+      tags: tagNames.map((name: string) => ({ name })),
+    };
+    return this.request('POST', `/${encodeURIComponent(module)}/${encodeURIComponent(recordId)}/actions/add_tags`, body);
   }
 
-  private async listPipelines(): Promise<ToolResult> {
-    return this.request('GET', '/settings/pipeline');
+  private async listPipelines(args: Record<string, unknown>): Promise<ToolResult> {
+    const layoutId = args.layout_id as string;
+    if (!layoutId) {
+      return { content: [{ type: 'text', text: 'layout_id is required' }], isError: true };
+    }
+    const params = new URLSearchParams({ layout_id: layoutId });
+    return this.request('GET', `/settings/pipeline?${params.toString()}`);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {

@@ -305,7 +305,7 @@ export class TypeformMCPServer {
       },
       {
         name: 'update_workspace',
-        description: 'Update a workspace name or add/remove members',
+        description: 'Update a workspace name using Typeform\'s JSON Patch format. Only name updates are supported via this tool.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -315,10 +315,10 @@ export class TypeformMCPServer {
             },
             name: {
               type: 'string',
-              description: 'Updated workspace display name',
+              description: 'New workspace display name to replace the current name',
             },
           },
-          required: ['workspace_id'],
+          required: ['workspace_id', 'name'],
         },
       },
       {
@@ -699,9 +699,15 @@ export class TypeformMCPServer {
 
   private async updateWorkspace(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.workspace_id) return { content: [{ type: 'text', text: 'workspace_id is required' }], isError: true };
-    const body: Record<string, unknown> = {};
-    if (args.name) body.name = args.name;
-    return this.tfPatch(`/workspaces/${encodeURIComponent(args.workspace_id as string)}`, body);
+    // Typeform workspace PATCH uses JSON Patch format: array of {op, path, value} operations
+    const ops: Array<Record<string, unknown>> = [];
+    if (args.name) ops.push({ op: 'replace', path: '/name', value: args.name });
+    if (ops.length === 0) return { content: [{ type: 'text', text: 'At least one field to update is required (name)' }], isError: true };
+    const url = `${this.baseUrl}/workspaces/${encodeURIComponent(args.workspace_id as string)}`;
+    const response = await fetch(url, { method: 'PATCH', headers: this.headers, body: JSON.stringify(ops) });
+    if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async deleteWorkspace(args: Record<string, unknown>): Promise<ToolResult> {

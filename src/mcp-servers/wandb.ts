@@ -5,10 +5,19 @@
  */
 
 // Official MCP: https://github.com/wandb/wandb-mcp-server — transport: stdio + hosted HTTPS, auth: API key
-// Vendor MCP tools: ~5 (query_wandb_tool, query_weave_traces_tool, count_weave_traces_tool,
-//   create_wandb_report_tool, query_wandb_support_bot). Our adapter covers 12 tools (full REST API surface).
-// Recommendation: Use vendor MCP for Weave traces and report creation. Use this adapter for direct
-//   REST/GraphQL access, air-gapped deployments, or when the hosted server is unavailable.
+// MCP maintained: yes — last commit 2026-03-25. MCP tool count: 6.
+// Vendor MCP tools (6): query_wandb_tool, query_weave_traces_tool, count_weave_traces_tool,
+//   create_wandb_report_tool, query_wandb_entity_projects, query_wandb_support_bot.
+// Our adapter covers 12 tools via GraphQL (projects, runs, artifacts, sweeps, reports, metrics).
+// Integration: use-both — MCP has unique tools (Weave traces, support bot, natural-language run queries)
+//   not available via REST/GraphQL; our adapter has unique tools (list_artifacts, list_artifact_versions,
+//   list_sweeps, get_sweep, list_reports, get_run_metrics) not exposed by the MCP.
+// MCP-sourced tools (6): query_wandb_tool (run search), query_weave_traces_tool, count_weave_traces_tool,
+//   create_wandb_report_tool, query_wandb_entity_projects, query_wandb_support_bot.
+// REST-sourced tools (12): list_projects, get_project, list_runs, get_run, search_runs,
+//   list_artifacts, get_artifact, list_artifact_versions, list_sweeps, get_sweep,
+//   list_reports, get_run_metrics.
+// Combined coverage: 18 tools (MCP: 6 + REST: 12; shared: 0 — different interfaces to same data).
 //
 // Base URL: https://api.wandb.ai
 // Auth: Bearer token — Authorization: Bearer <api_key>. Obtain API key at wandb.ai/settings.

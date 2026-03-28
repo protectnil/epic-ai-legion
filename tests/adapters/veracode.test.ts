@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { VericodeMCPServer } from '../../src/mcp-servers/veracode.js';
+import { VeracodeMCPServer } from '../../src/mcp-servers/veracode.js';
 
-describe('VericodeMCPServer', () => {
-  const adapter = new VericodeMCPServer({ apiId: 'test-id', apiKey: 'test-key' });
+describe('VeracodeMCPServer', () => {
+  const adapter = new VeracodeMCPServer({ apiId: 'test-id', apiKey: 'test-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

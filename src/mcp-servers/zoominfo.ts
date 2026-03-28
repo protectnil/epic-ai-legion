@@ -4,17 +4,27 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://docs.zoominfo.com/mcp — hosted remote MCP server, transport: HTTP,
-//   auth: OAuth 2.0 Dynamic Client Registration (requires ZoomInfo partner credentials).
-// Our adapter covers: 10 tools (search, enrich, intent, news, compliance, websights).
-// Vendor MCP covers: full API surface via hosted endpoint.
-// Recommendation: Use vendor MCP for OAuth2 partner deployments. Use this adapter for
+// Official MCP (data): https://www.zoominfo.com/solutions/zoominfo-mcp — ZoomInfo's partner
+//   data-access MCP server; transport: HTTP (remote hosted); auth: OAuth 2.0 Dynamic Client
+//   Registration (requires ZoomInfo partner program enrollment). Tools include search_contacts,
+//   enrich_contacts, search_companies, enrich_companies, find_similar_companies, and more.
+//   Not publicly documented as a self-hostable server — available to ZoomInfo partner accounts.
+// Note: https://docs.zoominfo.com/mcp is a separate documentation/code-gen MCP (not data access).
+// Our adapter covers: 10 tools (search, enrich, intent, news, compliance, technographics).
+// Vendor MCP covers: full GTM data surface (search, enrich, intent, lookalike) for partner OAuth2.
+// Recommendation: Use vendor partner MCP for OAuth2 partner deployments. Use this adapter for
 //   username/password JWT deployments and air-gapped environments.
 //
-// Base URL: https://api.zoominfo.com
+// IMPORTANT: This adapter implements the ZoomInfo Legacy Enterprise API (api-docs.zoominfo.com).
+//   The legacy API is currently in the process of being deprecated by ZoomInfo. New development
+//   should target the new GTM API at https://api.zoominfo.com/gtm (OAuth2, new endpoint paths).
+//   This adapter remains valid for existing username/password integrations until deprecation.
+//
+// Base URL: https://api.zoominfo.com  (legacy API; new GTM API base: https://api.zoominfo.com/gtm)
 // Auth: POST /authenticate with username + password → JWT (60-min TTL, refresh at 55 min)
-// Docs: https://docs.zoominfo.com/docs/general-overview
-//       https://docs.zoominfo.com/reference/overview
+//   (Legacy auth method. New API uses OAuth2 client credentials.)
+// Docs: https://api-docs.zoominfo.com/ (legacy)
+//       https://docs.zoominfo.com/docs/general-overview (new GTM API)
 // Rate limits: 1,500 requests/min across standard Enrich endpoints; 25 records per enrich call
 
 import { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';

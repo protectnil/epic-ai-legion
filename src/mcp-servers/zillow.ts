@@ -13,6 +13,12 @@
 // Docs: https://bridgedataoutput.com/docs/platform/API/bridge | https://www.zillowgroup.com/developers/
 // Rate limits: ~1,000 requests/day per dataset (Zillow terms of service); all requests must be dynamic — no local caching
 // Note: Zillow's terms prohibit storing retrieved data locally. Requests must be real-time.
+//
+// ⚠️  ENDPOINT NOTE: Old Zestimate endpoints (/zestimates, /rental_zestimates) were DEPRECATED January 2022.
+//   Current Zestimate endpoint: /zestimates_v2/zestimate (both property and rental Zestimates in one response).
+//   Source: https://www.bridgeinteractive.com/new-zestimate-api-now-available/
+//   get_price_history (/updatedPropertyDetails) — UNVERIFIED, from deprecated Zillow API, not confirmed in Bridge docs.
+//   get_market_stats — uses OData Property endpoint with $select for aggregate stats — UNVERIFIED pattern.
 
 import { ToolDefinition, ToolResult } from './types.js';
 
@@ -335,7 +341,8 @@ export class ZillowMCPServer {
 
   private async getZestimate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zpid) return { content: [{ type: 'text', text: 'zpid is required' }], isError: true };
-    return this.get('/zestimates', { zpid: args.zpid as string });
+    // Updated endpoint per Bridge Interactive (Oct 2021): /zestimates was deprecated Jan 2022
+    return this.get('/zestimates_v2/zestimate', { zpid: args.zpid as string });
   }
 
   private async getZestimatesByAddress(args: Record<string, unknown>): Promise<ToolResult> {
@@ -344,12 +351,15 @@ export class ZillowMCPServer {
     if (args.city) params.city = args.city as string;
     if (args.state) params.state = args.state as string;
     if (args.zip) params.zip = args.zip as string;
-    return this.get('/zestimates', params);
+    // Updated endpoint per Bridge Interactive (Oct 2021): /zestimates was deprecated Jan 2022
+    return this.get('/zestimates_v2/zestimate', params);
   }
 
   private async getRentalZestimate(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.zpid) return { content: [{ type: 'text', text: 'zpid is required' }], isError: true };
-    return this.get('/rental_zestimates', { zpid: args.zpid as string });
+    // Rental Zestimates are now included in the unified zestimates_v2 response (field: rental.zestimate)
+    // /rental_zestimates was deprecated Jan 2022 along with the old /zestimates endpoint
+    return this.get('/zestimates_v2/zestimate', { zpid: args.zpid as string });
   }
 
   private async searchListings(args: Record<string, unknown>): Promise<ToolResult> {

@@ -4,12 +4,16 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official xMatters MCP server was found on GitHub or npm as of March 2026.
-// Community tool: github.com/xmatters/xmtoolbox (Node.js library, not MCP).
+// Official MCP: None found as of 2026-03-28
+// No official xMatters MCP server was found on GitHub, npm, or xMatters developer docs as of 2026-03-28.
+// Community tool: github.com/xmatters/xmtoolbox (Node.js library, not MCP — not a replacement).
+// Our adapter covers: 20 tools. Vendor MCP covers: 0 tools.
+// Recommendation: use-rest-api — no official MCP exists.
 //
 // Base URL: https://{company}.xmatters.com/api/xm/1
-// Auth: Bearer token (OAuth) OR Basic (Base64 username:password)
+// Auth: HTTP Basic (Authorization: Basic base64(user:pass)) OR OAuth2 Bearer token
+//   (POST https://{company}.xmatters.com/oauth2/token with client_credentials grant).
+//   Bearer token is preferred; Basic requires REST Web Service User role on the account.
 // Docs: https://help.xmatters.com/xmapi/
 // Rate limits: Not publicly documented; xMatters recommends staying below 60 req/min per token
 
@@ -616,7 +620,8 @@ export class XMattersMCPServer {
   private async terminateEvent(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.eventId as string;
     if (!id) return { content: [{ type: 'text', text: 'eventId is required' }], isError: true };
-    return this.request('DELETE', `/events/${encodeURIComponent(id)}`);
+    // xMatters terminates events via POST with status=TERMINATED in body, not DELETE
+    return this.request('POST', `/events/${encodeURIComponent(id)}`, { id, status: 'TERMINATED' });
   }
 
   private async getPerson(args: Record<string, unknown>): Promise<ToolResult> {

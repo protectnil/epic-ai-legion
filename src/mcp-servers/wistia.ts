@@ -4,8 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Wistia MCP server was found on GitHub. Third-party Zapier/Pipedream adapters exist but are not official.
+// Official MCP: None found as of 2026-03-28
+// No official Wistia MCP server was found on GitHub, npmjs.com, or Wistia developer docs.
+//
+// Note: Wistia introduced a date-versioned "modern" API (e.g. X-Wistia-Api-Version: 2026-01) alongside the
+//   perpetually supported v1 API. This adapter uses v1 (/v1/ prefix). The modern API adds Folders, Webinars,
+//   Allowed Domains, Customizations, and Taggings endpoints not covered here. v1 is perpetually supported.
+// Note: list_project_medias calls GET /v1/projects/{hashed_id}.json — the same endpoint as get_project.
+//   In Wistia v1, the project detail response includes media items inline; there is no separate
+//   list-project-medias endpoint. The tool is functionally correct but returns identical data to get_project.
 //
 // Base URL: https://api.wistia.com/v1
 // Auth: Bearer token (API password from Account Settings → API Access)

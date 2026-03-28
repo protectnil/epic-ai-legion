@@ -4,8 +4,8 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Trellix EDR MCP server was found on GitHub or npm as of March 2026.
+// Official MCP: None found as of 2026-03-28
+// No official Trellix EDR MCP server was found on GitHub or npm as of 2026-03-28.
 //
 // Base URL (regional, select by data center):
 //   US-West (default): https://api.soc.trellix.com
@@ -18,6 +18,10 @@
 // Auth: OAuth2 client_credentials — IAM endpoint: https://iam.manage.trellix.com/iam/v1.1/token
 //   Required scope: soc.act.tg
 //   Credentials (client_id, client_secret) created at: https://uam.ui.trellix.com/clientcreds.html
+//   IMPORTANT: All API calls require TWO auth headers:
+//     1. Authorization: Bearer {access_token}  (from IAM token endpoint above)
+//     2. x-api-key: {api_key}  (from Trellix on-boarding email or API Access Management page)
+//   Content-Type for all requests MUST be: application/vnd.api+json  (not application/json)
 // Docs: https://docs.trellix.com/bundle/mvision-endpoint-detection-and-response-product-guide
 //       https://developer.manage.trellix.com/mvision/apis/home
 // Rate limits: See https://docs.trellix.com/bundle/mvision-endpoint-detection-and-response-product-guide
@@ -28,6 +32,7 @@ import { ToolDefinition, ToolResult } from './types.js';
 interface TrellixEDRConfig {
   clientId: string;
   clientSecret: string;
+  apiKey: string;
   region?: string;
   baseUrl?: string;
 }
@@ -44,6 +49,7 @@ const REGION_MAP: Record<string, string> = {
 export class TrellixEDRMCPServer {
   private readonly clientId: string;
   private readonly clientSecret: string;
+  private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly iamUrl = 'https://iam.manage.trellix.com/iam/v1.1/token';
   private accessToken: string | null = null;
@@ -52,6 +58,7 @@ export class TrellixEDRMCPServer {
   constructor(config: TrellixEDRConfig) {
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
+    this.apiKey = config.apiKey;
     if (config.baseUrl) {
       this.baseUrl = config.baseUrl.replace(/\/$/, '');
     } else {
@@ -121,7 +128,8 @@ export class TrellixEDRMCPServer {
       method,
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+        'Content-Type': 'application/vnd.api+json',
         Accept: 'application/json',
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -431,27 +439,56 @@ export class TrellixEDRMCPServer {
   }
 
   private async isolateDevice(args: Record<string, unknown>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { deviceId: args.device_id };
-    if (args.comment) body.comment = args.comment;
-    const data = await this.req('/edr/v2/devices/isolate', 'POST', body);
+    // Network quarantine via host remediation. Action "networkIsolation" isolates the host.
+    // Docs: /edr/v2/remediation/host  (POST, Content-Type: application/vnd.api+json)
+    const body: Record<string, unknown> = {
+      data: {
+        type: 'hostRemediation',
+        attributes: {
+          action: 'networkIsolation',
+          hostIds: [args.device_id],
+          ...(args.comment ? { comment: args.comment } : {}),
+        },
+      },
+    };
+    const data = await this.req('/edr/v2/remediation/host', 'POST', body);
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async releaseDevice(args: Record<string, unknown>): Promise<ToolResult> {
-    const body: Record<string, unknown> = { deviceId: args.device_id };
-    if (args.comment) body.comment = args.comment;
-    const data = await this.req('/edr/v2/devices/release', 'POST', body);
+    // End network quarantine via host remediation. Action "endNetworkIsolation" restores connectivity.
+    // Docs: /edr/v2/remediation/host  (POST, Content-Type: application/vnd.api+json)
+    const body: Record<string, unknown> = {
+      data: {
+        type: 'hostRemediation',
+        attributes: {
+          action: 'endNetworkIsolation',
+          hostIds: [args.device_id],
+          ...(args.comment ? { comment: args.comment } : {}),
+        },
+      },
+    };
+    const data = await this.req('/edr/v2/remediation/host', 'POST', body);
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async quarantineFile(args: Record<string, unknown>): Promise<ToolResult> {
-    const body: Record<string, unknown> = {
-      deviceId: args.device_id,
+    // File threat remediation via /edr/v2/remediation/threat
+    // Docs: POST /edr/v2/remediation/threat  (Content-Type: application/vnd.api+json)
+    const attributes: Record<string, unknown> = {
+      action: 'StopAndRemove',
+      affectedHostIds: [args.device_id],
       fileHash: args.file_hash,
     };
-    if (args.file_path) body.filePath = args.file_path;
-    if (args.comment) body.comment = args.comment;
-    const data = await this.req('/edr/v2/files/quarantine', 'POST', body);
+    if (args.file_path) attributes.filePath = args.file_path;
+    if (args.comment) attributes.comment = args.comment;
+    const body: Record<string, unknown> = {
+      data: {
+        type: 'threatRemediation',
+        attributes,
+      },
+    };
+    const data = await this.req('/edr/v2/remediation/threat', 'POST', body);
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 

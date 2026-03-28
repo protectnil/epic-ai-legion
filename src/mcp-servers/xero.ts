@@ -4,13 +4,26 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/XeroAPI/xero-mcp-server — Xero's official MCP server.
-//   Transport: stdio. Auth: OAuth2 PKCE (Client ID + Secret, or Bearer token for multi-tenant).
-//   Tool count: ~10 tools (list-accounts, list-contacts, list-invoices, list-credit-notes,
-//   list-items, list-manual-journals, list-profit-and-loss, and related). Read-oriented.
-//   Our adapter covers 14 tools (full accounting API surface including create/update/payments).
-// Recommendation: Use vendor MCP for read-only accounting queries with OAuth PKCE.
-//   Use this adapter for write operations (payments, credit notes) or air-gapped deployments.
+// Official MCP: https://github.com/XeroAPI/xero-mcp-server — transport: stdio, auth: OAuth2 PKCE or Bearer token.
+//   Published by XeroAPI (official). Last updated: December 26, 2025. Actively maintained.
+//   Tool count: 46 tools (list-accounts, list-contacts, list-invoices, list-credit-notes,
+//   list-items, list-manual-journals, list-profit-and-loss, list-quotes, list-tax-rates,
+//   list-payments, list-trial-balance, list-bank-transactions, list-payroll-employees,
+//   list-report-balance-sheet, list-payroll-employee-leave, list-payroll-employee-leave-balances,
+//   list-payroll-employee-leave-types, list-payroll-leave-periods, list-payroll-leave-types,
+//   list-timesheets, list-aged-receivables-by-contact, list-aged-payables-by-contact,
+//   list-contact-groups, list-tracking-categories, list-organisation-details,
+//   create-bank-transaction, create-contact, create-credit-note, create-invoice, create-item,
+//   create-manual-journal, create-payment, create-quote, create-payroll-timesheet,
+//   create-tracking-category, create-tracking-option, update-bank-transaction, update-contact,
+//   update-invoice, update-item, update-manual-journal, update-quote, update-credit-note,
+//   update-tracking-category, update-tracking-options, update-payroll-timesheet-line,
+//   approve-payroll-timesheet, revert-payroll-timesheet, add-payroll-timesheet-line,
+//   delete-payroll-timesheet, get-payroll-timesheet).
+//   MCP is a strict superset: covers all our REST tools plus payroll, quotes, items, tracking, journals.
+// Our adapter covers: 14 tools. Vendor MCP covers: 46 tools (full API + payroll surface).
+// Recommendation: use-vendor-mcp — MCP meets all 4 criteria and is a strict superset of our REST adapter.
+//   This REST adapter is retained as an air-gapped fallback only.
 //
 // Base URL: https://api.xero.com/api.xro/2.0
 // Auth: Bearer token + Xero-Tenant-Id header (required for all API calls)

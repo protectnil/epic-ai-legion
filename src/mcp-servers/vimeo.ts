@@ -4,8 +4,9 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Vimeo MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28
+// No official Vimeo MCP server was found on GitHub or npm. Community wrappers exist (viasocket.com,
+//   lobehub.com) but no vendor-published MCP server found on GitHub or npm.
 //
 // Base URL: https://api.vimeo.com
 // Auth: OAuth2 Bearer token (access_token). Personal Access Tokens supported for server-side use.

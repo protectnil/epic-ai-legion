@@ -4,9 +4,23 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/wix/wix-mcp — transport: HTTP (https://mcp.wix.com/mcp), auth: OAuth2
-// Our adapter covers: 20 tools (sites, members, contacts, stores, orders, bookings, blog). Vendor MCP covers: full platform via HTTP MCP.
-// Recommendation: Use vendor MCP for full Wix platform coverage via natural language. Use this adapter for air-gapped / REST-only deployments.
+// Official MCP: https://github.com/wix/wix-mcp — transport: streamable-HTTP (https://mcp.wix.com/mcp), auth: OAuth2 / API key
+// Our adapter covers: 20 tools (sites, members, contacts, stores, orders, bookings, blog).
+// Vendor MCP covers: 12 tools — 9 documentation/search tools + 3 API execution tools. Last updated: 2025, actively maintained.
+//   Qualifies: official vendor repo, maintained, 12 tools, streamable-HTTP transport.
+//
+// Integration: use-both
+//   MCP-only tools (9): SearchWixWDSDocumentation, SearchWixRESTDocumentation, SearchWixSDKDocumentation,
+//     SearchBuildAppsDocumentation, SearchWixHeadlessDocumentation, WixBusinessFlowsDocumentation,
+//     ReadFullDocsArticle, ReadFullDocsMethodSchema, SupportAndFeedback
+//   MCP API tools (3): ListWixSites, CallWixSiteAPI, ManageWixSite (high-level, natural-language oriented)
+//   REST-sourced tools (this adapter, 20): list_sites, get_site, list_members, get_member, update_member,
+//     list_contacts, get_contact, create_contact, update_contact, delete_contact, query_products, get_product,
+//     list_orders, get_order, update_order, list_bookings, get_booking, list_blog_posts, get_blog_post, list_site_pages
+//   The MCP's API tools (ListWixSites, CallWixSiteAPI, ManageWixSite) are generic wrappers that call any Wix API;
+//   our REST adapter provides explicit typed tools for specific endpoints with structured parameters.
+//   Combined coverage: Use vendor MCP for documentation search and natural-language site management;
+//   use this adapter for typed, structured access to specific Wix API resources.
 //
 // Base URL: https://www.wixapis.com
 // Auth: Bearer token (OAuth2 access token or API key from Wix Business Manager)

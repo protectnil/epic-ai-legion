@@ -4,9 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/webflow/mcp-server — transport: stdio, auth: Site API token / OAuth2
-// Our adapter covers: 20 tools (sites, pages, CMS collections, items, assets, forms, ecommerce). Vendor MCP covers: Data API + Designer API.
-// Recommendation: Use vendor MCP for Designer API canvas access. Use this adapter for REST-only / air-gapped deployments.
+// Official MCP: https://github.com/webflow/mcp-server — transport: streamable-HTTP (remote) + stdio (local), auth: OAuth2
+// Our adapter covers: 20 tools (sites, pages, CMS collections, items, assets, forms, ecommerce).
+// Vendor MCP covers: Data API tools (sites, cms, pages, components, scripts, comments, enterprise) + Designer API tools
+//   (canvas elements, styles, variables, assets, pages). Last commit: Feb 16, 2026 (actively maintained). Tool modules: 14+.
+//   Qualifies: official vendor repo, maintained within 6 months, 10+ tools, streamable-HTTP + stdio transport.
+//
+// Integration: use-both
+//   MCP-sourced tools: Designer API (canvas, elements, styles, variables) — not accessible via REST Data API
+//   REST-sourced tools (this adapter, 20): list_sites, get_site, publish_site, list_pages, get_page,
+//     list_collections, get_collection, create_collection, list_collection_items, get_collection_item,
+//     create_collection_item, update_collection_item, delete_collection_item, publish_collection_items,
+//     list_assets, list_asset_folders, list_forms, list_form_submissions, list_products, list_orders
+//   Combined coverage: REST adapter for programmatic/air-gapped CMS + Data API access;
+//   vendor MCP for Designer API canvas access and natural-language workflows.
 //
 // Base URL: https://api.webflow.com/v2
 // Auth: Bearer token (Site API token or OAuth2 access token)
@@ -330,7 +341,6 @@ export class WebflowMCPServer {
     return {
       Authorization: `Bearer ${this.apiToken}`,
       'Content-Type': 'application/json',
-      'accept-version': '1.0.0',
     };
   }
 

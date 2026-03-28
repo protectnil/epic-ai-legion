@@ -4,10 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official USPTO MCP server was found on GitHub or npm.
 // Note: The PatentsView legacy API was discontinued May 2025. This adapter targets the PatentSearch API
-//       and the USPTO Open Data Portal (data.uspto.gov, migrated March 2026).
+//       and the USPTO Open Data Portal (data.uspto.gov).
+// BREAKING CHANGE (March 2026): PatentSearch API entity URL parameters changed from plural to singular
+//   (patents→patent, inventors→inventor, assignees→assignee, claims→claim, cpc_subgroups→cpc_subgroup).
+//   Also: patent_number field renamed to patent_id. Applied in this adapter as of 2026-03-28 audit.
 //
 // Base URL: https://search.patentsview.org (PatentSearch) + https://developer.uspto.gov (open data)
 // Auth: X-Api-Key header for PatentSearch API (45 req/min per key). Open data endpoints are public.
@@ -93,7 +96,7 @@ export class USPTOMCPServer {
             },
             fields: {
               type: 'string',
-              description: 'Comma-separated fields to return: patent_id,patent_number,patent_title,patent_date,assignee_organization,inventor_first_name,inventor_last_name,cpc_subgroup_id (default: all basic fields)',
+              description: 'Comma-separated fields to return: patent_id,patent_title,patent_date,assignee_organization,inventor_first_name,inventor_last_name,cpc_subgroup_id (default: all basic fields). Note: patent_number was renamed to patent_id in March 2026.',
             },
           },
         },
@@ -369,16 +372,16 @@ export class USPTOMCPServer {
       o: { per_page: (args.limit as number) || 25, page: Math.floor(((args.offset as number) || 0) / ((args.limit as number) || 25)) + 1 },
       s: [{ patent_date: 'desc' }],
     };
-    return this.patentSearchPost('/api/query?entity=patents', body);
+    return this.patentSearchPost('/api/query?entity=patent', body);
   }
 
   private async getPatent(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.patent_number) return { content: [{ type: 'text', text: 'patent_number is required' }], isError: true };
     const body = {
-      q: { _eq: { patent_number: String(args.patent_number).replace(/[^0-9]/g, '') } },
-      f: ['patent_id', 'patent_number', 'patent_title', 'patent_abstract', 'patent_date', 'patent_type', 'assignee_organization', 'inventor_first_name', 'inventor_last_name', 'cpc_subgroup_id', 'cited_patent_number'],
+      q: { _eq: { patent_id: String(args.patent_number).replace(/[^0-9]/g, '') } },
+      f: ['patent_id', 'patent_title', 'patent_abstract', 'patent_date', 'patent_type', 'assignee_organization', 'inventor_first_name', 'inventor_last_name', 'cpc_subgroup_id'],
     };
-    return this.patentSearchPost('/api/query?entity=patents', body);
+    return this.patentSearchPost('/api/query?entity=patent', body);
   }
 
   private async searchInventors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -388,7 +391,7 @@ export class USPTOMCPServer {
       f: ['inventor_id', 'inventor_first_name', 'inventor_last_name', 'inventor_city', 'inventor_state', 'inventor_country'],
       o: { per_page: (args.limit as number) || 25, page: Math.floor(((args.offset as number) || 0) / ((args.limit as number) || 25)) + 1 },
     };
-    return this.patentSearchPost('/api/query?entity=inventors', body);
+    return this.patentSearchPost('/api/query?entity=inventor', body);
   }
 
   private async searchAssignees(args: Record<string, unknown>): Promise<ToolResult> {
@@ -398,7 +401,7 @@ export class USPTOMCPServer {
       f: ['assignee_id', 'assignee_organization', 'assignee_type', 'assignee_city', 'assignee_state', 'assignee_country'],
       o: { per_page: (args.limit as number) || 25, page: Math.floor(((args.offset as number) || 0) / ((args.limit as number) || 25)) + 1 },
     };
-    return this.patentSearchPost('/api/query?entity=assignees', body);
+    return this.patentSearchPost('/api/query?entity=assignee', body);
   }
 
   private async searchCpcSubgroups(args: Record<string, unknown>): Promise<ToolResult> {
@@ -408,30 +411,31 @@ export class USPTOMCPServer {
       f: ['cpc_subgroup_id', 'cpc_subgroup_title', 'cpc_group_id', 'cpc_subclass_id'],
       o: { per_page: (args.limit as number) || 25 },
     };
-    return this.patentSearchPost('/api/query?entity=cpc_subgroups', body);
+    return this.patentSearchPost('/api/query?entity=cpc_subgroup', body);
   }
 
   private async getPatentClaims(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.patent_number) return { content: [{ type: 'text', text: 'patent_number is required' }], isError: true };
     const body = {
-      q: { _eq: { patent_number: String(args.patent_number).replace(/[^0-9]/g, '') } },
-      f: ['patent_number', 'claim_sequence', 'claim_text', 'claim_dependent'],
+      q: { _eq: { patent_id: String(args.patent_number).replace(/[^0-9]/g, '') } },
+      f: ['patent_id', 'claim_sequence', 'claim_text', 'claim_dependent'],
       o: { per_page: 100 },
     };
-    return this.patentSearchPost('/api/query?entity=claims', body);
+    return this.patentSearchPost('/api/query?entity=claim', body);
   }
 
   private async searchPatentCitations(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.patent_number) return { content: [{ type: 'text', text: 'patent_number is required' }], isError: true };
     const direction = (args.direction as string) || 'forward';
-    const field = direction === 'forward' ? 'cited_patent_number' : 'patent_number';
-    const returnField = direction === 'forward' ? 'patent_number' : 'cited_patent_number';
+    // After March 2026 breaking change: patent_number→patent_id, cited_patent_number→cited_patent_id
+    const field = direction === 'forward' ? 'cited_patent_id' : 'patent_id';
+    const returnField = direction === 'forward' ? 'patent_id' : 'cited_patent_id';
     const body = {
-      q: { _eq: { [field]: args.patent_number } },
+      q: { _eq: { [field]: String(args.patent_number).replace(/[^0-9]/g, '') } },
       f: [field, returnField, 'patent_title', 'patent_date'],
       o: { per_page: (args.limit as number) || 50 },
     };
-    return this.patentSearchPost('/api/query?entity=patents', body);
+    return this.patentSearchPost('/api/query?entity=patent', body);
   }
 
   private async searchApplications(args: Record<string, unknown>): Promise<ToolResult> {

@@ -748,13 +748,13 @@ export class ZoomMCPServer {
     params.set('type', (args.type as string) ?? 'scheduled');
     params.set('page_size', String((args.page_size as number) ?? 30));
     if (args.next_page_token) params.set('next_page_token', args.next_page_token as string);
-    return this.request('GET', `/users/${user}/meetings?${params.toString()}`);
+    return this.request('GET', `/users/${encodeURIComponent(user)}/meetings?${params.toString()}`);
   }
 
   private async getMeeting(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.meeting_id as string;
     if (!id) return { content: [{ type: 'text', text: 'meeting_id is required' }], isError: true };
-    return this.request('GET', `/meetings/${id}`);
+    return this.request('GET', `/meetings/${encodeURIComponent(id)}`);
   }
 
   private async createMeeting(args: Record<string, unknown>): Promise<ToolResult> {
@@ -770,7 +770,7 @@ export class ZoomMCPServer {
     if (args.agenda) body.agenda = args.agenda;
     if (args.password) body.password = args.password;
     if (args.settings) body.settings = args.settings;
-    return this.request('POST', `/users/${user}/meetings`, body);
+    return this.request('POST', `/users/${encodeURIComponent(user)}/meetings`, body);
   }
 
   private async updateMeeting(args: Record<string, unknown>): Promise<ToolResult> {
@@ -783,7 +783,7 @@ export class ZoomMCPServer {
     if (args.agenda !== undefined) body.agenda = args.agenda;
     if (args.password !== undefined) body.password = args.password;
     if (args.settings !== undefined) body.settings = args.settings;
-    return this.request('PATCH', `/meetings/${id}`, body);
+    return this.request('PATCH', `/meetings/${encodeURIComponent(id)}`, body);
   }
 
   private async deleteMeeting(args: Record<string, unknown>): Promise<ToolResult> {
@@ -792,7 +792,7 @@ export class ZoomMCPServer {
     const params = new URLSearchParams();
     if (args.notify_hosts !== undefined) params.set('notify_hosts', String(args.notify_hosts));
     const qs = params.toString();
-    return this.request('DELETE', `/meetings/${id}${qs ? `?${qs}` : ''}`);
+    return this.request('DELETE', `/meetings/${encodeURIComponent(id)}${qs ? `?${qs}` : ''}`);
   }
 
   private async listMeetingRegistrants(args: Record<string, unknown>): Promise<ToolResult> {
@@ -802,7 +802,7 @@ export class ZoomMCPServer {
     params.set('status', (args.status as string) ?? 'approved');
     params.set('page_size', String((args.page_size as number) ?? 30));
     if (args.next_page_token) params.set('next_page_token', args.next_page_token as string);
-    return this.request('GET', `/meetings/${id}/registrants?${params.toString()}`);
+    return this.request('GET', `/meetings/${encodeURIComponent(id)}/registrants?${params.toString()}`);
   }
 
   private async addMeetingRegistrant(args: Record<string, unknown>): Promise<ToolResult> {
@@ -815,13 +815,13 @@ export class ZoomMCPServer {
     const params = new URLSearchParams();
     if (args.auto_approve !== undefined) params.set('auto_approve', String(args.auto_approve));
     const qs = params.toString();
-    return this.request('POST', `/meetings/${id}/registrants${qs ? `?${qs}` : ''}`, body);
+    return this.request('POST', `/meetings/${encodeURIComponent(id)}/registrants${qs ? `?${qs}` : ''}`, body);
   }
 
   private async listPastMeetingInstances(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.meeting_id as string;
     if (!id) return { content: [{ type: 'text', text: 'meeting_id is required' }], isError: true };
-    return this.request('GET', `/past_meetings/${id}/instances`);
+    return this.request('GET', `/past_meetings/${encodeURIComponent(id)}/instances`);
   }
 
   private async getMeetingParticipants(args: Record<string, unknown>): Promise<ToolResult> {
@@ -830,7 +830,7 @@ export class ZoomMCPServer {
     const params = new URLSearchParams();
     params.set('page_size', String((args.page_size as number) ?? 30));
     if (args.next_page_token) params.set('next_page_token', args.next_page_token as string);
-    return this.request('GET', `/past_meetings/${id}/participants?${params.toString()}`);
+    return this.request('GET', `/past_meetings/${encodeURIComponent(id)}/participants?${params.toString()}`);
   }
 
   private async listRecordings(args: Record<string, unknown>): Promise<ToolResult> {
@@ -840,13 +840,13 @@ export class ZoomMCPServer {
     if (args.from) params.set('from', args.from as string);
     if (args.to) params.set('to', args.to as string);
     if (args.next_page_token) params.set('next_page_token', args.next_page_token as string);
-    return this.request('GET', `/users/${user}/recordings?${params.toString()}`);
+    return this.request('GET', `/users/${encodeURIComponent(user)}/recordings?${params.toString()}`);
   }
 
   private async getRecording(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.meeting_id as string;
     if (!id) return { content: [{ type: 'text', text: 'meeting_id is required' }], isError: true };
-    return this.request('GET', `/meetings/${id}/recordings`);
+    return this.request('GET', `/meetings/${encodeURIComponent(id)}/recordings`);
   }
 
   private async listWebinars(args: Record<string, unknown>): Promise<ToolResult> {
@@ -854,13 +854,13 @@ export class ZoomMCPServer {
     const params = new URLSearchParams();
     params.set('page_size', String((args.page_size as number) ?? 30));
     if (args.next_page_token) params.set('next_page_token', args.next_page_token as string);
-    return this.request('GET', `/users/${user}/webinars?${params.toString()}`);
+    return this.request('GET', `/users/${encodeURIComponent(user)}/webinars?${params.toString()}`);
   }
 
   private async getWebinar(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.webinar_id as string;
     if (!id) return { content: [{ type: 'text', text: 'webinar_id is required' }], isError: true };
-    return this.request('GET', `/webinars/${id}`);
+    return this.request('GET', `/webinars/${encodeURIComponent(id)}`);
   }
 
   private async createWebinar(args: Record<string, unknown>): Promise<ToolResult> {
@@ -875,7 +875,7 @@ export class ZoomMCPServer {
     if (args.agenda) body.agenda = args.agenda;
     if (args.password) body.password = args.password;
     if (args.settings) body.settings = args.settings;
-    return this.request('POST', `/users/${user}/webinars`, body);
+    return this.request('POST', `/users/${encodeURIComponent(user)}/webinars`, body);
   }
 
   private async updateWebinar(args: Record<string, unknown>): Promise<ToolResult> {
@@ -887,7 +887,7 @@ export class ZoomMCPServer {
     if (args.duration !== undefined) body.duration = args.duration;
     if (args.agenda !== undefined) body.agenda = args.agenda;
     if (args.settings !== undefined) body.settings = args.settings;
-    return this.request('PATCH', `/webinars/${id}`, body);
+    return this.request('PATCH', `/webinars/${encodeURIComponent(id)}`, body);
   }
 
   private async deleteWebinar(args: Record<string, unknown>): Promise<ToolResult> {
@@ -898,7 +898,7 @@ export class ZoomMCPServer {
       params.set('send_cancellation_email', String(args.send_cancellation_email));
     }
     const qs = params.toString();
-    return this.request('DELETE', `/webinars/${id}${qs ? `?${qs}` : ''}`);
+    return this.request('DELETE', `/webinars/${encodeURIComponent(id)}${qs ? `?${qs}` : ''}`);
   }
 
   private async listWebinarRegistrants(args: Record<string, unknown>): Promise<ToolResult> {
@@ -908,7 +908,7 @@ export class ZoomMCPServer {
     params.set('status', (args.status as string) ?? 'approved');
     params.set('page_size', String((args.page_size as number) ?? 30));
     if (args.next_page_token) params.set('next_page_token', args.next_page_token as string);
-    return this.request('GET', `/webinars/${id}/registrants?${params.toString()}`);
+    return this.request('GET', `/webinars/${encodeURIComponent(id)}/registrants?${params.toString()}`);
   }
 
   private async addWebinarRegistrant(args: Record<string, unknown>): Promise<ToolResult> {
@@ -918,7 +918,7 @@ export class ZoomMCPServer {
     }
     const body: Record<string, unknown> = { email: args.email, first_name: args.first_name };
     if (args.last_name) body.last_name = args.last_name;
-    return this.request('POST', `/webinars/${id}/registrants`, body);
+    return this.request('POST', `/webinars/${encodeURIComponent(id)}/registrants`, body);
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -932,7 +932,7 @@ export class ZoomMCPServer {
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.user_id as string;
     if (!id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
-    return this.request('GET', `/users/${id}`);
+    return this.request('GET', `/users/${encodeURIComponent(id)}`);
   }
 
   private async createUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -961,13 +961,13 @@ export class ZoomMCPServer {
     if (args.department !== undefined) body.dept = args.department;
     if (args.job_title !== undefined) body.job_title = args.job_title;
     if (args.timezone !== undefined) body.timezone = args.timezone;
-    return this.request('PATCH', `/users/${id}`, body);
+    return this.request('PATCH', `/users/${encodeURIComponent(id)}`, body);
   }
 
   private async getMeetingReport(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.meeting_id as string;
     if (!id) return { content: [{ type: 'text', text: 'meeting_id is required' }], isError: true };
-    return this.request('GET', `/report/meetings/${id}`);
+    return this.request('GET', `/report/meetings/${encodeURIComponent(id)}`);
   }
 
   private async getDailyUsageReport(args: Record<string, unknown>): Promise<ToolResult> {

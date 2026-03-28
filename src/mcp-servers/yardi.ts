@@ -4,7 +4,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
+// Official MCP: None found as of 2026-03-28
 // No official Yardi MCP server was found on GitHub. Yardi does not publish a public REST API —
 // its integration platform uses SOAP/WSDL web services (ItfResidentTransactions, ItfGuestCard, etc.)
 // accessed through client-specific tenant URLs. Access requires Yardi Interface Partner enrollment.

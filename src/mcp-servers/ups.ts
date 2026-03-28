@@ -4,11 +4,15 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official UPS MCP server was found on GitHub or npm.
+// Official MCP: https://github.com/UPS-API/ups-mcp — transport: stdio, auth: OAuth2 client credentials
+// Our adapter covers: 10 tools. Vendor MCP covers: 2 tools (track_shipment, validate_address).
+// Recommendation: use-rest-api — MCP fails 2 of 4 protocol criteria: only 2 tools (needs 10+) and
+//   last commit July 29, 2025 (8 months before audit; needs commits within 6 months). REST adapter
+//   is the authoritative integration with 10-tool coverage vs MCP's 2.
 //
 // Base URL: https://onlinetools.ups.com/api
 // Auth: OAuth2 client credentials — POST https://onlinetools.ups.com/security/v1/oauth/token
+//   (Basic auth header: base64(clientId:clientSecret), body: grant_type=client_credentials)
 // Docs: https://developer.ups.com/
 // Rate limits: Not publicly documented; UPS enforces per-account quotas. Sandbox: https://wwwcie.ups.com/api
 
@@ -640,8 +644,23 @@ export class UPSMCPServer {
   private async cancelPickup(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.confirmation_number) return { content: [{ type: 'text', text: 'confirmation_number is required' }], isError: true };
     const token = await this.getOrRefreshToken();
-    const cancelDate = (args.cancel_date as string) || new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return this.upsGet(`/pickup/v1/pickups/${encodeURIComponent(args.confirmation_number as string)}?CancelBy=CONFIRM&CancelDate=${cancelDate}`, token);
+    // DELETE /shipments/v2409/pickup/{CancelBy} — PRN (pickup request number) sent in Prn header
+    // CancelBy code 02 = Cancel by PRN (confirmation number). Ref: UPS Pickup API v2409.
+    const response = await fetch(`${this.baseUrl}/shipments/v2409/pickup/02`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'transId': `epicai-${Date.now()}`,
+        'transactionSrc': 'epicai',
+        'Prn': args.confirmation_number as string,
+      },
+    });
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+    const data = await response.json();
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async getLocator(args: Record<string, unknown>): Promise<ToolResult> {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TrellixEDRMCPServer } from '../../src/mcp-servers/trellix-edr.js';
 
 describe('TrellixEDRMCPServer', () => {
-  const adapter = new TrellixEDRMCPServer({ clientId: 'test-id', clientSecret: 'test-secret' });
+  const adapter = new TrellixEDRMCPServer({ clientId: 'test-id', clientSecret: 'test-secret', apiKey: 'test-api-key' });
 
   it('instantiates without error', () => {
     expect(adapter).toBeDefined();

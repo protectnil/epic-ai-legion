@@ -4,10 +4,13 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: https://github.com/mtane0412/twitch-mcp-server — transport: stdio, auth: Client ID + App access token (OAuth2)
-// Our adapter covers: 18 tools (streams, users, channels, clips, games, videos, schedule, search, chat, bits, subscriptions, moderators, polls, predictions, hype train, EventSub).
-// Vendor MCP covers: ~10 tools (core read operations). Our adapter has broader coverage.
-// Recommendation: Use this adapter for full Helix API coverage. Vendor MCP suitable for lightweight read-only use cases.
+// Official MCP: None found as of 2026-03-28. Twitch (the company) has not published an official MCP server.
+// Community MCP: https://github.com/mtane0412/twitch-mcp-server — transport: stdio, auth: Client ID + App access token (OAuth2).
+//   This is a community server by @mtane0412, NOT published or maintained by Twitch Inc.
+//   Covers ~10 core read-only Helix operations. Our adapter covers 18 tools with broader write/moderation coverage.
+//   Per protocol, community forks do not qualify as "official MCP server" — use-rest-api applies.
+// Our adapter covers: 18 tools (streams, users, channels, clips, games, videos, schedule, search, chat, bits, subscriptions, moderators, polls, predictions).
+// Recommendation: use-rest-api — no official Twitch MCP exists. Our adapter provides superior coverage.
 //
 // Base URL: https://api.twitch.tv/helix
 // Auth: OAuth2 app access token (Bearer) + Client-ID header required on every request.
@@ -279,13 +282,12 @@ export class TwitchMCPServer {
       },
       {
         name: 'get_polls',
-        description: 'Get active and terminated polls for a broadcaster\'s channel. Requires channel:read:polls scope.',
+        description: 'Get polls (all or by specific IDs) for a broadcaster\'s channel from the last 90 days. Requires channel:read:polls scope.',
         inputSchema: {
           type: 'object',
           properties: {
             broadcaster_id: { type: 'string', description: 'Broadcaster user ID' },
             id: { type: 'string', description: 'Filter by specific poll IDs (comma-separated, max 20)' },
-            status: { type: 'string', description: 'Filter by status: ACTIVE, COMPLETED, LOCKED, TERMINATED, ARCHIVED, MODERATED, INVALID' },
             first: { type: 'number', description: 'Maximum results to return (default: 20, max: 20)' },
             after: { type: 'string', description: 'Cursor for forward pagination' },
           },
@@ -294,13 +296,12 @@ export class TwitchMCPServer {
       },
       {
         name: 'get_predictions',
-        description: 'Get Channel Points predictions for a broadcaster\'s channel including outcomes and point totals. Requires channel:read:predictions scope.',
+        description: 'Get Channel Points predictions for a broadcaster\'s channel from the last 90 days, including outcomes and point totals. Requires channel:read:predictions scope.',
         inputSchema: {
           type: 'object',
           properties: {
             broadcaster_id: { type: 'string', description: 'Broadcaster user ID' },
             id: { type: 'string', description: 'Filter by specific prediction IDs (comma-separated, max 25)' },
-            status: { type: 'string', description: 'Filter by status: ACTIVE, CANCELED, LOCKED, RESOLVED' },
             first: { type: 'number', description: 'Maximum results to return (default: 20, max: 25)' },
             after: { type: 'string', description: 'Cursor for forward pagination' },
           },
@@ -566,7 +567,6 @@ export class TwitchMCPServer {
   private async getPolls(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({ broadcaster_id: args.broadcaster_id as string });
     if (args.id) params.append('id', args.id as string);
-    if (args.status) params.append('status', args.status as string);
     if (args.first) params.append('first', String(args.first));
     if (args.after) params.append('after', args.after as string);
     return this.helixGet('/polls', params);
@@ -575,7 +575,6 @@ export class TwitchMCPServer {
   private async getPredictions(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({ broadcaster_id: args.broadcaster_id as string });
     if (args.id) params.append('id', args.id as string);
-    if (args.status) params.append('status', args.status as string);
     if (args.first) params.append('first', String(args.first));
     if (args.after) params.append('after', args.after as string);
     return this.helixGet('/predictions', params);

@@ -4,8 +4,11 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Vonage MCP server was found on GitHub or npm.
+// Official MCP: None found as of 2026-03-28
+// Vonage has a documentation-only MCP (https://github.com/Vonage/vonage-mcp-server-documentation, 7 tools)
+//   that only provides documentation search — NOT a functional API MCP. Community telephony MCP
+//   (Vonage-Community/telephony-mcp-server) has only 2 tools (voice_call, send_sms) and is community,
+//   not official. Neither qualifies. Use this REST adapter as primary.
 //
 // Base URL: https://rest.nexmo.com (SMS), https://api.nexmo.com (Voice, Verify, Numbers), https://api.vonage.com (Messages v1)
 // Auth: API Key + API Secret (query params or JSON body). JWT (app_id + private_key) for Voice API calls.
@@ -600,12 +603,12 @@ export class VonageMCPServer {
 
   private async buyNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.country || !args.msisdn) return { content: [{ type: 'text', text: 'country and msisdn are required' }], isError: true };
-    return this.apiGet('/number/buy', { country: args.country as string, msisdn: args.msisdn as string });
+    return this.restPost('/number/buy', { country: args.country, msisdn: args.msisdn });
   }
 
   private async cancelNumber(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.country || !args.msisdn) return { content: [{ type: 'text', text: 'country and msisdn are required' }], isError: true };
-    return this.apiGet('/number/cancel', { country: args.country as string, msisdn: args.msisdn as string });
+    return this.restPost('/number/cancel', { country: args.country, msisdn: args.msisdn });
   }
 
   private async getAccountBalance(): Promise<ToolResult> {

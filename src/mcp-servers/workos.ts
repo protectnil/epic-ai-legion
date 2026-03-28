@@ -466,7 +466,7 @@ export class WorkOSMCPServer {
   private async updateUser(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.user_id) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
     const { user_id, ...body } = args;
-    return this.put(`/user_management/users/${user_id}`, body);
+    return this.put(`/user_management/users/${encodeURIComponent(user_id as string)}`, body);
   }
 
   private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -492,7 +492,7 @@ export class WorkOSMCPServer {
   private async updateOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.organization_id) return { content: [{ type: 'text', text: 'organization_id is required' }], isError: true };
     const { organization_id, ...body } = args;
-    return this.put(`/organizations/${organization_id}`, body);
+    return this.put(`/organizations/${encodeURIComponent(organization_id as string)}`, body);
   }
 
   private async deleteOrganization(args: Record<string, unknown>): Promise<ToolResult> {

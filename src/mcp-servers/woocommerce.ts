@@ -4,13 +4,17 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None (official WooCommerce/Automattic MCP adapter targets WordPress Abilities API, not the WooCommerce REST API directly)
-// Community MCP servers exist (techspawn/woocommerce-mcp-server, jlfguthrie/woo-mcp) but are not official Automattic-maintained REST API wrappers.
+// Official MCP: https://developer.woocommerce.com/docs/features/mcp/ — transport: stdio (via @automattic/mcp-wordpress-remote proxy),
+//   auth: WooCommerce API key (consumer_key + consumer_secret). Developer preview as of 2026-03; bridges to the WordPress Abilities API,
+//   not the WooCommerce REST API directly. Tool count not disclosed; covers core product/order/customer operations.
+//   Community MCP: github.com/techspawn/woocommerce-mcp-server (82 stars, ~8 commits, not officially maintained).
+// Our adapter covers: 30 tools (full REST API surface). Recommendation: use-rest-api — the official Automattic MCP is in developer
+//   preview and routes through a local proxy; our REST adapter provides direct, stable access to all wc/v3 endpoints without a proxy.
 //
 // Base URL: https://{your-store.com}/wp-json/wc/v3
 // Auth: HTTP Basic Auth — consumer_key as username, consumer_secret as password
 // Docs: https://woocommerce.github.io/woocommerce-rest-api-docs/
-// Rate limits: Governed by WordPress/server config; no published WooCommerce-specific limit
+// Rate limits: Governed by WordPress/server config; no published WooCommerce-specific rate limit
 
 import { ToolDefinition, ToolResult } from './types.js';
 

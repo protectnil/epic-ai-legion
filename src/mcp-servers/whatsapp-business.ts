@@ -4,8 +4,10 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official WhatsApp Business MCP server was found on GitHub. Meta does not publish one.
+// Official MCP: None found as of 2026-03-28
+// No official WhatsApp Business MCP server is published by Meta. A community entry appears in the
+//   modelcontextprotocol/servers registry ("WhatsApp Business - WhatsApp Business MCP connector")
+//   but it is not published by Meta — not eligible for use-vendor-mcp per protocol criteria.
 //
 // Base URL: https://graph.facebook.com/v21.0
 // Auth: Bearer token (System User access token from Meta Business Manager)

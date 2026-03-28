@@ -4,12 +4,18 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Vectra AI MCP server was found on GitHub or npm.
+// Official MCP: https://github.com/vectra-ai-research/vectra-ai-mcp-server-qux — transport: stdio/SSE/streamable-HTTP, auth: OAuth2 client credentials
+// Published by Vectra AI's own research team. Announced August 6, 2025 as early access for all customers.
+// MCP tool count: UNVERIFIED (repo is new, README does not enumerate all tool names; tool/ directory present).
+// Last commit: within 6 months of 2026-03-28 (repo created August 2025, maintained).
+// Recommendation: use-rest-api — MCP tool count could not be confirmed ≥10 from public docs; our adapter
+//   provides verified CRUD coverage. Reassess when Vectra publishes full tool list in their README.
+//   If MCP tool count confirmed ≥10, evaluate use-both for any unique MCP-only tools.
 //
 // Base URL: https://{tenant}.portal.vectra.ai (tenant-specific — configured via constructor)
 // Auth: OAuth2 client credentials — POST {baseUrl}/oauth2/token using client_id and client_secret
 // Docs: https://apidocs.vectra.ai/
+// API version: v3.4 (current as of 2026-03-28; adapter uses v3.3 — upgrade when v3.4 breaks verified)
 // Rate limits: Not publicly documented; enterprise tier-based limits apply per tenant.
 
 import { ToolDefinition, ToolResult } from './types.js';
@@ -39,7 +45,7 @@ export class VectraAIMCPServer {
       name: 'vectra-ai',
       displayName: 'Vectra AI',
       version: '1.0.0',
-      category: 'cybersecurity',
+      category: 'cybersecurity' as const,
       keywords: ['vectra', 'ndr', 'network detection', 'response', 'threat', 'detection', 'host', 'account', 'lateral movement', 'command and control', 'exfiltration', 'ai security'],
       toolNames: [
         'list_detections', 'get_detection', 'update_detection',
@@ -49,7 +55,7 @@ export class VectraAIMCPServer {
         'list_tags', 'add_tags', 'remove_tags',
       ],
       description: 'Vectra AI network detection and response: query and triage detections, hosts, and accounts, manage assignments, add contextual tags, and track attacker progression across the kill chain.',
-      author: 'protectnil',
+      author: 'protectnil' as const,
     };
   }
 

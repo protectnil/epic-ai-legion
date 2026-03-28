@@ -4,13 +4,20 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Twilio MCP server was found on GitHub or npm as of March 2026.
+// Official MCP: https://github.com/twilio-labs/mcp — transport: stdio, auth: API key + secret
+// Published by Twilio's ETI team under the official twilio-labs GitHub org.
+// npm: @twilio-alpha/mcp v0.7.0, last published ~Sept 2025 (within 6 months of 2026-03-28).
+// Dynamically exposes 1,400+ Twilio API endpoints from OpenAPI spec across all product APIs.
+// Our adapter covers: 20 tools (core messaging, voice, verify, lookup operations).
+// Vendor MCP covers: 1,400+ tools (full Twilio API surface via OpenAPI translation).
+// Recommendation: use-vendor-mcp — vendor MCP is a strict superset with 70x more coverage.
+//   Use this adapter for air-gapped deployments where npm install at runtime is not permitted.
 //
 // Base URL: https://api.twilio.com/2010-04-01/Accounts/{AccountSid}
 //   Verify API: https://verify.twilio.com/v2
 //   Lookup API: https://lookups.twilio.com/v2
 // Auth: HTTP Basic — username=AccountSid, password=AuthToken
+//       (Twilio recommends API key/secret for production; Account SID + Auth Token for dev/test)
 // Docs: https://www.twilio.com/docs/usage/api
 //       https://www.twilio.com/docs/voice/api
 //       https://www.twilio.com/docs/messaging/api
