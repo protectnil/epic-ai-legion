@@ -91,14 +91,9 @@ export class StellastraMCPServer {
       return { content: [{ type: 'text', text: 'rating must be an integer from 1 to 5' }], isError: true };
     }
 
-    const params = new URLSearchParams();
-    params.set('user_email', userEmail);
-    params.set('rating', String(rating));
-    if (userName) params.set('user_name', userName);
-
     const credentials = btoa(`${this.authEmail}:${this.apiKey}`);
 
-    const response = await fetch(`${this.baseUrl}/post-review?${params.toString()}`, {
+    const response = await fetch(`${this.baseUrl}/post-review`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,

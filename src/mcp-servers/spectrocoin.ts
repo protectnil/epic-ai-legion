@@ -130,29 +130,30 @@ export class SpectroCoinMCPServer {
       }
     }
 
-    const params = new URLSearchParams();
-    params.set('merchantId', this.merchantId);
-    params.set('apiId', this.apiId);
-    params.set('orderId', args.orderId as string);
-    params.set('payCurrency', args.payCurrency as string);
-    params.set('receiveCurrency', args.receiveCurrency as string);
-    params.set('sign', args.sign as string);
+    const payload: Record<string, unknown> = {
+      merchantId: this.merchantId,
+      apiId: this.apiId,
+      orderId: args.orderId,
+      payCurrency: args.payCurrency,
+      receiveCurrency: args.receiveCurrency,
+      sign: args.sign,
+    };
 
-    if (args.payAmount != null) params.set('payAmount', String(args.payAmount));
-    if (args.receiveAmount != null) params.set('receiveAmount', String(args.receiveAmount));
-    if (args.description) params.set('description', args.description as string);
-    if (args.culture) params.set('culture', args.culture as string);
-    if (args.callbackUrl) params.set('callbackUrl', args.callbackUrl as string);
-    if (args.successUrl) params.set('successUrl', args.successUrl as string);
-    if (args.failureUrl) params.set('failureUrl', args.failureUrl as string);
-    if (args.payerEmail) params.set('payerEmail', args.payerEmail as string);
-    if (args.payerName) params.set('payerName', args.payerName as string);
-    if (args.payerSurname) params.set('payerSurname', args.payerSurname as string);
+    if (args.payAmount != null) payload.payAmount = args.payAmount;
+    if (args.receiveAmount != null) payload.receiveAmount = args.receiveAmount;
+    if (args.description) payload.description = args.description;
+    if (args.culture) payload.culture = args.culture;
+    if (args.callbackUrl) payload.callbackUrl = args.callbackUrl;
+    if (args.successUrl) payload.successUrl = args.successUrl;
+    if (args.failureUrl) payload.failureUrl = args.failureUrl;
+    if (args.payerEmail) payload.payerEmail = args.payerEmail;
+    if (args.payerName) payload.payerName = args.payerName;
+    if (args.payerSurname) payload.payerSurname = args.payerSurname;
 
     const response = await fetch(`${this.baseUrl}/createOrder`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {

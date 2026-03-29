@@ -97,7 +97,10 @@ export class ClioMCPServer {
   }
 
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    // Clio API requires .json suffix on all endpoints
+    const [pathPart, queryPart] = url.split('?');
+    const normalizedUrl = pathPart.endsWith('.json') ? url : `${pathPart}.json${queryPart ? `?${queryPart}` : ''}`;
+    const response = await fetch(normalizedUrl, { headers: this.headers, ...options });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };

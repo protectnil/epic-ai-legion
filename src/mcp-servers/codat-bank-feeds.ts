@@ -344,7 +344,7 @@ export class CodatBankFeedsMCPServer {
   private async createBankFeedAccounts(args: Record<string, unknown>): Promise<ToolResult> {
     const { companyId, connectionId, accounts } = args;
     return this.request(
-      'PUT',
+      'POST',
       `/companies/${companyId}/connections/${connectionId}/connectionInfo/bankFeedAccounts`,
       undefined,
       accounts,

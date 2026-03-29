@@ -569,17 +569,18 @@ export class LangSmithMCPServer {
   }
 
   private async listRuns(args: Record<string, unknown>): Promise<ToolResult> {
-    const params: Record<string, string> = {
-      limit: String((args.limit as number) || 100),
+    // LangSmith /api/v1/runs requires POST with filter body (not GET with query params)
+    const body: Record<string, unknown> = {
+      limit: (args.limit as number) || 100,
     };
-    if (args.project_id) params.session = args.project_id as string;
-    if (args.project_name) params.session_name = args.project_name as string;
-    if (args.run_type) params.run_type = args.run_type as string;
-    if (typeof args.error === 'boolean') params.error = String(args.error);
-    if (args.start_time) params.start_time = args.start_time as string;
-    if (args.end_time) params.end_time = args.end_time as string;
-    if (args.cursor) params.cursor = args.cursor as string;
-    return this.httpGet('/api/v1/runs', params);
+    if (args.project_id) body.session = args.project_id;
+    if (args.project_name) body.session_name = args.project_name;
+    if (args.run_type) body.run_type = args.run_type;
+    if (typeof args.error === 'boolean') body.error = args.error;
+    if (args.start_time) body.start_time = args.start_time;
+    if (args.end_time) body.end_time = args.end_time;
+    if (args.cursor) body.cursor = args.cursor;
+    return this.httpPost('/api/v1/runs/query', body);
   }
 
   private async getRun(args: Record<string, unknown>): Promise<ToolResult> {

@@ -1215,7 +1215,36 @@ export class DiscourseMCPServer {
   }
 
   private async createUpload(args: Record<string, unknown>): Promise<ToolResult> {
-    return this.post('/uploads.json', args);
+    const fileBase64 = args.file as string;
+    const filename = args.filename as string;
+    const uploadType = args.type as string;
+
+    if (!fileBase64 || !filename || !uploadType) {
+      return { content: [{ type: 'text', text: 'type, file (base64), and filename are required' }], isError: true };
+    }
+
+    // Discourse /uploads.json requires multipart/form-data
+    const fileBuffer = Buffer.from(fileBase64, 'base64');
+    const blob = new Blob([fileBuffer]);
+    const formData = new FormData();
+    formData.append('type', uploadType);
+    formData.append('files[]', blob, filename);
+
+    // Don't set Content-Type — fetch sets it with boundary for FormData
+    const headers: Record<string, string> = { 'Api-Key': this.apiKey, 'Api-Username': this.apiUsername };
+    const response = await fetch(`${this.baseUrl}/uploads.json`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    }
+
+    const ct = response.headers.get('content-type') ?? '';
+    const data = ct.includes('application/json') ? await response.json() : { status: response.status };
+    return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
   }
 
   private async adminListUsers(args: Record<string, unknown>): Promise<ToolResult> {

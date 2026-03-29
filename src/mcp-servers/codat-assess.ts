@@ -1052,7 +1052,7 @@ export class CodatAssessMCPServer {
   private async downloadExcelReport(args: Record<string, unknown>): Promise<ToolResult> {
     const { companyId, reportType } = args;
     return this.request(
-      'POST',
+      'GET',
       `/data/companies/${companyId}/assess/excel/download`,
       { reportType },
     );
