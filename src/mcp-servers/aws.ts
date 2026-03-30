@@ -33,6 +33,7 @@
 // Rate limits: Per-service; EC2 and IAM support up to 100 req/s; S3 5,500 GET/s per prefix
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import { createHmac, createHash } from 'node:crypto';
 
 interface AWSConfig {
@@ -129,10 +130,11 @@ function truncate(text: string): string {
 
 // ── Adapter ───────────────────────────────────────────────────────────────────
 
-export class AWSMCPServer {
+export class AWSMCPServer extends MCPAdapterBase {
   private readonly config: AWSConfig;
 
   constructor(config: AWSConfig) {
+    super();
     this.config = config;
   }
 
@@ -455,7 +457,7 @@ export class AWSMCPServer {
     const url = 'https://s3.amazonaws.com/';
     const globalConfig: AWSConfig = { ...this.config, region: 'us-east-1' };
     const headers = signRequest('GET', url, 's3', globalConfig);
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],
@@ -477,7 +479,7 @@ export class AWSMCPServer {
     const qs = Object.keys(queryParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`).join('&');
     const url = `${base}?${qs}`;
     const headers = signRequest('GET', url, 's3', this.config, '', queryParams);
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],
@@ -490,7 +492,7 @@ export class AWSMCPServer {
     const key = args.key as string;
     const url = `https://${bucket}.s3.${this.config.region}.amazonaws.com/${encodeURIComponent(key)}`;
     const headers = signRequest('GET', url, 's3', this.config);
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -555,7 +557,7 @@ export class AWSMCPServer {
     const qs = Object.keys(queryParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`).join('&');
     const fullUrl = `${url}?${qs}`;
     const headers = signRequest('GET', fullUrl, 'ec2', this.config, '', queryParams);
-    const response = await fetch(fullUrl, { headers });
+    const response = await this.fetchWithRetry(fullUrl, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],
@@ -576,7 +578,7 @@ export class AWSMCPServer {
       : '';
     const url = base + qs;
     const headers = signRequest('GET', url, 'lambda', this.config, '', queryParams);
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     let data: unknown;
     try { data = await response.json(); } catch { data = await response.text(); }
     return {
@@ -590,7 +592,7 @@ export class AWSMCPServer {
     let url = `https://lambda.${this.config.region}.amazonaws.com/2015-03-31/functions/${encodeURIComponent(functionName)}`;
     if (args.qualifier) url += `?Qualifier=${encodeURIComponent(String(args.qualifier))}`;
     const headers = signRequest('GET', url, 'lambda', this.config);
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     let data: unknown;
     try { data = await response.json(); } catch { data = await response.text(); }
     return {
@@ -605,7 +607,7 @@ export class AWSMCPServer {
     let url = `https://lambda.${this.config.region}.amazonaws.com/2015-03-31/functions/${encodeURIComponent(functionName)}/invocations`;
     if (args.qualifier) url += `?Qualifier=${encodeURIComponent(String(args.qualifier))}`;
     const headers = signRequest('POST', url, 'lambda', this.config, payload);
-    const response = await fetch(url, { method: 'POST', headers, body: payload });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers, body: payload });
     let data: unknown;
     try { data = await response.json(); } catch { data = await response.text(); }
     return {
@@ -653,7 +655,7 @@ export class AWSMCPServer {
     const qs = Object.keys(queryParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`).join('&');
     const fullUrl = `${url}?${qs}`;
     const headers = signRequest('GET', fullUrl, 'iam', iamConfig, '', queryParams);
-    const response = await fetch(fullUrl, { headers });
+    const response = await this.fetchWithRetry(fullUrl, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],
@@ -704,7 +706,7 @@ export class AWSMCPServer {
     const qs = Object.keys(queryParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`).join('&');
     const fullUrl = `${url}?${qs}`;
     const headers = signRequest('GET', fullUrl, 'monitoring', this.config, '', queryParams);
-    const response = await fetch(fullUrl, { headers });
+    const response = await this.fetchWithRetry(fullUrl, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],
@@ -726,7 +728,7 @@ export class AWSMCPServer {
     const qs = Object.keys(queryParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`).join('&');
     const fullUrl = `${url}?${qs}`;
     const headers = signRequest('GET', fullUrl, 'rds', this.config, '', queryParams);
-    const response = await fetch(fullUrl, { headers });
+    const response = await this.fetchWithRetry(fullUrl, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],
@@ -759,7 +761,7 @@ export class AWSMCPServer {
       'Content-Type': 'application/x-amz-json-1.1',
       'X-Amz-Target': `AmazonEC2ContainerServiceV20141113.${action}`,
     };
-    const response = await fetch(url, { method: 'POST', headers, body: bodyStr });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers, body: bodyStr });
     let data: unknown;
     try { data = await response.json(); } catch { data = await response.text(); }
     return {
@@ -782,7 +784,7 @@ export class AWSMCPServer {
     const qs = Object.keys(queryParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`).join('&');
     const fullUrl = `${url}?${qs}`;
     const headers = signRequest('GET', fullUrl, 'sqs', this.config, '', queryParams);
-    const response = await fetch(fullUrl, { headers });
+    const response = await this.fetchWithRetry(fullUrl, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],
@@ -802,7 +804,7 @@ export class AWSMCPServer {
     const qs = Object.keys(queryParams).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k])}`).join('&');
     const fullUrl = `${url}?${qs}`;
     const headers = signRequest('GET', fullUrl, 'sns', this.config, '', queryParams);
-    const response = await fetch(fullUrl, { headers });
+    const response = await this.fetchWithRetry(fullUrl, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],
@@ -822,7 +824,7 @@ export class AWSMCPServer {
     const fullUrl = `${url}?${qs}`;
     const stsConfig: AWSConfig = { ...this.config, region: 'us-east-1' };
     const headers = signRequest('GET', fullUrl, 'sts', stsConfig, '', queryParams);
-    const response = await fetch(fullUrl, { headers });
+    const response = await this.fetchWithRetry(fullUrl, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: truncate(JSON.stringify({ status: response.status, body: text }, null, 2)) }],

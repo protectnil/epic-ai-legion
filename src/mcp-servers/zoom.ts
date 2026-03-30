@@ -14,6 +14,7 @@
 //   GET endpoints: ~10 req/s. POST meeting: ~100 req/day per user (heavy rate limits apply).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ZoomConfig {
   /** OAuth2 Server-to-Server access token. */
@@ -22,11 +23,12 @@ interface ZoomConfig {
   baseUrl?: string;
 }
 
-export class ZoomMCPServer {
+export class ZoomMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ZoomConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.zoom.us/v2';
   }
@@ -712,15 +714,8 @@ export class ZoomMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: this.headers(),
       body: body !== undefined ? JSON.stringify(body) : undefined,

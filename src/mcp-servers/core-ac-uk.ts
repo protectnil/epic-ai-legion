@@ -14,17 +14,19 @@
 // Coverage: 200M+ open-access research articles harvested from 10,000+ repositories.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CoreAcUkConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class CoreAcUkMCPServer {
+export class CoreAcUkMCPServer extends MCPAdapterBase {
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: CoreAcUkConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://core.ac.uk/api-v2';
   }
@@ -462,18 +464,12 @@ export class CoreAcUkMCPServer {
     return { 'Content-Type': 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const allParams = { ...this.authParam, ...params };
     const qs = new URLSearchParams(allParams).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.baseHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.baseHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -485,7 +481,7 @@ export class CoreAcUkMCPServer {
     const allParams = { ...this.authParam, ...params };
     const qs = new URLSearchParams(allParams).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.baseHeaders,
       body: JSON.stringify(body),

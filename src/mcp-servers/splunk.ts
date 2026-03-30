@@ -27,6 +27,7 @@
 // Rate limits: Not publicly documented; governed by instance resource limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SplunkConfig {
   host: string;
@@ -38,11 +39,12 @@ interface SplunkConfig {
   port?: number;
 }
 
-export class SplunkMCPServer {
+export class SplunkMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: SplunkConfig) {
+    super();
     const port = config.port ?? 8089;
     this.baseUrl = `https://${config.host}:${port}`;
     if (config.token) {
@@ -418,13 +420,6 @@ export class SplunkMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async createSearchJob(args: Record<string, unknown>): Promise<ToolResult> {
     const search = args.search as string;
     if (!search) {
@@ -439,7 +434,7 @@ export class SplunkMCPServer {
     });
     if (args.app) params.set('app', args.app as string);
 
-    const response = await fetch(`${this.baseUrl}/services/search/jobs`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/services/search/jobs`, {
       method: 'POST',
       headers: this.headers,
       body: params.toString(),
@@ -456,7 +451,7 @@ export class SplunkMCPServer {
     if (!sid) {
       return { content: [{ type: 'text', text: 'sid is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/services/search/jobs/${encodeURIComponent(sid)}?output_mode=json`,
       { method: 'GET', headers: this.headers },
     );
@@ -477,7 +472,7 @@ export class SplunkMCPServer {
       offset: String((args.offset as number) ?? 0),
       count: String((args.count as number) ?? 100),
     });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/services/search/jobs/${encodeURIComponent(sid)}/results?${params}`,
       { method: 'GET', headers: this.headers },
     );
@@ -498,7 +493,7 @@ export class SplunkMCPServer {
       offset: String((args.offset as number) ?? 0),
       count: String((args.count as number) ?? 100),
     });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/services/search/jobs/${encodeURIComponent(sid)}/events?${params}`,
       { method: 'GET', headers: this.headers },
     );
@@ -518,7 +513,7 @@ export class SplunkMCPServer {
     if (args.owner) params.set('owner', args.owner as string);
     if (args.app) params.set('app', args.app as string);
 
-    const response = await fetch(`${this.baseUrl}/services/alerts/fired_alerts?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/services/alerts/fired_alerts?${params}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -548,7 +543,7 @@ export class SplunkMCPServer {
       output_mode: 'json',
     });
 
-    const response = await fetch(`${this.baseUrl}/services/search/jobs`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/services/search/jobs`, {
       method: 'POST',
       headers: this.headers,
       body: params.toString(),
@@ -569,7 +564,7 @@ export class SplunkMCPServer {
     if (args.app) params.set('app', args.app as string);
     if (args.owner) params.set('owner', args.owner as string);
 
-    const response = await fetch(`${this.baseUrl}/services/saved/searches?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/services/saved/searches?${params}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -586,7 +581,7 @@ export class SplunkMCPServer {
       return { content: [{ type: 'text', text: 'name is required' }], isError: true };
     }
     const app = (args.app as string) ?? 'search';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/servicesNS/-/${encodeURIComponent(app)}/saved/searches/${encodeURIComponent(name)}?output_mode=json`,
       { method: 'GET', headers: this.headers },
     );
@@ -603,7 +598,7 @@ export class SplunkMCPServer {
       return { content: [{ type: 'text', text: 'name is required' }], isError: true };
     }
     const app = (args.app as string) ?? 'search';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/servicesNS/-/${encodeURIComponent(app)}/saved/searches/${encodeURIComponent(name)}/dispatch`,
       {
         method: 'POST',
@@ -624,7 +619,7 @@ export class SplunkMCPServer {
       count: String((args.count as number) ?? 100),
       offset: String((args.offset as number) ?? 0),
     });
-    const response = await fetch(`${this.baseUrl}/services/data/indexes?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/services/data/indexes?${params}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -640,7 +635,7 @@ export class SplunkMCPServer {
     if (!name) {
       return { content: [{ type: 'text', text: 'name is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/services/data/indexes/${encodeURIComponent(name)}?output_mode=json`,
       { method: 'GET', headers: this.headers },
     );
@@ -653,7 +648,7 @@ export class SplunkMCPServer {
 
   private async listKvstoreCollections(args: Record<string, unknown>): Promise<ToolResult> {
     const app = (args.app as string) ?? 'search';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/servicesNS/-/${encodeURIComponent(app)}/storage/collections/config?output_mode=json`,
       { method: 'GET', headers: this.headers },
     );
@@ -677,7 +672,7 @@ export class SplunkMCPServer {
     });
     if (args.query) params.set('query', args.query as string);
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/servicesNS/-/${encodeURIComponent(app)}/storage/collections/data/${encodeURIComponent(collection)}?${params}`,
       { method: 'GET', headers: this.headers },
     );
@@ -694,7 +689,7 @@ export class SplunkMCPServer {
       count: String((args.count as number) ?? 100),
       offset: String((args.offset as number) ?? 0),
     });
-    const response = await fetch(`${this.baseUrl}/services/apps/local?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/services/apps/local?${params}`, {
       method: 'GET',
       headers: this.headers,
     });

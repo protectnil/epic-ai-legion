@@ -36,6 +36,7 @@
 //   GET  /analytics/v1/reports                    — list reports
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DoceboConfig {
   clientId: string;
@@ -43,7 +44,7 @@ interface DoceboConfig {
   baseUrl: string;  // e.g. https://yourcompany.docebosaas.com
 }
 
-export class DoceboMCPServer {
+export class DoceboMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -51,6 +52,7 @@ export class DoceboMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: DoceboConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     // Normalize: strip trailing slash
@@ -571,7 +573,7 @@ export class DoceboMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -599,17 +601,10 @@ export class DoceboMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doceboGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const headers = await this.authHeaders();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -619,7 +614,7 @@ export class DoceboMCPServer {
 
   private async doceboPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -633,7 +628,7 @@ export class DoceboMCPServer {
 
   private async doceboPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
@@ -647,7 +642,7 @@ export class DoceboMCPServer {
 
   private async doceboDelete(path: string): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers });
     if (response.status === 204 || response.ok) {
       return { content: [{ type: 'text', text: 'Deleted successfully' }], isError: false };
     }

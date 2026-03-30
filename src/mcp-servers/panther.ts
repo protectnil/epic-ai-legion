@@ -30,6 +30,7 @@
 // Rate limits: Not publicly documented; Panther applies per-tenant limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface PantherConfig {
@@ -37,11 +38,12 @@ interface PantherConfig {
   baseUrl: string;  // Required — customer-specific Panther domain; no universal default
 }
 
-export class PantherMCPServer {
+export class PantherMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PantherConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
   }
@@ -424,16 +426,9 @@ export class PantherMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params && params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.reqHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.reqHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
       return {
@@ -447,7 +442,7 @@ export class PantherMCPServer {
 
   private async fetchPatch(path: string, body: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: this.reqHeaders,
       body: JSON.stringify(body),

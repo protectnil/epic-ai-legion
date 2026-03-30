@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; use cursor-based pagination
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AdaConfig {
   handle: string;
@@ -22,11 +23,12 @@ interface AdaConfig {
   baseUrl?: string;
 }
 
-export class AdaMCPServer {
+export class AdaMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: AdaConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || `https://${config.handle}.ada.support/api/v2`;
   }
@@ -327,17 +329,10 @@ export class AdaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Ada API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -347,7 +342,7 @@ export class AdaMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -361,7 +356,7 @@ export class AdaMCPServer {
   }
 
   private async patch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -375,7 +370,7 @@ export class AdaMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Ada API error ${response.status}: ${response.statusText}` }], isError: true };
     }

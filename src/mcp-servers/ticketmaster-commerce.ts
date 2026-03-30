@@ -15,6 +15,7 @@
 // Rate limits: Varies by tier. Default public tier: 5,000 calls/day.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TicketmasterCommerceConfig {
   apiKey: string;
@@ -23,12 +24,13 @@ interface TicketmasterCommerceConfig {
   baseUrl?: string;
 }
 
-export class TicketmasterCommerceMCPServer {
+export class TicketmasterCommerceMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly accessToken: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: TicketmasterCommerceConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://www.ticketmaster.com/commerce/v2';
@@ -92,13 +94,6 @@ export class TicketmasterCommerceMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getEventOffers(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.event_id) {
       return { content: [{ type: 'text', text: 'event_id is required' }], isError: true };
@@ -123,7 +118,7 @@ export class TicketmasterCommerceMCPServer {
       headers['Content-Type'] = 'text/plain';
     }
 
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

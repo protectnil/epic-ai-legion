@@ -13,17 +13,19 @@
 // Spec: https://api.apis.guru/v2/specs/openfigi.com/1.4.0/openapi.json (OpenAPI 3.0)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenFIGIConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class OpenFIGIMCPServer {
+export class OpenFIGIMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: OpenFIGIConfig = {}) {
+    super();
     this.apiKey = config.apiKey || '';
     this.baseUrl = config.baseUrl || 'https://api.openfigi.com/v1';
   }
@@ -163,7 +165,7 @@ export class OpenFIGIMCPServer {
       };
     }
     const url = `${this.baseUrl}/mapping`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(jobs),
@@ -185,7 +187,7 @@ export class OpenFIGIMCPServer {
       };
     }
     const url = `${this.baseUrl}/mapping/values/${encodeURIComponent(String(key))}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       headers: this.buildHeaders(),
     });
     const text = await res.text();

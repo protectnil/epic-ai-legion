@@ -35,6 +35,7 @@
 // Rate limits: 100 synchronous API calls/min; 50,000 API calls/day
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GainsightConfig {
   accessKey: string;
@@ -44,12 +45,13 @@ interface GainsightConfig {
   tenantUrl?: string;
 }
 
-export class GainsightMCPServer {
+export class GainsightMCPServer extends MCPAdapterBase {
   private readonly accessKey: string;
   private readonly domainUrl: string;
   private readonly tenantUrl: string;
 
   constructor(config: GainsightConfig) {
+    super();
     this.accessKey = config.accessKey;
     this.domainUrl = config.domainUrl.replace(/\/$/, '');
     this.tenantUrl = (config.tenantUrl ?? config.domainUrl).replace(/\/$/, '');
@@ -395,14 +397,8 @@ export class GainsightMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async dataGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.domainUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.domainUrl}${path}`, {
       method: 'GET',
       headers: this.dataHeaders,
     });
@@ -421,7 +417,7 @@ export class GainsightMCPServer {
   }
 
   private async dataPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.domainUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.domainUrl}${path}`, {
       method: 'POST',
       headers: this.dataHeaders,
       body: JSON.stringify(body),
@@ -441,7 +437,7 @@ export class GainsightMCPServer {
   }
 
   private async dataPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.domainUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.domainUrl}${path}`, {
       method: 'PUT',
       headers: this.dataHeaders,
       body: JSON.stringify(body),
@@ -461,7 +457,7 @@ export class GainsightMCPServer {
   }
 
   private async tenantPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.tenantUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.tenantUrl}${path}`, {
       method: 'POST',
       headers: this.dataHeaders,
       body: JSON.stringify(body),
@@ -481,7 +477,7 @@ export class GainsightMCPServer {
   }
 
   private async tenantPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.tenantUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.tenantUrl}${path}`, {
       method: 'PUT',
       headers: this.dataHeaders,
       body: JSON.stringify(body),
@@ -536,7 +532,7 @@ export class GainsightMCPServer {
     }
     const results: unknown[] = [];
     for (const gsid of ids) {
-      const response = await fetch(
+      const response = await this.fetchWithRetry(
         `${this.domainUrl}/v1/data/objects/${encodeURIComponent(objectName)}/${encodeURIComponent(gsid)}`,
         { method: 'DELETE', headers: this.dataHeaders },
       );

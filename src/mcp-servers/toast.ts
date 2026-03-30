@@ -19,6 +19,7 @@
 // Rate limits: Not publicly documented; standard practice is to implement exponential backoff on 429.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ToastConfig {
   clientId: string;
@@ -26,7 +27,7 @@ interface ToastConfig {
   baseUrl?: string;
 }
 
-export class ToastMCPServer {
+export class ToastMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -34,6 +35,7 @@ export class ToastMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: ToastConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://ws-api.toasttab.com';
@@ -361,7 +363,7 @@ export class ToastMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/authentication/v1/authentication/login`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/authentication/v1/authentication/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ clientId: this.clientId, clientSecret: this.clientSecret, userAccessType: 'TOAST_MACHINE_CLIENT' }),
@@ -385,7 +387,7 @@ export class ToastMCPServer {
     if (restaurantGuid) headers['Toast-Restaurant-External-ID'] = restaurantGuid;
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -395,7 +397,7 @@ export class ToastMCPServer {
 
   private async toastPost(path: string, restaurantGuid: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -409,13 +411,6 @@ export class ToastMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async getRestaurants(args: Record<string, unknown>): Promise<ToolResult> {

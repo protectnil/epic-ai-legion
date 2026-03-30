@@ -27,6 +27,7 @@
 // Rate limits: Service-specific; most control plane APIs allow ~1,000 requests/sec per tenancy
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OracleCloudConfig {
   // For simplified integrations: pre-signed auth token (e.g. from OCI CLI session or instance principal)
@@ -36,13 +37,14 @@ interface OracleCloudConfig {
   baseUrl?: string;     // Override — defaults to iaas.{region}.oraclecloud.com
 }
 
-export class OracleCloudMCPServer {
+export class OracleCloudMCPServer extends MCPAdapterBase {
   private readonly authToken: string;
   private readonly region: string;
   private readonly tenancyId: string;
   private readonly baseUrl: string;
 
   constructor(config: OracleCloudConfig) {
+    super();
     this.authToken = config.authToken;
     this.region = config.region;
     this.tenancyId = config.tenancyId;
@@ -530,13 +532,6 @@ export class OracleCloudMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private computeUrl(path: string): string {
     return `${this.baseUrl}/20160918${path}`;
   }
@@ -556,7 +551,7 @@ export class OracleCloudMCPServer {
   private async apiGet(url: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const fullUrl = `${url}${qs ? '?' + qs : ''}`;
-    const response = await fetch(fullUrl, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(fullUrl, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -565,7 +560,7 @@ export class OracleCloudMCPServer {
   }
 
   private async apiPost(url: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -578,7 +573,7 @@ export class OracleCloudMCPServer {
   }
 
   private async apiAction(url: string, action: string): Promise<ToolResult> {
-    const response = await fetch(`${url}?action=${action}`, {
+    const response = await this.fetchWithRetry(`${url}?action=${action}`, {
       method: 'POST',
       headers: this.headers,
     });
@@ -592,7 +587,7 @@ export class OracleCloudMCPServer {
   private async apiDelete(url: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const fullUrl = `${url}${qs ? '?' + qs : ''}`;
-    const response = await fetch(fullUrl, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(fullUrl, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -713,7 +708,7 @@ export class OracleCloudMCPServer {
       args.namespace as string,
       `/b/${encodeURIComponent(args.bucket_name as string)}/o/${encodeURIComponent(args.object_name as string)}`,
     );
-    const response = await fetch(url, { method: 'HEAD', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'HEAD', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

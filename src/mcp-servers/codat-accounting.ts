@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented; Codat enforces per-tenant limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CodatAccountingConfig {
   apiKey: string;
@@ -21,13 +22,14 @@ interface CodatAccountingConfig {
   baseUrl?: string;
 }
 
-export class CodatAccountingMCPServer {
+export class CodatAccountingMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly companyId: string;
   private readonly connectionId: string;
   private readonly baseUrl: string;
 
   constructor(config: CodatAccountingConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.companyId = config.companyId;
     this.connectionId = config.connectionId || '';
@@ -586,7 +588,7 @@ export class CodatAccountingMCPServer {
 
   private async codatRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

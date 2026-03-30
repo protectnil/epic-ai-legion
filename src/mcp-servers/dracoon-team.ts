@@ -15,6 +15,7 @@
 // Rate limits: See DRACOON docs — enterprise file management platform
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DracoonTeamConfig {
   accessToken: string;
@@ -22,11 +23,12 @@ interface DracoonTeamConfig {
   baseUrl?: string;
 }
 
-export class DracoonTeamMCPServer {
+export class DracoonTeamMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: DracoonTeamConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl
       ?? (config.serverDomain ? `https://${config.serverDomain}/api` : 'https://your-server.dracoon.team/api');
@@ -915,12 +917,6 @@ export class DracoonTeamMCPServer {
     return `Bearer ${this.accessToken}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private buildQuery(params: Record<string, unknown>): string {
     const q = Object.entries(params)
@@ -946,7 +942,7 @@ export class DracoonTeamMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

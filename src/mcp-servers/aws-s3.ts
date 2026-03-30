@@ -20,6 +20,7 @@
 
 import { createHmac, createHash } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AWSS3Config {
   accessKeyId: string;
@@ -29,7 +30,7 @@ interface AWSS3Config {
   forcePathStyle?: boolean;
 }
 
-export class AWSS3MCPServer {
+export class AWSS3MCPServer extends MCPAdapterBase {
   private readonly accessKeyId: string;
   private readonly secretAccessKey: string;
   private readonly region: string;
@@ -37,6 +38,7 @@ export class AWSS3MCPServer {
   private readonly forcePathStyle: boolean;
 
   constructor(config: AWSS3Config) {
+    super();
     this.accessKeyId = config.accessKeyId;
     this.secretAccessKey = config.secretAccessKey;
     this.region = config.region;
@@ -538,12 +540,6 @@ export class AWSS3MCPServer {
       headers: signed,
       body: body.length > 0 ? body : undefined,
     });
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async xmlResult(response: Response): Promise<ToolResult> {

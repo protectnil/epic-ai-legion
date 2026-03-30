@@ -27,17 +27,19 @@
 //   /profile/identity/v4/Users. The v1 endpoint may still function for backward compatibility.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ConcurConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class ConcurMCPServer {
+export class ConcurMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ConcurConfig) {
+    super();
     this.accessToken = config.accessToken;
     // Default to US datacenter. EU callers: https://eu.api.concursolutions.com
     // AP callers: https://usg.api.concursolutions.com
@@ -480,14 +482,8 @@ export class ConcurMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

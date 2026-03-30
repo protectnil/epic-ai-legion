@@ -20,6 +20,7 @@
 // Rate limits: Free tier — rate limited; PRO account unlocks higher limits. Exact limits not published.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HuggingFaceConfig {
   apiKey: string;
@@ -27,12 +28,13 @@ interface HuggingFaceConfig {
   inferenceBaseUrl?: string;
 }
 
-export class HuggingFaceMCPServer {
+export class HuggingFaceMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly inferenceBaseUrl: string;
 
   constructor(config: HuggingFaceConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://huggingface.co/api';
     this.inferenceBaseUrl = config.inferenceBaseUrl ?? 'https://router.huggingface.co';
@@ -292,16 +294,9 @@ export class HuggingFaceMCPServer {
     return { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async hubGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params && params.toString() ? `?${params}` : ''}`;
-    const response = await fetch(url, { headers: this.hubHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.hubHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -415,7 +410,7 @@ export class HuggingFaceMCPServer {
       'Content-Type': 'application/json',
     };
     if (args.provider) headers['X-HF-Provider'] = String(args.provider);
-    const response = await fetch(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
+    const response = await this.fetchWithRetry(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -433,7 +428,7 @@ export class HuggingFaceMCPServer {
     if (!modelId || !inputs) {
       return { content: [{ type: 'text', text: 'model_id and inputs are required' }], isError: true };
     }
-    const response = await fetch(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
+    const response = await this.fetchWithRetry(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
       method: 'POST',
       headers: this.hubHeaders,
       body: JSON.stringify({ inputs }),
@@ -451,7 +446,7 @@ export class HuggingFaceMCPServer {
     if (!modelId || !inputs) {
       return { content: [{ type: 'text', text: 'model_id and inputs are required' }], isError: true };
     }
-    const response = await fetch(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
+    const response = await this.fetchWithRetry(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
       method: 'POST',
       headers: this.hubHeaders,
       body: JSON.stringify({ inputs }),
@@ -476,7 +471,7 @@ export class HuggingFaceMCPServer {
         min_length: (args.min_length as number) ?? 30,
       },
     };
-    const response = await fetch(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
+    const response = await this.fetchWithRetry(`${this.inferenceBaseUrl}/models/${encodeURIComponent(modelId)}`, {
       method: 'POST',
       headers: this.hubHeaders,
       body: JSON.stringify(body),

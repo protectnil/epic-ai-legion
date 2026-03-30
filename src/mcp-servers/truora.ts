@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TruoraConfig {
   /** Truora API key (Truora-API-Key header) */
@@ -22,11 +23,12 @@ interface TruoraConfig {
   baseUrl?: string;
 }
 
-export class TruoraMCPServer {
+export class TruoraMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: TruoraConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.truora.com';
   }
@@ -548,13 +550,6 @@ export class TruoraMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildFormBody(params: Record<string, unknown>): string {
     const form = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -574,7 +569,7 @@ export class TruoraMCPServer {
 
   private async get(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${this.buildQuery(params)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.jsonHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.jsonHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -584,7 +579,7 @@ export class TruoraMCPServer {
   }
 
   private async postForm(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: this.buildFormBody(body),
@@ -598,7 +593,7 @@ export class TruoraMCPServer {
   }
 
   private async putForm(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: this.buildFormBody(body),
@@ -612,7 +607,7 @@ export class TruoraMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.jsonHeaders,
     });

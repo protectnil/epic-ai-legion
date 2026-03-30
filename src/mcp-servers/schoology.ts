@@ -15,6 +15,7 @@
 
 import { createHmac } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SchoologyConfig {
   consumerKey: string;
@@ -22,12 +23,13 @@ interface SchoologyConfig {
   baseUrl?: string;
 }
 
-export class SchoologyMCPServer {
+export class SchoologyMCPServer extends MCPAdapterBase {
   private readonly consumerKey: string;
   private readonly consumerSecret: string;
   private readonly baseUrl: string;
 
   constructor(config: SchoologyConfig) {
+    super();
     this.consumerKey = config.consumerKey;
     this.consumerSecret = config.consumerSecret;
     this.baseUrl = config.baseUrl || 'https://api.schoology.com/v1';
@@ -515,17 +517,10 @@ export class SchoologyMCPServer {
     return `OAuth realm="Schoology API", ${headerParts.join(', ')}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const oauthHeader = this.buildOAuthHeader('GET', url);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         'Authorization': oauthHeader,
         'Accept': 'application/json',
@@ -541,7 +536,7 @@ export class SchoologyMCPServer {
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const oauthHeader = this.buildOAuthHeader('POST', url);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'Authorization': oauthHeader,

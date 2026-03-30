@@ -15,6 +15,7 @@
 // Rate limits: None documented; governed by AEM instance capacity
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AdobeAemConfig {
   /** AEM instance base URL, e.g. http://localhost:4502 */
@@ -25,11 +26,12 @@ interface AdobeAemConfig {
   password: string;
 }
 
-export class AdobeAemMCPServer {
+export class AdobeAemMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: AdobeAemConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     const user = config.username ?? 'admin';
     this.authHeader = `Basic ${Buffer.from(`${user}:${config.password}`).toString('base64')}`;
@@ -727,16 +729,9 @@ export class AdobeAemMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'GET',
       headers: { 'Authorization': this.authHeader },
     });
@@ -753,7 +748,7 @@ export class AdobeAemMCPServer {
   }
 
   private async doDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: { 'Authorization': this.authHeader },
     });
@@ -765,7 +760,7 @@ export class AdobeAemMCPServer {
   }
 
   private async doPost(path: string, params: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers(),
       body: new URLSearchParams(params).toString(),

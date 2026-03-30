@@ -13,6 +13,7 @@
 // Rate limits: Depends on plan — Free tier limited; paid plans vary. See https://www.geodatasource.com/pricing
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GeoDataSourceConfig {
   apiKey: string;
@@ -20,11 +21,12 @@ interface GeoDataSourceConfig {
   baseUrl?: string;
 }
 
-export class GeoDataSourceMCPServer {
+export class GeoDataSourceMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GeoDataSourceConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.geodatasource.com';
   }
@@ -89,13 +91,6 @@ export class GeoDataSourceMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async lookupCityByCoordinates(args: Record<string, unknown>): Promise<ToolResult> {
     if (args.lat === undefined || args.lng === undefined) {
       return { content: [{ type: 'text', text: 'lat and lng are required' }], isError: true };
@@ -115,7 +110,7 @@ export class GeoDataSourceMCPServer {
     });
 
     const url = `${this.baseUrl}/city?${qs.toString()}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
 
     if (!response.ok) {
       return {

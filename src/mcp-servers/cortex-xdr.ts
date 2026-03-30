@@ -26,6 +26,7 @@
 // Rate limits: Not officially published; recommended 10 req/s per API key
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import { createHash, randomBytes } from 'node:crypto';
 
 interface CortexXDRConfig {
@@ -35,13 +36,14 @@ interface CortexXDRConfig {
   advancedAuth?: boolean;
 }
 
-export class CortexXDRMCPServer {
+export class CortexXDRMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly apiKeyId: string;
   private readonly baseUrl: string;
   private readonly advancedAuth: boolean;
 
   constructor(config: CortexXDRConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.apiKeyId = config.apiKeyId;
     const fqdn = config.fqdn.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -103,15 +105,8 @@ export class CortexXDRMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),

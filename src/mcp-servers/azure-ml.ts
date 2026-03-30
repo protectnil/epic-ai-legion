@@ -20,6 +20,7 @@
 // Rate limits: ~120 req/min per workspace for management plane operations
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AzureMLConfig {
   subscriptionId: string;
@@ -36,7 +37,7 @@ function truncate(text: string): string {
     : text;
 }
 
-export class AzureMLMCPServer {
+export class AzureMLMCPServer extends MCPAdapterBase {
   private readonly subscriptionId: string;
   private readonly resourceGroupName: string;
   private readonly workspaceName: string;
@@ -45,6 +46,7 @@ export class AzureMLMCPServer {
   private readonly apiVersion: string;
 
   constructor(config: AzureMLConfig) {
+    super();
     this.subscriptionId = config.subscriptionId;
     this.resourceGroupName = config.resourceGroupName;
     this.workspaceName = config.workspaceName;
@@ -374,7 +376,7 @@ export class AzureMLMCPServer {
   }
 
   private async fetchJSON(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -417,7 +419,7 @@ export class AzureMLMCPServer {
   private async cancelJob(args: Record<string, unknown>): Promise<ToolResult> {
     const jobName = encodeURIComponent(String(args.job_name));
     const url = `${this.baseUrl}${this.wp()}/jobs/${jobName}/cancel?${this.av()}`;
-    const response = await fetch(url, { method: 'POST', headers: this.headers, body: '{}' });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.headers, body: '{}' });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to cancel job: ${response.status} ${errText}` }], isError: true };

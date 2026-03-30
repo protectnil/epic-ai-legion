@@ -23,6 +23,7 @@
 // Rate limits: Not publicly documented; varies by subscription tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MandiantConfig {
   /** OAuth2 client ID from the Mandiant Advantage portal. */
@@ -37,7 +38,7 @@ interface MandiantConfig {
 
 const DEFAULT_BASE_URL = 'https://api.intelligence.mandiant.com/v4';
 
-export class MandiantMCPServer {
+export class MandiantMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly appName: string;
@@ -47,6 +48,7 @@ export class MandiantMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: MandiantConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.appName = config.appName;
@@ -266,7 +268,7 @@ export class MandiantMCPServer {
       return this.accessToken;
     }
     const basicCredential = btoa(`${this.clientId}:${this.clientSecret}`);
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${basicCredential}`,
@@ -296,16 +298,9 @@ export class MandiantMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(path: string): Promise<unknown> {
     const h = await this.reqHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: h });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: h });
     if (!response.ok) {
       throw new Error(`Mandiant API error: ${response.status} ${response.statusText} — ${path}`);
     }

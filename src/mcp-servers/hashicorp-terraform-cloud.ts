@@ -33,6 +33,7 @@
 // Rate limits: 30 req/s per token (HCP Terraform cloud); no documented limit for TFE.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TerraformCloudConfig {
   /** HCP Terraform or Terraform Enterprise API token. */
@@ -41,11 +42,12 @@ interface TerraformCloudConfig {
   baseUrl?: string;
 }
 
-export class HashicorpTerraformCloudMCPServer {
+export class HashicorpTerraformCloudMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: TerraformCloudConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = (config.baseUrl ?? 'https://app.terraform.io').replace(/\/$/, '');
   }
@@ -467,15 +469,8 @@ export class HashicorpTerraformCloudMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.buildHeaders(),
     });
@@ -491,7 +486,7 @@ export class HashicorpTerraformCloudMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),
@@ -512,7 +507,7 @@ export class HashicorpTerraformCloudMCPServer {
   }
 
   private async apiPatch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),
@@ -529,7 +524,7 @@ export class HashicorpTerraformCloudMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.buildHeaders(),
     });

@@ -27,6 +27,7 @@
 // Rate limits: 10,000 complexity per minute (default). Complexity varies by query depth.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MondayConfig {
   /**
@@ -40,11 +41,12 @@ interface MondayConfig {
 
 const MONDAY_BASE_URL = 'https://api.monday.com/v2';
 
-export class MondayMCPServer {
+export class MondayMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly apiVersion: string;
 
   constructor(config: MondayConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.apiVersion = config.apiVersion || '2025-07';
   }
@@ -76,17 +78,11 @@ export class MondayMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async runQuery(query: string, variables?: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { query };
     if (variables) body.variables = variables;
 
-    const response = await fetch(MONDAY_BASE_URL, {
+    const response = await this.fetchWithRetry(MONDAY_BASE_URL, {
       method: 'POST',
       headers: {
         Authorization: this.apiToken,

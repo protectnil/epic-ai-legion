@@ -14,17 +14,19 @@
 // Rate limits: 20,000 queries/100 seconds per user; 1,000,000,000 queries/day per project
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleDriveConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class GoogleDriveMCPServer {
+export class GoogleDriveMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: GoogleDriveConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://www.googleapis.com/drive/v3';
   }
@@ -400,12 +402,6 @@ export class GoogleDriveMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listFiles(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     const parentId = (args.folder_id as string) ?? 'root';
@@ -415,7 +411,7 @@ export class GoogleDriveMCPServer {
     if (args.order_by) params.set('orderBy', args.order_by as string);
     params.set('fields', (args.fields as string) ?? 'nextPageToken,files(id,name,mimeType,modifiedTime,size,parents,webViewLink)');
 
-    const response = await fetch(`${this.baseUrl}/files?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -427,7 +423,7 @@ export class GoogleDriveMCPServer {
     const params = new URLSearchParams();
     params.set('fields', (args.fields as string) ?? 'id,name,mimeType,modifiedTime,size,parents,webViewLink,owners,shared');
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}?${params}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -445,7 +441,7 @@ export class GoogleDriveMCPServer {
     if (args.order_by) params.set('orderBy', args.order_by as string);
     params.set('fields', (args.fields as string) ?? 'nextPageToken,files(id,name,mimeType,modifiedTime,size,parents,webViewLink)');
 
-    const response = await fetch(`${this.baseUrl}/files?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -461,7 +457,7 @@ export class GoogleDriveMCPServer {
     if (args.description) body.description = args.description;
     if (args.parent_id) body.parents = [args.parent_id];
 
-    const response = await fetch(`${this.baseUrl}/files`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -483,7 +479,7 @@ export class GoogleDriveMCPServer {
     if (args.remove_parents) params.set('removeParents', args.remove_parents as string);
     const qs = params.toString() ? `?${params}` : '';
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}${qs}`, {
       method: 'PATCH',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -500,7 +496,7 @@ export class GoogleDriveMCPServer {
     if (args.name) body.name = args.name;
     if (args.parent_id) body.parents = [args.parent_id];
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/copy`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/copy`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -513,7 +509,7 @@ export class GoogleDriveMCPServer {
   }
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -527,7 +523,7 @@ export class GoogleDriveMCPServer {
     const mimeType = (args.mime_type as string) ?? 'text/plain';
     const params = new URLSearchParams({ mimeType });
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/export?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/export?${params}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -543,7 +539,7 @@ export class GoogleDriveMCPServer {
     params.set('pageSize', String((args.page_size as number) ?? 100));
     if (args.page_token) params.set('pageToken', args.page_token as string);
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/permissions?${params}`,
       { headers: this.authHeaders },
     );
@@ -566,7 +562,7 @@ export class GoogleDriveMCPServer {
     params.set('sendNotificationEmail', String(args.send_notification_email ?? true));
     params.set('fields', 'id,type,role,emailAddress,displayName');
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/permissions?${params}`,
       {
         method: 'POST',
@@ -582,7 +578,7 @@ export class GoogleDriveMCPServer {
   }
 
   private async deletePermission(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/permissions/${encodeURIComponent(args.permission_id as string)}`,
       {
         method: 'DELETE',
@@ -601,7 +597,7 @@ export class GoogleDriveMCPServer {
     params.set('pageSize', String((args.page_size as number) ?? 200));
     if (args.page_token) params.set('pageToken', args.page_token as string);
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/revisions?${params}`,
       { headers: this.authHeaders },
     );
@@ -613,7 +609,7 @@ export class GoogleDriveMCPServer {
   }
 
   private async getRevision(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}/revisions/${encodeURIComponent(args.revision_id as string)}`,
       { headers: this.authHeaders },
     );

@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented. Contact your account executive.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FulfillmentConfig {
   /** Bearer token from OAuth2 /oauth/access_token. Pass this after obtaining it via get_access_token. */
@@ -22,12 +23,13 @@ interface FulfillmentConfig {
   apiKey?: string;
 }
 
-export class FulfillmentMCPServer {
+export class FulfillmentMCPServer extends MCPAdapterBase {
   private readonly baseUrl = 'https://api.fulfillment.com/v2';
   private readonly accessToken: string;
   private readonly apiKey: string;
 
   constructor(config: FulfillmentConfig) {
+    super();
     this.accessToken = config.accessToken ?? '';
     this.apiKey = config.apiKey ?? '';
   }
@@ -347,11 +349,6 @@ export class FulfillmentMCPServer {
     return headers;
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(
     method: string,
@@ -366,7 +363,7 @@ export class FulfillmentMCPServer {
       init.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${this.baseUrl}${path}`, init);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, init);
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

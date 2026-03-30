@@ -17,6 +17,7 @@
 //   People/VAP: 50 req/24h. People/top-clickers: 50 req/24h. URL decode: 1800 req/24h.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ProofpointConfig {
   /** Service principal (username) from Proofpoint TAP dashboard. */
@@ -27,11 +28,12 @@ interface ProofpointConfig {
   baseUrl?: string;
 }
 
-export class ProofpointMCPServer {
+export class ProofpointMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: ProofpointConfig) {
+    super();
     this.baseUrl = (config.baseUrl ?? 'https://tap-api-v2.proofpoint.com').replace(/\/$/, '');
     this.authHeader = `Basic ${btoa(`${config.servicePrincipal}:${config.secret}`)}`;
   }
@@ -443,7 +445,7 @@ export class ProofpointMCPServer {
     params.set('format', (args.format as string) ?? 'json');
 
     const url = `${this.baseUrl}${path}?${params.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' },
     });
 
@@ -464,7 +466,7 @@ export class ProofpointMCPServer {
       return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/campaign/${encodeURIComponent(id)}`,
       { headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' } },
     );
@@ -489,7 +491,7 @@ export class ProofpointMCPServer {
     if (args.page !== undefined) params.set('page', String(args.page));
     if (args.size !== undefined) params.set('size', String(args.size));
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/campaign/ids?${params.toString()}`,
       { headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' } },
     );
@@ -510,7 +512,7 @@ export class ProofpointMCPServer {
       return { content: [{ type: 'text', text: 'threat_id is required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/threat/summary/${encodeURIComponent(id)}`,
       { headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' } },
     );
@@ -535,7 +537,7 @@ export class ProofpointMCPServer {
       return { content: [{ type: 'text', text: 'threat_id or campaign_id is required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/forensics?${params.toString()}`,
       { headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' } },
     );
@@ -560,7 +562,7 @@ export class ProofpointMCPServer {
     if (args.size !== undefined) params.set('size', String(args.size));
     if (args.page !== undefined) params.set('page', String(args.page));
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/people/vap?${params.toString()}`,
       { headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' } },
     );
@@ -585,7 +587,7 @@ export class ProofpointMCPServer {
     if (args.size !== undefined) params.set('size', String(args.size));
     if (args.page !== undefined) params.set('page', String(args.page));
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/people/top-clickers?${params.toString()}`,
       { headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' } },
     );
@@ -606,7 +608,7 @@ export class ProofpointMCPServer {
       return { content: [{ type: 'text', text: 'urls array is required and must not be empty' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/url/decode`,
       {
         method: 'POST',

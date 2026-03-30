@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; avoid aggressive polling of build endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenSuseObsConfig {
   username: string;
@@ -22,12 +23,13 @@ interface OpenSuseObsConfig {
   baseUrl?: string;
 }
 
-export class OpenSuseObsMCPServer {
+export class OpenSuseObsMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: OpenSuseObsConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl || 'https://api.opensuse.org';
@@ -889,13 +891,6 @@ export class OpenSuseObsMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private get authHeader(): string {
     return 'Basic ' + Buffer.from(`${this.username}:${this.password}`).toString('base64');
   }
@@ -907,7 +902,7 @@ export class OpenSuseObsMCPServer {
         url.searchParams.set(key, String(value));
       }
     }
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       headers: {
         Authorization: this.authHeader,
         Accept: 'application/xml',
@@ -930,7 +925,7 @@ export class OpenSuseObsMCPServer {
         url.searchParams.set(key, String(value));
       }
     }
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,

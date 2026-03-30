@@ -13,18 +13,20 @@
 // Rate limits: Not publicly documented; depends on account tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VisageCloudConfig {
   accessKey: string;
   secretKey: string;
 }
 
-export class VisageCloudMCPServer {
+export class VisageCloudMCPServer extends MCPAdapterBase {
   private readonly accessKey: string;
   private readonly secretKey: string;
   private readonly baseUrl = 'https://visagecloud.com';
 
   constructor(config: VisageCloudConfig) {
+    super();
     this.accessKey = config.accessKey;
     this.secretKey = config.secretKey;
   }
@@ -271,14 +273,10 @@ export class VisageCloudMCPServer {
     return new URLSearchParams({ accessKey: this.accessKey, secretKey: this.secretKey });
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
 
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
     const headers = { 'Content-Type': 'application/json', Accept: 'application/json', ...(init?.headers as Record<string, string> ?? {}) };
-    const response = await fetch(url, { ...init, headers });
+    const response = await this.fetchWithRetry(url, { ...init, headers });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

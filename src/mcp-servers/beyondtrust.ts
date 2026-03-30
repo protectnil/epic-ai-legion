@@ -23,6 +23,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BeyondTrustConfig {
   /** API registration key from BeyondInsight */
@@ -35,13 +36,14 @@ interface BeyondTrustConfig {
   baseUrl: string;
 }
 
-export class BeyondTrustMCPServer {
+export class BeyondTrustMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: BeyondTrustConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.username = config.username;
     this.password = config.password;
@@ -53,7 +55,7 @@ export class BeyondTrustMCPServer {
   }
 
   private async signIn(): Promise<string> {
-    const response = await fetch(`${this.baseUrl}/Auth/SignAppIn`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Auth/SignAppIn`, {
       method: 'POST',
       headers: { Authorization: this.psAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify(null),
@@ -70,7 +72,7 @@ export class BeyondTrustMCPServer {
   }
 
   private async signOut(sessionId: string): Promise<void> {
-    await fetch(`${this.baseUrl}/Auth/Signout`, {
+    await this.fetchWithRetry(`${this.baseUrl}/Auth/Signout`, {
       method: 'POST',
       headers: { Authorization: this.psAuthHeader(), 'Content-Type': 'application/json', Cookie: `ASP.NET_SessionId=${sessionId}` },
       body: JSON.stringify(null),
@@ -83,12 +85,6 @@ export class BeyondTrustMCPServer {
       'Content-Type': 'application/json',
       Cookie: `ASP.NET_SessionId=${sessionId}`,
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -350,7 +346,7 @@ export class BeyondTrustMCPServer {
     params.set('limit', String(limit));
     params.set('offset', String(offset));
     if (args.system_name) params.set('systemName', String(args.system_name));
-    const response = await fetch(`${this.baseUrl}/ManagedSystems?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ManagedSystems?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to list managed systems: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -358,7 +354,7 @@ export class BeyondTrustMCPServer {
 
   private async getManagedSystem(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.system_id) return { content: [{ type: 'text', text: 'system_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/ManagedSystems/${encodeURIComponent(args.system_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ManagedSystems/${encodeURIComponent(args.system_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to get managed system: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -370,7 +366,7 @@ export class BeyondTrustMCPServer {
     params.set('offset', String((args.offset as number) || 0));
     if (args.system_name) params.set('systemName', String(args.system_name));
     if (args.account_name) params.set('accountName', String(args.account_name));
-    const response = await fetch(`${this.baseUrl}/ManagedAccounts?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ManagedAccounts?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to list managed accounts: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -378,7 +374,7 @@ export class BeyondTrustMCPServer {
 
   private async getManagedAccount(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/ManagedAccounts/${encodeURIComponent(args.account_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ManagedAccounts/${encodeURIComponent(args.account_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to get managed account: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -395,7 +391,7 @@ export class BeyondTrustMCPServer {
       AccessType: (args.access_type as string) || 'View',
     };
     if (args.reason) body.Reason = args.reason;
-    const response = await fetch(`${this.baseUrl}/Requests`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Requests`, {
       method: 'POST',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(body),
@@ -407,7 +403,7 @@ export class BeyondTrustMCPServer {
 
   private async retrieveCredential(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/Credentials/${encodeURIComponent(args.request_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Credentials/${encodeURIComponent(args.request_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to retrieve credential: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
@@ -417,7 +413,7 @@ export class BeyondTrustMCPServer {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.reason) body.Reason = args.reason;
-    const response = await fetch(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}/Checkin`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}/Checkin`, {
       method: 'PUT',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(body),
@@ -435,7 +431,7 @@ export class BeyondTrustMCPServer {
     if (args.system_name) params.set('systemName', String(args.system_name));
     if (args.start_date) params.set('startDate', String(args.start_date));
     if (args.end_date) params.set('endDate', String(args.end_date));
-    const response = await fetch(`${this.baseUrl}/Requests?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Requests?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to list requests: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -443,7 +439,7 @@ export class BeyondTrustMCPServer {
 
   private async getRequest(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to get request: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -453,7 +449,7 @@ export class BeyondTrustMCPServer {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
     const body: Record<string, unknown> = { Status: 'Approved' };
     if (args.reason) body.Reason = args.reason;
-    const response = await fetch(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, {
       method: 'PUT',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(body),
@@ -466,7 +462,7 @@ export class BeyondTrustMCPServer {
     if (!args.request_id) return { content: [{ type: 'text', text: 'request_id is required' }], isError: true };
     const body: Record<string, unknown> = { Status: 'Denied' };
     if (args.reason) body.Reason = args.reason;
-    const response = await fetch(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Requests/${encodeURIComponent(args.request_id as string)}`, {
       method: 'PUT',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(body),
@@ -483,7 +479,7 @@ export class BeyondTrustMCPServer {
     if (args.user_name) params.set('userName', String(args.user_name));
     if (args.start_date) params.set('startDate', String(args.start_date));
     if (args.end_date) params.set('endDate', String(args.end_date));
-    const response = await fetch(`${this.baseUrl}/Sessions?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Sessions?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to list sessions: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -491,7 +487,7 @@ export class BeyondTrustMCPServer {
 
   private async getSession(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.session_id) return { content: [{ type: 'text', text: 'session_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/Sessions/${encodeURIComponent(String(args.session_id))}`,
       { method: 'GET', headers: this.makeHeaders(sessionId) },
     );
@@ -504,7 +500,7 @@ export class BeyondTrustMCPServer {
     const params = new URLSearchParams();
     params.set('limit', String((args.limit as number) || 100));
     params.set('offset', String((args.offset as number) || 0));
-    const response = await fetch(`${this.baseUrl}/AccessPolicies?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/AccessPolicies?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to list access policies: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -516,7 +512,7 @@ export class BeyondTrustMCPServer {
     params.set('offset', String((args.offset as number) || 0));
     if (args.username) params.set('username', String(args.username));
     if (args.group_id) params.set('groupId', String(args.group_id));
-    const response = await fetch(`${this.baseUrl}/Users?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Users?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to list users: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };
@@ -524,7 +520,7 @@ export class BeyondTrustMCPServer {
 
   private async rotateCredential(args: Record<string, unknown>, sessionId: string): Promise<ToolResult> {
     if (!args.account_id) return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/ManagedAccounts/${encodeURIComponent(args.account_id as string)}/Credentials/Change`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ManagedAccounts/${encodeURIComponent(args.account_id as string)}/Credentials/Change`, {
       method: 'POST',
       headers: this.makeHeaders(sessionId),
       body: JSON.stringify(null),
@@ -538,7 +534,7 @@ export class BeyondTrustMCPServer {
     const params = new URLSearchParams();
     params.set('limit', String((args.limit as number) || 100));
     params.set('offset', String((args.offset as number) || 0));
-    const response = await fetch(`${this.baseUrl}/PasswordPolicies?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/PasswordPolicies?${params.toString()}`, { method: 'GET', headers: this.makeHeaders(sessionId) });
     if (!response.ok) return { content: [{ type: 'text', text: `Failed to list password policies: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }], isError: false };

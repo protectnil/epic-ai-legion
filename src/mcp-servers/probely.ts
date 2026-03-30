@@ -18,17 +18,19 @@
 // Rate limits: Not publicly documented; paginate results and avoid tight polling
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ProbelyConfig {
   authToken: string;
   baseUrl?: string;
 }
 
-export class ProbelyMCPServer {
+export class ProbelyMCPServer extends MCPAdapterBase {
   private readonly authToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ProbelyConfig) {
+    super();
     this.authToken = config.authToken;
     this.baseUrl = config.baseUrl || 'https://api.probely.com';
   }
@@ -335,7 +337,7 @@ export class ProbelyMCPServer {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

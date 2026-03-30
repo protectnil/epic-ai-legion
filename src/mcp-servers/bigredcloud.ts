@@ -15,17 +15,19 @@
 // OData: Most list endpoints support OData $filter, $orderby, $top, $skip via query params.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BigRedCloudConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class BigRedCloudMCPServer {
+export class BigRedCloudMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BigRedCloudConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://app.bigredcloud.com/api';
   }
@@ -868,7 +870,7 @@ export class BigRedCloudMCPServer {
     extraParams?: Record<string, string>,
   ): Promise<ToolResult> {
     const url = this.buildUrl(path, extraParams);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...(options.headers as Record<string, string> | undefined) },
     });

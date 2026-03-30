@@ -14,17 +14,19 @@
 // Rate limits: Not publicly documented. DataBC enforces per-key limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GovBcCaRouterConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class GovBcCaRouterMCPServer {
+export class GovBcCaRouterMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GovBcCaRouterConfig) {
+    super();
     this.apiKey = config.apiKey || '';
     this.baseUrl = config.baseUrl || 'https://router.api.gov.bc.ca';
   }
@@ -345,7 +347,7 @@ export class GovBcCaRouterMCPServer {
   private async routerRequest(path: string, args: Record<string, unknown>, isTruck: boolean, isPairs = false): Promise<ToolResult> {
     const params = this.buildParams(args, isTruck, isPairs);
     const url = `${this.baseUrl}${path}?${params.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { Accept: 'application/json' },
     });
 

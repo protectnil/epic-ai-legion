@@ -20,6 +20,7 @@
 // Rate limits: Not publicly documented; BambooHR enforces per-key limits — implement backoff on 429
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BambooHRConfig {
   /** Your BambooHR subdomain, e.g. "mycompany" from mycompany.bamboohr.com */
@@ -28,11 +29,12 @@ interface BambooHRConfig {
   apiKey: string;
 }
 
-export class BambooHRMCPServer {
+export class BambooHRMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BambooHRConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = `https://api.bamboohr.com/api/gateway.php/${encodeURIComponent(config.companyDomain)}/v1`;
   }
@@ -47,12 +49,6 @@ export class BambooHRMCPServer {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -397,7 +393,7 @@ export class BambooHRMCPServer {
   }
 
   private async getEmployeeDirectory(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/employees/directory`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/employees/directory`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get employee directory: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -409,7 +405,7 @@ export class BambooHRMCPServer {
     const employeeId = args.employee_id as string;
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
     const fields = (args.fields as string) || 'firstName,lastName,jobTitle,department,workEmail,hireDate,employmentHistoryStatus,location';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}?fields=${encodeURIComponent(fields)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -429,7 +425,7 @@ export class BambooHRMCPServer {
     if (args.department) body.department = args.department;
     if (args.job_title) body.jobTitle = args.job_title;
     if (args.work_email) body.workEmail = args.work_email;
-    const response = await fetch(`${this.baseUrl}/employees/`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/employees/`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to add employee: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -443,7 +439,7 @@ export class BambooHRMCPServer {
     if (!employeeId || !fields) {
       return { content: [{ type: 'text', text: 'employee_id and fields are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(fields) },
     );
@@ -458,7 +454,7 @@ export class BambooHRMCPServer {
     if (!since) return { content: [{ type: 'text', text: 'since is required' }], isError: true };
     let url = `${this.baseUrl}/employees/changed?since=${encodeURIComponent(since)}`;
     if (args.type) url += `&type=${encodeURIComponent(args.type as string)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list changed employees: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -474,7 +470,7 @@ export class BambooHRMCPServer {
     if (args.employee_id) url += `&employeeId=${encodeURIComponent(args.employee_id as string)}`;
     if (args.status) url += `&status=${encodeURIComponent(args.status as string)}`;
     if (args.type) url += `&type=${encodeURIComponent(args.type as string)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list time off requests: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -483,7 +479,7 @@ export class BambooHRMCPServer {
   }
 
   private async getTimeOffPolicies(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/meta/time_off/types/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/meta/time_off/types/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get time off policies: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -496,7 +492,7 @@ export class BambooHRMCPServer {
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
     let url = `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}/time_off/calculator`;
     if (args.end) url += `?end=${encodeURIComponent(args.end as string)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get time off balances: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -515,7 +511,7 @@ export class BambooHRMCPServer {
       end,
       ...(note ? { note } : {}),
     };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employee_id as string)}/time_off/request`,
       { method: 'PUT', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -534,7 +530,7 @@ export class BambooHRMCPServer {
     }
     const body: Record<string, unknown> = { status };
     if (args.note) body.note = args.note;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/time_off/requests/${encodeURIComponent(requestId)}/status`,
       { method: 'PUT', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -552,7 +548,7 @@ export class BambooHRMCPServer {
     }
     const body: Record<string, unknown> = { title, fields: fields.map(f => ({ id: f })) };
     if (args.filters) body.filters = args.filters;
-    const response = await fetch(`${this.baseUrl}/reports/custom?format=json`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/reports/custom?format=json`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -567,7 +563,7 @@ export class BambooHRMCPServer {
   private async getEmployeeFiles(args: Record<string, unknown>): Promise<ToolResult> {
     const employeeId = args.employee_id as string;
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}/files/view/`,
       { method: 'GET', headers: this.headers },
     );
@@ -579,7 +575,7 @@ export class BambooHRMCPServer {
   }
 
   private async getCompanyFiles(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/files/view/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/view/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get company files: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -588,7 +584,7 @@ export class BambooHRMCPServer {
   }
 
   private async listTrainingTypes(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/training/type`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/training/type`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list training types: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -599,7 +595,7 @@ export class BambooHRMCPServer {
   private async listEmployeeTraining(args: Record<string, unknown>): Promise<ToolResult> {
     const employeeId = args.employee_id as string;
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/training/record/employee/${encodeURIComponent(employeeId)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -611,7 +607,7 @@ export class BambooHRMCPServer {
   }
 
   private async listBenefitsPlans(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/benefits/settings/deduction_types/all`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/benefits/settings/deduction_types/all`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list benefit plans: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -622,7 +618,7 @@ export class BambooHRMCPServer {
   private async getEmployeeBenefits(args: Record<string, unknown>): Promise<ToolResult> {
     const employeeId = args.employee_id as string;
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}/benefits/deductions`,
       { method: 'GET', headers: this.headers },
     );
@@ -636,7 +632,7 @@ export class BambooHRMCPServer {
   private async getEmployeeJobInfo(args: Record<string, unknown>): Promise<ToolResult> {
     const employeeId = args.employee_id as string;
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}/tables/jobInfo`,
       { method: 'GET', headers: this.headers },
     );
@@ -650,7 +646,7 @@ export class BambooHRMCPServer {
   private async getEmployeeCompensation(args: Record<string, unknown>): Promise<ToolResult> {
     const employeeId = args.employee_id as string;
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}/tables/compensation`,
       { method: 'GET', headers: this.headers },
     );
@@ -664,7 +660,7 @@ export class BambooHRMCPServer {
   private async getEmployeeDependents(args: Record<string, unknown>): Promise<ToolResult> {
     const employeeId = args.employee_id as string;
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}/tables/dependents`,
       { method: 'GET', headers: this.headers },
     );
@@ -678,7 +674,7 @@ export class BambooHRMCPServer {
   private async getEmployeeEmergencyContacts(args: Record<string, unknown>): Promise<ToolResult> {
     const employeeId = args.employee_id as string;
     if (!employeeId) return { content: [{ type: 'text', text: 'employee_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/employees/${encodeURIComponent(employeeId)}/tables/emergencyContacts`,
       { method: 'GET', headers: this.headers },
     );
@@ -694,7 +690,7 @@ export class BambooHRMCPServer {
     if (args.status_id) params.set('statusId', String(args.status_id));
     if (args.department_id) params.set('departmentId', String(args.department_id));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}/applicant_tracking/jobs${qs}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/applicant_tracking/jobs${qs}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list jobs: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -708,7 +704,7 @@ export class BambooHRMCPServer {
     const params = new URLSearchParams();
     if (args.status_id) params.set('statusId', String(args.status_id));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/applicant_tracking/jobs/${jobId}/applicants${qs}`,
       { method: 'GET', headers: this.headers },
     );
@@ -720,7 +716,7 @@ export class BambooHRMCPServer {
   }
 
   private async listWebhooks(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/webhooks`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/webhooks`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list webhooks: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -729,7 +725,7 @@ export class BambooHRMCPServer {
   }
 
   private async getMetaFields(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/meta/fields/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/meta/fields/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get meta fields: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -738,7 +734,7 @@ export class BambooHRMCPServer {
   }
 
   private async getMetaTables(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/meta/tables/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/meta/tables/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get meta tables: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }

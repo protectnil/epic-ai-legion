@@ -16,6 +16,7 @@
 // Rate limits: Contact BeeZUP. Batch operations max 100 items per call.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BeezupConfig {
   /** BeeZUP API subscription key (Ocp-Apim-Subscription-Key header) */
@@ -24,11 +25,12 @@ interface BeezupConfig {
   baseUrl?: string;
 }
 
-export class BeezupMCPServer {
+export class BeezupMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BeezupConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.beezup.com';
   }
@@ -332,13 +334,6 @@ export class BeezupMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(extra: Record<string, string> = {}): Record<string, string> {
     return {
       'Ocp-Apim-Subscription-Key': this.apiKey,
@@ -349,7 +344,7 @@ export class BeezupMCPServer {
   }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.authHeaders(),
     });
@@ -362,7 +357,7 @@ export class BeezupMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),

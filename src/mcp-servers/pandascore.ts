@@ -10,17 +10,19 @@
 // Docs: https://developers.pandascore.co/
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PandaScoreConfig {
   token: string;
   baseUrl?: string;
 }
 
-export class PandaScoreMCPServer {
+export class PandaScoreMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: PandaScoreConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = config.baseUrl || 'https://api.pandascore.co';
   }
@@ -395,13 +397,6 @@ export class PandaScoreMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private buildParams(args: Record<string, unknown>, allowed: string[]): URLSearchParams {
     const params = new URLSearchParams();
     for (const key of allowed) {
@@ -415,7 +410,7 @@ export class PandaScoreMCPServer {
   private async get(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const qs = params && params.toString() ? '?' + params.toString() : '';
     const url = `${this.baseUrl}${path}${qs}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `PandaScore API error ${response.status}: ${errText}` }], isError: true };

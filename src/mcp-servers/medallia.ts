@@ -22,6 +22,7 @@
 //   OAuth token URL are confirmed; all other REST sub-paths are UNVERIFIED.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MedalliaConfig {
   clientId: string;
@@ -31,7 +32,7 @@ interface MedalliaConfig {
   baseUrl?: string;   // optional override for the API gateway base
 }
 
-export class MedalliaMCPServer {
+export class MedalliaMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly instance: string;
@@ -41,6 +42,7 @@ export class MedalliaMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: MedalliaConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.instance = config.instance;
@@ -339,7 +341,7 @@ export class MedalliaMCPServer {
       return this.bearerToken;
     }
     const tokenUrl = `https://${this.instance}.medallia.com/oauth/${this.company}/token`;
-    const response = await fetch(tokenUrl, {
+    const response = await this.fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -356,17 +358,10 @@ export class MedalliaMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async mGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -381,7 +376,7 @@ export class MedalliaMCPServer {
 
   private async mPost(path: string, body: unknown): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

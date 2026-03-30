@@ -15,17 +15,19 @@
 // Rate limits: 30 requests/hour on free tier; higher limits on paid plans.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TheNounProjectConfig {
   authHeader: string;
   baseUrl?: string;
 }
 
-export class TheNounProjectMCPServer {
+export class TheNounProjectMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: TheNounProjectConfig) {
+    super();
     this.authHeader = config.authHeader;
     this.baseUrl = config.baseUrl ?? 'http://api.thenounproject.com';
   }
@@ -344,15 +346,9 @@ export class TheNounProjectMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'GET',
       headers: this.reqHeaders,
     });

@@ -17,6 +17,7 @@
 // Note: All keys (organizerKey, trainingKey, etc.) are int64 integers passed as strings
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoToTrainingConfig {
   /**
@@ -36,12 +37,13 @@ interface GoToTrainingConfig {
   baseUrl?: string;
 }
 
-export class GetgoGototrainingMCPServer {
+export class GetgoGototrainingMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly organizerKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GoToTrainingConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.organizerKey = config.organizerKey;
     this.baseUrl = config.baseUrl || 'https://api.getgo.com/G2T/rest';
@@ -413,19 +415,12 @@ export class GetgoGototrainingMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private resolveOrganizerKey(args: Record<string, unknown>): string {
     return (args.organizerKey as string) || this.organizerKey;
   }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -434,7 +429,7 @@ export class GetgoGototrainingMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -450,7 +445,7 @@ export class GetgoGototrainingMCPServer {
   }
 
   private async apiPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -466,7 +461,7 @@ export class GetgoGototrainingMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

@@ -17,6 +17,7 @@
 //              Contact TransUnion technical services for your account limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TransUnionConfig {
   clientId: string;
@@ -24,7 +25,7 @@ interface TransUnionConfig {
   baseUrl?: string;
 }
 
-export class TransUnionMCPServer {
+export class TransUnionMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -32,6 +33,7 @@ export class TransUnionMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: TransUnionConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://api.transunion.com';
@@ -442,7 +444,7 @@ export class TransUnionMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/oauth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -461,7 +463,7 @@ export class TransUnionMCPServer {
 
   private async tuPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -475,13 +477,6 @@ export class TransUnionMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private buildConsumer(args: Record<string, unknown>): Record<string, unknown> {

@@ -20,6 +20,7 @@
 // Rate limits: Not publicly documented; subject to contract entitlements
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DunBradstreetConfig {
   consumerKey: string;
@@ -27,7 +28,7 @@ interface DunBradstreetConfig {
   baseUrl?: string;
 }
 
-export class DunBradstreetMCPServer {
+export class DunBradstreetMCPServer extends MCPAdapterBase {
   private readonly consumerKey: string;
   private readonly consumerSecret: string;
   private readonly baseUrl: string;
@@ -35,6 +36,7 @@ export class DunBradstreetMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: DunBradstreetConfig) {
+    super();
     this.consumerKey = config.consumerKey;
     this.consumerSecret = config.consumerSecret;
     this.baseUrl = config.baseUrl || 'https://plus.dnb.com';
@@ -348,7 +350,7 @@ export class DunBradstreetMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/v2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/token`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.consumerKey}:${this.consumerSecret}`)}`,
@@ -369,7 +371,7 @@ export class DunBradstreetMCPServer {
   private async dnbGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -384,7 +386,7 @@ export class DunBradstreetMCPServer {
 
   private async dnbPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -399,12 +401,6 @@ export class DunBradstreetMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async matchCompany(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = {};

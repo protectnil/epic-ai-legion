@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented. Rate limiting introduced in Construct 4.2.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AccelaConfig {
   /** OAuth2 Bearer access token obtained via Accela auth flows */
@@ -27,11 +28,12 @@ interface AccelaConfig {
   baseUrl?: string;
 }
 
-export class AccelaMCPServer {
+export class AccelaMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: AccelaConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://apis.accela.com';
   }
@@ -558,13 +560,6 @@ export class AccelaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildQuery(params: Record<string, string | undefined>): string {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -576,7 +571,7 @@ export class AccelaMCPServer {
 
   private async get(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${this.buildQuery(params)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -586,7 +581,7 @@ export class AccelaMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -600,7 +595,7 @@ export class AccelaMCPServer {
   }
 
   private async put(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),

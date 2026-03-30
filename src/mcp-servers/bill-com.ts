@@ -20,6 +20,7 @@
 // Rate limits: 18,000 API calls per developer key per hour (confirmed from developer docs)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BillComConfig {
   userName: string;
@@ -33,7 +34,7 @@ interface BillComConfig {
   baseUrl?: string;
 }
 
-export class BillComMCPServer {
+export class BillComMCPServer extends MCPAdapterBase {
   private readonly userName: string;
   private readonly password: string;
   private readonly organizationId: string;
@@ -42,6 +43,7 @@ export class BillComMCPServer {
   private sessionId: string | null = null;
 
   constructor(config: BillComConfig) {
+    super();
     this.userName = config.userName;
     this.password = config.password;
     this.organizationId = config.organizationId;
@@ -50,7 +52,7 @@ export class BillComMCPServer {
   }
 
   private async login(): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/login`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -78,12 +80,6 @@ export class BillComMCPServer {
       devKey: this.devKey,
       sessionId: this.sessionId as string,
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -428,7 +424,7 @@ export class BillComMCPServer {
         params.set(k, String(v));
       }
     }
-    const response = await fetch(`${this.baseUrl}/vendors?${params}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vendors?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list vendors (HTTP ${response.status}): ${err}` }], isError: true };
@@ -439,7 +435,7 @@ export class BillComMCPServer {
 
   private async getVendor(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     if (!args.vendorId) return { content: [{ type: 'text', text: 'vendorId is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/vendors/${encodeURIComponent(String(args.vendorId))}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vendors/${encodeURIComponent(String(args.vendorId))}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to get vendor (HTTP ${response.status}): ${err}` }], isError: true };
@@ -454,7 +450,7 @@ export class BillComMCPServer {
     for (const field of ['email', 'address1', 'address2', 'addressCity', 'addressState', 'addressZip', 'phone']) {
       if (args[field]) vendor[field] = args[field];
     }
-    const response = await fetch(`${this.baseUrl}/vendors`, { method: 'POST', headers, body: JSON.stringify(vendor) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vendors`, { method: 'POST', headers, body: JSON.stringify(vendor) });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to create vendor (HTTP ${response.status}): ${err}` }], isError: true };
@@ -469,7 +465,7 @@ export class BillComMCPServer {
     for (const field of ['name', 'email', 'address1', 'addressCity', 'addressState', 'addressZip', 'isActive']) {
       if (args[field] !== undefined) updates[field] = args[field];
     }
-    const response = await fetch(`${this.baseUrl}/vendors/${encodeURIComponent(String(args.vendorId))}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vendors/${encodeURIComponent(String(args.vendorId))}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(updates),
@@ -491,7 +487,7 @@ export class BillComMCPServer {
         params.set(k, String(v));
       }
     }
-    const response = await fetch(`${this.baseUrl}/bills?${params}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/bills?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list bills (HTTP ${response.status}): ${err}` }], isError: true };
@@ -502,7 +498,7 @@ export class BillComMCPServer {
 
   private async getBill(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     if (!args.billId) return { content: [{ type: 'text', text: 'billId is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/bills/${encodeURIComponent(String(args.billId))}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/bills/${encodeURIComponent(String(args.billId))}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to get bill (HTTP ${response.status}): ${err}` }], isError: true };
@@ -524,7 +520,7 @@ export class BillComMCPServer {
     if (args.invoiceNumber) bill.invoiceNumber = args.invoiceNumber;
     if (args.description) bill.description = args.description;
     if (args.billLineItems) bill.billLineItems = args.billLineItems;
-    const response = await fetch(`${this.baseUrl}/bills`, { method: 'POST', headers, body: JSON.stringify(bill) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/bills`, { method: 'POST', headers, body: JSON.stringify(bill) });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to create bill (HTTP ${response.status}): ${err}` }], isError: true };
@@ -539,7 +535,7 @@ export class BillComMCPServer {
     if (args.dueDate !== undefined) updates.dueDate = args.dueDate;
     if (args.description !== undefined) updates.description = args.description;
     if (args.billLineItems !== undefined) updates.billLineItems = args.billLineItems;
-    const response = await fetch(`${this.baseUrl}/bills/${encodeURIComponent(String(args.billId))}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/bills/${encodeURIComponent(String(args.billId))}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(updates),
@@ -565,7 +561,7 @@ export class BillComMCPServer {
     };
     if (args.vendorId) payment.vendorId = args.vendorId;
     if (args.processDate) payment.processDate = args.processDate;
-    const response = await fetch(`${this.baseUrl}/payments`, { method: 'POST', headers, body: JSON.stringify(payment) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/payments`, { method: 'POST', headers, body: JSON.stringify(payment) });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to pay bill (HTTP ${response.status}): ${err}` }], isError: true };
@@ -576,7 +572,7 @@ export class BillComMCPServer {
 
   private async payBillsBulk(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     if (!args.payments) return { content: [{ type: 'text', text: 'payments array is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/payments/bulk`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/payments/bulk`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ payments: args.payments }),
@@ -598,7 +594,7 @@ export class BillComMCPServer {
         params.set(k, String(v));
       }
     }
-    const response = await fetch(`${this.baseUrl}/payments?${params}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/payments?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list payments (HTTP ${response.status}): ${err}` }], isError: true };
@@ -609,7 +605,7 @@ export class BillComMCPServer {
 
   private async getPayment(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     if (!args.paymentId) return { content: [{ type: 'text', text: 'paymentId is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/payments/${encodeURIComponent(String(args.paymentId))}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/payments/${encodeURIComponent(String(args.paymentId))}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to get payment (HTTP ${response.status}): ${err}` }], isError: true };
@@ -627,7 +623,7 @@ export class BillComMCPServer {
         params.set(k, String(v));
       }
     }
-    const response = await fetch(`${this.baseUrl}/customers?${params}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/customers?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list customers (HTTP ${response.status}): ${err}` }], isError: true };
@@ -638,7 +634,7 @@ export class BillComMCPServer {
 
   private async getCustomer(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     if (!args.customerId) return { content: [{ type: 'text', text: 'customerId is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/customers/${encodeURIComponent(String(args.customerId))}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/customers/${encodeURIComponent(String(args.customerId))}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to get customer (HTTP ${response.status}): ${err}` }], isError: true };
@@ -653,7 +649,7 @@ export class BillComMCPServer {
     for (const field of ['email', 'address1', 'addressCity', 'addressState', 'addressZip', 'phone']) {
       if (args[field]) customer[field] = args[field];
     }
-    const response = await fetch(`${this.baseUrl}/customers`, { method: 'POST', headers, body: JSON.stringify(customer) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/customers`, { method: 'POST', headers, body: JSON.stringify(customer) });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to create customer (HTTP ${response.status}): ${err}` }], isError: true };
@@ -671,7 +667,7 @@ export class BillComMCPServer {
         params.set(k, String(v));
       }
     }
-    const response = await fetch(`${this.baseUrl}/invoices?${params}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/invoices?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list invoices (HTTP ${response.status}): ${err}` }], isError: true };
@@ -682,7 +678,7 @@ export class BillComMCPServer {
 
   private async getInvoice(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     if (!args.invoiceId) return { content: [{ type: 'text', text: 'invoiceId is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/invoices/${encodeURIComponent(String(args.invoiceId))}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/invoices/${encodeURIComponent(String(args.invoiceId))}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to get invoice (HTTP ${response.status}): ${err}` }], isError: true };
@@ -704,7 +700,7 @@ export class BillComMCPServer {
     if (args.invoiceNumber) invoice.invoiceNumber = args.invoiceNumber;
     if (args.description) invoice.description = args.description;
     if (args.invoiceLineItems) invoice.invoiceLineItems = args.invoiceLineItems;
-    const response = await fetch(`${this.baseUrl}/invoices`, { method: 'POST', headers, body: JSON.stringify(invoice) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/invoices`, { method: 'POST', headers, body: JSON.stringify(invoice) });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to create invoice (HTTP ${response.status}): ${err}` }], isError: true };
@@ -722,7 +718,7 @@ export class BillComMCPServer {
         params.set(k, String(v));
       }
     }
-    const response = await fetch(`${this.baseUrl}/classifications/chart-of-accounts?${params}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/classifications/chart-of-accounts?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list chart of accounts (HTTP ${response.status}): ${err}` }], isError: true };
@@ -735,7 +731,7 @@ export class BillComMCPServer {
     const params = new URLSearchParams();
     params.set('max', String(args.max || 100));
     params.set('start', String(args.start || 0));
-    const response = await fetch(`${this.baseUrl}/classifications/departments?${params}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/classifications/departments?${params}`, { method: 'GET', headers });
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Failed to list departments (HTTP ${response.status}): ${err}` }], isError: true };

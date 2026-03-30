@@ -15,6 +15,7 @@
 // Rate limits: Not documented — self-hosted deployment; limits depend on your infrastructure.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ApacheConfig {
   /** Base URL of the Qakka deployment (default: https://apache.local) */
@@ -23,11 +24,12 @@ interface ApacheConfig {
   apiToken?: string;
 }
 
-export class ApacheMCPServer {
+export class ApacheMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiToken: string | undefined;
 
   constructor(config: ApacheConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://apache.local';
     this.apiToken = config.apiToken;
   }
@@ -264,13 +266,6 @@ export class ApacheMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
     if (this.apiToken) {
@@ -287,7 +282,7 @@ export class ApacheMCPServer {
     if (body !== undefined) {
       options.body = JSON.stringify(body);
     }
-    const response = await fetch(`${this.baseUrl}${path}`, options);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, options);
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -358,7 +353,7 @@ export class ApacheMCPServer {
     if (args.delay) params.set('delay', args.delay as string);
     if (args.expiration) params.set('expiration', args.expiration as string);
     const path = `/queues/${encodeURIComponent(args.queue_name as string)}/messages?${params.toString()}`;
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { ...this.buildHeaders(), 'Content-Type': 'application/octet-stream' },
       body: args.data as string,

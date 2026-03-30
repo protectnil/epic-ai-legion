@@ -16,17 +16,19 @@
 // Rate limits: Free tier up to 2,000 queries/month for Complaints; Enterprise tiers vary
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CallControlConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CallControlMCPServer {
+export class CallControlMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CallControlConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.callcontrol.com';
   }
@@ -278,13 +280,6 @@ export class CallControlMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: 'GET' | 'POST',
     path: string,
@@ -300,7 +295,7 @@ export class CallControlMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

@@ -19,6 +19,7 @@
 // Rate limits: 800 points per minute (app access token). Most GET endpoints cost 1 point.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TwitchConfig {
   clientId: string;
@@ -27,12 +28,13 @@ interface TwitchConfig {
   baseUrl?: string;
 }
 
-export class TwitchMCPServer {
+export class TwitchMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TwitchConfig) {
+    super();
     this.clientId = config.clientId;
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://api.twitch.tv/helix';
@@ -372,7 +374,7 @@ export class TwitchMCPServer {
   private async helixGet(path: string, params: URLSearchParams): Promise<ToolResult> {
     const qs = params.toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -396,7 +398,7 @@ export class TwitchMCPServer {
 
   private async helixPost(path: string, body: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),

@@ -21,6 +21,7 @@
 // Rate limits: Not publicly documented; Workday recommends avoiding concurrent burst requests.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WorkdayConfig {
   /** Full ccx/api base URL, e.g. "https://wd5-impl-services1.workday.com/ccx/api" */
@@ -31,12 +32,13 @@ interface WorkdayConfig {
   accessToken: string;
 }
 
-export class WorkdayMCPServer {
+export class WorkdayMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly tenant: string;
   private readonly accessToken: string;
 
   constructor(config: WorkdayConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.tenant = config.tenant;
     this.accessToken = config.accessToken;
@@ -248,15 +250,8 @@ export class WorkdayMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders() });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `Workday API error: HTTP ${response.status} ${response.statusText}` }],

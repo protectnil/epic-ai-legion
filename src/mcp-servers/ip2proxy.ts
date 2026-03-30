@@ -15,17 +15,19 @@
 // Rate limits: Credit-based. Credits deducted per query vary by package (PX1=1 credit through PX11=11 credits).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Ip2ProxyConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class Ip2ProxyMCPServer {
+export class Ip2ProxyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: Ip2ProxyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.ip2proxy.com';
   }
@@ -105,15 +107,6 @@ export class Ip2ProxyMCPServer {
     }
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────────
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async query(params: Record<string, string | undefined>): Promise<ToolResult> {
     const qs = new URLSearchParams();
     qs.set('key', this.apiKey);
@@ -124,7 +117,7 @@ export class Ip2ProxyMCPServer {
       }
     }
     const url = `${this.baseUrl}/?${qs.toString()}`;
-    const response = await fetch(url);
+    const response = await this.fetchWithRetry(url, {});
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `IP2Proxy API error: ${response.status} ${response.statusText}` }],

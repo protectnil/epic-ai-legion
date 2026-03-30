@@ -33,6 +33,7 @@
 // Rate limits: Not publicly documented per-plan; 429 on breach; streaming endpoint available for async lookups
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClearbitConfig {
   apiKey: string;
@@ -42,7 +43,7 @@ interface ClearbitConfig {
   revealBaseUrl?: string;
 }
 
-export class ClearbitMCPServer {
+export class ClearbitMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly personBaseUrl: string;
   private readonly companyBaseUrl: string;
@@ -50,6 +51,7 @@ export class ClearbitMCPServer {
   private readonly revealBaseUrl: string;
 
   constructor(config: ClearbitConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.personBaseUrl = config.personBaseUrl || 'https://person.clearbit.com';
     this.companyBaseUrl = config.companyBaseUrl || 'https://company.clearbit.com';
@@ -267,17 +269,10 @@ export class ClearbitMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async clearbitGet(url: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const fullUrl = `${url}${qs ? '?' + qs : ''}`;
-    const response = await fetch(fullUrl, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(fullUrl, { method: 'GET', headers: this.headers });
 
     // 202 means async — data not yet available
     if (response.status === 202) {

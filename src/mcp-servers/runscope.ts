@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented; standard API throttling applies
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RunscopeConfig {
   /** Runscope OAuth2 access token */
@@ -25,11 +26,12 @@ interface RunscopeConfig {
   baseUrl?: string;
 }
 
-export class RunscopeMCPServer {
+export class RunscopeMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: RunscopeConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://api.runscope.com';
   }
@@ -304,7 +306,7 @@ export class RunscopeMCPServer {
 
   private async request(method: string, path: string, body?: unknown): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       method,
       headers: {
         Authorization: `Bearer ${this.accessToken}`,

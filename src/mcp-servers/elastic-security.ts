@@ -24,6 +24,7 @@
 // Note: Space-aware endpoints prefix paths with /s/{spaceId}; default space uses /api/... directly
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ElasticSecurityConfig {
   kibanaUrl: string;
@@ -34,12 +35,13 @@ interface ElasticSecurityConfig {
   spaceId?: string;
 }
 
-export class ElasticSecurityMCPServer {
+export class ElasticSecurityMCPServer extends MCPAdapterBase {
   private readonly kibanaUrl: string;
   private readonly authHeader: string;
   private readonly pathPrefix: string;
 
   constructor(config: ElasticSecurityConfig) {
+    super();
     this.kibanaUrl = config.kibanaUrl.replace(/\/$/, '');
     if (config.apiKey) {
       this.authHeader = `ApiKey ${config.apiKey}`;
@@ -590,19 +592,13 @@ export class ElasticSecurityMCPServer {
     return h;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private prefix(path: string): string {
     return `${this.kibanaUrl}${this.pathPrefix}${path}`;
   }
 
   private async kfetch(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init ?? {});
     if (!response.ok) {
       let errBody = '';
       try { errBody = await response.text(); } catch { /* ignore */ }

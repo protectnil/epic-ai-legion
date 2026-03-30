@@ -43,6 +43,7 @@
 // Rate limits: 1000 requests/min per API key for REST API v2
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NewRelicConfig {
   apiKey: string;
@@ -50,12 +51,13 @@ interface NewRelicConfig {
   graphqlUrl?: string;
 }
 
-export class NewRelicMCPServer {
+export class NewRelicMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly graphqlUrl: string;
 
   constructor(config: NewRelicConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.newrelic.com/v2';
     this.graphqlUrl = config.graphqlUrl ?? 'https://api.newrelic.com/graphql';
@@ -429,15 +431,8 @@ export class NewRelicMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async nerdgraph(query: string): Promise<ToolResult> {
-    const response = await fetch(this.graphqlUrl, {
+    const response = await this.fetchWithRetry(this.graphqlUrl, {
       method: 'POST',
       headers: this.restHeaders,
       body: JSON.stringify({ query }),
@@ -526,7 +521,7 @@ export class NewRelicMCPServer {
     if (args.filter_language) params.append('filter[language]', args.filter_language as string);
     params.append('page', String((args.page as number) ?? 1));
 
-    const response = await fetch(`${this.baseUrl}/applications.json?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/applications.json?${params}`, {
       method: 'GET',
       headers: this.restHeaders,
     });
@@ -546,7 +541,7 @@ export class NewRelicMCPServer {
   }
 
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/applications/${encodeURIComponent(args.application_id as string)}.json`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/applications/${encodeURIComponent(args.application_id as string)}.json`, {
       method: 'GET',
       headers: this.restHeaders,
     });
@@ -570,7 +565,7 @@ export class NewRelicMCPServer {
     if (args.filter_name) params.append('filter[name]', args.filter_name as string);
     params.append('page', String((args.page as number) ?? 1));
 
-    const response = await fetch(`${this.baseUrl}/alerts_policies.json?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/alerts_policies.json?${params}`, {
       method: 'GET',
       headers: this.restHeaders,
     });
@@ -593,7 +588,7 @@ export class NewRelicMCPServer {
     const incidentPreference = (args.incident_preference as string) ?? 'PER_POLICY';
     const body = { policy: { name: args.name, incident_preference: incidentPreference } };
 
-    const response = await fetch(`${this.baseUrl}/alerts_policies.json`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/alerts_policies.json`, {
       method: 'POST',
       headers: this.restHeaders,
       body: JSON.stringify(body),
@@ -677,7 +672,7 @@ export class NewRelicMCPServer {
     if (args.filter_policy_id) params.set('filter[policy_id]', String(args.filter_policy_id));
     params.set('page', String((args.page as number) ?? 1));
 
-    const response = await fetch(`${this.baseUrl}/alerts_incidents.json?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/alerts_incidents.json?${params}`, {
       method: 'GET',
       headers: this.restHeaders,
     });
@@ -748,7 +743,7 @@ export class NewRelicMCPServer {
     if (args.user) (body.deployment as Record<string, unknown>).user = args.user;
     if (args.timestamp) (body.deployment as Record<string, unknown>).timestamp = args.timestamp;
 
-    const response = await fetch(`${this.baseUrl}/applications/${encodeURIComponent(args.application_id as string)}/deployments.json`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/applications/${encodeURIComponent(args.application_id as string)}/deployments.json`, {
       method: 'POST',
       headers: this.restHeaders,
       body: JSON.stringify(body),
@@ -773,7 +768,7 @@ export class NewRelicMCPServer {
     if (args.filter_name) params.append('filter[name]', args.filter_name as string);
     params.append('page', String((args.page as number) ?? 1));
 
-    const response = await fetch(`${this.baseUrl}/key_transactions.json?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/key_transactions.json?${params}`, {
       method: 'GET',
       headers: this.restHeaders,
     });

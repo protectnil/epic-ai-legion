@@ -18,17 +18,19 @@
 //       which requires admin JWT auth, not an API token. Callers should be aware of this distinction.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StrapiConfig {
   apiToken: string;
   baseUrl: string;
 }
 
-export class StrapiMCPServer {
+export class StrapiMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: StrapiConfig) {
+    super();
     this.apiToken = config.apiToken;
     // baseUrl should be the full API root, e.g. https://cms.example.com/api
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -424,17 +426,10 @@ export class StrapiMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -443,7 +438,7 @@ export class StrapiMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -456,7 +451,7 @@ export class StrapiMCPServer {
   }
 
   private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -469,7 +464,7 @@ export class StrapiMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -492,7 +487,7 @@ export class StrapiMCPServer {
     const qs = new URLSearchParams(params).toString();
     const filterStr = args.filters ? `&${args.filters as string}` : '';
     const url = `${this.baseUrl}/${encodeURIComponent(args.content_type as string)}?${qs}${filterStr}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -547,7 +542,7 @@ export class StrapiMCPServer {
     const qs = new URLSearchParams(params).toString();
     const filterStr = args.filters ? `&${args.filters as string}` : '';
     const url = `${this.baseUrl}/users?${qs}${filterStr}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -608,7 +603,7 @@ export class StrapiMCPServer {
   private async uploadMedia(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.file_url || !args.file_name) return { content: [{ type: 'text', text: 'file_url and file_name are required' }], isError: true };
     // Fetch the file from the remote URL
-    const fileResponse = await fetch(args.file_url as string);
+    const fileResponse = await this.fetchWithRetry(args.file_url as string, {});
     if (!fileResponse.ok) {
       return { content: [{ type: 'text', text: `Failed to fetch file from URL: ${fileResponse.status}` }], isError: true };
     }
@@ -619,7 +614,7 @@ export class StrapiMCPServer {
     if (args.folder_id !== undefined) {
       formData.append('path', String(args.folder_id));
     }
-    const response = await fetch(`${this.baseUrl}/upload`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/upload`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${this.apiToken}` },
       body: formData,

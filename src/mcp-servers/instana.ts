@@ -25,6 +25,7 @@
 // Rate limits: Not publicly documented. The REST API is designed for low-frequency tooling, not streaming.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface InstanaConfig {
   /**
@@ -40,11 +41,12 @@ interface InstanaConfig {
   apiToken: string;
 }
 
-export class InstanaMCPServer {
+export class InstanaMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiToken: string;
 
   constructor(config: InstanaConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.apiToken = config.apiToken;
   }
@@ -367,16 +369,9 @@ export class InstanaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params && params.toString() ? `?${params}` : ''}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -385,7 +380,7 @@ export class InstanaMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),

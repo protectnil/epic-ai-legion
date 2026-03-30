@@ -23,17 +23,19 @@
 // Rate limits: 500 requests per minute per source IP.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DrataConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class DrataMCPServer {
+export class DrataMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: DrataConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://public-api.drata.com/public/v1';
   }
@@ -465,7 +467,7 @@ export class DrataMCPServer {
   }
 
   private async request(path: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       ...options,
       headers: { ...this.headers, ...(options?.headers as Record<string, string> ?? {}) },
     });
@@ -510,7 +512,7 @@ export class DrataMCPServer {
     const params = new URLSearchParams({ limit: '500', offset: '0' });
     if (args.framework) params.set('framework', args.framework as string);
 
-    const response = await fetch(`${this.baseUrl}/controls?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/controls?${params}`, {
       method: 'GET',
       headers: this.headers,
     });

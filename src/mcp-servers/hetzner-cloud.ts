@@ -13,6 +13,7 @@
 // Rate limits: 3600 requests/hour per API token. X-RateLimit-* headers returned on each response.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HetznerCloudConfig {
   apiToken: string;
@@ -20,11 +21,12 @@ interface HetznerCloudConfig {
   baseUrl?: string;
 }
 
-export class HetznerCloudMCPServer {
+export class HetznerCloudMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: HetznerCloudConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://api.hetzner.cloud/v1';
   }
@@ -1177,13 +1179,6 @@ export class HetznerCloudMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private headers(): Record<string, string> {
     return {
       'Authorization': `Bearer ${this.apiToken}`,
@@ -1192,7 +1187,7 @@ export class HetznerCloudMCPServer {
   }
 
   private async fetch(path: string, method: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: this.headers(),
       body: body !== undefined ? JSON.stringify(body) : undefined,

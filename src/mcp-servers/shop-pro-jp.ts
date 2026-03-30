@@ -15,17 +15,19 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ShopProJpConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class ShopProJpMCPServer {
+export class ShopProJpMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ShopProJpConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.shop-pro.jp';
   }
@@ -352,7 +354,7 @@ export class ShopProJpMCPServer {
       init.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
 
     if (!response.ok) {
       let detail = '';

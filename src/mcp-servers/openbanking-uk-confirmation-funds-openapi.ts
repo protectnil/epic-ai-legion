@@ -16,6 +16,7 @@
 // Rate limits: Defined per ASPSP. Typically 500–1000 req/min per TPP client credential.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenBankingUKConfirmationFundsOpenapiConfig {
   /** OAuth2 Bearer access token issued to the TPP */
@@ -28,13 +29,14 @@ interface OpenBankingUKConfirmationFundsOpenapiConfig {
   customerUserAgent?: string;
 }
 
-export class OpenBankingUKConfirmationFundsOpenapiMCPServer {
+export class OpenBankingUKConfirmationFundsOpenapiMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
   private readonly fapiCustomerIpAddress: string | undefined;
   private readonly customerUserAgent: string | undefined;
 
   constructor(config: OpenBankingUKConfirmationFundsOpenapiConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://openbanking.org.uk/open-banking/v3.1/cbpii';
     this.fapiCustomerIpAddress = config.fapiCustomerIpAddress;
@@ -190,13 +192,6 @@ export class OpenBankingUKConfirmationFundsOpenapiMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(interactionId?: string): Record<string, string> {
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${this.accessToken}`,
@@ -239,7 +234,7 @@ export class OpenBankingUKConfirmationFundsOpenapiMCPServer {
       (body['Data'] as Record<string, unknown>)['ExpirationDateTime'] = args.expiration_date_time;
     }
 
-    const response = await fetch(`${this.baseUrl}/funds-confirmation-consents`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/funds-confirmation-consents`, {
       method: 'POST',
       headers: this.buildHeaders(args.x_fapi_interaction_id as string | undefined),
       body: JSON.stringify(body),
@@ -262,7 +257,7 @@ export class OpenBankingUKConfirmationFundsOpenapiMCPServer {
       return { content: [{ type: 'text', text: 'consent_id is required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/funds-confirmation-consents/${encodeURIComponent(args.consent_id as string)}`,
       {
         method: 'GET',
@@ -287,7 +282,7 @@ export class OpenBankingUKConfirmationFundsOpenapiMCPServer {
       return { content: [{ type: 'text', text: 'consent_id is required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/funds-confirmation-consents/${encodeURIComponent(args.consent_id as string)}`,
       {
         method: 'DELETE',
@@ -334,7 +329,7 @@ export class OpenBankingUKConfirmationFundsOpenapiMCPServer {
       },
     };
 
-    const response = await fetch(`${this.baseUrl}/funds-confirmations`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/funds-confirmations`, {
       method: 'POST',
       headers: this.buildHeaders(args.x_fapi_interaction_id as string | undefined),
       body: JSON.stringify(body),

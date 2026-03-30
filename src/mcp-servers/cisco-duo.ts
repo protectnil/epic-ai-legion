@@ -22,6 +22,7 @@
 // Log endpoints: authentication=v2, administrator=v1, telephony=v2 (v1 deprecated Sept 30, 2026).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import { createHmac } from 'node:crypto';
 
 interface CiscoDuoConfig {
@@ -30,12 +31,13 @@ interface CiscoDuoConfig {
   secretKey: string;      // skey
 }
 
-export class CiscoDuoMCPServer {
+export class CiscoDuoMCPServer extends MCPAdapterBase {
   private readonly apiHost: string;
   private readonly integrationKey: string;
   private readonly secretKey: string;
 
   constructor(config: CiscoDuoConfig) {
+    super();
     this.apiHost = config.apiHost.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
     this.integrationKey = config.integrationKey;
     this.secretKey = config.secretKey;
@@ -71,12 +73,6 @@ export class CiscoDuoMCPServer {
       body = new URLSearchParams(params).toString();
     }
     return fetch(url, { method, headers, body });
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async duoGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {

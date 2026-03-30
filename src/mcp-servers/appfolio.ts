@@ -19,6 +19,7 @@
 //   HTTP 429 returned when exceeded. next_page_url links are not rate-limited.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AppFolioConfig {
   clientId: string;
@@ -26,12 +27,13 @@ interface AppFolioConfig {
   vhost: string;
 }
 
-export class AppFolioMCPServer {
+export class AppFolioMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
 
   constructor(config: AppFolioConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     // BaseURL without credentials — credentials injected per-request via Authorization header
@@ -435,13 +437,6 @@ export class AppFolioMCPServer {
     return 'Basic ' + Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildBody(args: Record<string, unknown>): Record<string, unknown> {
     const body: Record<string, unknown> = {};
 
@@ -473,7 +468,7 @@ export class AppFolioMCPServer {
     const url = `${this.baseUrl}/${reportName}.json`;
     const body = this.buildBody(args);
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,
@@ -496,7 +491,7 @@ export class AppFolioMCPServer {
     let totalChars = JSON.stringify(data).length;
 
     while (nextPageUrl && totalChars < 10_000) {
-      const nextResponse = await fetch(nextPageUrl, {
+      const nextResponse = await this.fetchWithRetry(nextPageUrl, {
         headers: {
           Authorization: this.authHeader,
           Accept: 'application/json',

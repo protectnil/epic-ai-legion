@@ -14,6 +14,7 @@
 // Spec: https://api.apis.guru/v2/specs/blazemeter.com/4/swagger.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BlazeMeterConfig {
   /**
@@ -26,11 +27,12 @@ interface BlazeMeterConfig {
   baseUrl?: string;
 }
 
-export class BlazeMeterMCPServer {
+export class BlazeMeterMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BlazeMeterConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://a.blazemeter.com/api/v4';
   }
@@ -198,15 +200,8 @@ export class BlazeMeterMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
-    const response = await fetch(this.buildUrl(path, params), {
+    const response = await this.fetchWithRetry(this.buildUrl(path, params), {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });
@@ -218,7 +213,7 @@ export class BlazeMeterMCPServer {
   }
 
   private async apiPost(path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(this.buildUrl(path), {
+    const response = await this.fetchWithRetry(this.buildUrl(path), {
       method: 'POST',
       headers: this.jsonHeaders,
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -234,7 +229,7 @@ export class BlazeMeterMCPServer {
   }
 
   private async apiPatch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(this.buildUrl(path), {
+    const response = await this.fetchWithRetry(this.buildUrl(path), {
       method: 'PATCH',
       headers: this.jsonHeaders,
       body: JSON.stringify(body),

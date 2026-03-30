@@ -19,6 +19,7 @@
 // Rate limits: Not publicly documented — contact Modern Treasury for enterprise limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ModernTreasuryConfig {
   organizationId: string;
@@ -26,12 +27,13 @@ interface ModernTreasuryConfig {
   baseUrl?: string;
 }
 
-export class ModernTreasuryMCPServer {
+export class ModernTreasuryMCPServer extends MCPAdapterBase {
   private readonly organizationId: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ModernTreasuryConfig) {
+    super();
     this.organizationId = config.organizationId;
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://app.moderntreasury.com/api';
@@ -570,16 +572,9 @@ export class ModernTreasuryMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async mtGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/${path}${qs}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}${qs}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -589,7 +584,7 @@ export class ModernTreasuryMCPServer {
   }
 
   private async mtPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -603,7 +598,7 @@ export class ModernTreasuryMCPServer {
   }
 
   private async mtPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),

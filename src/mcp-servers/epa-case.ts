@@ -15,15 +15,17 @@
 //       get_case_info is the enhanced self-contained search endpoint.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EpaCaseConfig {
   baseUrl?: string;
 }
 
-export class EpaCaseMCPServer {
+export class EpaCaseMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: EpaCaseConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://echodata.epa.gov/echo';
   }
 
@@ -384,13 +386,6 @@ export class EpaCaseMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildParams(args: Record<string, unknown>, keys: string[]): URLSearchParams {
     const params = new URLSearchParams({ output: 'JSON' });
     for (const key of keys) {
@@ -403,7 +398,7 @@ export class EpaCaseMCPServer {
 
   private async get(path: string, params: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}/${path}?${params.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });

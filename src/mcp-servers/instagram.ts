@@ -16,17 +16,19 @@
 // Rate limits: 200 requests/hour per access_token (sandbox: 500 requests/hour)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface InstagramConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class InstagramMCPServer {
+export class InstagramMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: InstagramConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.instagram.com/v1';
   }
@@ -612,7 +614,7 @@ export class InstagramMCPServer {
       ).toString();
     }
 
-    const response = await fetch(url, options);
+    const response = await this.fetchWithRetry(url, options);
 
     if (!response.ok) {
       return {

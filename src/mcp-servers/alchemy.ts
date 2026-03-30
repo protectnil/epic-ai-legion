@@ -17,6 +17,7 @@
 // Rate limits: Varies by plan — free tier: 330 compute units/sec; paid plans higher
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AlchemyConfig {
   apiKey: string;
@@ -24,12 +25,13 @@ interface AlchemyConfig {
   baseUrl?: string;   // optional full override (overrides network + default)
 }
 
-export class AlchemyMCPServer {
+export class AlchemyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly network: string;
   private readonly baseUrlOverride: string | undefined;
 
   constructor(config: AlchemyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.network = config.network || 'eth-mainnet';
     this.baseUrlOverride = config.baseUrl;
@@ -478,15 +480,8 @@ export class AlchemyMCPServer {
     return 'https://dashboard.alchemy.com/api';
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async rpcCall(method: string, params: unknown[]): Promise<ToolResult> {
-    const response = await fetch(this.rpcUrl, {
+    const response = await this.fetchWithRetry(this.rpcUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
@@ -504,7 +499,7 @@ export class AlchemyMCPServer {
   private async nftGet(endpoint: string, params: Record<string, string>): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.nftBaseUrl}/${endpoint}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {
@@ -528,7 +523,7 @@ export class AlchemyMCPServer {
       },
     };
     if (body) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Notify API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -659,7 +654,7 @@ export class AlchemyMCPServer {
     }
     const network = (args.network as string) ?? this.network;
     const url = `https://api.g.alchemy.com/prices/v1/${this.apiKey}/tokens/by-address`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

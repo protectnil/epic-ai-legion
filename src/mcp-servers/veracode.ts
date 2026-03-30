@@ -38,6 +38,7 @@
 
 import { createHmac, randomBytes } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VeracodeConfig {
   apiId: string;
@@ -63,12 +64,13 @@ function buildVeracodeAuthHeader(
   return `VERACODE-HMAC-SHA-256 id=${apiId},ts=${ts},nonce=${nonce},sig=${sig}`;
 }
 
-export class VeracodeMCPServer {
+export class VeracodeMCPServer extends MCPAdapterBase {
   private readonly apiId: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: VeracodeConfig) {
+    super();
     this.apiId = config.apiId;
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.veracode.com';
@@ -405,7 +407,7 @@ export class VeracodeMCPServer {
   private async request(path: string, method: string, body?: unknown): Promise<ToolResult> {
     const authHeader = buildVeracodeAuthHeader(this.apiId, this.apiKey, path, method);
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: {
         Authorization: authHeader,

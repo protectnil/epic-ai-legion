@@ -15,17 +15,19 @@
 //           url-to-pdf (headless Chrome PDF), url-to-screenshot (headless Chrome screenshot)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DataflowkitConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class DataflowkitMCPServer {
+export class DataflowkitMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: DataflowkitConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.dataflowkit.com/v1';
   }
@@ -323,19 +325,12 @@ export class DataflowkitMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private apiUrl(path: string): string {
     return `${this.baseUrl}${path}?api_key=${encodeURIComponent(this.apiKey)}`;
   }
 
   private async postJson(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(this.apiUrl(path), {
+    const response = await this.fetchWithRetry(this.apiUrl(path), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

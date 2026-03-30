@@ -13,6 +13,7 @@
 // Rate limits: 300 requests per 5 seconds (per account API overview documentation)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PlivoConfig {
   authId: string;
@@ -20,12 +21,13 @@ interface PlivoConfig {
   baseUrl?: string;
 }
 
-export class PlivoMCPServer {
+export class PlivoMCPServer extends MCPAdapterBase {
   private readonly authId: string;
   private readonly authToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PlivoConfig) {
+    super();
     this.authId = config.authId;
     this.authToken = config.authToken;
     this.baseUrl = config.baseUrl || 'https://api.plivo.com/v1';
@@ -283,20 +285,13 @@ export class PlivoMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private get accountBase(): string {
     return `${this.baseUrl}/Account/${this.authId}`;
   }
 
   private async get(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.accountBase}${path}/${qs}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.accountBase}${path}/${qs}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -305,7 +300,7 @@ export class PlivoMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.accountBase}${path}/`, {
+    const response = await this.fetchWithRetry(`${this.accountBase}${path}/`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -318,7 +313,7 @@ export class PlivoMCPServer {
   }
 
   private async patch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.accountBase}${path}/`, {
+    const response = await this.fetchWithRetry(`${this.accountBase}${path}/`, {
       method: 'POST',
       headers: { ...this.headers, 'X-HTTP-Method-Override': 'PATCH' },
       body: JSON.stringify(body),
@@ -331,7 +326,7 @@ export class PlivoMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.accountBase}${path}/`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.accountBase}${path}/`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -445,7 +440,7 @@ export class PlivoMCPServer {
   }
 
   private async getAccount(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/Account/${this.authId}/`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Account/${this.authId}/`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

@@ -17,17 +17,19 @@
 // Concept types: nytd_geo (geographic), nytd_per (person), nytd_org (organization), nytd_des (descriptor)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NYTimesSemanticConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class NYTimesSemanticApiMCPServer {
+export class NYTimesSemanticApiMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: NYTimesSemanticConfig) {
+    super();
     this.apiKey  = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.nytimes.com/svc/semantic/v2/concept').replace(/\/$/, '');
   }
@@ -255,18 +257,11 @@ export class NYTimesSemanticApiMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async nytGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const merged = { 'api-key': this.apiKey, ...params };
     const qs = '?' + new URLSearchParams(merged).toString();
     const url = `${this.baseUrl}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json', 'User-Agent': 'EpicAI-NYTSemantic-Adapter/1.0' },
     });

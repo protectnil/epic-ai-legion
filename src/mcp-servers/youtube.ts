@@ -14,6 +14,7 @@
 // Rate limits: 10,000 quota units/day by default. Search costs 100 units; reads cost 1-5 units.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface YouTubeConfig {
   /** API key for public data access (read-only). */
@@ -22,12 +23,13 @@ interface YouTubeConfig {
   accessToken?: string;
 }
 
-export class YouTubeMCPServer {
+export class YouTubeMCPServer extends MCPAdapterBase {
   private readonly baseUrl = 'https://www.googleapis.com/youtube/v3';
   private readonly apiKey?: string;
   private readonly accessToken?: string;
 
   constructor(config: YouTubeConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.accessToken = config.accessToken;
   }
@@ -655,16 +657,10 @@ export class YouTubeMCPServer {
     return h;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async get(endpoint: string, params: URLSearchParams): Promise<ToolResult> {
     this.addAuth(params);
-    const response = await fetch(`${this.baseUrl}/${endpoint}?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${endpoint}?${params.toString()}`, {
       method: 'GET',
       headers: this.authHeaders(),
     });
@@ -679,7 +675,7 @@ export class YouTubeMCPServer {
   private async post(endpoint: string, body: unknown, queryParams?: URLSearchParams): Promise<ToolResult> {
     const params = queryParams ?? new URLSearchParams();
     this.addAuth(params);
-    const response = await fetch(`${this.baseUrl}/${endpoint}?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${endpoint}?${params.toString()}`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -697,7 +693,7 @@ export class YouTubeMCPServer {
 
   private async del(endpoint: string, params: URLSearchParams): Promise<ToolResult> {
     this.addAuth(params);
-    const response = await fetch(`${this.baseUrl}/${endpoint}?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${endpoint}?${params.toString()}`, {
       method: 'DELETE',
       headers: this.authHeaders(),
     });
@@ -711,7 +707,7 @@ export class YouTubeMCPServer {
   private async put(endpoint: string, body: unknown, queryParams?: URLSearchParams): Promise<ToolResult> {
     const params = queryParams ?? new URLSearchParams();
     this.addAuth(params);
-    const response = await fetch(`${this.baseUrl}/${endpoint}?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${endpoint}?${params.toString()}`, {
       method: 'PUT',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -763,7 +759,7 @@ export class YouTubeMCPServer {
       rating: args.rating as string,
     });
     this.addAuth(params);
-    const response = await fetch(`${this.baseUrl}/videos/rate?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/videos/rate?${params.toString()}`, {
       method: 'POST',
       headers: this.authHeaders(),
     });

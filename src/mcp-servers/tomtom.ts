@@ -29,17 +29,19 @@
 //              Free plan: 50,000 tile requests/day, 2,500 non-tile requests/day.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TomTomConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class TomTomMCPServer {
+export class TomTomMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: TomTomConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.tomtom.com';
   }
@@ -382,7 +384,7 @@ export class TomTomMCPServer {
   private async ttGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     params.key = this.apiKey;
     const qs = new URLSearchParams(params).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       headers: { 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -395,7 +397,7 @@ export class TomTomMCPServer {
   private async ttPost(path: string, body: unknown, params: Record<string, string> = {}): Promise<ToolResult> {
     params.key = this.apiKey;
     const qs = new URLSearchParams(params).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -405,13 +407,6 @@ export class TomTomMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async geocode(args: Record<string, unknown>): Promise<ToolResult> {

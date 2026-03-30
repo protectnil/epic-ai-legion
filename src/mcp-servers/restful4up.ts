@@ -16,16 +16,18 @@
 // Rate limits: Self-hosted; no imposed limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Restful4UpConfig {
   /** Base URL of the RESTful4Up instance (default: http://restful4up.local) */
   baseUrl?: string;
 }
 
-export class Restful4UpMCPServer {
+export class Restful4UpMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: Restful4UpConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'http://restful4up.local';
   }
 
@@ -184,13 +186,6 @@ export class Restful4UpMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildFormData(args: Record<string, unknown>): FormData {
     const form = new FormData();
     const fileBase64 = args.file_base64 as string;
@@ -205,7 +200,7 @@ export class Restful4UpMCPServer {
     if (!args.file_base64) return { content: [{ type: 'text', text: 'file_base64 is required' }], isError: true };
     if (!args.filename) return { content: [{ type: 'text', text: 'filename is required' }], isError: true };
     const form = this.buildFormData(args);
-    const response = await fetch(`${this.baseUrl}/unpack`, { method: 'POST', body: form });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/unpack`, { method: 'POST', body: form });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -219,7 +214,7 @@ export class Restful4UpMCPServer {
     if (!args.file_base64) return { content: [{ type: 'text', text: 'file_base64 is required' }], isError: true };
     if (!args.filename) return { content: [{ type: 'text', text: 'filename is required' }], isError: true };
     const form = this.buildFormData(args);
-    const response = await fetch(`${this.baseUrl}/emulation-output`, { method: 'POST', body: form });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/emulation-output`, { method: 'POST', body: form });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -240,7 +235,7 @@ export class Restful4UpMCPServer {
         form.append('strings_to_ignore', s);
       }
     }
-    const response = await fetch(`${this.baseUrl}/generate-partial-yara-rules`, { method: 'POST', body: form });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/generate-partial-yara-rules`, { method: 'POST', body: form });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -265,7 +260,7 @@ export class Restful4UpMCPServer {
       form.append('rules', rule);
     }
     if (args.is_unpacking_required) form.append('is_unpacking_required', args.is_unpacking_required as string);
-    const response = await fetch(`${this.baseUrl}/apply-yara-rules`, { method: 'POST', body: form });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/apply-yara-rules`, { method: 'POST', body: form });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -276,7 +271,7 @@ export class Restful4UpMCPServer {
   }
 
   private async cleanUploadedFiles(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/clean`, { method: 'HEAD' });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/clean`, { method: 'HEAD' });
     if (response.status === 204) {
       return { content: [{ type: 'text', text: 'Cleanup successful — all uploaded files removed.' }], isError: false };
     }

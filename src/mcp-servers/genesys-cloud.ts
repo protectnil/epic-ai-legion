@@ -24,6 +24,7 @@
 // Rate limits: Varies per endpoint; burst limits enforced. Retry-After header on 429.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GenesysCloudConfig {
   clientId: string;
@@ -31,7 +32,7 @@ interface GenesysCloudConfig {
   region?: string;
 }
 
-export class GenesysCloudMCPServer {
+export class GenesysCloudMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly apiBase: string;
@@ -40,6 +41,7 @@ export class GenesysCloudMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: GenesysCloudConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     const region = config.region || 'mypurecloud.com';
@@ -515,7 +517,7 @@ export class GenesysCloudMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(`${this.loginBase}/oauth/token`, {
+    const response = await this.fetchWithRetry(`${this.loginBase}/oauth/token`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -534,16 +536,10 @@ export class GenesysCloudMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.apiBase}${path}`, {
+    const response = await this.fetchWithRetry(`${this.apiBase}${path}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -559,7 +555,7 @@ export class GenesysCloudMCPServer {
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.apiBase}${path}`, {
+    const response = await this.fetchWithRetry(`${this.apiBase}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

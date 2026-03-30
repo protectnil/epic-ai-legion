@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SwaggerGeneratorConfig {
   /**
@@ -23,10 +24,11 @@ interface SwaggerGeneratorConfig {
   baseUrl?: string;
 }
 
-export class SwaggerGeneratorMCPServer {
+export class SwaggerGeneratorMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: SwaggerGeneratorConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl?.replace(/\/$/, '') || 'https://generator.swagger.io/api';
   }
 
@@ -143,15 +145,8 @@ export class SwaggerGeneratorMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -160,7 +155,7 @@ export class SwaggerGeneratorMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -228,7 +223,7 @@ export class SwaggerGeneratorMCPServer {
   private async downloadGeneratedFile(args: Record<string, unknown>): Promise<ToolResult> {
     const fileId = args.fileId as string;
     if (!fileId) return { content: [{ type: 'text', text: 'fileId is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/gen/download/${encodeURIComponent(fileId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/gen/download/${encodeURIComponent(fileId)}`, {
       method: 'GET',
       headers: this.headers,
     });

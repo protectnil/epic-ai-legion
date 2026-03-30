@@ -23,17 +23,19 @@
 //       Variables and geographies differ per dataset. This adapter covers the most common datasets.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CensusGovConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class CensusGovMCPServer {
+export class CensusGovMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CensusGovConfig) {
+    super();
     this.apiKey = config.apiKey ?? '';
     this.baseUrl = config.baseUrl ?? 'https://api.census.gov/data';
   }
@@ -432,13 +434,6 @@ export class CensusGovMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildGeoParam(geoType: string, stateFips?: string, countyFips?: string): { for: string; in?: string } {
     const normalized = geoType.toLowerCase().trim();
     switch (normalized) {
@@ -480,7 +475,7 @@ export class CensusGovMCPServer {
     const keyParam = this.apiKey ? `${separator}key=${encodeURIComponent(this.apiKey)}` : '';
     const fullUrl = `${url}${keyParam}`;
 
-    const response = await fetch(fullUrl, {
+    const response = await this.fetchWithRetry(fullUrl, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });
@@ -554,7 +549,7 @@ export class CensusGovMCPServer {
     }
 
     const keyParam = this.apiKey ? `?key=${encodeURIComponent(this.apiKey)}` : '';
-    const response = await fetch(`${this.baseUrl}/${encodeURIComponent(args.year as string)}/${encodeURIComponent(args.dataset as string)}/variables.json${keyParam}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${encodeURIComponent(args.year as string)}/${encodeURIComponent(args.dataset as string)}/variables.json${keyParam}`, {
       headers: { Accept: 'application/json' },
     });
 
@@ -605,7 +600,7 @@ export class CensusGovMCPServer {
   private async listDatasets(args: Record<string, unknown>): Promise<ToolResult> {
     // The Census discovery endpoint lists all datasets
     const url = 'https://api.census.gov/data.json';
-    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    const response = await this.fetchWithRetry(url, { headers: { Accept: 'application/json' } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

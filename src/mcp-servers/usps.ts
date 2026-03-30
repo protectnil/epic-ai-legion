@@ -14,6 +14,7 @@
 // Rate limits: Default quota ~60 calls/hour per API scope. Test environment: https://apis-tem.usps.com
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface USPSConfig {
   clientId: string;
@@ -22,7 +23,7 @@ interface USPSConfig {
   tokenUrl?: string;
 }
 
-export class USPSMCPServer {
+export class USPSMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -32,6 +33,7 @@ export class USPSMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: USPSConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://apis.usps.com';
@@ -376,7 +378,7 @@ export class USPSMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -395,15 +397,9 @@ export class USPSMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async uspsGet(path: string, token: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
     });
     if (!response.ok) {
@@ -414,7 +410,7 @@ export class USPSMCPServer {
   }
 
   private async uspsPost(path: string, body: unknown, token: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(body),

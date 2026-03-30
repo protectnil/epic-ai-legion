@@ -31,17 +31,19 @@
 // Rate limits: 1,500 requests/minute per OAuth token; 150 requests/minute per PAT
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AsanaConfig {
   accessToken: string; // Personal Access Token or OAuth2 access token
   baseUrl?: string;
 }
 
-export class AsanaMCPServer {
+export class AsanaMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: AsanaConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://app.asana.com/api/1.0';
   }
@@ -535,15 +537,8 @@ export class AsanaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     let data: unknown;
     try {
       data = await response.json();

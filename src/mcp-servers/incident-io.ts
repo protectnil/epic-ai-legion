@@ -18,18 +18,20 @@
 // Rate limits: 1,200 requests/minute per API key (429 on exceed, exponential backoff recommended)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface IncidentIoConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class IncidentIoMCPServer {
+export class IncidentIoMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly baseUrlV1: string;
 
   constructor(config: IncidentIoConfig) {
+    super();
     this.apiKey = config.apiKey;
     const authority = (config.baseUrl ?? 'https://api.incident.io').replace(/\/$/, '');
     this.baseUrl = authority + '/v2';
@@ -336,16 +338,9 @@ export class IncidentIoMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params && params.toString() ? `?${params}` : ''}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -354,7 +349,7 @@ export class IncidentIoMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -367,7 +362,7 @@ export class IncidentIoMCPServer {
   }
 
   private async apiPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -500,7 +495,7 @@ export class IncidentIoMCPServer {
   private async listSeverities(): Promise<ToolResult> {
     // Severities V1 — lives at /v1/severities, not /v2/severities
     const url = `${this.baseUrlV1}/severities`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -513,7 +508,7 @@ export class IncidentIoMCPServer {
     if (!id) return { content: [{ type: 'text', text: 'severity_id is required' }], isError: true };
     // Severities V1 — lives at /v1/severities/{id}
     const url = `${this.baseUrlV1}/severities/${encodeURIComponent(id)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -528,7 +523,7 @@ export class IncidentIoMCPServer {
   private async listIncidentStatuses(): Promise<ToolResult> {
     // Incident Statuses V1 — lives at /v1/incident_statuses, not /v2/incident_statuses
     const url = `${this.baseUrlV1}/incident_statuses`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -539,7 +534,7 @@ export class IncidentIoMCPServer {
   private async listIncidentTypes(): Promise<ToolResult> {
     // Incident Types V1 — lives at /v1/incident_types, not /v2/incident_types
     const url = `${this.baseUrlV1}/incident_types`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }

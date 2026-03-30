@@ -33,17 +33,19 @@
 // Rate limits: Not publicly documented; Outreach applies per-token rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OutreachConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class OutreachMCPServer {
+export class OutreachMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: OutreachConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.outreach.io/api/v2';
   }
@@ -711,7 +713,7 @@ export class OutreachMCPServer {
   }
 
   private async getJson(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -727,7 +729,7 @@ export class OutreachMCPServer {
   }
 
   private async postJson(url: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -747,7 +749,7 @@ export class OutreachMCPServer {
   }
 
   private async patchJson(url: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),

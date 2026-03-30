@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented; governed by instance configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SonatypeNexusConfig {
   baseUrl: string;
@@ -24,11 +25,12 @@ interface SonatypeNexusConfig {
   password: string;
 }
 
-export class SonatypeNexusMCPServer {
+export class SonatypeNexusMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: SonatypeNexusConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.authHeader = `Basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`;
   }
@@ -334,15 +336,8 @@ export class SonatypeNexusMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listRepositories(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/repositories`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/repositories`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list repositories: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -355,7 +350,7 @@ export class SonatypeNexusMCPServer {
     if (!repositoryName) {
       return { content: [{ type: 'text', text: 'repositoryName is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/repositories/${encodeURIComponent(repositoryName)}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/repositories/${encodeURIComponent(repositoryName)}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get repository: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -373,7 +368,7 @@ export class SonatypeNexusMCPServer {
     if (args.continuationToken) params.push(`continuationToken=${encodeURIComponent(args.continuationToken as string)}`);
 
     const url = `${this.baseUrl}/service/rest/v1/search${params.length > 0 ? '?' + params.join('&') : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to search components: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -386,7 +381,7 @@ export class SonatypeNexusMCPServer {
     if (!id) {
       return { content: [{ type: 'text', text: 'id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/components/${encodeURIComponent(id)}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/components/${encodeURIComponent(id)}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get component: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -399,7 +394,7 @@ export class SonatypeNexusMCPServer {
     if (!id) {
       return { content: [{ type: 'text', text: 'id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/components/${encodeURIComponent(id)}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/components/${encodeURIComponent(id)}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to delete component: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -414,7 +409,7 @@ export class SonatypeNexusMCPServer {
     let url = `${this.baseUrl}/service/rest/v1/assets?repository=${encodeURIComponent(repository)}`;
     if (args.continuationToken) url += `&continuationToken=${encodeURIComponent(args.continuationToken as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list assets: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -427,7 +422,7 @@ export class SonatypeNexusMCPServer {
     if (!id) {
       return { content: [{ type: 'text', text: 'id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/assets/${encodeURIComponent(id)}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/assets/${encodeURIComponent(id)}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get asset: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -440,7 +435,7 @@ export class SonatypeNexusMCPServer {
     if (!id) {
       return { content: [{ type: 'text', text: 'id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/assets/${encodeURIComponent(id)}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/assets/${encodeURIComponent(id)}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to delete asset: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -448,7 +443,7 @@ export class SonatypeNexusMCPServer {
   }
 
   private async listBlobStores(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/blobstores`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/blobstores`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list blob stores: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -462,7 +457,7 @@ export class SonatypeNexusMCPServer {
       return { content: [{ type: 'text', text: 'name is required' }], isError: true };
     }
     // The quota endpoint provides detailed configuration including quota limits
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/blobstores/${encodeURIComponent(name)}/quota-status`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/blobstores/${encodeURIComponent(name)}/quota-status`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get blob store: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -476,7 +471,7 @@ export class SonatypeNexusMCPServer {
     if (args.userId) params.push(`userId=${encodeURIComponent(args.userId as string)}`);
 
     const url = `${this.baseUrl}/service/rest/v1/security/users${params.length > 0 ? '?' + params.join('&') : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list users: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -488,7 +483,7 @@ export class SonatypeNexusMCPServer {
     let url = `${this.baseUrl}/service/rest/v1/security/roles`;
     if (args.source) url += `?source=${encodeURIComponent(args.source as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list roles: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -497,7 +492,7 @@ export class SonatypeNexusMCPServer {
   }
 
   private async listRoutingRules(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/routing-rules`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/routing-rules`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list routing rules: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -509,7 +504,7 @@ export class SonatypeNexusMCPServer {
     let url = `${this.baseUrl}/service/rest/v1/tasks`;
     if (args.type) url += `?type=${encodeURIComponent(args.type as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list tasks: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -522,7 +517,7 @@ export class SonatypeNexusMCPServer {
     if (!id) {
       return { content: [{ type: 'text', text: 'id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/tasks/${encodeURIComponent(id)}/run`, { method: 'POST', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/tasks/${encodeURIComponent(id)}/run`, { method: 'POST', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to run task: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -530,7 +525,7 @@ export class SonatypeNexusMCPServer {
   }
 
   private async getSystemStatus(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/service/rest/v1/status/check`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/rest/v1/status/check`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get system status: ${response.status} ${response.statusText}` }], isError: true };
     }

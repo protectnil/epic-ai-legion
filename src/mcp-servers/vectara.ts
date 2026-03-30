@@ -16,17 +16,19 @@
 // Rate limits: See Vectara docs — limits vary by plan
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VectaraConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class VectaraMCPServer {
+export class VectaraMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: VectaraConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.vectara.io';
   }
@@ -357,12 +359,6 @@ export class VectaraMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -379,7 +375,7 @@ export class VectaraMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {
@@ -473,7 +469,7 @@ export class VectaraMCPServer {
     if (args.corpus_id === undefined || args.customer_id === undefined || !args.file_url || !args.filename) {
       return { content: [{ type: 'text', text: 'corpus_id, customer_id, file_url, and filename are required' }], isError: true };
     }
-    const fileResponse = await fetch(args.file_url as string);
+    const fileResponse = await this.fetchWithRetry(args.file_url as string, {});
     if (!fileResponse.ok) {
       return {
         content: [{ type: 'text', text: `Failed to fetch file from URL: ${fileResponse.status} ${fileResponse.statusText}` }],
@@ -493,7 +489,7 @@ export class VectaraMCPServer {
     if (args.document_id) qp.d = args.document_id as string;
     const qs = new URLSearchParams(qp).toString();
     const url = `${this.baseUrl}/v1/upload?${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'x-api-key': this.apiKey },
       body: formData,
@@ -538,7 +534,7 @@ export class VectaraMCPServer {
     }
     const body = this.buildQueryPayload(args);
     const url = `${this.baseUrl}/v1/stream-query`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'x-api-key': this.apiKey,

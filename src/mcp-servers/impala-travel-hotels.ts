@@ -14,17 +14,19 @@
 // Rate limits: Sandbox — refer to account dashboard; production varies by plan
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ImpalaHotelsConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class ImpalaHotelsMCPServer {
+export class ImpalaHotelsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ImpalaHotelsConfig) {
+    super();
     this.apiKey   = config.apiKey;
     this.baseUrl  = config.baseUrl || 'https://sandbox.impala.travel/v1';
   }
@@ -311,18 +313,9 @@ export class ImpalaHotelsMCPServer {
     }
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────────
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         'x-api-key': this.apiKey,
         Accept: 'application/json',
@@ -339,7 +332,7 @@ export class ImpalaHotelsMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'x-api-key': this.apiKey,
@@ -359,7 +352,7 @@ export class ImpalaHotelsMCPServer {
   }
 
   private async put(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: {
         'x-api-key': this.apiKey,
@@ -379,7 +372,7 @@ export class ImpalaHotelsMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: {
         'x-api-key': this.apiKey,

@@ -23,6 +23,7 @@
 // Rate limits: CMS API ~20 req/10s write, ~100 req/10s read. Dynamic Ingest: varies by plan.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BrightcoveConfig {
   clientId: string;
@@ -33,7 +34,7 @@ interface BrightcoveConfig {
   playersBaseUrl?: string;
 }
 
-export class BrightcoveMCPServer {
+export class BrightcoveMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly accountId: string;
@@ -45,6 +46,7 @@ export class BrightcoveMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: BrightcoveConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.accountId = config.accountId;
@@ -482,7 +484,7 @@ export class BrightcoveMCPServer {
     const now = Date.now();
     if (this.bearerToken && this.tokenExpiry > now) return this.bearerToken;
 
-    const response = await fetch('https://oauth.brightcove.com/v4/access_token', {
+    const response = await this.fetchWithRetry('https://oauth.brightcove.com/v4/access_token', {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -502,7 +504,7 @@ export class BrightcoveMCPServer {
     const token = await this.getOrRefreshToken();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
     const url = `${this.baseUrl}/accounts/${this.accountId}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -515,7 +517,7 @@ export class BrightcoveMCPServer {
   private async cmsPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.baseUrl}/accounts/${this.accountId}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -530,7 +532,7 @@ export class BrightcoveMCPServer {
   private async cmsPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.baseUrl}/accounts/${this.accountId}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -545,7 +547,7 @@ export class BrightcoveMCPServer {
   private async cmsDelete(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.baseUrl}/accounts/${this.accountId}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -558,7 +560,7 @@ export class BrightcoveMCPServer {
   private async ingestPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.ingestBaseUrl}/accounts/${this.accountId}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -574,7 +576,7 @@ export class BrightcoveMCPServer {
     const token = await this.getOrRefreshToken();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
     const url = `${this.playersBaseUrl}/accounts/${this.accountId}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -587,7 +589,7 @@ export class BrightcoveMCPServer {
   private async playersPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.playersBaseUrl}/accounts/${this.accountId}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -602,7 +604,7 @@ export class BrightcoveMCPServer {
   private async playersPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.playersBaseUrl}/accounts/${this.accountId}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -612,13 +614,6 @@ export class BrightcoveMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   // ── Tool implementations ──────────────────────────────────────────────────

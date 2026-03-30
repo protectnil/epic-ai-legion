@@ -16,17 +16,19 @@
 // OpenAPI spec: https://api.apis.guru/v2/specs/royalmail.com/click-and-drop/1.0.0/swagger.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RoyalMailClickAndDropConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class RoyalMailClickAndDropMCPServer {
+export class RoyalMailClickAndDropMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: RoyalMailClickAndDropConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://api.clickanddrop.royalmail.com/api/v1';
   }
@@ -314,13 +316,6 @@ export class RoyalMailClickAndDropMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async rmGet(path: string, query?: Record<string, string | number | undefined>): Promise<ToolResult> {
     let url = `${this.baseUrl}${path}`;
     if (query) {
@@ -331,7 +326,7 @@ export class RoyalMailClickAndDropMCPServer {
       const qs = params.toString();
       if (qs) url += `?${qs}`;
     }
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
     if (!response.ok) {
       const body = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${body}` }], isError: true };
@@ -341,7 +336,7 @@ export class RoyalMailClickAndDropMCPServer {
   }
 
   private async rmPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -355,7 +350,7 @@ export class RoyalMailClickAndDropMCPServer {
   }
 
   private async rmPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -369,7 +364,7 @@ export class RoyalMailClickAndDropMCPServer {
   }
 
   private async rmDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -417,7 +412,7 @@ export class RoyalMailClickAndDropMCPServer {
   private async getOrderLabel(args: Record<string, unknown>): Promise<ToolResult> {
     const ids = args.orderIdentifiers as string;
     if (!ids) return { content: [{ type: 'text', text: 'orderIdentifiers is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/orders/${encodeURIComponent(ids)}/label`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/orders/${encodeURIComponent(ids)}/label`, {
       method: 'GET',
       headers: { ...this.authHeaders, Accept: 'application/pdf' },
     });

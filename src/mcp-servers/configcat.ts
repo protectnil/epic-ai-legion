@@ -13,6 +13,7 @@
 // Rate limits: X-Rate-Limit-Remaining / X-Rate-Limit-Reset headers; HTTP 429 on breach
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ConfigCatConfig {
   /**
@@ -27,12 +28,13 @@ interface ConfigCatConfig {
   baseUrl?: string;
 }
 
-export class ConfigCatMCPServer {
+export class ConfigCatMCPServer extends MCPAdapterBase {
   private readonly basicUsername: string;
   private readonly basicPassword: string;
   private readonly baseUrl: string;
 
   constructor(config: ConfigCatConfig) {
+    super();
     this.basicUsername = config.basicUsername;
     this.basicPassword = config.basicPassword;
     this.baseUrl = config.baseUrl || 'https://api.configcat.com/v1';
@@ -342,15 +344,8 @@ export class ConfigCatMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -359,7 +354,7 @@ export class ConfigCatMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -375,7 +370,7 @@ export class ConfigCatMCPServer {
   }
 
   private async apiPatch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -391,7 +386,7 @@ export class ConfigCatMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

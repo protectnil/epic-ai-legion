@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; subject to per-contract limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HealthGorillaConfig {
   clientId: string;
@@ -23,7 +24,7 @@ interface HealthGorillaConfig {
   tokenUrl?: string;
 }
 
-export class HealthGorillaMCPServer {
+export class HealthGorillaMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -33,6 +34,7 @@ export class HealthGorillaMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: HealthGorillaConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://api.healthgorilla.com/fhir/R4';
@@ -494,7 +496,7 @@ export class HealthGorillaMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -513,19 +515,12 @@ export class HealthGorillaMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getResource(resourceType: string, id: string): Promise<ToolResult> {
     if (!id) {
       return { content: [{ type: 'text', text: `${resourceType} ID is required` }], isError: true };
     }
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}/${resourceType}/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${resourceType}/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/fhir+json',
@@ -571,7 +566,7 @@ export class HealthGorillaMCPServer {
 
     const token = await this.getOrRefreshToken();
     const url = `${this.baseUrl}/${resourceType}?${params.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/fhir+json',
@@ -597,7 +592,7 @@ export class HealthGorillaMCPServer {
     const token = await this.getOrRefreshToken();
     const qs = params.toString();
     const url = `${this.baseUrl}/Patient/${id}/$everything${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/fhir+json',

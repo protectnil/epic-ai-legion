@@ -15,15 +15,17 @@
 //       p_id is the EPA Facility Registry System REGISTRY_ID (required for facility endpoints).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EpaDfrConfig {
   baseUrl?: string;
 }
 
-export class EpaDfrMCPServer {
+export class EpaDfrMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: EpaDfrConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://echodata.epa.gov/echo';
   }
 
@@ -315,13 +317,6 @@ export class EpaDfrMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildParams(args: Record<string, unknown>): URLSearchParams {
     const params = new URLSearchParams();
     if (args.p_id) params.set('p_id', String(args.p_id));
@@ -343,7 +338,7 @@ export class EpaDfrMCPServer {
     }
     const params = this.buildParams(args);
     const url = `${this.baseUrl}/${endpoint}?${params.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });

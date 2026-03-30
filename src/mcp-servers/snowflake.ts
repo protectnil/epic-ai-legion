@@ -28,6 +28,7 @@
 // Rate limits: Snowflake enforces warehouse concurrency limits, not fixed req/min API rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SnowflakeConfig {
   account: string;
@@ -66,11 +67,12 @@ function sanitizeHandle(value: unknown): string {
   return value.replace(/[^A-Fa-f0-9\-]/g, '');
 }
 
-export class SnowflakeMCPServer {
+export class SnowflakeMCPServer extends MCPAdapterBase {
   private readonly config: SnowflakeConfig;
   private readonly baseUrl: string;
 
   constructor(config: SnowflakeConfig) {
+    super();
     this.config = config;
     this.baseUrl = `https://${config.account}.snowflakecomputing.com/api/v2`;
   }
@@ -402,15 +404,8 @@ export class SnowflakeMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async sqlPost(body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/statements`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/statements`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -437,7 +432,7 @@ export class SnowflakeMCPServer {
   private async getStatementStatus(args: Record<string, unknown>): Promise<ToolResult> {
     const handle = sanitizeHandle(args.statementHandle);
     if (!handle) return { content: [{ type: 'text', text: 'statementHandle is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/statements/${handle}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/statements/${handle}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -449,7 +444,7 @@ export class SnowflakeMCPServer {
   private async cancelStatement(args: Record<string, unknown>): Promise<ToolResult> {
     const handle = sanitizeHandle(args.statementHandle);
     if (!handle) return { content: [{ type: 'text', text: 'statementHandle is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/statements/${handle}/cancel`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/statements/${handle}/cancel`, {
       method: 'POST',
       headers: this.headers,
     });
@@ -463,7 +458,7 @@ export class SnowflakeMCPServer {
     const partition = args.partition as number;
     if (!handle) return { content: [{ type: 'text', text: 'statementHandle is required' }], isError: true };
     if (partition === undefined || partition === null) return { content: [{ type: 'text', text: 'partition is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/statements/${handle}?partition=${partition}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/statements/${handle}?partition=${partition}`, {
       method: 'GET',
       headers: this.headers,
     });

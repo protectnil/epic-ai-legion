@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VeloPaymentsConfig {
   apiKey: string;      // base64-encoded API key:secret
@@ -20,7 +21,7 @@ interface VeloPaymentsConfig {
   payorId?: string;    // default payor ID for operations
 }
 
-export class VeloPaymentsMCPServer {
+export class VeloPaymentsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly payorId?: string;
@@ -28,6 +29,7 @@ export class VeloPaymentsMCPServer {
   private tokenExpiry?: number;
 
   constructor(config: VeloPaymentsConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.velopayments.com').replace(/\/$/, '');
     this.payorId = config.payorId;
@@ -282,16 +284,12 @@ export class VeloPaymentsMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
 
   private async getToken(): Promise<string> {
     if (this.cachedToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
       return this.cachedToken;
     }
-    const response = await fetch(`${this.baseUrl}/v1/authenticate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/authenticate`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${this.apiKey}`,
@@ -316,7 +314,7 @@ export class VeloPaymentsMCPServer {
       Accept: 'application/json',
       ...(init?.headers as Record<string, string> ?? {}),
     };
-    const response = await fetch(url, { ...init, headers });
+    const response = await this.fetchWithRetry(url, { ...init, headers });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

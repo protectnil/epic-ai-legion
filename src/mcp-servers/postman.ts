@@ -17,17 +17,19 @@
 // Rate limits: 300 requests/minute per API key (free plans may be lower)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PostmanConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class PostmanMCPServer {
+export class PostmanMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: PostmanConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.getpostman.com').replace(/\/$/, '');
   }
@@ -422,15 +424,8 @@ export class PostmanMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       return {

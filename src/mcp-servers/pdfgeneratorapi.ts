@@ -14,17 +14,19 @@
 // Rate limits: Not publicly documented; enforced per account tier.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PDFGeneratorAPIConfig {
   jwtToken: string;
   baseUrl?: string;
 }
 
-export class PDFGeneratorAPIMCPServer {
+export class PDFGeneratorAPIMCPServer extends MCPAdapterBase {
   private readonly jwtToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PDFGeneratorAPIConfig) {
+    super();
     this.jwtToken = config.jwtToken;
     this.baseUrl = config.baseUrl || 'https://us1.pdfgeneratorapi.com/api/v3';
   }
@@ -263,7 +265,7 @@ export class PDFGeneratorAPIMCPServer {
     options: RequestInit = {},
   ): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

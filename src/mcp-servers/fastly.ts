@@ -19,17 +19,19 @@
 // Rate limits: Read (GET/HEAD): 6,000 req/min; Single-URL and surrogate key purges: avg 100,000/hr per customer
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FastlyConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class FastlyMCPServer {
+export class FastlyMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: FastlyConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.fastly.com';
   }
@@ -597,16 +599,9 @@ export class FastlyMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fastlyGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -615,7 +610,7 @@ export class FastlyMCPServer {
   }
 
   private async fastlyPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -628,7 +623,7 @@ export class FastlyMCPServer {
   }
 
   private async fastlyPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -641,7 +636,7 @@ export class FastlyMCPServer {
   }
 
   private async fastlyDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -756,7 +751,7 @@ export class FastlyMCPServer {
     // The URL path after /purge/ is the full URL to purge (including scheme).
     const headers: Record<string, string> = { ...this.headers };
     if (args.soft) headers['Fastly-Soft-Purge'] = '1';
-    const response = await fetch(`${this.baseUrl}/purge/${encodeURIComponent(args.url as string)}`, { method: 'POST', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/purge/${encodeURIComponent(args.url as string)}`, { method: 'POST', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Purge error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -769,7 +764,7 @@ export class FastlyMCPServer {
     // Fastly API: POST /service/{service_id}/purge/{surrogate_key} for a single key
     const headers: Record<string, string> = { ...this.headers };
     if (args.soft) headers['Fastly-Soft-Purge'] = '1';
-    const response = await fetch(`${this.baseUrl}/service/${encodeURIComponent(args.service_id as string)}/purge/${encodeURIComponent(args.surrogate_key as string)}`, { method: 'POST', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/service/${encodeURIComponent(args.service_id as string)}/purge/${encodeURIComponent(args.surrogate_key as string)}`, { method: 'POST', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Purge error: ${response.status} ${response.statusText}` }], isError: true };
     }

@@ -18,6 +18,7 @@
 // Rate limits: Not publicly documented. bunq enforces rate limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BunqConfig {
   sessionToken: string;
@@ -25,12 +26,13 @@ interface BunqConfig {
   baseUrl?: string;
 }
 
-export class BunqMCPServer {
+export class BunqMCPServer extends MCPAdapterBase {
   private readonly sessionToken: string;
   private readonly userId: string;
   private readonly baseUrl: string;
 
   constructor(config: BunqConfig) {
+    super();
     this.sessionToken = config.sessionToken;
     this.userId = String(config.userId);
     this.baseUrl = config.baseUrl ?? 'https://api.bunq.com/v1';
@@ -483,7 +485,7 @@ export class BunqMCPServer {
 
   private async bunqRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { ...options, headers: { ...this.buildHeaders(), ...(options.headers as Record<string, string> | undefined) } });
+    const response = await this.fetchWithRetry(url, { ...options, headers: { ...this.buildHeaders(), ...(options.headers as Record<string, string> | undefined) } });
 
     if (!response.ok) {
       let detail = '';

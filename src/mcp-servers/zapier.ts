@@ -27,6 +27,7 @@
 // Rate limits: Not publicly documented; governed by Zapier plan limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ZapierConfig {
   /** API key for the NLA AI Actions API (from nla.zapier.com). Uses x-api-key header. */
@@ -41,13 +42,14 @@ interface ZapierConfig {
   zapBaseUrl?: string;
 }
 
-export class ZapierMCPServer {
+export class ZapierMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly zapOAuthToken: string | undefined;
   private readonly nlaBaseUrl: string;
   private readonly zapBaseUrl: string;
 
   constructor(config: ZapierConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.zapOAuthToken = config.zapOAuthToken;
     this.nlaBaseUrl = config.nlaBaseUrl || 'https://nla.zapier.com/api/v1';
@@ -285,14 +287,10 @@ export class ZapierMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
 
   private async nlaGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.nlaBaseUrl}${path}${qs}`, { headers: this.nlaHeaders });
+    const response = await this.fetchWithRetry(`${this.nlaBaseUrl}${path}${qs}`, { headers: this.nlaHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -301,7 +299,7 @@ export class ZapierMCPServer {
   }
 
   private async nlaPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.nlaBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.nlaBaseUrl}${path}`, {
       method: 'POST',
       headers: this.nlaHeaders,
       body: JSON.stringify(body),
@@ -318,7 +316,7 @@ export class ZapierMCPServer {
       return { content: [{ type: 'text', text: 'Zap management tools require zapOAuthToken (OAuth2 Bearer). Provide zapOAuthToken in config.' }], isError: true };
     }
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.zapBaseUrl}${path}${qs}`, { headers: this.zapHeaders });
+    const response = await this.fetchWithRetry(`${this.zapBaseUrl}${path}${qs}`, { headers: this.zapHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -330,7 +328,7 @@ export class ZapierMCPServer {
     if (!this.zapOAuthToken) {
       return { content: [{ type: 'text', text: 'Zap management tools require zapOAuthToken (OAuth2 Bearer). Provide zapOAuthToken in config.' }], isError: true };
     }
-    const response = await fetch(`${this.zapBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.zapBaseUrl}${path}`, {
       method: 'POST',
       headers: this.zapHeaders,
       body: body ? JSON.stringify(body) : undefined,

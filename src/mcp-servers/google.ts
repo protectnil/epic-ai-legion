@@ -14,17 +14,19 @@
 // Rate limits: Standard Google API quota; subject to per-project limits in Cloud Console
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleTravelPartnerConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class GoogleMCPServer {
+export class GoogleMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: GoogleTravelPartnerConfig) {
+    super();
     this.token = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://travelpartner.googleapis.com/v3').replace(/\/$/, '');
   }
@@ -375,7 +377,7 @@ export class GoogleMCPServer {
   }
 
   private async doGet(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -388,7 +390,7 @@ export class GoogleMCPServer {
   }
 
   private async doPost(url: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -405,7 +407,7 @@ export class GoogleMCPServer {
   }
 
   private async doPatch(url: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -422,7 +424,7 @@ export class GoogleMCPServer {
   }
 
   private async doDelete(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'DELETE', headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

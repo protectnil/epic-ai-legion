@@ -15,15 +15,17 @@
 // Workflow: call search_facilities → get QID → paginate with get_paginated_results → download or map as needed.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EpaRcraConfig {
   baseUrl?: string;
 }
 
-export class EpaRcraMCPServer {
+export class EpaRcraMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: EpaRcraConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://echodata.epa.gov/echo';
   }
 
@@ -600,18 +602,11 @@ export class EpaRcraMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async echoGet(path: string, params: Record<string, string>): Promise<ToolResult> {
     params.output = 'JSON';
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/${path}?${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });
@@ -707,7 +702,7 @@ export class EpaRcraMCPServer {
     params.output = 'GEOJSON';
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/rcra_rest_services.get_geojson?${qs}`;
-    const response = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -726,7 +721,7 @@ export class EpaRcraMCPServer {
     params.output = 'CSV';
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/rcra_rest_services.get_info_clusters?${qs}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -745,7 +740,7 @@ export class EpaRcraMCPServer {
     params.output = 'CSV';
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/rcra_rest_services.get_download?${qs}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],

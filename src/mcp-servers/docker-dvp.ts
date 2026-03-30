@@ -17,6 +17,7 @@
 // Audience: Docker Verified Publishers only — requires publisher namespace access
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DockerDvpConfig {
   /**
@@ -32,11 +33,12 @@ interface DockerDvpConfig {
   baseUrl?: string;
 }
 
-export class DockerDvpMCPServer {
+export class DockerDvpMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: DockerDvpConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = config.baseUrl || 'https://hub.docker.com/api/publisher/analytics/v1';
   }
@@ -175,15 +177,8 @@ export class DockerDvpMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -196,7 +191,7 @@ export class DockerDvpMCPServer {
     if (!username || !password) {
       return { content: [{ type: 'text', text: 'username and password are required' }], isError: true };
     }
-    const response = await fetch('https://hub.docker.com/v2/users/login', {
+    const response = await this.fetchWithRetry('https://hub.docker.com/v2/users/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ username, password }),
@@ -214,7 +209,7 @@ export class DockerDvpMCPServer {
     if (!login_2fa_token || !code) {
       return { content: [{ type: 'text', text: 'login_2fa_token and code are required' }], isError: true };
     }
-    const response = await fetch('https://hub.docker.com/v2/users/2fa-login', {
+    const response = await this.fetchWithRetry('https://hub.docker.com/v2/users/2fa-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ login_2fa_token, code }),

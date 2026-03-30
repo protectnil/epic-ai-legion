@@ -13,6 +13,7 @@
 // Rate limits: Rate-limited per credential. 429 Too Many Requests with optional Retry-After header.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Art19Config {
   token: string;
@@ -21,12 +22,13 @@ interface Art19Config {
   baseUrl?: string;
 }
 
-export class Art19MCPServer {
+export class Art19MCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly credential: string;
   private readonly baseUrl: string;
 
   constructor(config: Art19Config) {
+    super();
     this.token = config.token;
     this.credential = config.credential;
     this.baseUrl = config.baseUrl ?? 'https://art19.com';
@@ -357,13 +359,6 @@ export class Art19MCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private headers(): Record<string, string> {
     return {
       'Accept': 'application/vnd.api+json',
@@ -372,7 +367,7 @@ export class Art19MCPServer {
   }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.headers(),
     });

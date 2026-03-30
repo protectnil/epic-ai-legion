@@ -35,6 +35,7 @@
 // Rate limits: Varies by endpoint; ingestion API allows up to 2000 events/request, 1 MB max
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AmplitudeConfig {
   apiKey: string;
@@ -47,13 +48,14 @@ interface AmplitudeConfig {
   analyticsBaseUrl?: string;
 }
 
-export class AmplitudeMCPServer {
+export class AmplitudeMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly secretKey: string;
   private readonly ingestionBaseUrl: string;
   private readonly analyticsBaseUrl: string;
 
   constructor(config: AmplitudeConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.secretKey = config.secretKey;
     this.ingestionBaseUrl = config.ingestionBaseUrl ?? 'https://api2.amplitude.com/2/httpapi';
@@ -63,13 +65,6 @@ export class AmplitudeMCPServer {
   private get basicAuthHeader(): string {
     const encoded = Buffer.from(`${this.apiKey}:${this.secretKey}`).toString('base64');
     return `Basic ${encoded}`;
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -345,7 +340,7 @@ export class AmplitudeMCPServer {
     }
     const body: Record<string, unknown> = { api_key: this.apiKey, events };
     if (args.options) body.options = args.options;
-    const response = await fetch(this.ingestionBaseUrl, {
+    const response = await this.fetchWithRetry(this.ingestionBaseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -364,7 +359,7 @@ export class AmplitudeMCPServer {
     }
     const identifyUrl = this.ingestionBaseUrl.replace('/2/httpapi', '/identify');
     const body = { api_key: this.apiKey, identification: JSON.stringify(identification) };
-    const response = await fetch(identifyUrl, {
+    const response = await this.fetchWithRetry(identifyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams(body as Record<string, string>).toString(),
@@ -383,7 +378,7 @@ export class AmplitudeMCPServer {
     let url = `${this.analyticsBaseUrl}/users?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
     if (args.m) url += `&m=${encodeURIComponent(args.m as string)}`;
     if (args.i) url += `&i=${encodeURIComponent(args.i as number)}`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -402,7 +397,7 @@ export class AmplitudeMCPServer {
     if (args.s) url += `&s=${encodeURIComponent(JSON.stringify(args.s))}`;
     if (args.g) url += `&g=${encodeURIComponent(JSON.stringify(args.g))}`;
     if (args.limit) url += `&limit=${encodeURIComponent(args.limit as number)}`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -421,7 +416,7 @@ export class AmplitudeMCPServer {
     if (args.converted_within) url += `&converted_within=${encodeURIComponent(args.converted_within as number)}`;
     if (args.s) url += `&s=${encodeURIComponent(JSON.stringify(args.s))}`;
     if (args.g) url += `&g=${encodeURIComponent(JSON.stringify(args.g))}`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -438,7 +433,7 @@ export class AmplitudeMCPServer {
     let url = `${this.analyticsBaseUrl}/retention?se=${encodeURIComponent(JSON.stringify(se))}&re=${encodeURIComponent(JSON.stringify(re))}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
     if (args.retention_type) url += `&retention_type=${encodeURIComponent(args.retention_type as string)}`;
     if (args.i) url += `&i=${encodeURIComponent(args.i as number)}`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -451,7 +446,7 @@ export class AmplitudeMCPServer {
     if (!user) return { content: [{ type: 'text', text: 'user is required' }], isError: true };
     let url = `${this.analyticsBaseUrl}/useractivity?user=${encodeURIComponent(user)}`;
     if (args.limit) url += `&limit=${encodeURIComponent(args.limit as number)}`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -463,7 +458,7 @@ export class AmplitudeMCPServer {
     const userId = args.user_id as string;
     if (!userId) return { content: [{ type: 'text', text: 'user_id is required' }], isError: true };
     const url = `${this.analyticsBaseUrl}/usersearch?user=${encodeURIComponent(userId)}`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -472,7 +467,7 @@ export class AmplitudeMCPServer {
   }
 
   private async listCohorts(_args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.analyticsBaseUrl}/cohorts`, {
+    const response = await this.fetchWithRetry(`${this.analyticsBaseUrl}/cohorts`, {
       method: 'GET',
       headers: { Authorization: this.basicAuthHeader },
     });
@@ -491,7 +486,7 @@ export class AmplitudeMCPServer {
     if (args.props !== undefined) params.push(`props=${encodeURIComponent(args.props as number)}`);
     if (args.limit !== undefined) params.push(`limit=${encodeURIComponent(args.limit as number)}`);
     if (params.length > 0) url += `?${params.join('&')}`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -500,7 +495,7 @@ export class AmplitudeMCPServer {
   }
 
   private async listEventTypes(_args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.analyticsBaseUrl}/taxonomy/event`, {
+    const response = await this.fetchWithRetry(`${this.analyticsBaseUrl}/taxonomy/event`, {
       method: 'GET',
       headers: { Authorization: this.basicAuthHeader },
     });
@@ -514,7 +509,7 @@ export class AmplitudeMCPServer {
   private async getEventType(args: Record<string, unknown>): Promise<ToolResult> {
     const eventType = args.event_type as string;
     if (!eventType) return { content: [{ type: 'text', text: 'event_type is required' }], isError: true };
-    const response = await fetch(`${this.analyticsBaseUrl}/taxonomy/event/${encodeURIComponent(eventType)}`, {
+    const response = await this.fetchWithRetry(`${this.analyticsBaseUrl}/taxonomy/event/${encodeURIComponent(eventType)}`, {
       method: 'GET',
       headers: { Authorization: this.basicAuthHeader },
     });
@@ -526,7 +521,7 @@ export class AmplitudeMCPServer {
   }
 
   private async listUserProperties(_args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.analyticsBaseUrl}/taxonomy/user-property`, {
+    const response = await this.fetchWithRetry(`${this.analyticsBaseUrl}/taxonomy/user-property`, {
       method: 'GET',
       headers: { Authorization: this.basicAuthHeader },
     });
@@ -540,7 +535,7 @@ export class AmplitudeMCPServer {
   private async listEventProperties(args: Record<string, unknown>): Promise<ToolResult> {
     const eventType = args.event_type as string;
     if (!eventType) return { content: [{ type: 'text', text: 'event_type is required' }], isError: true };
-    const response = await fetch(`${this.analyticsBaseUrl}/taxonomy/event/${encodeURIComponent(eventType)}/event-property`, {
+    const response = await this.fetchWithRetry(`${this.analyticsBaseUrl}/taxonomy/event/${encodeURIComponent(eventType)}/event-property`, {
       method: 'GET',
       headers: { Authorization: this.basicAuthHeader },
     });
@@ -556,7 +551,7 @@ export class AmplitudeMCPServer {
     const end = args.end as string;
     if (!start || !end) return { content: [{ type: 'text', text: 'start and end are required (format: YYYYMMDDTHH)' }], isError: true };
     const url = `${this.analyticsBaseUrl}/export?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.basicAuthHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -579,7 +574,7 @@ export class AmplitudeMCPServer {
     if (userIds && userIds.length > 0) body.user_ids = userIds;
     if (deviceIds && deviceIds.length > 0) body.amplitude_ids = deviceIds;
     if (args.requester) body.requester = args.requester;
-    const response = await fetch(`${this.analyticsBaseUrl}/deletions/users`, {
+    const response = await this.fetchWithRetry(`${this.analyticsBaseUrl}/deletions/users`, {
       method: 'POST',
       headers: { Authorization: this.basicAuthHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -594,7 +589,7 @@ export class AmplitudeMCPServer {
   private async getDeletionJob(args: Record<string, unknown>): Promise<ToolResult> {
     const jobId = args.job_id as string;
     if (!jobId) return { content: [{ type: 'text', text: 'job_id is required' }], isError: true };
-    const response = await fetch(`${this.analyticsBaseUrl}/deletions/users/${encodeURIComponent(jobId)}`, {
+    const response = await this.fetchWithRetry(`${this.analyticsBaseUrl}/deletions/users/${encodeURIComponent(jobId)}`, {
       method: 'GET',
       headers: { Authorization: this.basicAuthHeader },
     });

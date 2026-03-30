@@ -16,6 +16,7 @@
 // Rate limits: Varies by API. SMS: 30 msg/sec default. Voice: 20 concurrent calls. Verify: 5 req/sec.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VonageConfig {
   apiKey: string;
@@ -23,13 +24,14 @@ interface VonageConfig {
   baseUrl?: string;
 }
 
-export class VonageMCPServer {
+export class VonageMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly apiSecret: string;
   private readonly restBaseUrl: string;
   private readonly apiBaseUrl: string;
 
   constructor(config: VonageConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.apiSecret = config.apiSecret;
     this.restBaseUrl = config.baseUrl || 'https://rest.nexmo.com';
@@ -418,17 +420,10 @@ export class VonageMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async restGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const allParams = { api_key: this.apiKey, api_secret: this.apiSecret, ...params };
     const qs = new URLSearchParams(allParams).toString();
-    const response = await fetch(`${this.restBaseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.restBaseUrl}${path}?${qs}`, {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) {
@@ -441,7 +436,7 @@ export class VonageMCPServer {
   private async restPost(path: string, body: Record<string, unknown> = {}, baseUrl?: string): Promise<ToolResult> {
     const payload = { api_key: this.apiKey, api_secret: this.apiSecret, ...body };
     const url = (baseUrl || this.restBaseUrl) + path;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(payload),
@@ -456,7 +451,7 @@ export class VonageMCPServer {
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const allParams = { api_key: this.apiKey, api_secret: this.apiSecret, ...params };
     const qs = new URLSearchParams(allParams).toString();
-    const response = await fetch(`${this.apiBaseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.apiBaseUrl}${path}?${qs}`, {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) {
@@ -500,7 +495,7 @@ export class VonageMCPServer {
     if (args.machine_detection) body.machine_detection = args.machine_detection;
     // Note: Voice API requires JWT auth. For simplicity, using basic auth here.
     // Production use should implement JWT signing with node:crypto + application credentials.
-    const response = await fetch(`${this.apiBaseUrl}/v1/calls`, {
+    const response = await this.fetchWithRetry(`${this.apiBaseUrl}/v1/calls`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -518,7 +513,7 @@ export class VonageMCPServer {
 
   private async getCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_uuid) return { content: [{ type: 'text', text: 'call_uuid is required' }], isError: true };
-    const response = await fetch(`${this.apiBaseUrl}/v1/calls/${encodeURIComponent(args.call_uuid as string)}`, {
+    const response = await this.fetchWithRetry(`${this.apiBaseUrl}/v1/calls/${encodeURIComponent(args.call_uuid as string)}`, {
       headers: { 'Accept': 'application/json', 'Authorization': `Basic ${btoa(`${this.apiKey}:${this.apiSecret}`)}` },
     });
     if (!response.ok) {
@@ -537,7 +532,7 @@ export class VonageMCPServer {
     if (args.date_start) params.date_start = args.date_start as string;
     if (args.date_end) params.date_end = args.date_end as string;
     const qs = new URLSearchParams(params).toString();
-    const response = await fetch(`${this.apiBaseUrl}/v1/calls?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.apiBaseUrl}/v1/calls?${qs}`, {
       headers: { 'Accept': 'application/json', 'Authorization': `Basic ${btoa(`${this.apiKey}:${this.apiSecret}`)}` },
     });
     if (!response.ok) {
@@ -549,7 +544,7 @@ export class VonageMCPServer {
 
   private async endCall(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.call_uuid) return { content: [{ type: 'text', text: 'call_uuid is required' }], isError: true };
-    const response = await fetch(`${this.apiBaseUrl}/v1/calls/${encodeURIComponent(args.call_uuid as string)}`, {
+    const response = await this.fetchWithRetry(`${this.apiBaseUrl}/v1/calls/${encodeURIComponent(args.call_uuid as string)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Basic ${btoa(`${this.apiKey}:${this.apiSecret}`)}` },
       body: JSON.stringify({ action: 'hangup' }),

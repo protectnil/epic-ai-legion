@@ -22,6 +22,7 @@
 // Rate limits: Pro — 500 calls/min; Demo — 30 calls/min; Public (no key) — ~10-30 calls/min.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CoinGeckoConfig {
   apiKey: string;
@@ -29,12 +30,13 @@ interface CoinGeckoConfig {
   baseUrl?: string;
 }
 
-export class CoinGeckoMCPServer {
+export class CoinGeckoMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly plan: 'pro' | 'demo';
   private readonly baseUrl: string;
 
   constructor(config: CoinGeckoConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.plan = config.plan ?? 'pro';
     this.baseUrl = config.baseUrl || (this.plan === 'pro'
@@ -421,17 +423,11 @@ export class CoinGeckoMCPServer {
     return { [headerName]: this.apiKey };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async cgGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', ...this.authHeader },
     });

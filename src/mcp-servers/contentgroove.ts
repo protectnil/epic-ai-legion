@@ -13,17 +13,19 @@
 // Rate limits: 429 returned when exceeded; retry with exponential backoff
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ContentGrooveConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class ContentGrooveMCPServer {
+export class ContentGrooveMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ContentGrooveConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.contentgroove.com';
   }
@@ -422,12 +424,6 @@ export class ContentGrooveMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listClips(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.filter) params.set('filter', String(args.filter));
@@ -436,7 +432,7 @@ export class ContentGrooveMCPServer {
     if (args.sort) params.set('sort', String(args.sort));
 
     const url = `${this.baseUrl}/api/v1/clips${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
 
     if (!response.ok) {
       return {
@@ -454,7 +450,7 @@ export class ContentGrooveMCPServer {
 
   private async getClip(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as string;
-    const response = await fetch(`${this.baseUrl}/api/v1/clips/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/clips/${id}`, {
       headers: this.authHeaders(),
     });
 
@@ -484,7 +480,7 @@ export class ContentGrooveMCPServer {
       },
     };
 
-    const response = await fetch(`${this.baseUrl}/api/v1/clips`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/clips`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -511,7 +507,7 @@ export class ContentGrooveMCPServer {
     if (args.start_time !== undefined) attributes.start_time = args.start_time;
     if (args.end_time !== undefined) attributes.end_time = args.end_time;
 
-    const response = await fetch(`${this.baseUrl}/api/v1/clips/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/clips/${id}`, {
       method: 'PUT',
       headers: this.authHeaders(),
       body: JSON.stringify({ data: { attributes } }),
@@ -533,7 +529,7 @@ export class ContentGrooveMCPServer {
 
   private async deleteClip(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as string;
-    const response = await fetch(`${this.baseUrl}/api/v1/clips/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/clips/${id}`, {
       method: 'DELETE',
       headers: this.authHeaders(),
     });
@@ -559,7 +555,7 @@ export class ContentGrooveMCPServer {
     if (args.sort) params.set('sort', String(args.sort));
 
     const url = `${this.baseUrl}/api/v1/medias${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
 
     if (!response.ok) {
       return {
@@ -577,7 +573,7 @@ export class ContentGrooveMCPServer {
 
   private async getMedia(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as string;
-    const response = await fetch(`${this.baseUrl}/api/v1/medias/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/medias/${id}`, {
       headers: this.authHeaders(),
     });
 
@@ -601,7 +597,7 @@ export class ContentGrooveMCPServer {
     if (args.upload_id) attributes.upload_id = args.upload_id;
     if (args.description) attributes.description = args.description;
 
-    const response = await fetch(`${this.baseUrl}/api/v1/medias`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/medias`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify({ data: { attributes } }),
@@ -627,7 +623,7 @@ export class ContentGrooveMCPServer {
     if (args.name !== undefined) attributes.name = args.name;
     if (args.description !== undefined) attributes.description = args.description;
 
-    const response = await fetch(`${this.baseUrl}/api/v1/medias/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/medias/${id}`, {
       method: 'PUT',
       headers: this.authHeaders(),
       body: JSON.stringify({ data: { attributes } }),
@@ -649,7 +645,7 @@ export class ContentGrooveMCPServer {
 
   private async deleteMedia(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as string;
-    const response = await fetch(`${this.baseUrl}/api/v1/medias/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/medias/${id}`, {
       method: 'DELETE',
       headers: this.authHeaders(),
     });
@@ -668,7 +664,7 @@ export class ContentGrooveMCPServer {
   }
 
   private async getUploadUrl(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/v1/direct_uploads`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/direct_uploads`, {
       headers: this.authHeaders(),
     });
 
@@ -692,7 +688,7 @@ export class ContentGrooveMCPServer {
     if (args.sort) params.set('sort', String(args.sort));
 
     const url = `${this.baseUrl}/api/v1/webhook_subscriptions${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
 
     if (!response.ok) {
       return {
@@ -710,7 +706,7 @@ export class ContentGrooveMCPServer {
 
   private async getWebhookSubscription(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as string;
-    const response = await fetch(`${this.baseUrl}/api/v1/webhook_subscriptions/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/webhook_subscriptions/${id}`, {
       headers: this.authHeaders(),
     });
 
@@ -732,7 +728,7 @@ export class ContentGrooveMCPServer {
     const attributes: Record<string, unknown> = { url: args.url as string };
     if (args.event_types) attributes.event_types = args.event_types;
 
-    const response = await fetch(`${this.baseUrl}/api/v1/webhook_subscriptions`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/webhook_subscriptions`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify({ data: { attributes } }),
@@ -754,7 +750,7 @@ export class ContentGrooveMCPServer {
 
   private async deleteWebhookSubscription(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as string;
-    const response = await fetch(`${this.baseUrl}/api/v1/webhook_subscriptions/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/webhook_subscriptions/${id}`, {
       method: 'DELETE',
       headers: this.authHeaders(),
     });

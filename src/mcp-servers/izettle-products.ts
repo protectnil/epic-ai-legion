@@ -16,17 +16,19 @@
 // Rate limits: See Zettle developer docs
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface IZettleProductsConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class IZettleProductsMCPServer {
+export class IZettleProductsMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: IZettleProductsConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://products.izettle.com';
   }
@@ -779,13 +781,6 @@ export class IZettleProductsMCPServer {
     return `Bearer ${this.accessToken}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     path: string,
@@ -806,7 +801,7 @@ export class IZettleProductsMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

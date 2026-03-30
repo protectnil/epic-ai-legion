@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented; contact project44 for tenant-level limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Project44Config {
   clientId: string;
@@ -20,7 +21,7 @@ interface Project44Config {
   baseUrl?: string;
 }
 
-export class Project44MCPServer {
+export class Project44MCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -28,6 +29,7 @@ export class Project44MCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: Project44Config) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://na12.api.project44.com';
@@ -210,7 +212,7 @@ export class Project44MCPServer {
     const now = Date.now();
     if (this.bearerToken && this.tokenExpiry > now) return this.bearerToken;
 
-    const response = await fetch(`${this.baseUrl}/api/v4/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v4/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -227,17 +229,10 @@ export class Project44MCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -249,7 +244,7 @@ export class Project44MCPServer {
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -263,7 +258,7 @@ export class Project44MCPServer {
 
   private async put(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -277,7 +272,7 @@ export class Project44MCPServer {
 
   private async del(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });

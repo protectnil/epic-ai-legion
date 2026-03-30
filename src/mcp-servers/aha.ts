@@ -17,6 +17,7 @@
 // Rate limits: ~10 req/s; pagination is 1-indexed (page 1 = first page)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AhaConfig {
   apiKey: string;
@@ -24,11 +25,12 @@ interface AhaConfig {
   baseUrl?: string;
 }
 
-export class AhaMCPServer {
+export class AhaMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: AhaConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || `https://${config.subdomain}.aha.io/api/v1`;
   }
@@ -344,13 +346,6 @@ export class AhaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private buildPaginationParams(args: Record<string, unknown>): string {
     const params: string[] = [];
     if (args.page) params.push(`page=${encodeURIComponent(args.page as string)}`);
@@ -359,7 +354,7 @@ export class AhaMCPServer {
   }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Aha! API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -369,7 +364,7 @@ export class AhaMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -383,7 +378,7 @@ export class AhaMCPServer {
   }
 
   private async put(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),

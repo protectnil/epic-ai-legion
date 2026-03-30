@@ -24,18 +24,20 @@
 // Rate limits: 250 quota units/second per user; sending is limited per Google Workspace policy.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GmailConfig {
   accessToken: string;
   userId?: string;
 }
 
-export class GmailMCPServer {
+export class GmailMCPServer extends MCPAdapterBase {
   private readonly baseUrl = 'https://gmail.googleapis.com/gmail/v1';
   private readonly userId: string;
   private readonly token: string;
 
   constructor(config: GmailConfig) {
+    super();
     this.token = config.accessToken;
     this.userId = config.userId ?? 'me';
   }
@@ -538,13 +540,6 @@ export class GmailMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildRawMessage(fields: {
     to: string;
     subject: string;
@@ -584,7 +579,7 @@ export class GmailMCPServer {
     const labelIds = args.labelIds as string[] | undefined;
     if (labelIds) labelIds.forEach(id => params.append('labelIds', id));
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages?${params}`,
       { headers: this.headers },
     );
@@ -601,7 +596,7 @@ export class GmailMCPServer {
       return { content: [{ type: 'text', text: 'messageId is required' }], isError: true };
     }
     const params = new URLSearchParams({ format: (args.format as string) ?? 'full' });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages/${encodeURIComponent(messageId)}?${params}`,
       { headers: this.headers },
     );
@@ -620,7 +615,7 @@ export class GmailMCPServer {
     const params = new URLSearchParams({ q: query });
     params.append('maxResults', String((args.maxResults as number) ?? 20));
     if (args.pageToken) params.append('pageToken', args.pageToken as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages?${params}`,
       { headers: this.headers },
     );
@@ -643,7 +638,7 @@ export class GmailMCPServer {
       bcc: args.bcc as string | undefined,
       htmlBody: args.htmlBody as boolean | undefined,
     });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages/send`,
       { method: 'POST', headers: this.headers, body: JSON.stringify({ raw }) },
     );
@@ -661,7 +656,7 @@ export class GmailMCPServer {
       return { content: [{ type: 'text', text: 'messageId and body are required' }], isError: true };
     }
     // Fetch original message for threading headers
-    const orig = await fetch(
+    const orig = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages/${encodeURIComponent(messageId)}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Subject&metadataHeaders=Message-ID&metadataHeaders=References`,
       { headers: this.headers },
     );
@@ -686,7 +681,7 @@ export class GmailMCPServer {
       inReplyTo: messageIdHeader,
       references,
     });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages/send`,
       {
         method: 'POST',
@@ -712,7 +707,7 @@ export class GmailMCPServer {
       cc: args.cc as string | undefined,
       bcc: args.bcc as string | undefined,
     });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/drafts`,
       { method: 'POST', headers: this.headers, body: JSON.stringify({ message: { raw } }) },
     );
@@ -728,7 +723,7 @@ export class GmailMCPServer {
     params.append('maxResults', String((args.maxResults as number) ?? 20));
     if (args.pageToken) params.append('pageToken', args.pageToken as string);
     if (args.q) params.append('q', args.q as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/drafts?${params}`,
       { headers: this.headers },
     );
@@ -745,7 +740,7 @@ export class GmailMCPServer {
       return { content: [{ type: 'text', text: 'draftId is required' }], isError: true };
     }
     const params = new URLSearchParams({ format: (args.format as string) ?? 'full' });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/drafts/${encodeURIComponent(draftId)}?${params}`,
       { headers: this.headers },
     );
@@ -761,7 +756,7 @@ export class GmailMCPServer {
     if (!draftId) {
       return { content: [{ type: 'text', text: 'draftId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/drafts/send`,
       { method: 'POST', headers: this.headers, body: JSON.stringify({ id: draftId }) },
     );
@@ -777,7 +772,7 @@ export class GmailMCPServer {
     if (!draftId) {
       return { content: [{ type: 'text', text: 'draftId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/drafts/${encodeURIComponent(draftId)}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -792,7 +787,7 @@ export class GmailMCPServer {
     if (!messageId) {
       return { content: [{ type: 'text', text: 'messageId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages/${encodeURIComponent(messageId)}/trash`,
       { method: 'POST', headers: this.headers },
     );
@@ -808,7 +803,7 @@ export class GmailMCPServer {
     if (!messageId) {
       return { content: [{ type: 'text', text: 'messageId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages/${encodeURIComponent(messageId)}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -826,7 +821,7 @@ export class GmailMCPServer {
     const body: Record<string, unknown> = {};
     if (args.addLabelIds) body.addLabelIds = args.addLabelIds;
     if (args.removeLabelIds) body.removeLabelIds = args.removeLabelIds;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/messages/${encodeURIComponent(messageId)}/modify`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -844,7 +839,7 @@ export class GmailMCPServer {
     if (args.q) params.append('q', args.q as string);
     const labelIds = args.labelIds as string[] | undefined;
     if (labelIds) labelIds.forEach(id => params.append('labelIds', id));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/threads?${params}`,
       { headers: this.headers },
     );
@@ -861,7 +856,7 @@ export class GmailMCPServer {
       return { content: [{ type: 'text', text: 'threadId is required' }], isError: true };
     }
     const params = new URLSearchParams({ format: (args.format as string) ?? 'full' });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/threads/${encodeURIComponent(threadId)}?${params}`,
       { headers: this.headers },
     );
@@ -877,7 +872,7 @@ export class GmailMCPServer {
     if (!threadId) {
       return { content: [{ type: 'text', text: 'threadId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/threads/${encodeURIComponent(threadId)}/trash`,
       { method: 'POST', headers: this.headers },
     );
@@ -896,7 +891,7 @@ export class GmailMCPServer {
     const body: Record<string, unknown> = {};
     if (args.addLabelIds) body.addLabelIds = args.addLabelIds;
     if (args.removeLabelIds) body.removeLabelIds = args.removeLabelIds;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/threads/${encodeURIComponent(threadId)}/modify`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -908,7 +903,7 @@ export class GmailMCPServer {
   }
 
   private async listLabels(): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/labels`,
       { headers: this.headers },
     );
@@ -927,7 +922,7 @@ export class GmailMCPServer {
     const body: Record<string, unknown> = { name };
     if (args.messageListVisibility) body.messageListVisibility = args.messageListVisibility;
     if (args.labelListVisibility) body.labelListVisibility = args.labelListVisibility;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/labels`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -939,7 +934,7 @@ export class GmailMCPServer {
   }
 
   private async getProfile(): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${this.userId}/profile`,
       { headers: this.headers },
     );

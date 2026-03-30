@@ -10,15 +10,17 @@
 // Rate limits: Not formally documented; use responsibly
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenTargetsConfig {
   baseUrl?: string;
 }
 
-export class OpenTargetsMCPServer {
+export class OpenTargetsMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: OpenTargetsConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://platform-api.opentargets.io/v3/platform';
   }
 
@@ -454,13 +456,6 @@ export class OpenTargetsMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string | number | boolean> = {}): Promise<ToolResult> {
     const url = new URL(`${this.baseUrl}${path}`);
     for (const [key, value] of Object.entries(params)) {
@@ -468,7 +463,7 @@ export class OpenTargetsMCPServer {
         url.searchParams.set(key, String(value));
       }
     }
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {

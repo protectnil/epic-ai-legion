@@ -21,6 +21,7 @@
 //   Create Query Result: max 10 requests/min. Create Query Result (relational): max 1 request/min.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HoneycombConfig {
   /** Honeycomb API key from Account > Team Settings > API Keys. */
@@ -29,11 +30,12 @@ interface HoneycombConfig {
   baseUrl?: string;
 }
 
-export class HoneycombMCPServer {
+export class HoneycombMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: HoneycombConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.honeycomb.io').replace(/\/$/, '');
   }
@@ -482,15 +484,8 @@ export class HoneycombMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async hcGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -503,7 +498,7 @@ export class HoneycombMCPServer {
   }
 
   private async hcPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -517,7 +512,7 @@ export class HoneycombMCPServer {
   }
 
   private async hcPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -531,7 +526,7 @@ export class HoneycombMCPServer {
   }
 
   private async hcDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -546,7 +541,7 @@ export class HoneycombMCPServer {
   private async hcPostEvent(path: string, body: unknown, timestamp?: string): Promise<ToolResult> {
     const eventHeaders: Record<string, string> = { ...this.headers };
     if (timestamp) eventHeaders['X-Honeycomb-Event-Time'] = timestamp;
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: eventHeaders,
       body: JSON.stringify(body),

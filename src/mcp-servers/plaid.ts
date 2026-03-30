@@ -18,6 +18,7 @@
 // Rate limits: Varies by product; contact Plaid for production rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PlaidConfig {
   clientId: string;
@@ -26,13 +27,14 @@ interface PlaidConfig {
   baseUrl?: string;
 }
 
-export class PlaidMCPServer {
+export class PlaidMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly secret: string;
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PlaidConfig) {
+    super();
     this.clientId = config.clientId;
     this.secret = config.secret;
     this.accessToken = config.accessToken || '';
@@ -495,15 +497,8 @@ export class PlaidMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async postPlaid(endpoint: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

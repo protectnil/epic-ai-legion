@@ -15,17 +15,19 @@
 // Spec: https://api.apis.guru/v2/specs/nytimes.com/timeswire/3.0.0/openapi.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NYTimesTimesWireConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class NYTimesTimesTagsMCPServer {
+export class NYTimesTimesTagsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: NYTimesTimesWireConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.nytimes.com/svc/news/v3';
   }
@@ -176,18 +178,12 @@ export class NYTimesTimesTagsMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const qp = new URLSearchParams(params);
     qp.set('api-key', this.apiKey);
     const qs = `?${qp.toString()}`;
 
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { method: 'GET' });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { method: 'GET' });
 
     if (!response.ok) {
       let errText = '';

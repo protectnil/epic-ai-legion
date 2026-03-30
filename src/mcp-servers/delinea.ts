@@ -43,6 +43,7 @@
 // Rate limits: Not publicly documented; depends on server configuration and edition.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DelineaConfig {
   username: string;
@@ -51,7 +52,7 @@ interface DelineaConfig {
   baseUrl: string;
 }
 
-export class DelineaMCPServer {
+export class DelineaMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
@@ -59,6 +60,7 @@ export class DelineaMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: DelineaConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -94,7 +96,7 @@ export class DelineaMCPServer {
     const apiBase = this.baseUrl.replace(/\/api\/v1\/?$/, '');
     const tokenUrl = `${apiBase}/oauth2/token`;
 
-    const response = await fetch(tokenUrl, {
+    const response = await this.fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -567,16 +569,11 @@ export class DelineaMCPServer {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(path: string, options: RequestInit = {}): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       ...options,
       headers: {

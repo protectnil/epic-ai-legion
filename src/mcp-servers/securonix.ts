@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented. Tenant-specific limits apply.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SecuronixConfig {
   /** Full base URL including tenant, e.g. https://acme.securonix.net */
@@ -25,13 +26,14 @@ interface SecuronixConfig {
   password?: string;
 }
 
-export class SecuronixMCPServer {
+export class SecuronixMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private token: string;
   private readonly username: string;
   private readonly password: string;
 
   constructor(config: SecuronixConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.token = config.token ?? '';
     this.username = config.username ?? '';
@@ -46,7 +48,7 @@ export class SecuronixMCPServer {
         'Securonix authentication required: provide a token or username + password in config',
       );
     }
-    const response = await fetch(`${this.baseUrl}/ws/token/generate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ws/token/generate`, {
       method: 'GET',
       headers: {
         username: this.username,
@@ -445,12 +447,6 @@ export class SecuronixMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchWs(
     path: string,
     method: 'GET' | 'POST',
@@ -473,7 +469,7 @@ export class SecuronixMCPServer {
     if (body) {
       headers['Content-Type'] = 'application/json';
     }
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -520,7 +516,7 @@ export class SecuronixMCPServer {
       };
     }
     const validity = String(args.validity ?? 1);
-    const response = await fetch(`${this.baseUrl}/ws/token/generate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ws/token/generate`, {
       method: 'GET',
       headers: { username, password, validity },
     });

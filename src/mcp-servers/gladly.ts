@@ -16,6 +16,7 @@
 //   Reports API: 10 requests/minute with 2 concurrent requests across the org.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GladlyConfig {
   organization: string;
@@ -24,11 +25,12 @@ interface GladlyConfig {
   baseUrl?: string;
 }
 
-export class GladlyMCPServer {
+export class GladlyMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: GladlyConfig) {
+    super();
     const credentials = Buffer.from(`${config.email}:${config.apiToken}`).toString('base64');
     this.authHeader = `Basic ${credentials}`;
     this.baseUrl = config.baseUrl || `https://${config.organization}.gladly.com/api/v1`;
@@ -364,15 +366,8 @@ export class GladlyMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getOrganization(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/organization`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/organization`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get organization: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -385,7 +380,7 @@ export class GladlyMCPServer {
     if (!conversation_id) {
       return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -401,7 +396,7 @@ export class GladlyMCPServer {
     if (!conversation_id) {
       return { content: [{ type: 'text', text: 'conversation_id is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/items`,
       { method: 'GET', headers: this.headers },
     );
@@ -427,7 +422,7 @@ export class GladlyMCPServer {
     if (args.status) {
       payload.status = { value: args.status };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}`,
       { method: 'PATCH', headers: this.headers, body: JSON.stringify(payload) },
     );
@@ -444,7 +439,7 @@ export class GladlyMCPServer {
     if (!conversation_id || !topic_ids || topic_ids.length === 0) {
       return { content: [{ type: 'text', text: 'conversation_id and topic_ids are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/topics`,
       { method: 'POST', headers: this.headers, body: JSON.stringify({ topicIds: topic_ids }) },
     );
@@ -461,7 +456,7 @@ export class GladlyMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.cursor) params.set('cursor', args.cursor as string);
     const url = `${this.baseUrl}/customer-profiles${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list customers: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -474,7 +469,7 @@ export class GladlyMCPServer {
     if (!customer_id) {
       return { content: [{ type: 'text', text: 'customer_id is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/customer-profiles/${encodeURIComponent(customer_id)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -491,7 +486,7 @@ export class GladlyMCPServer {
     if (args.email) payload.emails = [{ original: args.email }];
     if (args.phone) payload.phones = [{ original: args.phone }];
     if (args.external_customer_id) payload.externalCustomerId = args.external_customer_id;
-    const response = await fetch(`${this.baseUrl}/customer-profiles`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/customer-profiles`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -513,7 +508,7 @@ export class GladlyMCPServer {
     if (args.email) payload.emails = [{ original: args.email }];
     if (args.phone) payload.phones = [{ original: args.phone }];
     if (args.external_customer_id) payload.externalCustomerId = args.external_customer_id;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/customer-profiles/${encodeURIComponent(customer_id)}`,
       { method: 'PATCH', headers: this.headers, body: JSON.stringify(payload) },
     );
@@ -533,7 +528,7 @@ export class GladlyMCPServer {
       return { content: [{ type: 'text', text: 'At least one search parameter (email, phone_number, or external_customer_id) is required' }], isError: true };
     }
     const url = `${this.baseUrl}/customer-profiles?${params.toString()}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to search customers: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -546,7 +541,7 @@ export class GladlyMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.cursor) params.set('cursor', args.cursor as string);
     const url = `${this.baseUrl}/agents${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list agents: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -559,7 +554,7 @@ export class GladlyMCPServer {
     if (!agent_id) {
       return { content: [{ type: 'text', text: 'agent_id is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/agents/${encodeURIComponent(agent_id)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -571,7 +566,7 @@ export class GladlyMCPServer {
   }
 
   private async listInboxes(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/inboxes`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/inboxes`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list inboxes: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -585,7 +580,7 @@ export class GladlyMCPServer {
     if (!conversation_id || !body) {
       return { content: [{ type: 'text', text: 'conversation_id and body are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/conversations/${encodeURIComponent(conversation_id)}/notes`,
       { method: 'POST', headers: this.headers, body: JSON.stringify({ content: { body } }) },
     );

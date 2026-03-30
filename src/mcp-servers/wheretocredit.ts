@@ -16,6 +16,7 @@
 //       The programs endpoint returns all supported frequent flyer programs (no auth required).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WhereToCreditConfig {
   /** API key for authenticated endpoints */
@@ -24,11 +25,12 @@ interface WhereToCreditConfig {
   baseUrl?: string;
 }
 
-export class WhereToCreditMCPServer {
+export class WhereToCreditMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: WhereToCreditConfig) {
+    super();
     this.apiKey  = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.wheretocredit.com';
   }
@@ -156,12 +158,6 @@ export class WhereToCreditMCPServer {
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private get authHeaders(): Record<string, string> {
     return {
@@ -174,7 +170,7 @@ export class WhereToCreditMCPServer {
   // ── Tool implementations ─────────────────────────────────────────────────────
 
   private async listPrograms(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/1.0/programs`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/1.0/programs`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -195,7 +191,7 @@ export class WhereToCreditMCPServer {
         isError: true,
       };
     }
-    const response = await fetch(`${this.baseUrl}/api/1.0/calculate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/1.0/calculate`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(itineraries),

@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented; avoid high-frequency polling
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface D7NetworksConfig {
   username: string;
@@ -23,12 +24,13 @@ interface D7NetworksConfig {
   baseUrl?: string;
 }
 
-export class D7NetworksMCPServer {
+export class D7NetworksMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: D7NetworksConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl || 'https://rest-api.d7networks.com/secure';
@@ -135,7 +137,7 @@ export class D7NetworksMCPServer {
       Accept: 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

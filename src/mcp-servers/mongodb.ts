@@ -28,6 +28,7 @@
 // Rate limits: Not documented; subject to Atlas App Services tier limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MongoDBConfig {
   appId: string;
@@ -38,13 +39,14 @@ interface MongoDBConfig {
   baseUrl?: string;
 }
 
-export class MongoDBMCPServer {
+export class MongoDBMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly dataSource: string;
   private readonly database: string;
   private readonly baseUrl: string;
 
   constructor(config: MongoDBConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.dataSource = config.dataSource;
     this.database = config.database;
@@ -78,14 +80,8 @@ export class MongoDBMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doAction(endpoint: string, payload: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${endpoint}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${endpoint}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),

@@ -13,17 +13,19 @@
 // Rate limits: Not published; standard gateway throttling applies.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Sms77Config {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class Sms77MCPServer {
+export class Sms77MCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: Sms77Config) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://gateway.sms77.io/api';
   }
@@ -465,12 +467,6 @@ export class Sms77MCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -478,7 +474,7 @@ export class Sms77MCPServer {
     params?: URLSearchParams,
   ): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method,
       headers: this.authHeaders,
       body: body ? JSON.stringify(body) : undefined,

@@ -13,16 +13,18 @@
 // Rate limits: Not publicly documented; use responsibly
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SonarTradingConfig {
   /** Base URL override (default: https://sonar.trading/api/v1/) */
   baseUrl?: string;
 }
 
-export class SonarTradingMCPServer {
+export class SonarTradingMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: SonarTradingConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://sonar.trading/api/v1';
   }
 
@@ -135,15 +137,8 @@ export class SonarTradingMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {});
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Sonar Trading API error ${response.status}: ${errText}` }], isError: true };

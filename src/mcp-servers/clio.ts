@@ -23,6 +23,7 @@
 //   https://docs.developers.clio.com/api-docs/clio-manage/rate-limits/
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 const CLIO_REGIONAL_BASES: Record<string, string> = {
   us: 'https://app.clio.com',
@@ -41,11 +42,12 @@ interface ClioConfig {
   baseUrl?: string;
 }
 
-export class ClioMCPServer {
+export class ClioMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ClioConfig) {
+    super();
     this.accessToken = config.accessToken;
     if (config.baseUrl) {
       this.baseUrl = config.baseUrl;
@@ -90,17 +92,11 @@ export class ClioMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<ToolResult> {
     // Clio API requires .json suffix on all endpoints
     const [pathPart, queryPart] = url.split('?');
     const normalizedUrl = pathPart.endsWith('.json') ? url : `${pathPart}.json${queryPart ? `?${queryPart}` : ''}`;
-    const response = await fetch(normalizedUrl, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(normalizedUrl, { headers: this.headers, ...options });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };

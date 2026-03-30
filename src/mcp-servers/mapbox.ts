@@ -29,17 +29,19 @@
 //              Datasets API (Read): 480 req/min. Datasets API (Write): 40 req/min.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MapboxConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class MapboxMCPServer {
+export class MapboxMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: MapboxConfig) {
+    super();
     this.token = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://api.mapbox.com').replace(/\/$/, '');
   }
@@ -450,13 +452,6 @@ export class MapboxMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, extraParams?: Record<string, string>): Promise<ToolResult> {
     const url = new URL(`${this.baseUrl}${path}`);
     url.searchParams.set('access_token', this.token);
@@ -465,7 +460,7 @@ export class MapboxMCPServer {
         url.searchParams.set(k, v);
       }
     }
-    const response = await fetch(url.toString());
+    const response = await this.fetchWithRetry(url.toString(), {});
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${err}` }], isError: true };
@@ -477,7 +472,7 @@ export class MapboxMCPServer {
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
     const url = new URL(`${this.baseUrl}${path}`);
     url.searchParams.set('access_token', this.token);
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

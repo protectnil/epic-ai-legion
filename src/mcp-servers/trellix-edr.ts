@@ -28,6 +28,7 @@
 //   (documented per endpoint in Trellix EDR API rate limits page)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TrellixEDRConfig {
   clientId: string;
@@ -46,7 +47,7 @@ const REGION_MAP: Record<string, string> = {
   'ap-southeast-1': 'https://api.soc.ap-southeast-1.trellix.com',
 };
 
-export class TrellixEDRMCPServer {
+export class TrellixEDRMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly apiKey: string;
@@ -56,6 +57,7 @@ export class TrellixEDRMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: TrellixEDRConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.apiKey = config.apiKey;
@@ -99,7 +101,7 @@ export class TrellixEDRMCPServer {
     if (this.accessToken && this.tokenExpiry > now) {
       return this.accessToken;
     }
-    const response = await fetch(this.iamUrl, {
+    const response = await this.fetchWithRetry(this.iamUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -124,7 +126,7 @@ export class TrellixEDRMCPServer {
   // ──────────────────────────────────────────────
   private async req(path: string, method = 'GET', body?: unknown): Promise<unknown> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${token}`,
@@ -145,13 +147,6 @@ export class TrellixEDRMCPServer {
   // ──────────────────────────────────────────────
   // Truncation helper
   // ──────────────────────────────────────────────
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   get tools(): ToolDefinition[] {
     return [
       // ── Threats ──────────────────────────────────

@@ -17,17 +17,19 @@
 // Note: getUpdates (polling) and setWebhook are mutually exclusive — only use one at a time
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TelegramConfig {
   botToken: string;
   baseUrl?: string;
 }
 
-export class TelegramMCPServer {
+export class TelegramMCPServer extends MCPAdapterBase {
   private readonly botToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TelegramConfig) {
+    super();
     this.botToken = config.botToken;
     this.baseUrl = config.baseUrl || 'https://api.telegram.org';
   }
@@ -593,15 +595,8 @@ export class TelegramMCPServer {
     return `${this.baseUrl}/bot${this.botToken}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async callBotApi(method: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.apiBase}/${method}`, {
+    const response = await this.fetchWithRetry(`${this.apiBase}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

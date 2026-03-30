@@ -18,17 +18,19 @@
 //              report current limits and reset timing.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TogetherAIConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class TogetherAIMCPServer {
+export class TogetherAIMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: TogetherAIConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.together.xyz/v1';
   }
@@ -382,7 +384,7 @@ export class TogetherAIMCPServer {
   }
 
   private async togetherGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -391,7 +393,7 @@ export class TogetherAIMCPServer {
   }
 
   private async togetherPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -404,7 +406,7 @@ export class TogetherAIMCPServer {
   }
 
   private async togetherDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -413,13 +415,6 @@ export class TogetherAIMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async listModels(): Promise<ToolResult> {

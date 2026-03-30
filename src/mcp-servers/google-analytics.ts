@@ -19,18 +19,20 @@
 // NOTE: runFunnelReport uses v1alpha endpoint (POST /v1alpha/{property}:runFunnelReport), not v1beta.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleAnalyticsConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class GoogleAnalyticsMCPServer {
+export class GoogleAnalyticsMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
   private readonly alphaBaseUrl: string;
 
   constructor(config: GoogleAnalyticsConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://analyticsdata.googleapis.com/v1beta';
     this.alphaBaseUrl = 'https://analyticsdata.googleapis.com/v1alpha';
@@ -291,16 +293,9 @@ export class GoogleAnalyticsMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async gaPost(path: string, body: Record<string, unknown>, useAlpha = false): Promise<ToolResult> {
     const base = useAlpha ? this.alphaBaseUrl : this.baseUrl;
-    const response = await fetch(`${base}${path}`, {
+    const response = await this.fetchWithRetry(`${base}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -314,7 +309,7 @@ export class GoogleAnalyticsMCPServer {
   }
 
   private async gaGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.headers,
     });

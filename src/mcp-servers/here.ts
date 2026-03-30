@@ -18,6 +18,7 @@
 // Rate limits: Free tier 250,000 transactions/month; paid tiers vary by plan
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HereConfig {
   apiKey: string;
@@ -27,7 +28,7 @@ interface HereConfig {
   matrixBaseUrl?: string;
 }
 
-export class HereMCPServer {
+export class HereMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly geocodeBaseUrl: string;
   private readonly routingBaseUrl: string;
@@ -35,6 +36,7 @@ export class HereMCPServer {
   private readonly matrixBaseUrl: string;
 
   constructor(config: HereConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.geocodeBaseUrl = config.geocodeBaseUrl || 'https://geocode.search.hereapi.com/v1';
     this.routingBaseUrl = config.routingBaseUrl || 'https://router.hereapi.com/v8';
@@ -301,18 +303,11 @@ export class HereMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async hereGet(baseUrl: string, path: string, params: Record<string, string>): Promise<ToolResult> {
     params['apiKey'] = this.apiKey;
     const qs = new URLSearchParams(params).toString();
     const url = `${baseUrl}${path}?${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {
@@ -324,7 +319,7 @@ export class HereMCPServer {
 
   private async herePost(baseUrl: string, path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const url = `${baseUrl}${path}?apiKey=${encodeURIComponent(this.apiKey)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body),

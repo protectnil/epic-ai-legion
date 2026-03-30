@@ -17,6 +17,7 @@
 // Rate limits: Standard ~250 req/min. Enterprise: contact Shutterstock.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ShutterstockConfig {
   /** OAuth2 Bearer token (preferred) */
@@ -29,13 +30,14 @@ interface ShutterstockConfig {
   baseUrl?: string;
 }
 
-export class ShutterstockMCPServer {
+export class ShutterstockMCPServer extends MCPAdapterBase {
   private readonly apiToken?: string;
   private readonly clientId?: string;
   private readonly clientSecret?: string;
   private readonly baseUrl: string;
 
   constructor(config: ShutterstockConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -412,13 +414,6 @@ export class ShutterstockMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(): Record<string, string> {
     if (this.apiToken) {
       return { Authorization: `Bearer ${this.apiToken}` };
@@ -441,7 +436,7 @@ export class ShutterstockMCPServer {
       }
     }
     const url = `${this.baseUrl}${path}?${qs.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { ...this.authHeaders(), Accept: 'application/json' },
     });
@@ -455,7 +450,7 @@ export class ShutterstockMCPServer {
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { ...this.authHeaders(), 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body),

@@ -46,6 +46,7 @@
 //   GET  /2/lists/:id/tweets
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TwitterConfig {
   /** App-only Bearer token for read operations. OAuth 2.0 user access token for write operations. */
@@ -53,11 +54,12 @@ interface TwitterConfig {
   baseUrl?: string;
 }
 
-export class TwitterMCPServer {
+export class TwitterMCPServer extends MCPAdapterBase {
   private readonly bearerToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TwitterConfig) {
+    super();
     this.bearerToken = config.bearerToken;
     this.baseUrl = config.baseUrl ?? 'https://api.x.com/2';
   }
@@ -497,7 +499,7 @@ export class TwitterMCPServer {
   private async xGet(path: string, params: URLSearchParams): Promise<ToolResult> {
     const qs = params.toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -511,7 +513,7 @@ export class TwitterMCPServer {
 
   private async xPost(path: string, body: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -525,7 +527,7 @@ export class TwitterMCPServer {
 
   private async xDelete(path: string): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.authHeaders });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

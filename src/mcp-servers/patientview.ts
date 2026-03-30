@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented; contact PatientView for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PatientViewConfig {
   /** Username for PatientView authentication */
@@ -26,11 +27,12 @@ interface PatientViewConfig {
   baseUrl?: string;
 }
 
-export class PatientViewMCPServer {
+export class PatientViewMCPServer extends MCPAdapterBase {
   private readonly authToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PatientViewConfig) {
+    super();
     this.authToken = config.authToken ?? '';
     this.baseUrl = config.baseUrl ?? 'https://www.patientview.org';
   }
@@ -370,13 +372,6 @@ export class PatientViewMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(): Record<string, string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.authToken) headers['X-Auth-Token'] = this.authToken;
@@ -395,7 +390,7 @@ export class PatientViewMCPServer {
         }
       }
     }
-    const response = await fetch(url.toString(), { method: 'GET', headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url.toString(), { method: 'GET', headers: this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -405,7 +400,7 @@ export class PatientViewMCPServer {
   }
 
   private async fetchPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -419,7 +414,7 @@ export class PatientViewMCPServer {
   }
 
   private async fetchDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.authHeaders(),
     });

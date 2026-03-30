@@ -40,6 +40,7 @@
 // Rate limits: 100 read requests/second and 100 write requests/second in live mode per secret key
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StripeConfig {
   /** Stripe secret key (sk_live_... or sk_test_...) */
@@ -48,12 +49,13 @@ interface StripeConfig {
   apiVersion?: string;
 }
 
-export class StripeMCPServer {
+export class StripeMCPServer extends MCPAdapterBase {
   private readonly secretKey: string;
   private readonly apiVersion: string;
   private readonly baseUrl = 'https://api.stripe.com/v1';
 
   constructor(config: StripeConfig) {
+    super();
     this.secretKey = config.secretKey;
     this.apiVersion = config.apiVersion ?? '2024-06-20';
   }
@@ -581,17 +583,11 @@ export class StripeMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = params?.toString()
       ? `${this.baseUrl}${path}?${params}`
       : `${this.baseUrl}${path}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -618,7 +614,7 @@ export class StripeMCPServer {
   }
 
   private async post(path: string, params: URLSearchParams): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: params,
@@ -827,7 +823,7 @@ export class StripeMCPServer {
     }
 
     // Immediate cancellation via DELETE
-    const response = await fetch(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });

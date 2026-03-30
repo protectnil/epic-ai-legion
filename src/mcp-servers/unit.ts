@@ -13,17 +13,19 @@
 // Rate limits: 200 req/sec per org (documented in Unit API docs)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface UnitConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class UnitMCPServer {
+export class UnitMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: UnitConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = (config.baseUrl || 'https://api.s.unit.sh').replace(/\/$/, '');
   }
@@ -35,16 +37,10 @@ export class UnitMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
     const opts: RequestInit = { method, headers: this.headers };
     if (body) opts.body = JSON.stringify(body);
-    const response = await fetch(`${this.baseUrl}${path}`, opts);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, opts);
     if (!response.ok) {
       const err = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${err}` }], isError: true };

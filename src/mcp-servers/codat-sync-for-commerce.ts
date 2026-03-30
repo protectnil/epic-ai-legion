@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented; standard Codat platform limits apply
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CodatSyncForCommerceConfig {
   /** Codat API key */
@@ -21,11 +22,12 @@ interface CodatSyncForCommerceConfig {
   baseUrl?: string;
 }
 
-export class CodatSyncForCommerceMCPServer {
+export class CodatSyncForCommerceMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CodatSyncForCommerceConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.codat.io';
   }
@@ -421,7 +423,7 @@ export class CodatSyncForCommerceMCPServer {
   }
 
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: {
         'Authorization': this.authHeader(),

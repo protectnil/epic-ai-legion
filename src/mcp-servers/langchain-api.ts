@@ -21,17 +21,19 @@
 // Rate limits: Not publicly documented; varies by plan
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LangChainConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class LangChainMCPServer {
+export class LangChainMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: LangChainConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.smith.langchain.com/api/v1';
   }
@@ -472,15 +474,8 @@ export class LangChainMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<{ ok: boolean; status: number; statusText: string; data: unknown }> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     let data: unknown;
     try {
       data = await response.json();

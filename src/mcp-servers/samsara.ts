@@ -16,17 +16,19 @@
 //   Global organizational limits also apply. See docs for per-endpoint details.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SamsaraConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class SamsaraMCPServer {
+export class SamsaraMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SamsaraConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.samsara.com';
   }
@@ -540,15 +542,8 @@ export class SamsaraMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -557,7 +552,7 @@ export class SamsaraMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -570,7 +565,7 @@ export class SamsaraMCPServer {
   }
 
   private async apiPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -583,7 +578,7 @@ export class SamsaraMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

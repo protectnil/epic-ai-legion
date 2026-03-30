@@ -13,17 +13,19 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FrankieFinancialConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class FrankieFinancialMCPServer {
+export class FrankieFinancialMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: FrankieFinancialConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.frankiefinancial.io/compliance/v1.2';
   }
@@ -411,7 +413,7 @@ export class FrankieFinancialMCPServer {
       switch (name) {
         // ── Service ─────────────────────────────────────────────────────────
         case 'check_service_status': {
-          response = await fetch(`${this.baseUrl}/ruok`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/ruok`, { headers });
           break;
         }
 
@@ -427,7 +429,7 @@ export class FrankieFinancialMCPServer {
           if (args.email) body.email = args.email;
           if (args.phone_mobile) body.phone_mobile = args.phone_mobile;
           if (args.addresses) body.addresses = args.addresses;
-          response = await fetch(`${this.baseUrl}/entity`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
@@ -436,12 +438,12 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'get_entity': {
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}`, { headers });
           break;
         }
 
         case 'get_entity_full': {
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}/full`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}/full`, { headers });
           break;
         }
 
@@ -453,7 +455,7 @@ export class FrankieFinancialMCPServer {
           if (args.date_of_birth) body.date_of_birth = args.date_of_birth;
           if (args.email) body.email = args.email;
           if (args.phone_mobile) body.phone_mobile = args.phone_mobile;
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
@@ -462,7 +464,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'delete_entity': {
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}`, {
             method: 'DELETE',
             headers,
           });
@@ -477,7 +479,7 @@ export class FrankieFinancialMCPServer {
           if (args.date_of_birth) body.date_of_birth = args.date_of_birth;
           if (args.page) body.page = args.page;
           if (args.page_size) body.page_size = args.page_size;
-          response = await fetch(`${this.baseUrl}/entity/search`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/search`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
@@ -487,7 +489,7 @@ export class FrankieFinancialMCPServer {
 
         // ── Entity Verification ──────────────────────────────────────────────
         case 'verify_entity': {
-          response = await fetch(
+          response = await this.fetchWithRetry(
             `${this.baseUrl}/entity/${args.entity_id}/verify/${args.check_type}/${args.result_level}`,
             { method: 'POST', headers, body: JSON.stringify({}) }
           );
@@ -495,13 +497,13 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'get_entity_checks': {
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}/checks`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}/checks`, { headers });
           break;
         }
 
         // ── Entity Flags ─────────────────────────────────────────────────────
         case 'set_entity_blacklist': {
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}/flag/blacklist`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}/flag/blacklist`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ blacklisted: args.blacklisted, reason: args.reason }),
@@ -510,7 +512,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'set_entity_watchlist': {
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}/flag/watchlist`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}/flag/watchlist`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ watchlisted: args.watchlisted, reason: args.reason }),
@@ -519,7 +521,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'set_entity_monitoring': {
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}/flag/monitor`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}/flag/monitor`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ monitored: args.monitored }),
@@ -528,7 +530,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'update_entity_status': {
-          response = await fetch(`${this.baseUrl}/entity/${args.entity_id}/status`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/entity/${args.entity_id}/status`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ status: args.status, comment: args.comment }),
@@ -545,7 +547,7 @@ export class FrankieFinancialMCPServer {
           };
           if (args.document_number) body.document_number = args.document_number;
           if (args.expiry_date) body.expiry_date = args.expiry_date;
-          response = await fetch(`${this.baseUrl}/document`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/document`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
@@ -554,12 +556,12 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'get_document': {
-          response = await fetch(`${this.baseUrl}/document/${args.document_id}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/document/${args.document_id}`, { headers });
           break;
         }
 
         case 'get_document_full': {
-          response = await fetch(`${this.baseUrl}/document/${args.document_id}/full`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/document/${args.document_id}/full`, { headers });
           break;
         }
 
@@ -567,7 +569,7 @@ export class FrankieFinancialMCPServer {
           const body: Record<string, unknown> = {};
           if (args.document_number) body.document_number = args.document_number;
           if (args.expiry_date) body.expiry_date = args.expiry_date;
-          response = await fetch(`${this.baseUrl}/document/${args.document_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/document/${args.document_id}`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
@@ -576,7 +578,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'delete_document': {
-          response = await fetch(`${this.baseUrl}/document/${args.document_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/document/${args.document_id}`, {
             method: 'DELETE',
             headers,
           });
@@ -584,7 +586,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'verify_document': {
-          response = await fetch(`${this.baseUrl}/document/${args.document_id}/verify`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/document/${args.document_id}/verify`, {
             method: 'POST',
             headers,
             body: JSON.stringify({}),
@@ -593,7 +595,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'scan_document': {
-          response = await fetch(`${this.baseUrl}/document/${args.document_id}/scan`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/document/${args.document_id}/scan`, {
             method: 'POST',
             headers,
             body: JSON.stringify({}),
@@ -602,7 +604,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'get_document_checks': {
-          response = await fetch(`${this.baseUrl}/document/${args.document_id}/checks`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/document/${args.document_id}/checks`, { headers });
           break;
         }
 
@@ -610,7 +612,7 @@ export class FrankieFinancialMCPServer {
         case 'search_business_international': {
           const body: Record<string, unknown> = { business_name: args.business_name };
           if (args.country) body.country = args.country;
-          response = await fetch(`${this.baseUrl}/business/international/search`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/business/international/search`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
@@ -619,7 +621,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'get_business_profile': {
-          response = await fetch(`${this.baseUrl}/business/international/profile`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/business/international/profile`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ business_id: args.business_id, country: args.country }),
@@ -628,7 +630,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'run_business_reports': {
-          response = await fetch(`${this.baseUrl}/business/reports`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/business/reports`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ entity_id: args.entity_id, report_types: args.report_types }),
@@ -637,7 +639,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'verify_business': {
-          response = await fetch(`${this.baseUrl}/business/${args.entity_id}/verify`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/business/${args.entity_id}/verify`, {
             method: 'POST',
             headers,
             body: JSON.stringify({}),
@@ -646,7 +648,7 @@ export class FrankieFinancialMCPServer {
         }
 
         case 'query_business_ownership': {
-          response = await fetch(`${this.baseUrl}/business/ownership/query`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/business/ownership/query`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ entity_id: args.entity_id }),

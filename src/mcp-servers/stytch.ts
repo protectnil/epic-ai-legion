@@ -20,6 +20,7 @@
 // Rate limits: Not publicly documented; contact Stytch support for rate limit details
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StytchConfig {
   projectId: string;
@@ -27,12 +28,13 @@ interface StytchConfig {
   baseUrl?: string;
 }
 
-export class StytchMCPServer {
+export class StytchMCPServer extends MCPAdapterBase {
   private readonly projectId: string;
   private readonly secret: string;
   private readonly baseUrl: string;
 
   constructor(config: StytchConfig) {
+    super();
     this.projectId = config.projectId;
     this.secret = config.secret;
     this.baseUrl = config.baseUrl || 'https://api.stytch.com/v1';
@@ -406,17 +408,10 @@ export class StytchMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -425,7 +420,7 @@ export class StytchMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -438,7 +433,7 @@ export class StytchMCPServer {
   }
 
   private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -451,7 +446,7 @@ export class StytchMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

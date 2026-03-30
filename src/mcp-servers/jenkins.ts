@@ -29,6 +29,7 @@
 // Rate limits: None documented; governed by Jenkins thread pool and executor concurrency settings
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface JenkinsConfig {
   /** Jenkins root URL, e.g. https://jenkins.example.com (no trailing slash) */
@@ -37,11 +38,12 @@ interface JenkinsConfig {
   apiToken: string;
 }
 
-export class JenkinsMCPServer {
+export class JenkinsMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: JenkinsConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.authHeader = `Basic ${Buffer.from(`${config.username}:${config.apiToken}`).toString('base64')}`;
   }
@@ -318,14 +320,8 @@ export class JenkinsMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'GET', headers: this.jsonHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.jsonHeaders() });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `Jenkins API error: ${response.status} ${response.statusText}` }],
@@ -369,7 +365,7 @@ export class JenkinsMCPServer {
       return { content: [{ type: 'text', text: 'jobName and buildNumber are required' }], isError: true };
     }
     const url = `${this.baseUrl}/${this.jobPath(jobName)}/${buildNumber}/consoleText`;
-    const response = await fetch(url, { method: 'GET', headers: { Authorization: this.authHeader } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Authorization: this.authHeader } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get build log: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -399,7 +395,7 @@ export class JenkinsMCPServer {
       url = `${this.baseUrl}/${this.jobPath(jobName)}/build`;
     }
 
-    const response = await fetch(url, { method: 'POST', headers, body });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers, body });
     if (response.status !== 201 && !response.ok) {
       return { content: [{ type: 'text', text: `Failed to trigger build: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -417,7 +413,7 @@ export class JenkinsMCPServer {
       return { content: [{ type: 'text', text: 'jobName and buildNumber are required' }], isError: true };
     }
     const url = `${this.baseUrl}/${this.jobPath(jobName)}/${buildNumber}/stop`;
-    const response = await fetch(url, { method: 'POST', headers: this.jsonHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.jsonHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to stop build: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -430,7 +426,7 @@ export class JenkinsMCPServer {
       return { content: [{ type: 'text', text: 'queueItemId is required' }], isError: true };
     }
     const url = `${this.baseUrl}/queue/cancelItem?id=${queueItemId}`;
-    const response = await fetch(url, { method: 'POST', headers: this.jsonHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.jsonHeaders() });
     // Jenkins returns 302 or 204 on success for this endpoint
     if (!response.ok && response.status !== 302) {
       return { content: [{ type: 'text', text: `Failed to cancel queue item: ${response.status} ${response.statusText}` }], isError: true };
@@ -459,7 +455,7 @@ export class JenkinsMCPServer {
     if (!jobName) {
       return { content: [{ type: 'text', text: 'jobName is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${this.jobPath(jobName)}/enable`,
       { method: 'POST', headers: this.jsonHeaders() },
     );
@@ -474,7 +470,7 @@ export class JenkinsMCPServer {
     if (!jobName) {
       return { content: [{ type: 'text', text: 'jobName is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${this.jobPath(jobName)}/disable`,
       { method: 'POST', headers: this.jsonHeaders() },
     );

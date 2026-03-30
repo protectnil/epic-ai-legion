@@ -16,15 +16,17 @@
 // Rate limits: Not publicly documented; avoid abuse of the public service
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CirclHashlookupConfig {
   baseUrl?: string;
 }
 
-export class CirclLuHashlookupMCPServer {
+export class CirclLuHashlookupMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: CirclHashlookupConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://hashlookup.circl.lu';
   }
 
@@ -235,7 +237,7 @@ export class CirclLuHashlookupMCPServer {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

@@ -15,16 +15,18 @@
 // Rate limits: Not documented. Public API; standard fair-use expected.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ConsumerFinanceConfig {
   /** Optional base URL override (default: https://api.consumerfinance.gov) */
   baseUrl?: string;
 }
 
-export class ConsumerFinanceMCPServer {
+export class ConsumerFinanceMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: ConsumerFinanceConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://api.consumerfinance.gov';
   }
 
@@ -178,15 +180,8 @@ export class ConsumerFinanceMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) {

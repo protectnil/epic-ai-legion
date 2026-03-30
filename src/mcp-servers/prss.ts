@@ -18,17 +18,19 @@
 // Rate limits: Not publicly documented — use standard retry backoff
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PRSSConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class PRSSMCPServer {
+export class PRSSMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PRSSConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://contentdepot.prss.org';
   }
@@ -600,13 +602,6 @@ export class PRSSMCPServer {
 
   // -- Private helpers -------------------------------------------------------
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     path: string,
@@ -630,7 +625,7 @@ export class PRSSMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };

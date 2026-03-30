@@ -15,17 +15,19 @@
 // Rate limits: Varies by plan; no globally documented rate limit. Respect HTTP 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ScaleAIConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class ScaleAIMCPServer {
+export class ScaleAIMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ScaleAIConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.scale.com/v1';
   }
@@ -441,12 +443,6 @@ export class ScaleAIMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -454,7 +450,7 @@ export class ScaleAIMCPServer {
     params?: URLSearchParams,
   ): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method,
       headers: this.headers,
       body: body ? JSON.stringify(body) : undefined,

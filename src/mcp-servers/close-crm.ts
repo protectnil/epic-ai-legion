@@ -40,6 +40,7 @@
 // Rate limits: Per-endpoint-group limits at organization level. Not fully publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CloseCRMConfig {
   apiKey: string;
@@ -50,11 +51,12 @@ interface CloseCRMConfig {
   baseUrl?: string;
 }
 
-export class CloseCRMMCPServer {
+export class CloseCRMMCPServer extends MCPAdapterBase {
   private readonly basicToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CloseCRMConfig) {
+    super();
     // Close uses HTTP Basic auth: API key as username, empty string as password.
     this.basicToken = Buffer.from(`${config.apiKey}:`).toString('base64');
     this.baseUrl = (config.baseUrl || 'https://api.close.com/api/v1').replace(/\/$/, '');
@@ -86,14 +88,8 @@ export class CloseCRMMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };

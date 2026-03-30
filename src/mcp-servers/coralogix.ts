@@ -23,6 +23,7 @@
 // Rate limits: Not publicly documented; standard cloud API throttling applies
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 /**
  * Coralogix region identifiers mapped to their REST API base URLs.
@@ -58,11 +59,12 @@ interface CoralogixConfig {
   baseUrl?: string;
 }
 
-export class CoralogixMCPServer {
+export class CoralogixMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CoralogixConfig) {
+    super();
     this.apiKey = config.apiKey;
     if (config.baseUrl) {
       this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -495,14 +497,8 @@ export class CoralogixMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {
@@ -637,7 +633,7 @@ export class CoralogixMCPServer {
     if (!alertId) {
       return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/api/v3/alert-defs/${encodeURIComponent(alertId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v3/alert-defs/${encodeURIComponent(alertId)}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -736,7 +732,7 @@ export class CoralogixMCPServer {
     if (enrichmentId === undefined) {
       return { content: [{ type: 'text', text: 'enrichment_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/api/v1/external/custom-enrichments/${enrichmentId}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1/external/custom-enrichments/${enrichmentId}`, {
       method: 'DELETE',
       headers: this.headers,
     });

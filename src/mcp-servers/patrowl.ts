@@ -11,6 +11,7 @@
 //   nmap, ssllabs, arachni, owl_dns, virustotal, urlvoid, cortex, owl_leaks, owl_code, sslscan
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PatrowlConfig {
   /** Base URL of the Patrowl engine (default: http://patrowl.local) */
@@ -19,11 +20,12 @@ interface PatrowlConfig {
   apiKey?: string;
 }
 
-export class PatrowlMCPServer {
+export class PatrowlMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
   constructor(config: PatrowlConfig) {
+    super();
     this.baseUrl = (config.baseUrl || 'http://patrowl.local').replace(/\/$/, '');
     this.apiKey = config.apiKey || '';
   }
@@ -201,7 +203,7 @@ export class PatrowlMCPServer {
       init.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
 
     if (!response.ok) {
       return {

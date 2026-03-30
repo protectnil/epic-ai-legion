@@ -16,17 +16,19 @@
 // Rate limits: Not publicly documented; implement exponential backoff on 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TypeformConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class TypeformMCPServer {
+export class TypeformMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TypeformConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.typeform.com';
   }
@@ -543,7 +545,7 @@ export class TypeformMCPServer {
   private async tfGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -552,7 +554,7 @@ export class TypeformMCPServer {
   }
 
   private async tfPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -565,7 +567,7 @@ export class TypeformMCPServer {
   }
 
   private async tfPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -578,7 +580,7 @@ export class TypeformMCPServer {
   }
 
   private async tfPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -593,19 +595,13 @@ export class TypeformMCPServer {
   private async tfDelete(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     return { content: [{ type: 'text', text: JSON.stringify({ deleted: true }) }], isError: false };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async listForms(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {
@@ -704,7 +700,7 @@ export class TypeformMCPServer {
     if (args.name) ops.push({ op: 'replace', path: '/name', value: args.name });
     if (ops.length === 0) return { content: [{ type: 'text', text: 'At least one field to update is required (name)' }], isError: true };
     const url = `${this.baseUrl}/workspaces/${encodeURIComponent(args.workspace_id as string)}`;
-    const response = await fetch(url, { method: 'PATCH', headers: this.headers, body: JSON.stringify(ops) });
+    const response = await this.fetchWithRetry(url, { method: 'PATCH', headers: this.headers, body: JSON.stringify(ops) });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };

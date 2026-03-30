@@ -14,6 +14,7 @@
 // Rate limits: Varies by plan; Fauna enforces read/write ops quotas per billing period, not per-minute rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FaunaConfig {
   secret: string;           // Fauna secret key (e.g. fn... or a database-scoped key)
@@ -21,12 +22,13 @@ interface FaunaConfig {
   apiVersion?: string;      // FQL version header value (default: 10)
 }
 
-export class FaunaMCPServer {
+export class FaunaMCPServer extends MCPAdapterBase {
   private readonly secret: string;
   private readonly baseUrl: string;
   private readonly apiVersion: string;
 
   constructor(config: FaunaConfig) {
+    super();
     this.secret = config.secret;
     this.baseUrl = config.baseUrl || 'https://db.fauna.com';
     this.apiVersion = config.apiVersion || '10';
@@ -370,15 +372,8 @@ export class FaunaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async faunaPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -392,7 +387,7 @@ export class FaunaMCPServer {
   }
 
   private async faunaGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.json().catch(() => ({ error: response.statusText }));
       return { content: [{ type: 'text', text: `API error: ${response.status} ${JSON.stringify(err)}` }], isError: true };
@@ -400,7 +395,6 @@ export class FaunaMCPServer {
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
-
 
   // The Fauna Core HTTP API uses a single /query/1 endpoint for all FQL execution
   private async runQuery(args: Record<string, unknown>): Promise<ToolResult> {

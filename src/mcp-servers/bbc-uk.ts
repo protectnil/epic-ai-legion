@@ -16,6 +16,7 @@
 // Note: Personalised endpoints (/my/*) require OAuth bearer token. Public endpoints are open.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BBCUKConfig {
   apiKey?: string;
@@ -24,12 +25,13 @@ interface BBCUKConfig {
   baseUrl?: string;
 }
 
-export class BBCUKMCPServer {
+export class BBCUKMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly bearerToken: string;
   private readonly baseUrl: string;
 
   constructor(config: BBCUKConfig) {
+    super();
     this.apiKey = config.apiKey ?? '';
     this.bearerToken = config.bearerToken ?? '';
     this.baseUrl = config.baseUrl ?? 'https://rms.api.bbc.co.uk';
@@ -269,13 +271,6 @@ export class BBCUKMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Accept': 'application/json',
@@ -301,7 +296,7 @@ export class BBCUKMCPServer {
 
   private async get(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'GET', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.buildHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

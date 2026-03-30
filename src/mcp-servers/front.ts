@@ -17,17 +17,19 @@
 // Rate limits: Varies by endpoint; Core API: ~50 req/s per token. Search endpoint: 40% of company rate limit.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FrontConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class FrontMCPServer {
+export class FrontMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: FrontConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = (config.baseUrl ?? 'https://api2.frontapp.com').replace(/\/$/, '');
   }
@@ -440,14 +442,8 @@ export class FrontMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -466,7 +462,7 @@ export class FrontMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -487,7 +483,7 @@ export class FrontMCPServer {
   }
 
   private async patch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),

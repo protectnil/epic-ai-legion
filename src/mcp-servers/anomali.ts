@@ -19,6 +19,7 @@
 // Rate limits: Not publicly documented; recommended to stay under 60 req/min
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AnomaliConfig {
   username: string;
@@ -26,24 +27,18 @@ interface AnomaliConfig {
   baseUrl?: string;
 }
 
-export class AnomaliMCPServer {
+export class AnomaliMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
 
   constructor(config: AnomaliConfig) {
+    super();
     this.baseUrl = config.baseUrl || 'https://api.threatstream.com/api';
     this.headers = {
       'Authorization': `apikey ${config.username}:${config.apiKey}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -297,7 +292,7 @@ export class AnomaliMCPServer {
     if (args.severity) params.append('meta.severity', String(args.severity));
     if (args.status) params.append('status', String(args.status));
     if (args.query) params.append('value__icontains', String(args.query));
-    const response = await fetch(`${this.baseUrl}/v2/intelligence/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/intelligence/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -308,7 +303,7 @@ export class AnomaliMCPServer {
   private async getIndicator(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.indicator_id as string;
     if (!id) return { content: [{ type: 'text', text: 'indicator_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/v2/intelligence/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/intelligence/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -321,7 +316,7 @@ export class AnomaliMCPServer {
     if (!objects || !Array.isArray(objects) || objects.length === 0) {
       return { content: [{ type: 'text', text: 'objects array is required and must be non-empty' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/intelligence/`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/intelligence/`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ objects }),
@@ -341,7 +336,7 @@ export class AnomaliMCPServer {
     if (args.severity) body.meta = { severity: args.severity };
     if (args.status) body.status = args.status;
     if (args.tags) body.tags = args.tags;
-    const response = await fetch(`${this.baseUrl}/v2/intelligence/${encodeURIComponent(id)}/`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/intelligence/${encodeURIComponent(id)}/`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -360,7 +355,7 @@ export class AnomaliMCPServer {
     if (args.status) params.append('status', String(args.status));
     if (args.tag) params.append('tags__name', String(args.tag));
     if (args.is_public !== undefined) params.append('is_public', String(args.is_public));
-    const response = await fetch(`${this.baseUrl}/v1/tipreport/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/tipreport/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -371,7 +366,7 @@ export class AnomaliMCPServer {
   private async getThreatBulletin(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.bulletin_id as string;
     if (!id) return { content: [{ type: 'text', text: 'bulletin_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/v1/tipreport/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/tipreport/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -384,7 +379,7 @@ export class AnomaliMCPServer {
     params.append('limit', String(args.limit ?? 50));
     params.append('offset', String(args.offset ?? 0));
     if (args.query) params.append('name__icontains', String(args.query));
-    const response = await fetch(`${this.baseUrl}/v1/actor/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/actor/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -395,7 +390,7 @@ export class AnomaliMCPServer {
   private async getActor(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.actor_id as string;
     if (!id) return { content: [{ type: 'text', text: 'actor_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/v1/actor/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/actor/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -408,7 +403,7 @@ export class AnomaliMCPServer {
     params.append('limit', String(args.limit ?? 50));
     params.append('offset', String(args.offset ?? 0));
     if (args.query) params.append('name__icontains', String(args.query));
-    const response = await fetch(`${this.baseUrl}/v1/campaign/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/campaign/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -419,7 +414,7 @@ export class AnomaliMCPServer {
   private async getCampaign(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.campaign_id as string;
     if (!id) return { content: [{ type: 'text', text: 'campaign_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/v1/campaign/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/campaign/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -434,7 +429,7 @@ export class AnomaliMCPServer {
     if (args.cve_id) params.append('cve_id', String(args.cve_id));
     if (args.query) params.append('name__icontains', String(args.query));
     if (args.severity) params.append('meta.severity', String(args.severity));
-    const response = await fetch(`${this.baseUrl}/v1/vulnerability/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/vulnerability/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -447,7 +442,7 @@ export class AnomaliMCPServer {
     if (!cveId) return { content: [{ type: 'text', text: 'cve_id is required' }], isError: true };
     const params = new URLSearchParams();
     params.append('cve_id', cveId);
-    const response = await fetch(`${this.baseUrl}/v1/vulnerability/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/vulnerability/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -459,7 +454,7 @@ export class AnomaliMCPServer {
     const params = new URLSearchParams();
     params.append('limit', String(args.limit ?? 50));
     params.append('offset', String(args.offset ?? 0));
-    const response = await fetch(`${this.baseUrl}/v1/feed/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/feed/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -472,7 +467,7 @@ export class AnomaliMCPServer {
     params.append('limit', String(args.limit ?? 100));
     params.append('offset', String(args.offset ?? 0));
     if (args.query) params.append('name__icontains', String(args.query));
-    const response = await fetch(`${this.baseUrl}/v1/tag/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/tag/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -485,7 +480,7 @@ export class AnomaliMCPServer {
     params.append('limit', String(args.limit ?? 50));
     params.append('offset', String(args.offset ?? 0));
     if (args.status) params.append('status', String(args.status));
-    const response = await fetch(`${this.baseUrl}/v1/incident/?${params.toString()}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/incident/?${params.toString()}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -496,7 +491,7 @@ export class AnomaliMCPServer {
   private async getIncident(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.incident_id as string;
     if (!id) return { content: [{ type: 'text', text: 'incident_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/v1/incident/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/incident/${encodeURIComponent(id)}/`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

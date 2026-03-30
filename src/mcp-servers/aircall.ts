@@ -16,6 +16,7 @@
 // Rate limits: 60 requests/min per company (120/min for Advanced Messaging accounts)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AircallConfig {
   apiId: string;
@@ -23,12 +24,13 @@ interface AircallConfig {
   baseUrl?: string;
 }
 
-export class AircallMCPServer {
+export class AircallMCPServer extends MCPAdapterBase {
   private readonly apiId: string;
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: AircallConfig) {
+    super();
     this.apiId = config.apiId;
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.aircall.io/v1';
@@ -680,13 +682,6 @@ export class AircallMCPServer {
     return `Basic ${credentials}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     path: string,
@@ -706,7 +701,7 @@ export class AircallMCPServer {
       },
     };
     if (body) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],

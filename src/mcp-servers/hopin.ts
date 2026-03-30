@@ -24,6 +24,7 @@
 // Rate limits: Not publicly documented; implement exponential backoff on 429 responses
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HopinConfig {
   clientId: string;
@@ -32,7 +33,7 @@ interface HopinConfig {
   tokenUrl?: string;
 }
 
-export class HopinMCPServer {
+export class HopinMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -41,6 +42,7 @@ export class HopinMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: HopinConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://api.hopin.com';
@@ -574,7 +576,7 @@ export class HopinMCPServer {
   private async getOrRefreshToken(): Promise<string> {
     const now = Date.now();
     if (this.bearerToken && this.tokenExpiry > now) return this.bearerToken;
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -590,17 +592,10 @@ export class HopinMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -612,7 +607,7 @@ export class HopinMCPServer {
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -626,7 +621,7 @@ export class HopinMCPServer {
 
   private async apiPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -637,7 +632,6 @@ export class HopinMCPServer {
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
-
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {

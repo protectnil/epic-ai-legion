@@ -18,6 +18,7 @@
 //              Returns HTTP 429 with Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining headers.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GustoConfig {
   accessToken: string;
@@ -25,11 +26,12 @@ interface GustoConfig {
   baseUrl?: string;
 }
 
-export class GustoMCPServer {
+export class GustoMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: GustoConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl || 'https://api.gusto.com').replace(/\/$/, '');
   }
@@ -361,14 +363,8 @@ export class GustoMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getCurrentUser(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v1/me`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/me`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -377,7 +373,7 @@ export class GustoMCPServer {
   }
 
   private async getCompany(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}`,
       { headers: this.authHeaders },
     );
@@ -394,7 +390,7 @@ export class GustoMCPServer {
     params.set('per', String((args.per as number) ?? 25));
     if (args.terminated === true) params.set('terminated', 'true');
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}/employees?${params}`,
       { headers: this.authHeaders },
     );
@@ -406,7 +402,7 @@ export class GustoMCPServer {
   }
 
   private async getEmployee(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/employees/${encodeURIComponent(args.employee_id as string)}`,
       { headers: this.authHeaders },
     );
@@ -418,7 +414,7 @@ export class GustoMCPServer {
   }
 
   private async getEmployeeJobs(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/employees/${encodeURIComponent(args.employee_id as string)}/jobs`,
       { headers: this.authHeaders },
     );
@@ -437,7 +433,7 @@ export class GustoMCPServer {
     if (args.include_off_cycle) params.set('include_off_cycle', 'true');
     const qs = params.toString() ? `?${params}` : '';
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}/payrolls${qs}`,
       { headers: this.authHeaders },
     );
@@ -449,7 +445,7 @@ export class GustoMCPServer {
   }
 
   private async getPayroll(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}/payrolls/${encodeURIComponent(args.payroll_id as string)}`,
       { headers: this.authHeaders },
     );
@@ -466,7 +462,7 @@ export class GustoMCPServer {
     if (args.end_date) params.set('end_date', args.end_date as string);
     const qs = params.toString() ? `?${params}` : '';
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}/pay_periods${qs}`,
       { headers: this.authHeaders },
     );
@@ -478,7 +474,7 @@ export class GustoMCPServer {
   }
 
   private async listCompanyBenefits(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}/company_benefits`,
       { headers: this.authHeaders },
     );
@@ -490,7 +486,7 @@ export class GustoMCPServer {
   }
 
   private async listEmployeeBenefits(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/employees/${encodeURIComponent(args.employee_id as string)}/employee_benefits`,
       { headers: this.authHeaders },
     );
@@ -506,7 +502,7 @@ export class GustoMCPServer {
     params.set('page', String((args.page as number) ?? 1));
     params.set('per', String((args.per as number) ?? 25));
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}/contractors?${params}`,
       { headers: this.authHeaders },
     );
@@ -518,7 +514,7 @@ export class GustoMCPServer {
   }
 
   private async getContractor(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/contractors/${encodeURIComponent(args.contractor_id as string)}`,
       { headers: this.authHeaders },
     );
@@ -535,7 +531,7 @@ export class GustoMCPServer {
     if (args.status) params.set('status', args.status as string);
     const qs = params.toString() ? `?${params}` : '';
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}/time_off_requests${qs}`,
       { headers: this.authHeaders },
     );
@@ -547,7 +543,7 @@ export class GustoMCPServer {
   }
 
   private async listCompanyLocations(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/companies/${encodeURIComponent(args.company_id as string)}/locations`,
       { headers: this.authHeaders },
     );

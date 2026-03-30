@@ -12,6 +12,7 @@
 // Spec: https://api.orthanc-server.com/orthanc-openapi.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OrthancServerConfig {
   baseUrl?: string;
@@ -19,12 +20,13 @@ interface OrthancServerConfig {
   password?: string;
 }
 
-export class OrthancServerMCPServer {
+export class OrthancServerMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly username: string;
   private readonly password: string;
 
   constructor(config: OrthancServerConfig) {
+    super();
     this.baseUrl = config.baseUrl || 'https://demo.orthanc-server.com';
     this.username = config.username || '';
     this.password = config.password || '';
@@ -619,7 +621,7 @@ export class OrthancServerMCPServer {
 
   private async orthancRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';
@@ -751,7 +753,7 @@ export class OrthancServerMCPServer {
     const body = Buffer.from(args.dicomData as string, 'base64');
     const url = `${this.baseUrl}/instances`;
     const headers = { ...this.buildHeaders(), 'Content-Type': 'application/dicom' };
-    const response = await fetch(url, { method: 'POST', headers, body });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers, body });
     if (!response.ok) {
       let detail = '';
       try { detail = await response.text(); } catch { /* ignore */ }

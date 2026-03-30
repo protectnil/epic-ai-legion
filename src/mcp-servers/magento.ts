@@ -19,17 +19,19 @@
 //              Default page size limit: 300 items/page. Input list limit: 20 entities by default.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MagentoConfig {
   accessToken: string;
   baseUrl: string;  // e.g. https://store.example.com/rest/V1
 }
 
-export class MagentoMCPServer {
+export class MagentoMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: MagentoConfig) {
+    super();
     this.token = config.accessToken;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
   }
@@ -555,13 +557,6 @@ export class MagentoMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildSearchCriteria(filters: Array<{ field: string; value: unknown; conditionType?: string }>): string {
     const params = new URLSearchParams();
     filters.forEach((f, i) => {
@@ -573,7 +568,7 @@ export class MagentoMCPServer {
   }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -582,7 +577,7 @@ export class MagentoMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -596,7 +591,7 @@ export class MagentoMCPServer {
   }
 
   private async apiPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -610,7 +605,7 @@ export class MagentoMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

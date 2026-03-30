@@ -17,6 +17,7 @@
 // Note: App Passwords are deprecated as of 2025-09-09 and will be fully disabled 2026-06-09.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BitbucketConfig {
   username: string;
@@ -24,12 +25,13 @@ interface BitbucketConfig {
   baseUrl?: string;
 }
 
-export class BitbucketMCPServer {
+export class BitbucketMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly appPassword: string;
   private readonly baseUrl: string;
 
   constructor(config: BitbucketConfig) {
+    super();
     this.username = config.username;
     this.appPassword = config.appPassword;
     this.baseUrl = config.baseUrl || 'https://api.bitbucket.org/2.0';
@@ -556,15 +558,10 @@ export class BitbucketMCPServer {
     return { Authorization: this.authHeader(), 'Content-Type': 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async request(url: string, method = 'GET', body?: unknown): Promise<ToolResult> {
     const opts: RequestInit = { method, headers: this.headers() };
     if (body !== undefined) opts.body = JSON.stringify(body);
-    const response = await fetch(url, opts);
+    const response = await this.fetchWithRetry(url, opts);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -604,7 +601,7 @@ export class BitbucketMCPServer {
 
   private async deleteRepository(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -680,7 +677,7 @@ export class BitbucketMCPServer {
 
   private async deleteBranch(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/refs/branches/${encodeURIComponent(args.branch_name as string)}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -786,7 +783,7 @@ export class BitbucketMCPServer {
 
   private async deleteWebhook(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/hooks/${encodeURIComponent(args.webhook_uid as string)}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -802,7 +799,7 @@ export class BitbucketMCPServer {
 
   private async getSrcFile(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/repositories/${this.ws(args)}/${this.repo(args)}/src/${encodeURIComponent(args.commit as string)}/${encodeURIComponent(args.path as string)}`;
-    const response = await fetch(url, { headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

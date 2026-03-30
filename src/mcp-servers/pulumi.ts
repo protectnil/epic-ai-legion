@@ -22,6 +22,7 @@
 // Rate limits: Not publicly documented; standard API throttling applies
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PulumiConfig {
   /**
@@ -37,11 +38,12 @@ interface PulumiConfig {
   baseUrl?: string;
 }
 
-export class PulumiMCPServer {
+export class PulumiMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PulumiConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://api.pulumi.com').replace(/\/$/, '');
   }

@@ -20,17 +20,19 @@
 //              or 10 calls/user/hr (internal). File API: plan-dependent daily and per-second limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EgnyteConfig {
   accessToken: string;
   baseUrl: string; // e.g. https://mycompany.egnyte.com — required, no default
 }
 
-export class EgnyteMCPServer {
+export class EgnyteMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: EgnyteConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
   }
@@ -534,7 +536,7 @@ export class EgnyteMCPServer {
 
   private async egGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -543,7 +545,7 @@ export class EgnyteMCPServer {
   }
 
   private async egPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -556,7 +558,7 @@ export class EgnyteMCPServer {
   }
 
   private async egPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -569,7 +571,7 @@ export class EgnyteMCPServer {
   }
 
   private async egDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -579,12 +581,6 @@ export class EgnyteMCPServer {
     return { content: [{ type: 'text', text: JSON.stringify({ success: true, status: response.status }) }], isError: false };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private fsPath(path: string): string {
     // Egnyte FS API: metadata/list/delete/move/copy/create-folder uses /pubapi/v1/fs/{path}
@@ -627,7 +623,7 @@ export class EgnyteMCPServer {
     }
     const overwrite = args.overwrite !== false;
     const path = this.fsContentPath(args.path as string);
-    const response = await fetch(`${this.baseUrl}${path}${overwrite ? '' : '?x-egnyte-conflict=fail'}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${overwrite ? '' : '?x-egnyte-conflict=fail'}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.accessToken}`,
@@ -647,7 +643,7 @@ export class EgnyteMCPServer {
     const params: Record<string, string> = {};
     if (args.entry_id) params.entry_id = args.entry_id as string;
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${this.fsContentPath(args.path as string)}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${this.fsContentPath(args.path as string)}${qs}`, {
       headers: { 'Authorization': `Bearer ${this.accessToken}` },
     });
     if (!response.ok) {
@@ -668,7 +664,7 @@ export class EgnyteMCPServer {
 
   private async createFolder(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.path) return { content: [{ type: 'text', text: 'path is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}${this.fsPath(args.path as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${this.fsPath(args.path as string)}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ action: 'add_folder' }),
@@ -688,7 +684,7 @@ export class EgnyteMCPServer {
     if (!args.source_path || !args.destination_path) {
       return { content: [{ type: 'text', text: 'source_path and destination_path are required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}${this.fsPath(args.source_path as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${this.fsPath(args.source_path as string)}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ action: 'move', destination: args.destination_path }),
@@ -703,7 +699,7 @@ export class EgnyteMCPServer {
     if (!args.source_path || !args.destination_path) {
       return { content: [{ type: 'text', text: 'source_path and destination_path are required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}${this.fsPath(args.source_path as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${this.fsPath(args.source_path as string)}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ action: 'copy', destination: args.destination_path }),

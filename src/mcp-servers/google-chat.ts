@@ -20,17 +20,19 @@
 // Rate limits: 3,000 queries/min per project; per-user limits apply for user-auth flows
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleChatConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class GoogleChatMCPServer {
+export class GoogleChatMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: GoogleChatConfig) {
+    super();
     this.token = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://chat.googleapis.com/v1';
   }
@@ -474,16 +476,9 @@ export class GoogleChatMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/${path}${qs}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}${qs}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -493,7 +488,7 @@ export class GoogleChatMCPServer {
 
   private async post(path: string, body: Record<string, unknown>, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}${qs}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -507,7 +502,7 @@ export class GoogleChatMCPServer {
 
   private async patch(path: string, body: Record<string, unknown>, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}${qs}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -520,7 +515,7 @@ export class GoogleChatMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

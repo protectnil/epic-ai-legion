@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented; enterprise tier agreements govern quotas.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VertaforeConfig {
   clientId: string;
@@ -23,7 +24,7 @@ interface VertaforeConfig {
   tokenUrl?: string;
 }
 
-export class VertaforeMCPServer {
+export class VertaforeMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly agencyId: string;
@@ -34,6 +35,7 @@ export class VertaforeMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: VertaforeConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.agencyId = config.agencyId;
@@ -444,7 +446,7 @@ export class VertaforeMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -462,17 +464,11 @@ export class VertaforeMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -488,7 +484,7 @@ export class VertaforeMCPServer {
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

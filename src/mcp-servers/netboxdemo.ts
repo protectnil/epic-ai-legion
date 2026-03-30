@@ -14,17 +14,19 @@
 // Rate limits: Not publicly documented; enforce per-deployment limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NetBoxConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class NetboxdemoMCPServer {
+export class NetboxdemoMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: NetBoxConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = (config.baseUrl || 'https://netboxdemo.com/api').replace(/\/$/, '');
   }
@@ -710,7 +712,7 @@ export class NetboxdemoMCPServer {
 
   private async nbRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}/${path}`;
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

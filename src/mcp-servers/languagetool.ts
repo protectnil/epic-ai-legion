@@ -13,6 +13,7 @@
 //              Premium: 80 req/min, 300,000 chars/min, 60,000 chars/req.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LanguageToolConfig {
   username?: string;
@@ -20,12 +21,13 @@ interface LanguageToolConfig {
   baseUrl?: string;
 }
 
-export class LanguageToolMCPServer {
+export class LanguageToolMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: LanguageToolConfig) {
+    super();
     this.username = config.username ?? '';
     this.apiKey = config.apiKey ?? '';
     this.baseUrl = config.baseUrl ?? 'https://api.languagetoolplus.com/v2';
@@ -198,13 +200,6 @@ export class LanguageToolMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authParams(): Record<string, string> {
     const params: Record<string, string> = {};
     if (this.username) params.username = this.username;
@@ -215,7 +210,7 @@ export class LanguageToolMCPServer {
   private async postForm(path: string, body: Record<string, string>): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const form = new URLSearchParams(body);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: form.toString(),
@@ -236,7 +231,7 @@ export class LanguageToolMCPServer {
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params);
     const url = `${this.baseUrl}${path}?${qs.toString()}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };

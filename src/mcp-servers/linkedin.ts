@@ -23,6 +23,7 @@
 //   /ugcPosts endpoint which remains functional for approved partner apps.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LinkedInConfig {
   /** OAuth2 access token obtained via LinkedIn OAuth2 flow. */
@@ -31,11 +32,12 @@ interface LinkedInConfig {
   baseUrl?: string;
 }
 
-export class LinkedInMCPServer {
+export class LinkedInMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: LinkedInConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://api.linkedin.com/v2').replace(/\/$/, '');
   }
@@ -322,14 +324,8 @@ export class LinkedInMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetch(path: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await globalThis.fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       ...options,
       headers: { ...this.headers, ...(options?.headers as Record<string, string> ?? {}) },
     });

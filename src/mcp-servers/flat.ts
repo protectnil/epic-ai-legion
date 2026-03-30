@@ -13,17 +13,19 @@
 // Rate limits: See https://flat.io/developers/docs/api/rate-limits.html
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FlatConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class FlatMCPServer {
+export class FlatMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: FlatConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://api.flat.io/v2';
   }
@@ -507,12 +509,6 @@ export class FlatMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -520,7 +516,7 @@ export class FlatMCPServer {
     params?: URLSearchParams,
   ): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method,
       headers: this.authHeaders,
       body: body ? JSON.stringify(body) : undefined,

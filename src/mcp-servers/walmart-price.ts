@@ -19,6 +19,7 @@
 // Docs: https://developer.walmart.com/api/us/mp/price
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WalmartPriceConfig {
   accessToken: string;
@@ -28,13 +29,14 @@ interface WalmartPriceConfig {
   baseUrl?: string;
 }
 
-export class WalmartPriceMCPServer {
+export class WalmartPriceMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly channelType: string;
   private readonly serviceName: string;
   private readonly baseUrl: string;
 
   constructor(config: WalmartPriceConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.channelType = config.channelType || '';
     this.serviceName = config.serviceName || 'Walmart Marketplace';
@@ -165,7 +167,7 @@ export class WalmartPriceMCPServer {
   ): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     try {
-      const res = await fetch(url, { method, headers, body });
+      const res = await this.fetchWithRetry(url, { method, headers, body });
       const text = await res.text();
       const truncated = text.length > 10240 ? text.slice(0, 10240) + '\n…[truncated]' : text;
       if (!res.ok) {

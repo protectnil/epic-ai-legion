@@ -14,6 +14,7 @@
 // Analytics API: Retrieve event analytics data for Redeal deals, sites, and companies.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RedealAnalyticsConfig {
   /** Optional base URL override (default: https://analytics.redeal.io/api/1.0.0) */
@@ -22,11 +23,12 @@ interface RedealAnalyticsConfig {
   apiKey?: string;
 }
 
-export class RedealAnalyticsMCPServer {
+export class RedealAnalyticsMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiKey?: string;
 
   constructor(config: RedealAnalyticsConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://analytics.redeal.io/api/1.0.0';
     this.apiKey = config.apiKey;
   }
@@ -191,13 +193,6 @@ export class RedealAnalyticsMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getEvents(args: Record<string, unknown>): Promise<ToolResult> {
     const qs = new URLSearchParams();
     const stringFields = ['company', 'site', 'deal', 'type', 'nexttoken', 'queryexecutionid'] as const;
@@ -207,7 +202,7 @@ export class RedealAnalyticsMCPServer {
     const url = `${this.baseUrl}/events${qs.toString() ? '?' + qs.toString() : ''}`;
     const headers: Record<string, string> = { 'Accept': 'application/json' };
     if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

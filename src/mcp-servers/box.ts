@@ -28,6 +28,7 @@
 // Rate limits: ~1,000 API calls/min per OAuth2 token; burst limits vary by endpoint tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BoxConfig {
   clientId: string;
@@ -35,7 +36,7 @@ interface BoxConfig {
   baseUrl?: string;
 }
 
-export class BoxMCPServer {
+export class BoxMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -44,6 +45,7 @@ export class BoxMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: BoxConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://api.box.com/2.0';
@@ -459,7 +461,7 @@ export class BoxMCPServer {
     const now = Date.now();
     if (this.bearerToken && this.tokenExpiry > now) return this.bearerToken;
 
-    const response = await fetch('https://api.box.com/oauth2/token', {
+    const response = await this.fetchWithRetry('https://api.box.com/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -479,7 +481,7 @@ export class BoxMCPServer {
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -491,7 +493,7 @@ export class BoxMCPServer {
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -506,7 +508,7 @@ export class BoxMCPServer {
   private async apiDelete(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -514,13 +516,6 @@ export class BoxMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     return { content: [{ type: 'text', text: JSON.stringify({ deleted: true }) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   // ── Tool implementations ──────────────────────────────────────────────────
@@ -639,7 +634,7 @@ export class BoxMCPServer {
       sharedLink.permissions = { can_download: args.can_download };
     }
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}?fields=shared_link`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(args.file_id as string)}?fields=shared_link`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ shared_link: sharedLink }),

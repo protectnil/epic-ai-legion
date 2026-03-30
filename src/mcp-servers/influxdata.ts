@@ -14,6 +14,7 @@
 // Rate limits: Varies by deployment; InfluxDB Cloud: tiered by plan (free: 300MB write/day)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface InfluxDataConfig {
   apiToken?: string;
@@ -22,13 +23,14 @@ interface InfluxDataConfig {
   baseUrl?: string;
 }
 
-export class InfluxDataMCPServer {
+export class InfluxDataMCPServer extends MCPAdapterBase {
   private readonly apiToken: string | null;
   private readonly username: string | null;
   private readonly password: string | null;
   private readonly baseUrl: string;
 
   constructor(config: InfluxDataConfig) {
+    super();
     this.apiToken = config.apiToken ?? null;
     this.username = config.username ?? null;
     this.password = config.password ?? null;
@@ -966,7 +968,7 @@ export class InfluxDataMCPServer {
       options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${this.baseUrl}${path}`, options);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, options);
 
     if (!response.ok) {
       let errText = '';

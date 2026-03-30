@@ -20,6 +20,7 @@
 // Rate limits: Not publicly documented by Coupa
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CoupaConfig {
   clientId: string;
@@ -27,7 +28,7 @@ interface CoupaConfig {
   instanceUrl: string;    // e.g. https://acme.coupahost.com
 }
 
-export class CoupaMCPServer {
+export class CoupaMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly instanceUrl: string;
@@ -35,6 +36,7 @@ export class CoupaMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: CoupaConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     // Strip trailing slash
@@ -596,7 +598,7 @@ export class CoupaMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.instanceUrl}/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.instanceUrl}/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -626,17 +628,11 @@ export class CoupaMCPServer {
 
   // --- Helpers ---
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async coupaGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.instanceUrl}/api${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: await this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: await this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -645,7 +641,7 @@ export class CoupaMCPServer {
   }
 
   private async coupaPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.instanceUrl}/api${path}`, {
+    const response = await this.fetchWithRetry(`${this.instanceUrl}/api${path}`, {
       method: 'POST',
       headers: await this.authHeaders(),
       body: JSON.stringify(body),
@@ -658,7 +654,7 @@ export class CoupaMCPServer {
   }
 
   private async coupaPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.instanceUrl}/api${path}`, {
+    const response = await this.fetchWithRetry(`${this.instanceUrl}/api${path}`, {
       method: 'PUT',
       headers: await this.authHeaders(),
       body: JSON.stringify(body),

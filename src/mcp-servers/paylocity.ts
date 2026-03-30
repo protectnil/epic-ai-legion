@@ -12,6 +12,7 @@
 // Docs: https://developer.paylocity.com/
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PaylocityConfig {
   clientId: string;
@@ -22,7 +23,7 @@ interface PaylocityConfig {
   tokenUrl?: string;
 }
 
-export class PaylocityMCPServer {
+export class PaylocityMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -31,6 +32,7 @@ export class PaylocityMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: PaylocityConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = (config.baseUrl || 'https://api.paylocity.com/api').replace(/\/$/, '');
@@ -44,7 +46,7 @@ export class PaylocityMCPServer {
     }
 
     const credentials = btoa(`${this.clientId}:${this.clientSecret}`);
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -311,7 +313,7 @@ export class PaylocityMCPServer {
   private async apiFetch(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,

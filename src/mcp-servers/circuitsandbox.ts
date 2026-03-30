@@ -15,17 +15,19 @@
 // Rate limits: See Circuit developer docs
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CircuitSandboxConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class CircuitSandboxMCPServer {
+export class CircuitSandboxMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CircuitSandboxConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://circuitsandbox.net/rest/v2';
   }
@@ -971,13 +973,6 @@ export class CircuitSandboxMCPServer {
     return `Bearer ${this.accessToken}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildQuery(params: Record<string, unknown>): string {
     const q = Object.entries(params)
       .filter(([, v]) => v !== undefined && v !== null && v !== '')
@@ -1006,7 +1001,7 @@ export class CircuitSandboxMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

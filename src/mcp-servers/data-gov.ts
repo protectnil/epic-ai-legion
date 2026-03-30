@@ -17,17 +17,19 @@
 //       The actual dataset contents live at the URLs within each dataset record.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DataGovConfig {
   apiKey?: string;  // Optional: for GSA api.data.gov proxy at api.gsa.gov
   baseUrl?: string;
 }
 
-export class DataGovMCPServer {
+export class DataGovMCPServer extends MCPAdapterBase {
   private readonly apiKey: string | null;
   private readonly baseUrl: string;
 
   constructor(config: DataGovConfig = {}) {
+    super();
     this.apiKey = config.apiKey ?? null;
     this.baseUrl = config.baseUrl || 'https://catalog.data.gov/api/3';
   }
@@ -274,13 +276,6 @@ export class DataGovMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.apiKey) headers['x-api-key'] = this.apiKey;
@@ -290,7 +285,7 @@ export class DataGovMCPServer {
   private async ckanAction(action: string, params: Record<string, string>): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/action/${action}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: this.buildHeaders(),
     });

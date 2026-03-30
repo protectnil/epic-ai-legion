@@ -12,17 +12,19 @@
 // Coverage: Full-text search of NYT articles from September 18, 1851 to present
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NYTimesArticleSearchConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class NYTimesArticleSearchMCPServer {
+export class NYTimesArticleSearchMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: NYTimesArticleSearchConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.nytimes.com/svc/search/v2';
   }
@@ -122,13 +124,6 @@ export class NYTimesArticleSearchMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async searchArticles(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams({ 'api-key': this.apiKey });
 
@@ -144,7 +139,7 @@ export class NYTimesArticleSearchMCPServer {
     if (args.facet_filter != null) params.set('facet_filter', String(args.facet_filter));
 
     const url = `${this.baseUrl}/articlesearch.json?${params.toString()}`;
-    const response = await fetch(url);
+    const response = await this.fetchWithRetry(url, {});
 
     if (!response.ok) {
       return {

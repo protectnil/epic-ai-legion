@@ -28,6 +28,7 @@
 // Note: This adapter queries subgraphs via GraphQL POST requests. Subgraph IDs are unique per deployment.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TheGraphConfig {
   apiKey: string;
@@ -35,12 +36,13 @@ interface TheGraphConfig {
   subgraphStudioUrl?: string;
 }
 
-export class TheGraphMCPServer {
+export class TheGraphMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly gatewayBaseUrl: string;
   private readonly subgraphStudioUrl: string;
 
   constructor(config: TheGraphConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.gatewayBaseUrl = config.gatewayBaseUrl || 'https://gateway-arbitrum.network.thegraph.com/api';
     this.subgraphStudioUrl = config.subgraphStudioUrl || 'https://api.studio.thegraph.com/query';
@@ -343,17 +345,10 @@ export class TheGraphMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async graphqlPost(url: string, query: string, variables?: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { query };
     if (variables) body.variables = variables;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

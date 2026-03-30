@@ -53,6 +53,7 @@
 // Rate limits: ~200 req/s per organization; Boards and Git APIs have separate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AzureDevOpsConfig {
   organization: string;
@@ -66,13 +67,14 @@ function truncate(text: string): string {
     : text;
 }
 
-export class AzureDevOpsMCPServer {
+export class AzureDevOpsMCPServer extends MCPAdapterBase {
   private readonly organization: string;
   private readonly pat: string;
   private readonly baseUrl: string;
   private readonly vsrmBaseUrl: string;
 
   constructor(config: AzureDevOpsConfig) {
+    super();
     this.organization = config.organization;
     this.pat = config.personalAccessToken;
     this.baseUrl = (config.baseUrl || 'https://dev.azure.com').replace(/\/$/, '');
@@ -472,7 +474,7 @@ export class AzureDevOpsMCPServer {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private async fetchJSON(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

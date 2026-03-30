@@ -40,17 +40,19 @@
 //              ListAssets: 5 QPS (Backstory API limits)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ChronicleConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class ChronicleMCPServer {
+export class ChronicleMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ChronicleConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://backstory.googleapis.com';
   }
@@ -391,15 +393,8 @@ export class ChronicleMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async chronicleGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.reqHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.reqHeaders });
     if (!response.ok) {
       const errText = await response.text();
       return { content: [{ type: 'text', text: `Chronicle API error (HTTP ${response.status}): ${errText}` }], isError: true };
@@ -410,7 +405,7 @@ export class ChronicleMCPServer {
   }
 
   private async chroniclePost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.reqHeaders,
       body: JSON.stringify(body),
@@ -425,7 +420,7 @@ export class ChronicleMCPServer {
   }
 
   private async chroniclePatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.reqHeaders,
       body: JSON.stringify(body),

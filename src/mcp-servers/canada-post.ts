@@ -21,6 +21,7 @@
 // Note: A customer number (customerNumber) is required for shipment and manifest operations.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CanadaPostConfig {
   apiUsername: string;
@@ -30,7 +31,7 @@ interface CanadaPostConfig {
   language?: string;
 }
 
-export class CanadaPostMCPServer {
+export class CanadaPostMCPServer extends MCPAdapterBase {
   private readonly apiUsername: string;
   private readonly apiPassword: string;
   private readonly customerNumber: string;
@@ -38,6 +39,7 @@ export class CanadaPostMCPServer {
   private readonly language: string;
 
   constructor(config: CanadaPostConfig) {
+    super();
     this.apiUsername = config.apiUsername;
     this.apiPassword = config.apiPassword;
     this.customerNumber = config.customerNumber ?? '';
@@ -398,21 +400,13 @@ export class CanadaPostMCPServer {
     return `Basic ${credentials}`;
   }
 
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async cpGet(path: string, acceptType?: string): Promise<ToolResult> {
     const headers: Record<string, string> = {
       Authorization: this.authHeader,
       Accept: acceptType ?? 'application/vnd.cpc.track-v2+xml',
       'Accept-Language': this.language,
     };
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -421,7 +415,7 @@ export class CanadaPostMCPServer {
   }
 
   private async cpPost(path: string, xmlBody: string, contentType: string, acceptType: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,
@@ -566,7 +560,7 @@ export class CanadaPostMCPServer {
   private async voidShipment(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.shipment_id as string;
     if (!id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/rs/${this.customerNumber}/${this.customerNumber}/shipment/${id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/rs/${this.customerNumber}/${this.customerNumber}/shipment/${id}`, {
       method: 'DELETE',
       headers: {
         Authorization: this.authHeader,

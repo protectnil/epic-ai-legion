@@ -15,6 +15,7 @@
 // Rate limits: 10 requests/second per org. 429 responses include Retry-After header.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MerakiConfig {
   apiKey: string;
@@ -22,11 +23,12 @@ interface MerakiConfig {
   baseUrl?: string;
 }
 
-export class MerakiMCPServer {
+export class MerakiMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MerakiConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.meraki.com/api/v1';
   }
@@ -348,13 +350,6 @@ export class MerakiMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private get headers(): Record<string, string> {
     return {
       'X-Cisco-Meraki-API-Key': this.apiKey,
@@ -371,7 +366,7 @@ export class MerakiMCPServer {
     const url = `${this.baseUrl}${path}${qs.toString() ? `?${qs.toString()}` : ''}`;
     const init: RequestInit = { method, headers: this.headers };
     if (body !== undefined) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

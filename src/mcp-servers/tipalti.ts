@@ -26,17 +26,19 @@
 //   Specific limits not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TipaltiConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class TipaltiMCPServer {
+export class TipaltiMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TipaltiConfig) {
+    super();
     this.apiToken = config.apiToken;
     // NOTE: The Tipalti Procurement REST API base URL is tenant-provisioned. Operators must
     // supply their actual base URL via config.baseUrl. The default below is a placeholder.
@@ -72,7 +74,7 @@ export class TipaltiMCPServer {
   // Auth: x-api-key header with static API token (per Tipalti Procurement REST API docs)
   // ──────────────────────────────────────────────
   private async req(path: string, method = 'GET', body?: unknown): Promise<unknown> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: {
         'x-api-key': this.apiToken,
@@ -92,13 +94,6 @@ export class TipaltiMCPServer {
   // ──────────────────────────────────────────────
   // Truncation helper
   // ──────────────────────────────────────────────
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   get tools(): ToolDefinition[] {
     return [
       // ── Payees ───────────────────────────────────

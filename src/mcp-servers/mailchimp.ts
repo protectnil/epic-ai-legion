@@ -23,6 +23,7 @@
 // Rate limits: ~10 simultaneous connections per account; 120 req/min recommended maximum
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import { createHash } from 'node:crypto';
 
 interface MailchimpConfig {
@@ -34,11 +35,12 @@ interface MailchimpConfig {
   baseUrl?: string;
 }
 
-export class MailchimpMCPServer {
+export class MailchimpMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MailchimpConfig) {
+    super();
     this.apiKey = config.apiKey;
     if (config.baseUrl) {
       this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -357,19 +359,12 @@ export class MailchimpMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private subscriberHash(email: string): string {
     return createHash('md5').update(email.toLowerCase()).digest('hex');
   }
 
   private async fetch(url: string, opts: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { ...opts, headers: { ...this.reqHeaders, ...(opts.headers as Record<string, string> ?? {}) } });
+    const response = await this.fetchWithRetry(url, { ...opts, headers: { ...this.reqHeaders, ...(opts.headers as Record<string, string> ?? {}) } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

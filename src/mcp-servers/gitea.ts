@@ -14,17 +14,19 @@
 // Rate limits: Configurable per instance; typically 30-60 req/s per user
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GiteaConfig {
   token: string;
   baseUrl?: string;
 }
 
-export class GiteaMCPServer {
+export class GiteaMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: GiteaConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = (config.baseUrl ?? 'https://gitea.example.com/api/v1').replace(/\/$/, '');
   }
@@ -1036,7 +1038,7 @@ export class GiteaMCPServer {
   }
 
   private async doGet(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1049,7 +1051,7 @@ export class GiteaMCPServer {
   }
 
   private async doPost(url: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -1066,7 +1068,7 @@ export class GiteaMCPServer {
   }
 
   private async doPatch(url: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -1083,7 +1085,7 @@ export class GiteaMCPServer {
   }
 
   private async doPut(url: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -1100,7 +1102,7 @@ export class GiteaMCPServer {
   }
 
   private async doDelete(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'DELETE', headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1181,7 +1183,7 @@ export class GiteaMCPServer {
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
     // Gitea DELETE /contents/{filepath} requires a JSON body — use fetch directly
-    const response = await fetch(`${this.baseUrl}/repos/${args.owner}/${args.repo}/contents/${args.filepath}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/repos/${args.owner}/${args.repo}/contents/${args.filepath}`, {
       method: 'DELETE',
       headers: this.authHeaders(),
       body: JSON.stringify({ message: args.message, sha: args.sha, branch: args.branch }),

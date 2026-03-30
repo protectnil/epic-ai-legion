@@ -26,6 +26,7 @@
 // Rate limits: 50,000 API calls per day; 100 calls per 20 seconds per subscription
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MarketoConfig {
   /** OAuth2 client ID from Marketo Admin > LaunchPoint > API Service. */
@@ -38,7 +39,7 @@ interface MarketoConfig {
   restBaseUrl: string;
 }
 
-export class MarketoMCPServer {
+export class MarketoMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly identityUrl: string;
@@ -47,6 +48,7 @@ export class MarketoMCPServer {
   private tokenExpiresAt: number = 0;
 
   constructor(config: MarketoConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.identityUrl = config.identityUrl.replace(/\/$/, '');
@@ -334,7 +336,7 @@ export class MarketoMCPServer {
       return this.cachedToken;
     }
     const tokenUrl = `${this.identityUrl}/oauth/token?grant_type=client_credentials&client_id=${encodeURIComponent(this.clientId)}&client_secret=${encodeURIComponent(this.clientSecret)}`;
-    const response = await fetch(tokenUrl, { method: 'GET' });
+    const response = await this.fetchWithRetry(tokenUrl, { method: 'GET' });
     if (!response.ok) {
       throw new Error(`Marketo OAuth2 token request failed: ${response.status} ${response.statusText}`);
     }
@@ -353,16 +355,9 @@ export class MarketoMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
     const headers = await this.reqHeaders();
-    const response = await fetch(`${this.restBaseUrl}${path}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.restBaseUrl}${path}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -372,7 +367,7 @@ export class MarketoMCPServer {
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
     const headers = await this.reqHeaders();
-    const response = await fetch(`${this.restBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.restBaseUrl}${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),

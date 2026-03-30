@@ -17,6 +17,7 @@
 // Category: analytics (ecommerce analytics — pricing, products, customers, orders, SEO, rules)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BrainBIConfig {
   bearerToken?: string;
@@ -25,11 +26,12 @@ interface BrainBIConfig {
   baseUrl?: string;
 }
 
-export class BrainBIMCPServer {
+export class BrainBIMCPServer extends MCPAdapterBase {
   private bearerToken: string;
   private readonly baseUrl: string;
 
   constructor(config: BrainBIConfig) {
+    super();
     this.bearerToken = config.bearerToken ?? '';
     this.baseUrl = config.baseUrl ?? 'https://brainbi.net';
   }
@@ -255,14 +257,9 @@ export class BrainBIMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const str = JSON.stringify(data, null, 2);
-    return str.length > 8000 ? str.slice(0, 8000) + '\n…[truncated]' : str;
-  }
-
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -279,7 +276,7 @@ export class BrainBIMCPServer {
       headers: this.authHeaders,
     };
     if (body) fetchOpts.body = JSON.stringify(body);
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, fetchOpts);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, fetchOpts);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -294,7 +291,7 @@ export class BrainBIMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -318,7 +315,7 @@ export class BrainBIMCPServer {
       return { content: [{ type: 'text', text: 'email and password are required' }], isError: true };
     }
     const params = { email: args.email as string, password: args.password as string };
-    const response = await fetch(`${this.baseUrl}/api/login?${new URLSearchParams(params).toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/login?${new URLSearchParams(params).toString()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     });

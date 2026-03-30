@@ -15,17 +15,19 @@
 // Rate limits: Not published. Recommended <=60 req/min for production.
 
 import { ToolDefinition, ToolResult } from "./types.js";
+import { MCPAdapterBase } from './base.js';
 
 interface FirmalyzerIotvasConfig {
   apiKey: string;
   baseUrl?: string; // default: https://iotvas-api.firmalyzer.com/api/v1
 }
 
-export class FirmalyzerIotvasMCPServer {
+export class FirmalyzerIotvasMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
   constructor(config: FirmalyzerIotvasConfig) {
+    super();
     this.baseUrl = (config.baseUrl ?? "https://iotvas-api.firmalyzer.com/api/v1").replace(/\/$/, "");
     this.apiKey = config.apiKey;
   }
@@ -220,7 +222,7 @@ export class FirmalyzerIotvasMCPServer {
   }
 
   private async iotvasRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       ...options,
       headers: this.buildHeaders(),
     });

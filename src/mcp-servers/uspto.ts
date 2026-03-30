@@ -18,6 +18,7 @@
 // Rate limits: 45 requests/minute per API key
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface USPTOConfig {
   apiKey: string;
@@ -25,12 +26,13 @@ interface USPTOConfig {
   openDataBaseUrl?: string;
 }
 
-export class USPTOMCPServer {
+export class USPTOMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly patentSearchBaseUrl: string;
   private readonly openDataBaseUrl: string;
 
   constructor(config: USPTOConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.patentSearchBaseUrl = config.patentSearchBaseUrl || 'https://search.patentsview.org';
     this.openDataBaseUrl = config.openDataBaseUrl || 'https://developer.uspto.gov';
@@ -322,13 +324,6 @@ export class USPTOMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private get headers(): Record<string, string> {
     return {
       'X-Api-Key': this.apiKey,
@@ -337,9 +332,8 @@ export class USPTOMCPServer {
     };
   }
 
-
   private async patentSearchPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.patentSearchBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.patentSearchBaseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -446,7 +440,7 @@ export class USPTOMCPServer {
     if (args.date_to) params.set('dateRangeEndDate', args.date_to as string);
     params.set('rows', String((args.limit as number) || 25));
     params.set('start', String((args.offset as number) || 0));
-    const response = await fetch(`${this.openDataBaseUrl}/ibd/v1/applications?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.openDataBaseUrl}/ibd/v1/applications?${params.toString()}`, {
       headers: { 'X-Api-Key': this.apiKey, 'Accept': 'application/json' },
     });
     if (!response.ok) {
@@ -458,7 +452,7 @@ export class USPTOMCPServer {
 
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.application_number) return { content: [{ type: 'text', text: 'application_number is required' }], isError: true };
-    const response = await fetch(`${this.openDataBaseUrl}/ibd/v1/applications/${encodeURIComponent(args.application_number as string)}`, {
+    const response = await this.fetchWithRetry(`${this.openDataBaseUrl}/ibd/v1/applications/${encodeURIComponent(args.application_number as string)}`, {
       headers: { 'X-Api-Key': this.apiKey, 'Accept': 'application/json' },
     });
     if (!response.ok) {
@@ -474,7 +468,7 @@ export class USPTOMCPServer {
     if (args.owner_name) params.set('assigneeName', args.owner_name as string);
     if (args.status) params.set('liveOrDead', (args.status as string).toUpperCase() === 'DEAD' ? 'dead' : 'live');
     params.set('rows', String((args.limit as number) || 25));
-    const response = await fetch(`${this.openDataBaseUrl}/tsdr/v2/trademark/search?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.openDataBaseUrl}/tsdr/v2/trademark/search?${params.toString()}`, {
       headers: { 'X-Api-Key': this.apiKey, 'Accept': 'application/json' },
     });
     if (!response.ok) {

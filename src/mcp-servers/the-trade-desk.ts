@@ -20,6 +20,7 @@
 //              for partner-specific thresholds. Implement exponential backoff on 429.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TheTradeDeskConfig {
   login: string;
@@ -27,7 +28,7 @@ interface TheTradeDeskConfig {
   baseUrl?: string;
 }
 
-export class TheTradeDeskMCPServer {
+export class TheTradeDeskMCPServer extends MCPAdapterBase {
   private readonly login: string;
   private readonly password: string;
   private readonly baseUrl: string;
@@ -35,6 +36,7 @@ export class TheTradeDeskMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: TheTradeDeskConfig) {
+    super();
     this.login = config.login;
     this.password = config.password;
     this.baseUrl = config.baseUrl || 'https://api.thetradedesk.com/v3';
@@ -478,7 +480,7 @@ export class TheTradeDeskMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/authentication`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/authentication`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ Login: this.login, Password: this.password }),
@@ -495,7 +497,7 @@ export class TheTradeDeskMCPServer {
 
   private async ttdGet(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: {
         Authorization: `TTD ${token}`,
         'Content-Type': 'application/json',
@@ -510,7 +512,7 @@ export class TheTradeDeskMCPServer {
 
   private async ttdPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `TTD ${token}`,
@@ -527,7 +529,7 @@ export class TheTradeDeskMCPServer {
 
   private async ttdPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: {
         Authorization: `TTD ${token}`,
@@ -540,13 +542,6 @@ export class TheTradeDeskMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async authenticate(): Promise<ToolResult> {

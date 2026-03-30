@@ -15,15 +15,17 @@
 // Rate limits: Not formally documented; reasonable use expected per ORNL policy
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OrnlDaymetConfig {
   baseUrl?: string;
 }
 
-export class OrnlDaymetMCPServer {
+export class OrnlDaymetMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: OrnlDaymetConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://daymet.ornl.gov/single-pixel';
   }
 
@@ -273,7 +275,7 @@ export class OrnlDaymetMCPServer {
 
     const url = `${this.baseUrl}${path}?${params.toString()}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         'Accept': format === 'csv' ? 'text/csv' : 'application/json',
       },

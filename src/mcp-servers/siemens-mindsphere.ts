@@ -17,6 +17,7 @@
 // Rate limits: Varies by API. Consult tenant-specific documentation.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SiemensMindSphereConfig {
   clientId: string;
@@ -26,7 +27,7 @@ interface SiemensMindSphereConfig {
   baseUrl?: string;   // override the gateway URL entirely
 }
 
-export class SiemensMindSphereMCPServer {
+export class SiemensMindSphereMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly tenant: string;
@@ -36,6 +37,7 @@ export class SiemensMindSphereMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: SiemensMindSphereConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.tenant = config.tenant;
@@ -373,7 +375,7 @@ export class SiemensMindSphereMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/api/technicaltokenmanager/v3/oauth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/technicaltokenmanager/v3/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -407,18 +409,11 @@ export class SiemensMindSphereMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async msGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const headers = await this.authHeaders();
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -428,7 +423,7 @@ export class SiemensMindSphereMCPServer {
 
   private async msPut(path: string, body: unknown): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
@@ -442,7 +437,7 @@ export class SiemensMindSphereMCPServer {
 
   private async msPost(path: string, body: unknown): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -458,7 +453,7 @@ export class SiemensMindSphereMCPServer {
     const headers = await this.authHeaders();
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

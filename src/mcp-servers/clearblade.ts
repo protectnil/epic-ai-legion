@@ -19,6 +19,7 @@
 // Rate limits: Not publicly documented; depends on platform edition and deployment.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClearBladeConfig {
   userToken: string;
@@ -26,11 +27,12 @@ interface ClearBladeConfig {
   baseUrl?: string;
 }
 
-export class ClearBladeMCPServer {
+export class ClearBladeMCPServer extends MCPAdapterBase {
   private readonly userToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ClearBladeConfig) {
+    super();
     this.userToken = config.userToken;
     this.baseUrl = config.baseUrl ?? 'https://platform.clearblade.com';
   }
@@ -465,13 +467,6 @@ export class ClearBladeMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(): Record<string, string> {
     return {
       'ClearBlade-UserToken': this.userToken,
@@ -490,7 +485,7 @@ export class ClearBladeMCPServer {
       const qs = new URLSearchParams(queryParams);
       url += `?${qs.toString()}`;
     }
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: this.authHeaders(),
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -518,7 +513,7 @@ export class ClearBladeMCPServer {
     if (!args.email) return { content: [{ type: 'text', text: 'email is required' }], isError: true };
     if (!args.password) return { content: [{ type: 'text', text: 'password is required' }], isError: true };
     const url = `${this.baseUrl}/api/v/1/user/auth`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'ClearBlade-SystemKey': args.system_key as string,
@@ -540,7 +535,7 @@ export class ClearBladeMCPServer {
     if (!args.username) return { content: [{ type: 'text', text: 'username is required' }], isError: true };
     if (!args.password) return { content: [{ type: 'text', text: 'password is required' }], isError: true };
     const url = `${this.baseUrl}/admin/auth`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: args.username, password: args.password }),
@@ -571,7 +566,7 @@ export class ClearBladeMCPServer {
     if (!args.email) return { content: [{ type: 'text', text: 'email is required' }], isError: true };
     if (!args.password) return { content: [{ type: 'text', text: 'password is required' }], isError: true };
     const url = `${this.baseUrl}/api/v/1/user/reg`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'ClearBlade-SystemKey': args.system_key as string,

@@ -17,6 +17,7 @@
 // Note: Responses include `items`, `has_more`, `quota_remaining`, `quota_max`
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StackExchangeConfig {
   apiKey?: string;
@@ -24,12 +25,13 @@ interface StackExchangeConfig {
   baseUrl?: string;
 }
 
-export class StackExchangeMCPServer {
+export class StackExchangeMCPServer extends MCPAdapterBase {
   private readonly apiKey: string | undefined;
   private readonly accessToken: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: StackExchangeConfig = {}) {
+    super();
     this.apiKey = config.apiKey;
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.stackexchange.com/2.0';
@@ -276,7 +278,7 @@ export class StackExchangeMCPServer {
 
   private async request(path: string, params: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}?${params.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { 'User-Agent': 'EpicAI-StackExchange-MCP/1.0' },
     });
 

@@ -23,6 +23,7 @@
 // Rate limits: 83 req/10 sec (standard); 166 req/10 sec (Business plan)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface IntercomConfig {
   accessToken: string;
@@ -30,12 +31,13 @@ interface IntercomConfig {
   baseUrl?: string;
 }
 
-export class IntercomMCPServer {
+export class IntercomMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly apiVersion: string;
   private readonly baseUrl: string;
 
   constructor(config: IntercomConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.apiVersion = config.apiVersion ?? '2.15';
     this.baseUrl = config.baseUrl ?? 'https://api.intercom.io';
@@ -412,16 +414,9 @@ export class IntercomMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params && params.toString() ? `?${params}` : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -430,7 +425,7 @@ export class IntercomMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -443,7 +438,7 @@ export class IntercomMCPServer {
   }
 
   private async apiDelete(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -574,7 +569,7 @@ export class IntercomMCPServer {
     if (args.email) body.email = args.email;
     if (args.phone) body.phone = args.phone;
     if (args.custom_attributes) body.custom_attributes = args.custom_attributes;
-    const response = await fetch(`${this.baseUrl}/contacts/${encodeURIComponent(id)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/contacts/${encodeURIComponent(id)}`, {
       method: 'PUT',
       headers: this.authHeaders,
       body: JSON.stringify(body),

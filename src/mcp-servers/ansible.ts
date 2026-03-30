@@ -19,6 +19,7 @@
 // Rate limits: Not documented; governed by AAP controller instance capacity
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AnsibleConfig {
   /** Base URL of the AAP controller host, e.g. https://controller.example.com */
@@ -27,11 +28,12 @@ interface AnsibleConfig {
   token: string;
 }
 
-export class AnsibleMCPServer {
+export class AnsibleMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string;
 
   constructor(config: AnsibleConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.token = config.token;
   }
@@ -42,7 +44,6 @@ export class AnsibleMCPServer {
       'Content-Type': 'application/json',
     };
   }
-
 
   get tools(): ToolDefinition[] {
     return [
@@ -354,7 +355,7 @@ export class AnsibleMCPServer {
   }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -365,7 +366,7 @@ export class AnsibleMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -441,7 +442,7 @@ export class AnsibleMCPServer {
   private async getJobStdout(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as number;
     if (!id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/api/v2/jobs/${id}/stdout/?format=txt`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v2/jobs/${id}/stdout/?format=txt`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${this.token}`, Accept: 'text/plain' },
     });
@@ -503,7 +504,7 @@ export class AnsibleMCPServer {
   private async syncProject(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as number;
     if (!id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/api/v2/projects/${id}/update/`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v2/projects/${id}/update/`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({}),

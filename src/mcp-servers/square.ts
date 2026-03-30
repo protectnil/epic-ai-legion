@@ -18,6 +18,7 @@
 // Rate limits: ~100 requests/second per access token for most endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SquareConfig {
   accessToken: string;
@@ -33,12 +34,13 @@ interface SquareConfig {
   apiVersion?: string;
 }
 
-export class SquareMCPServer {
+export class SquareMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
   private readonly apiVersion: string;
 
   constructor(config: SquareConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://connect.squareup.com/v2';
     this.apiVersion = config.apiVersion ?? '2026-01-22';
@@ -512,18 +514,12 @@ export class SquareMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
     body?: unknown,
   ): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: this.authHeaders,
       body: body !== undefined ? JSON.stringify(body) : undefined,

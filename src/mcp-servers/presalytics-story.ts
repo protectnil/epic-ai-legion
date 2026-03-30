@@ -13,17 +13,19 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PresalyticsStoryConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class PresalyticsStoryMCPServer {
+export class PresalyticsStoryMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PresalyticsStoryConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.presalytics.io/story';
   }
@@ -499,7 +501,7 @@ export class PresalyticsStoryMCPServer {
 
   private async request(url: string, options: RequestInit = {}): Promise<ToolResult> {
     const mergedHeaders = { ...this.buildHeaders(), ...(options.headers as Record<string, string> | undefined) };
-    const response = await fetch(url, { ...options, headers: mergedHeaders });
+    const response = await this.fetchWithRetry(url, { ...options, headers: mergedHeaders });
 
     if (!response.ok) {
       let detail = '';

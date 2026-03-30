@@ -20,6 +20,7 @@
 //   Per-endpoint sub-limits apply (e.g., Ticket Create: 80/min on Growth, 160/min on Pro).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FreshdeskConfig {
   apiKey: string;
@@ -27,11 +28,12 @@ interface FreshdeskConfig {
   baseUrl?: string; // override full base URL if needed
 }
 
-export class FreshdeskMCPServer {
+export class FreshdeskMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: FreshdeskConfig) {
+    super();
     const credentials = Buffer.from(`${config.apiKey}:X`).toString('base64');
     this.authHeader = `Basic ${credentials}`;
     this.baseUrl = config.baseUrl || `https://${config.domain}.freshdesk.com/api/v2`;
@@ -468,7 +470,7 @@ export class FreshdeskMCPServer {
   }
 
   private async fdRequest(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

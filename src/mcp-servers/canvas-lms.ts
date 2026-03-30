@@ -23,6 +23,7 @@
 // Rate limits: 700 requests per 10 seconds per user token (by default; institution-configurable)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CanvasLMSConfig {
   accessToken: string;
@@ -30,11 +31,12 @@ interface CanvasLMSConfig {
   baseUrl?: string;
 }
 
-export class CanvasLMSMCPServer {
+export class CanvasLMSMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CanvasLMSConfig) {
+    super();
     this.accessToken = config.accessToken;
     // Allow explicit baseUrl override; otherwise construct from institutionDomain
     this.baseUrl = config.baseUrl
@@ -631,13 +633,6 @@ export class CanvasLMSMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildParams(args: Record<string, unknown>, fields: string[]): Record<string, string> {
     const params: Record<string, string> = {};
     for (const field of fields) {
@@ -650,7 +645,7 @@ export class CanvasLMSMCPServer {
 
   private async canvasGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const body = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} — ${body}` }], isError: true };
@@ -660,7 +655,7 @@ export class CanvasLMSMCPServer {
   }
 
   private async canvasPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -674,7 +669,7 @@ export class CanvasLMSMCPServer {
   }
 
   private async canvasPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -777,7 +772,7 @@ export class CanvasLMSMCPServer {
     const codes = (args.context_codes as string).split(',');
     const qs = codes.map(c => `context_codes[]=${encodeURIComponent(c.trim())}`).join('&');
     const extra = Object.keys(params).length > 0 ? '&' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/announcements?${qs}${extra}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/announcements?${qs}${extra}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

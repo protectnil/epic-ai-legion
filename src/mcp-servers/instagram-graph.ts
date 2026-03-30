@@ -22,17 +22,19 @@
 //              Messaging: 200 DMs/hour per account.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface InstagramGraphConfig {
   accessToken: string;
   apiVersion?: string;  // Default: v25.0
 }
 
-export class InstagramGraphMCPServer {
+export class InstagramGraphMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: InstagramGraphConfig) {
+    super();
     this.accessToken = config.accessToken;
     const version = config.apiVersion || 'v25.0';
     this.baseUrl = `https://graph.facebook.com/${version}`;
@@ -537,18 +539,11 @@ export class InstagramGraphMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async igGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     params.access_token = this.accessToken;
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}?${qs}`;
-    const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Accept: 'application/json' } });
     const data = await response.json() as { error?: { message: string; code: number; type: string } };
     if (!response.ok || data.error) {
       const msg = data.error ? `Graph API error ${data.error.code} (${data.error.type}): ${data.error.message}` : `HTTP ${response.status} ${response.statusText}`;
@@ -560,7 +555,7 @@ export class InstagramGraphMCPServer {
   private async igPost(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     params.access_token = this.accessToken;
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
       body: new URLSearchParams(params).toString(),
@@ -577,7 +572,7 @@ export class InstagramGraphMCPServer {
     params.access_token = this.accessToken;
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}?${qs}`;
-    const response = await fetch(url, { method: 'DELETE', headers: { Accept: 'application/json' } });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: { Accept: 'application/json' } });
     const data = await response.json() as { error?: { message: string; code: number; type: string } };
     if (!response.ok || data.error) {
       const msg = data.error ? `Graph API error ${data.error.code} (${data.error.type}): ${data.error.message}` : `HTTP ${response.status} ${response.statusText}`;

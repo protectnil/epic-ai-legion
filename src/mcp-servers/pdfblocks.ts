@@ -14,17 +14,19 @@
 //       This adapter accepts base64-encoded file content and converts to binary.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PDFBlocksConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class PDFBlocksMCPServer {
+export class PDFBlocksMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: PDFBlocksConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.pdfblocks.com';
   }
@@ -302,7 +304,7 @@ export class PDFBlocksMCPServer {
 
   private async apiRequest(path: string, form: FormData): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'X-Api-Key': this.apiKey },
       body: form,

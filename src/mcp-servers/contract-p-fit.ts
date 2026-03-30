@@ -13,6 +13,7 @@
 // Rate limits: Not documented; 429 returned when exceeded
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ContractPFitConfig {
   apiToken?: string;
@@ -21,13 +22,14 @@ interface ContractPFitConfig {
   baseUrl?: string;
 }
 
-export class ContractPFitMCPServer {
+export class ContractPFitMCPServer extends MCPAdapterBase {
   private readonly apiToken: string | null;
   private readonly username: string | null;
   private readonly password: string | null;
   private readonly baseUrl: string;
 
   constructor(config: ContractPFitConfig) {
+    super();
     this.apiToken = config.apiToken ?? null;
     this.username = config.username ?? null;
     this.password = config.password ?? null;
@@ -1091,11 +1093,6 @@ export class ContractPFitMCPServer {
     return { 'Content-Type': 'application/json' };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(
     method: string,
@@ -1118,7 +1115,7 @@ export class ContractPFitMCPServer {
       options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, options);
+    const response = await this.fetchWithRetry(url, options);
 
     if (!response.ok) {
       return {
@@ -1145,7 +1142,7 @@ export class ContractPFitMCPServer {
   // ── Auth ───────────────────────────────────────────────────────────────────
 
   private async login(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/auth`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: args.username, password: args.password }),

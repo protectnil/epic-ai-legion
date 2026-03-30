@@ -15,6 +15,7 @@
 // Rate limits: 100 requests/min per OAuth client ID (averaged over 10-minute window)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RedditConfig {
   /** OAuth2 Bearer access token from https://www.reddit.com/api/v1/access_token */
@@ -24,12 +25,13 @@ interface RedditConfig {
   baseUrl?: string;
 }
 
-export class RedditMCPServer {
+export class RedditMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly userAgent: string;
   private readonly baseUrl: string;
 
   constructor(config: RedditConfig) {
+    super();
     this.token = config.accessToken;
     this.userAgent = config.userAgent;
     this.baseUrl = config.baseUrl ?? 'https://oauth.reddit.com';
@@ -351,18 +353,11 @@ export class RedditMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = params
       ? `${this.baseUrl}${path}?${params.toString()}`
       : `${this.baseUrl}${path}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `Reddit API error: ${response.status} ${response.statusText}` }],
@@ -379,7 +374,7 @@ export class RedditMCPServer {
     for (const [k, v] of Object.entries(body)) {
       if (v !== undefined && v !== null) form.append(k, String(v));
     }
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { ...this.headers, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: form.toString(),

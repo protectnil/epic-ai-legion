@@ -28,6 +28,7 @@
 //   Vulnerability v1:       /vulnerability/assessment/api/v1/orgs/{org_key}/
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CarbonBlackConfig {
   apiKey: string;
@@ -36,12 +37,13 @@ interface CarbonBlackConfig {
   baseUrl?: string;
 }
 
-export class CarbonBlackMCPServer {
+export class CarbonBlackMCPServer extends MCPAdapterBase {
   private readonly authToken: string;
   private readonly baseUrl: string;
   private readonly orgKey: string;
 
   constructor(config: CarbonBlackConfig) {
+    super();
     this.authToken = `${config.apiKey}/${config.connectorId}`;
     this.baseUrl = config.baseUrl || 'https://defense.conferdeploy.net';
     this.orgKey = config.orgKey;
@@ -412,13 +414,8 @@ export class CarbonBlackMCPServer {
     return encodeURIComponent(this.orgKey);
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -427,7 +424,7 @@ export class CarbonBlackMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'POST', headers: this.headers(), body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'POST', headers: this.headers(), body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -437,7 +434,7 @@ export class CarbonBlackMCPServer {
   }
 
   private async delete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -446,7 +443,7 @@ export class CarbonBlackMCPServer {
 
   private async searchJob(submitPath: string, resultsPath: string, body: unknown): Promise<ToolResult> {
     // Step 1: Submit async search job
-    const submitResponse = await fetch(`${this.baseUrl}${submitPath}`, {
+    const submitResponse = await this.fetchWithRetry(`${this.baseUrl}${submitPath}`, {
       method: 'POST', headers: this.headers(), body: JSON.stringify(body),
     });
     if (!submitResponse.ok) {
@@ -464,7 +461,7 @@ export class CarbonBlackMCPServer {
 
     while (Date.now() < deadline) {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      const res = await fetch(pollUrl, { method: 'GET', headers: this.headers() });
+      const res = await this.fetchWithRetry(pollUrl, { method: 'GET', headers: this.headers() });
       if (!res.ok) {
         return { content: [{ type: 'text', text: `Failed to retrieve search results: ${res.status} ${res.statusText}` }], isError: true };
       }

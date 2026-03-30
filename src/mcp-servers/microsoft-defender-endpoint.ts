@@ -20,6 +20,7 @@
 // Rate limits: 100 calls/min, 1,500 calls/hour per application token
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MicrosoftDefenderEndpointConfig {
   tenantId: string;
@@ -28,7 +29,7 @@ interface MicrosoftDefenderEndpointConfig {
   baseUrl?: string;
 }
 
-export class MicrosoftDefenderEndpointMCPServer {
+export class MicrosoftDefenderEndpointMCPServer extends MCPAdapterBase {
   private readonly tenantId: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -37,6 +38,7 @@ export class MicrosoftDefenderEndpointMCPServer {
   private tokenExpiresAt: number = 0;
 
   constructor(config: MicrosoftDefenderEndpointConfig) {
+    super();
     this.tenantId = config.tenantId;
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -84,7 +86,7 @@ export class MicrosoftDefenderEndpointMCPServer {
       scope: 'https://api.securitycenter.microsoft.com/.default',
     });
 
-    const response = await fetch(tokenUrl, {
+    const response = await this.fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -99,12 +101,6 @@ export class MicrosoftDefenderEndpointMCPServer {
     this.accessToken = tokenData.access_token;
     this.tokenExpiresAt = now + tokenData.expires_in * 1000;
     return this.accessToken;
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -678,7 +674,7 @@ export class MicrosoftDefenderEndpointMCPServer {
   }
 
   private async apiGet(url: string, headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -687,7 +683,7 @@ export class MicrosoftDefenderEndpointMCPServer {
   }
 
   private async apiPost(url: string, headers: Record<string, string>, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -725,7 +721,7 @@ export class MicrosoftDefenderEndpointMCPServer {
     if (args.classification) body.classification = args.classification;
     if (args.determination) body.determination = args.determination;
     if (args.comment) body.comment = args.comment;
-    const response = await fetch(`${this.baseUrl}/api/alerts/${encodeURIComponent(id)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/alerts/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(body),
@@ -858,7 +854,7 @@ export class MicrosoftDefenderEndpointMCPServer {
   private async deleteIndicator(args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     const id = args.id as number;
     if (id === undefined || id === null) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/api/indicators/${id}`, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/indicators/${id}`, { method: 'DELETE', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

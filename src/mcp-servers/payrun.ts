@@ -12,6 +12,7 @@
 // Rate limits: Not publicly documented; treat as standard REST API.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PayRunConfig {
   /** Pre-computed OAuth 1.0a Authorization header value */
@@ -22,12 +23,13 @@ interface PayRunConfig {
   baseUrl?: string;
 }
 
-export class PayRunMCPServer {
+export class PayRunMCPServer extends MCPAdapterBase {
   private readonly authorizationHeader: string;
   private readonly apiVersion: string;
   private readonly baseUrl: string;
 
   constructor(config: PayRunConfig) {
+    super();
     this.authorizationHeader = config.authorizationHeader;
     this.apiVersion = config.apiVersion || 'default';
     this.baseUrl = config.baseUrl || 'https://api.payrun.io';
@@ -414,20 +416,13 @@ export class PayRunMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const init: RequestInit = { method, headers: this.headers };
     if (body !== undefined && method !== 'GET' && method !== 'DELETE') {
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

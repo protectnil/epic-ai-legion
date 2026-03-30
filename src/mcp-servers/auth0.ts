@@ -36,6 +36,7 @@
 // Rate limits: 1,000 requests/minute per API token (varies by plan)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Auth0Config {
   domain: string;          // e.g. your-tenant.auth0.com (no https://, no trailing slash)
@@ -43,11 +44,12 @@ interface Auth0Config {
   baseUrl?: string;        // optional full base URL override
 }
 
-export class Auth0MCPServer {
+export class Auth0MCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly managementToken: string;
 
   constructor(config: Auth0Config) {
+    super();
     const domain = config.domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
     this.baseUrl = config.baseUrl ?? `https://${domain}/api/v2`;
     this.managementToken = config.managementToken;
@@ -548,15 +550,8 @@ export class Auth0MCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     if (!response.ok) {
       let errText: string;
       try {

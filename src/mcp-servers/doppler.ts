@@ -36,17 +36,19 @@
 // Rate limits: Varies by plan; no documented global limit. Use exponential backoff on 429.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DopplerConfig {
   token: string;
   baseUrl?: string;
 }
 
-export class DopplerMCPServer {
+export class DopplerMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: DopplerConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = config.baseUrl ?? 'https://api.doppler.com/v3';
   }
@@ -503,7 +505,7 @@ export class DopplerMCPServer {
   }
 
   private async request(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       ...options,
       headers: { ...this.headers, ...(options?.headers as Record<string, string> ?? {}) },
     });

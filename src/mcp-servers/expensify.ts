@@ -18,6 +18,7 @@
 // Note: All operations use a single POST endpoint — the job type is specified in requestJobDescription.type
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ExpensifyConfig {
   partnerUserID: string;
@@ -26,12 +27,13 @@ interface ExpensifyConfig {
   baseUrl?: string;
 }
 
-export class ExpensifyMCPServer {
+export class ExpensifyMCPServer extends MCPAdapterBase {
   private readonly partnerUserID: string;
   private readonly partnerUserSecret: string;
   private readonly baseUrl: string;
 
   constructor(config: ExpensifyConfig) {
+    super();
     this.partnerUserID = config.partnerUserID;
     this.partnerUserSecret = config.partnerUserSecret;
     this.baseUrl = config.baseUrl ?? 'https://integrations.expensify.com/Integration-Server/ExpensifyIntegrations';
@@ -65,18 +67,12 @@ export class ExpensifyMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async postJob(requestJobDescription: Record<string, unknown>): Promise<ToolResult> {
     const body = new URLSearchParams({
       requestJobDescription: JSON.stringify(requestJobDescription),
     });
 
-    const response = await fetch(this.baseUrl, {
+    const response = await this.fetchWithRetry(this.baseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),

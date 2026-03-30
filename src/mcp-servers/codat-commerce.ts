@@ -17,17 +17,19 @@
 // Rate limits: Not formally documented; see https://docs.codat.io/using-the-api/rate-limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CodatCommerceConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CodatCommerceMCPServer {
+export class CodatCommerceMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CodatCommerceConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.codat.io';
   }
@@ -480,7 +482,7 @@ export class CodatCommerceMCPServer {
 
     const url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/connections/${encodeURIComponent(connectionId)}/data/${resource}?${params.toString()}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         'Authorization': this.buildAuthHeader(),
         'Content-Type': 'application/json',
@@ -519,7 +521,7 @@ export class CodatCommerceMCPServer {
 
     const url = `${this.baseUrl}/companies/${encodeURIComponent(companyId)}/connections/${encodeURIComponent(connectionId)}/data/commerce-info`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         'Authorization': this.buildAuthHeader(),
         'Content-Type': 'application/json',

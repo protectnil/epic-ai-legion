@@ -25,17 +25,19 @@
 //   Channel messages: max 50 per page. Chats: list requires Teams.ReadBasic.All permission.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MicrosoftTeamsConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class MicrosoftTeamsMCPServer {
+export class MicrosoftTeamsMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: MicrosoftTeamsConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl || 'https://graph.microsoft.com/v1.0').replace(/\/$/, '');
   }
@@ -62,12 +64,6 @@ export class MicrosoftTeamsMCPServer {
       description: 'Manage Microsoft Teams via Graph API: list teams and channels, send and read messages, manage chats, handle channel members and tabs, create online meetings, and access team membership.',
       author: 'protectnil',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -513,7 +509,7 @@ export class MicrosoftTeamsMCPServer {
   }
 
   private async graphGet(url: string, headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -522,7 +518,7 @@ export class MicrosoftTeamsMCPServer {
   }
 
   private async graphPost(url: string, headers: Record<string, string>, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }

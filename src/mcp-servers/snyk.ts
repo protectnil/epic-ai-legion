@@ -29,6 +29,7 @@
 // API version: REST API requires ?version= param on all requests. Recommended stable: 2024-10-15
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SnykConfig {
   apiToken: string;
@@ -36,12 +37,13 @@ interface SnykConfig {
   apiVersion?: string;
 }
 
-export class SnykMCPServer {
+export class SnykMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
   private readonly apiVersion: string;
 
   constructor(config: SnykConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.snyk.io';
     this.apiVersion = config.apiVersion || '2024-10-15';
@@ -495,13 +497,6 @@ export class SnykMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private versionParams(extra?: Record<string, string>): URLSearchParams {
     const p = new URLSearchParams({ version: this.apiVersion });
     if (extra) {
@@ -512,7 +507,7 @@ export class SnykMCPServer {
 
   private async snykGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
@@ -524,7 +519,7 @@ export class SnykMCPServer {
 
   private async snykPost(path: string, body: unknown, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -540,7 +535,7 @@ export class SnykMCPServer {
 
   private async snykPatch(path: string, body: unknown, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -556,7 +551,7 @@ export class SnykMCPServer {
 
   private async snykDelete(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${params ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
@@ -660,7 +655,7 @@ export class SnykMCPServer {
     // v1 ignores endpoint — REST equivalent is not GA as of 2024-10-15
     const url = `${this.baseUrl}/v1/org/${encodeURIComponent(orgId)}/project/${encodeURIComponent(projectId)}/ignores`;
     const headers = { Authorization: `token ${this.apiToken}`, 'Content-Type': 'application/json' };
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };
@@ -686,7 +681,7 @@ export class SnykMCPServer {
     if (args.expires) ignoreEntry.expires = args.expires;
     const url = `${this.baseUrl}/v1/org/${encodeURIComponent(orgId)}/project/${encodeURIComponent(projectId)}/ignore/${encodeURIComponent(issueId)}`;
     const headers = { Authorization: `token ${this.apiToken}`, 'Content-Type': 'application/json' };
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(ignoreEntry),
@@ -709,7 +704,7 @@ export class SnykMCPServer {
     }
     const url = `${this.baseUrl}/v1/org/${encodeURIComponent(orgId)}/project/${encodeURIComponent(projectId)}/ignore/${encodeURIComponent(issueId)}`;
     const headers = { Authorization: `token ${this.apiToken}`, 'Content-Type': 'application/json' };
-    const response = await fetch(url, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error (HTTP ${response.status}): ${errText}` }], isError: true };

@@ -16,17 +16,19 @@
 // Category: marketing (marketplace seller operations — product catalog, orders, shipments, tickets)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BrandLoversConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class BrandLoversMCPServer {
+export class BrandLoversMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BrandLoversConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.brandlovers.com/marketplace/v1';
   }
@@ -614,14 +616,9 @@ export class BrandLoversMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const str = JSON.stringify(data, null, 2);
-    return str.length > 8000 ? str.slice(0, 8000) + '\n…[truncated]' : str;
-  }
-
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -632,7 +629,7 @@ export class BrandLoversMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown> | unknown[]): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -651,7 +648,7 @@ export class BrandLoversMCPServer {
   }
 
   private async apiPut(path: string, body: Record<string, unknown> | unknown[]): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.authHeaders,
       body: JSON.stringify(body),

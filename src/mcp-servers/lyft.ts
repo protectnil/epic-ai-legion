@@ -15,16 +15,18 @@
 // Rate limits: Not publicly documented; throttling enforced per token.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LyftConfig {
   accessToken: string; // OAuth2 Bearer access token
 }
 
-export class LyftMCPServer {
+export class LyftMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl = 'https://api.lyft.com/v1';
 
   constructor(config: LyftConfig) {
+    super();
     this.accessToken = config.accessToken;
   }
 
@@ -261,7 +263,7 @@ export class LyftMCPServer {
   }
 
   private async lyftRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       ...options,
       headers: this.buildHeaders(),
     });

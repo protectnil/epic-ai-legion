@@ -50,6 +50,7 @@
 // Rate limits: Per-API; most have 1,000-10,000 req/100s per user quota.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleCloudConfig {
   accessToken: string;
@@ -66,11 +67,12 @@ const BIGQUERY_BASE = 'https://bigquery.googleapis.com/bigquery/v2';
 const IAM_BASE = 'https://iam.googleapis.com/v1';
 const GKE_BASE = 'https://container.googleapis.com/v1';
 
-export class GoogleCloudMCPServer {
+export class GoogleCloudMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly defaultProjectId: string;
 
   constructor(config: GoogleCloudConfig) {
+    super();
     this.token = config.accessToken;
     this.defaultProjectId = config.projectId ?? '';
   }
@@ -546,19 +548,13 @@ export class GoogleCloudMCPServer {
     return (args.projectId as string) || this.defaultProjectId;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.pageSize) params.set('pageSize', String(args.pageSize));
     if (args.pageToken) params.set('pageToken', String(args.pageToken));
     if (args.filter) params.set('filter', args.filter as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${CRM_BASE}/projects${params.toString() ? '?' + params.toString() : ''}`,
       { headers: this.headers },
     );
@@ -574,7 +570,7 @@ export class GoogleCloudMCPServer {
     if (!projectId) {
       return { content: [{ type: 'text', text: 'projectId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${CRM_BASE}/projects/${encodeURIComponent(projectId)}`,
       { headers: this.headers },
     );
@@ -599,7 +595,7 @@ export class GoogleCloudMCPServer {
     const url = isAggregated
       ? `${COMPUTE_BASE}/projects/${projectId}/aggregated/instances${params.toString() ? '?' + params.toString() : ''}`
       : `${COMPUTE_BASE}/projects/${projectId}/zones/${zone}/instances${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `GCP API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -614,7 +610,7 @@ export class GoogleCloudMCPServer {
     if (!zone || !instance) {
       return { content: [{ type: 'text', text: 'zone and instance are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${COMPUTE_BASE}/projects/${projectId}/zones/${zone}/instances/${encodeURIComponent(instance)}`,
       { headers: this.headers },
     );
@@ -631,7 +627,7 @@ export class GoogleCloudMCPServer {
     if (args.maxResults) params.set('maxResults', String(args.maxResults));
     if (args.pageToken) params.set('pageToken', args.pageToken as string);
     if (args.prefix) params.set('prefix', args.prefix as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${STORAGE_BASE}/b?${params.toString()}`,
       { headers: this.headers },
     );
@@ -651,7 +647,7 @@ export class GoogleCloudMCPServer {
     if (args.prefix) params.set('prefix', args.prefix as string);
     if (args.maxResults) params.set('maxResults', String(args.maxResults));
     if (args.pageToken) params.set('pageToken', args.pageToken as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${STORAGE_BASE}/b/${encodeURIComponent(bucket)}/o${params.toString() ? '?' + params.toString() : ''}`,
       { headers: this.headers },
     );
@@ -671,7 +667,7 @@ export class GoogleCloudMCPServer {
     if (args.filter) body.filter = String(args.filter);
     if (args.pageSize) body.pageSize = Number(args.pageSize);
     if (args.pageToken) body.pageToken = String(args.pageToken);
-    const response = await fetch(`${LOGGING_BASE}/entries:list`, {
+    const response = await this.fetchWithRetry(`${LOGGING_BASE}/entries:list`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -690,7 +686,7 @@ export class GoogleCloudMCPServer {
       return { content: [{ type: 'text', text: 'location is required (e.g., "us-central1" or "-" for all)' }], isError: true };
     }
     // Cloud Run v2: GET /v2/projects/{project}/locations/{location}/services
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${RUN_BASE}/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/services`,
       { headers: this.headers },
     );
@@ -709,7 +705,7 @@ export class GoogleCloudMCPServer {
       return { content: [{ type: 'text', text: 'location and serviceName are required' }], isError: true };
     }
     // Cloud Run v2: GET /v2/projects/{project}/locations/{location}/services/{service}
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${RUN_BASE}/projects/${encodeURIComponent(projectId)}/locations/${encodeURIComponent(location)}/services/${encodeURIComponent(serviceName)}`,
       { headers: this.headers },
     );
@@ -727,7 +723,7 @@ export class GoogleCloudMCPServer {
       return { content: [{ type: 'text', text: 'location is required (e.g., "us-central1" or "-" for all)' }], isError: true };
     }
     const parent = `projects/${projectId}/locations/${location}`;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${FUNCTIONS_BASE}/${parent}/functions`,
       { headers: this.headers },
     );
@@ -746,7 +742,7 @@ export class GoogleCloudMCPServer {
       return { content: [{ type: 'text', text: 'location and functionName are required' }], isError: true };
     }
     const name = `projects/${projectId}/locations/${location}/functions/${functionName}`;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${FUNCTIONS_BASE}/${name}`,
       { headers: this.headers },
     );
@@ -763,7 +759,7 @@ export class GoogleCloudMCPServer {
     if (!zone) {
       return { content: [{ type: 'text', text: 'zone is required (use "-" for all zones)' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${GKE_BASE}/projects/${projectId}/locations/${zone}/clusters`,
       { headers: this.headers },
     );
@@ -781,7 +777,7 @@ export class GoogleCloudMCPServer {
     if (!zone || !clusterId) {
       return { content: [{ type: 'text', text: 'zone and clusterId are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${GKE_BASE}/projects/${projectId}/locations/${zone}/clusters/${encodeURIComponent(clusterId)}`,
       { headers: this.headers },
     );
@@ -798,7 +794,7 @@ export class GoogleCloudMCPServer {
     if (args.maxResults) params.set('maxResults', String(args.maxResults));
     if (args.pageToken) params.set('pageToken', args.pageToken as string);
     if (args.filter) params.set('filter', args.filter as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${BIGQUERY_BASE}/projects/${projectId}/datasets${params.toString() ? '?' + params.toString() : ''}`,
       { headers: this.headers },
     );
@@ -818,7 +814,7 @@ export class GoogleCloudMCPServer {
     const params = new URLSearchParams();
     if (args.maxResults) params.set('maxResults', String(args.maxResults));
     if (args.pageToken) params.set('pageToken', args.pageToken as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${BIGQUERY_BASE}/projects/${projectId}/datasets/${encodeURIComponent(datasetId)}/tables${params.toString() ? '?' + params.toString() : ''}`,
       { headers: this.headers },
     );
@@ -834,7 +830,7 @@ export class GoogleCloudMCPServer {
     const params = new URLSearchParams();
     if (args.pageSize) params.set('pageSize', String(args.pageSize));
     if (args.pageToken) params.set('pageToken', args.pageToken as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${IAM_BASE}/projects/${projectId}/serviceAccounts${params.toString() ? '?' + params.toString() : ''}`,
       { headers: this.headers },
     );
@@ -850,7 +846,7 @@ export class GoogleCloudMCPServer {
     if (!projectId) {
       return { content: [{ type: 'text', text: 'projectId is required (or set in config)' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${CRM_BASE}/projects/${encodeURIComponent(projectId)}:getIamPolicy`,
       { method: 'POST', headers: this.headers, body: JSON.stringify({}) },
     );

@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; self-hosted rate limits depend on server configuration.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ConjurConfig {
   /** Base URL of the Conjur server (e.g. https://conjur.example.com) */
@@ -29,7 +30,7 @@ interface ConjurConfig {
   apiKey?: string;
 }
 
-export class ConjurMCPServer {
+export class ConjurMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly account: string;
   private accessToken: string | null;
@@ -37,6 +38,7 @@ export class ConjurMCPServer {
   private readonly apiKey: string | null;
 
   constructor(config: ConjurConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.account = config.account;
     this.accessToken = config.accessToken ?? null;
@@ -684,13 +686,6 @@ export class ConjurMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private acct(args: Record<string, unknown>): string {
     return (args.account as string | undefined) ?? this.account;
   }
@@ -713,7 +708,7 @@ export class ConjurMCPServer {
       const str = qs.toString();
       if (str) url += `?${str}`;
     }
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: options.headers ?? this.tokenHeader(),
       body: options.body,
@@ -734,7 +729,7 @@ export class ConjurMCPServer {
     if (!args.login || !args.api_key) return { content: [{ type: 'text', text: 'login and api_key are required' }], isError: true };
     const account = this.acct(args);
     const login = encodeURIComponent(args.login as string);
-    const response = await fetch(`${this.baseUrl}/authn/${encodeURIComponent(account)}/${login}/authenticate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/authn/${encodeURIComponent(account)}/${login}/authenticate`, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: args.api_key as string,
@@ -752,7 +747,7 @@ export class ConjurMCPServer {
       return { content: [{ type: 'text', text: 'login and apiKey must be configured in ConjurConfig for this operation' }], isError: true };
     }
     const account = this.acct(args);
-    const response = await fetch(`${this.baseUrl}/authn/${encodeURIComponent(account)}/login`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/authn/${encodeURIComponent(account)}/login`, {
       method: 'GET',
       headers: {
         'Authorization': `Basic ${btoa(`${this.login}:${this.apiKey}`)}`,
@@ -897,7 +892,7 @@ export class ConjurMCPServer {
     const body = new URLSearchParams();
     body.set('id', args.host_id as string);
     if (args.annotations) body.set('annotations', JSON.stringify(args.annotations));
-    const response = await fetch(`${this.baseUrl}/host_factories/hosts`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/host_factories/hosts`, {
       method: 'POST',
       headers: {
         'Authorization': `Token token="${args.host_factory_token as string}"`,
@@ -922,7 +917,7 @@ export class ConjurMCPServer {
     if (args.count !== undefined) body.set('count', String(args.count));
     if (args.cidr !== undefined) body.set('cidr', JSON.stringify(args.cidr));
     const headers = { ...this.tokenHeader(), 'Content-Type': 'application/x-www-form-urlencoded' };
-    const response = await fetch(`${this.baseUrl}/host_factory_tokens`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/host_factory_tokens`, {
       method: 'POST',
       headers,
       body: body.toString(),
@@ -948,7 +943,7 @@ export class ConjurMCPServer {
     body.set('csr', args.csr as string);
     body.set('ttl', args.ttl as string);
     const headers = { ...this.tokenHeader(), 'Content-Type': 'application/x-www-form-urlencoded' };
-    const response = await fetch(`${this.baseUrl}/ca/${encodeURIComponent(account)}/${encodeURIComponent(args.service_id as string)}/sign`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ca/${encodeURIComponent(account)}/${encodeURIComponent(args.service_id as string)}/sign`, {
       method: 'POST',
       headers,
       body: body.toString(),

@@ -16,17 +16,19 @@
 // Rate limits: Free tier — 5 req/min. Paid tiers up to unlimited. See https://polygon.io/dashboard
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PolygonConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class PolygonMCPServer {
+export class PolygonMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: PolygonConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.polygon.io';
   }
@@ -298,13 +300,6 @@ export class PolygonMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, unknown> = {}): string {
     const url = new URL(`${this.baseUrl}${path}`);
     url.searchParams.set('apiKey', this.apiKey);
@@ -318,7 +313,7 @@ export class PolygonMCPServer {
 
   private async request(path: string, params: Record<string, unknown> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });

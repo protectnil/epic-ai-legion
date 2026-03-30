@@ -17,6 +17,7 @@
 // Rate limits: Not explicitly published. OAuth2 tokens expire in ~3600s; refresh 60s early.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 const SECURE_ENDPOINT_BASE: Record<string, string> = {
   na:   'https://api.amp.cisco.com',
@@ -51,7 +52,7 @@ interface CiscoSecureConfig {
   umbrellaClientSecret?: string;
 }
 
-export class CiscoSecureMCPServer {
+export class CiscoSecureMCPServer extends MCPAdapterBase {
   private readonly region: string;
   private readonly secureEndpointBaseUrl: string;
   private readonly tokenEndpoint: string;
@@ -64,6 +65,7 @@ export class CiscoSecureMCPServer {
   private umbrellaToken: OAuthToken | null = null;
 
   constructor(config: CiscoSecureConfig) {
+    super();
     if (!config.clientId || !config.clientSecret) {
       throw new Error('CiscoSecureMCPServer: clientId and clientSecret are required');
     }
@@ -301,19 +303,13 @@ export class CiscoSecureMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getSecureEndpointToken(): Promise<string> {
     const now = Date.now();
     if (this.secureEndpointToken && this.secureEndpointToken.expires_at > now + 60_000) {
       return this.secureEndpointToken.access_token;
     }
     const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
-    const response = await fetch(this.tokenEndpoint, {
+    const response = await this.fetchWithRetry(this.tokenEndpoint, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -341,7 +337,7 @@ export class CiscoSecureMCPServer {
       return this.umbrellaToken.access_token;
     }
     const credentials = Buffer.from(`${this.umbrellaClientId}:${this.umbrellaClientSecret}`).toString('base64');
-    const response = await fetch(UMBRELLA_TOKEN_ENDPOINT, {
+    const response = await this.fetchWithRetry(UMBRELLA_TOKEN_ENDPOINT, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -362,7 +358,7 @@ export class CiscoSecureMCPServer {
 
   private async secureGet(path: string): Promise<ToolResult> {
     const token = await this.getSecureEndpointToken();
-    const response = await fetch(`${this.secureEndpointBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.secureEndpointBaseUrl}${path}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     if (!response.ok) {
@@ -374,7 +370,7 @@ export class CiscoSecureMCPServer {
 
   private async securePatch(path: string): Promise<ToolResult> {
     const token = await this.getSecureEndpointToken();
-    const response = await fetch(`${this.secureEndpointBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.secureEndpointBaseUrl}${path}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' },
     });
@@ -387,7 +383,7 @@ export class CiscoSecureMCPServer {
 
   private async secureDelete(path: string): Promise<ToolResult> {
     const token = await this.getSecureEndpointToken();
-    const response = await fetch(`${this.secureEndpointBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.secureEndpointBaseUrl}${path}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
@@ -514,7 +510,7 @@ export class CiscoSecureMCPServer {
     const params = new URLSearchParams({ limit: String(limit) });
     if (args.start_time) params.set('from', args.start_time as string);
     if (args.end_time) params.set('to', args.end_time as string);
-    const response = await fetch(`${UMBRELLA_BASE_URL}/reports/v2/activity/dns?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${UMBRELLA_BASE_URL}/reports/v2/activity/dns?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     if (!response.ok) {

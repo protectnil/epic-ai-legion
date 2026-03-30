@@ -16,6 +16,7 @@
 // Rate limits: See APIMatic docs — depends on plan tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface APIMAtICConfig {
   /** API key for X-Auth-Key header auth, OR provide email+password for Basic auth */
@@ -25,13 +26,14 @@ interface APIMAtICConfig {
   baseUrl?: string;
 }
 
-export class APIMAtICMCPServer {
+export class APIMAtICMCPServer extends MCPAdapterBase {
   private readonly apiKey: string | undefined;
   private readonly email: string | undefined;
   private readonly password: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: APIMAtICConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.email = config.email;
     this.password = config.password;
@@ -114,13 +116,6 @@ export class APIMAtICMCPServer {
     return {};
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async transformApi(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.format) {
       return { content: [{ type: 'text', text: 'format is required' }], isError: true };
@@ -160,7 +155,7 @@ export class APIMAtICMCPServer {
       };
     }
 
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

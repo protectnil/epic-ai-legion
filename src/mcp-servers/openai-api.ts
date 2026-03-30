@@ -17,6 +17,7 @@
 // Rate limits: Tier-dependent; see https://platform.openai.com/docs/guides/rate-limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenAIConfig {
   apiKey: string;
@@ -25,12 +26,13 @@ interface OpenAIConfig {
   baseUrl?: string;
 }
 
-export class OpenAIMCPServer {
+export class OpenAIMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly organizationId: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: OpenAIConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.organizationId = config.organizationId;
     this.baseUrl = config.baseUrl ?? 'https://api.openai.com/v1';
@@ -528,15 +530,8 @@ export class OpenAIMCPServer {
     return headers;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listModels(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/models`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/models`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -544,7 +539,7 @@ export class OpenAIMCPServer {
   }
 
   private async getModel(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/models/${encodeURIComponent(String(args.model_id))}`,
       { headers: this.getHeaders() }
     );
@@ -566,7 +561,7 @@ export class OpenAIMCPServer {
     if (args.n !== undefined) body.n = args.n;
     if (args.stop !== undefined) body.stop = args.stop;
 
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -586,7 +581,7 @@ export class OpenAIMCPServer {
     if (args.max_output_tokens !== undefined) body.max_output_tokens = args.max_output_tokens;
     if (args.temperature !== undefined) body.temperature = args.temperature;
 
-    const response = await fetch(`${this.baseUrl}/responses`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/responses`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -604,7 +599,7 @@ export class OpenAIMCPServer {
     };
     if (args.dimensions !== undefined) body.dimensions = args.dimensions;
 
-    const response = await fetch(`${this.baseUrl}/embeddings`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/embeddings`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -625,7 +620,7 @@ export class OpenAIMCPServer {
     if (args.quality !== undefined) body.quality = args.quality;
     if (args.response_format !== undefined) body.response_format = args.response_format;
 
-    const response = await fetch(`${this.baseUrl}/images/generations`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/images/generations`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -653,7 +648,7 @@ export class OpenAIMCPServer {
       return { content: [{ type: 'text', text: JSON.stringify(note, null, 2) }], isError: true };
     }
 
-    const imageResponse = await fetch(imageUrl);
+    const imageResponse = await this.fetchWithRetry(imageUrl, {});
     if (!imageResponse.ok) {
       return { content: [{ type: 'text', text: `Failed to fetch image: ${imageResponse.status}` }], isError: true };
     }
@@ -666,7 +661,7 @@ export class OpenAIMCPServer {
     const headers: Record<string, string> = { 'Authorization': `Bearer ${this.apiKey}` };
     if (this.organizationId) headers['OpenAI-Organization'] = this.organizationId;
 
-    const response = await fetch(`${this.baseUrl}/images/variations`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/images/variations`, {
       method: 'POST',
       headers,
       body: formData,
@@ -686,7 +681,7 @@ export class OpenAIMCPServer {
     if (args.response_format !== undefined) body.response_format = args.response_format;
     if (args.speed !== undefined) body.speed = args.speed;
 
-    const response = await fetch(`${this.baseUrl}/audio/speech`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/audio/speech`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -709,7 +704,7 @@ export class OpenAIMCPServer {
   private async createTranscription(args: Record<string, unknown>): Promise<ToolResult> {
     // Transcription requires multipart form upload; fetch audio from URL and forward
     const audioUrl = args.audio_url as string;
-    const audioResponse = await fetch(audioUrl);
+    const audioResponse = await this.fetchWithRetry(audioUrl, {});
     if (!audioResponse.ok) {
       return { content: [{ type: 'text', text: `Failed to fetch audio: ${audioResponse.status}` }], isError: true };
     }
@@ -724,7 +719,7 @@ export class OpenAIMCPServer {
     const headers: Record<string, string> = { 'Authorization': `Bearer ${this.apiKey}` };
     if (this.organizationId) headers['OpenAI-Organization'] = this.organizationId;
 
-    const response = await fetch(`${this.baseUrl}/audio/transcriptions`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/audio/transcriptions`, {
       method: 'POST',
       headers,
       body: formData,
@@ -742,7 +737,7 @@ export class OpenAIMCPServer {
 
   private async createTranslation(args: Record<string, unknown>): Promise<ToolResult> {
     const audioUrl = args.audio_url as string;
-    const audioResponse = await fetch(audioUrl);
+    const audioResponse = await this.fetchWithRetry(audioUrl, {});
     if (!audioResponse.ok) {
       return { content: [{ type: 'text', text: `Failed to fetch audio: ${audioResponse.status}` }], isError: true };
     }
@@ -755,7 +750,7 @@ export class OpenAIMCPServer {
     const headers: Record<string, string> = { 'Authorization': `Bearer ${this.apiKey}` };
     if (this.organizationId) headers['OpenAI-Organization'] = this.organizationId;
 
-    const response = await fetch(`${this.baseUrl}/audio/translations`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/audio/translations`, {
       method: 'POST',
       headers,
       body: formData,
@@ -776,7 +771,7 @@ export class OpenAIMCPServer {
       input: args.input,
       model: args.model ?? 'omni-moderation-latest',
     };
-    const response = await fetch(`${this.baseUrl}/moderations`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/moderations`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -791,7 +786,7 @@ export class OpenAIMCPServer {
     const params = new URLSearchParams();
     if (args.purpose) params.set('purpose', String(args.purpose));
     const url = `${this.baseUrl}/files${params.toString() ? '?' + params : ''}`;
-    const response = await fetch(url, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -799,7 +794,7 @@ export class OpenAIMCPServer {
   }
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/files/${encodeURIComponent(String(args.file_id))}`,
       { method: 'DELETE', headers: this.getHeaders() }
     );
@@ -814,7 +809,7 @@ export class OpenAIMCPServer {
     if (args.after !== undefined) params.set('after', String(args.after));
     if (args.limit !== undefined) params.set('limit', String(args.limit));
     const url = `${this.baseUrl}/fine_tuning/jobs${params.toString() ? '?' + params : ''}`;
-    const response = await fetch(url, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -830,7 +825,7 @@ export class OpenAIMCPServer {
     if (args.suffix !== undefined) body.suffix = args.suffix;
     if (args.n_epochs !== undefined) body.hyperparameters = { n_epochs: args.n_epochs };
 
-    const response = await fetch(`${this.baseUrl}/fine_tuning/jobs`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/fine_tuning/jobs`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -842,7 +837,7 @@ export class OpenAIMCPServer {
   }
 
   private async getFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/fine_tuning/jobs/${encodeURIComponent(String(args.fine_tuning_job_id))}`,
       { headers: this.getHeaders() }
     );
@@ -853,7 +848,7 @@ export class OpenAIMCPServer {
   }
 
   private async cancelFineTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/fine_tuning/jobs/${encodeURIComponent(String(args.fine_tuning_job_id))}/cancel`,
       { method: 'POST', headers: this.getHeaders() }
     );
@@ -869,7 +864,7 @@ export class OpenAIMCPServer {
     if (args.end_time !== undefined) params.set('end_time', String(args.end_time));
     if (args.bucket_width !== undefined) params.set('bucket_width', String(args.bucket_width));
     if (args.limit !== undefined) params.set('limit', String(args.limit));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/organization/usage/completions?${params}`,
       { headers: this.getHeaders() }
     );

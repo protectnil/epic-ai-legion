@@ -43,17 +43,19 @@
 // Rate limits: Not publicly documented; governed by instance configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SonarQubeConfig {
   baseUrl: string;
   token: string;
 }
 
-export class SonarQubeMCPServer {
+export class SonarQubeMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string;
 
   constructor(config: SonarQubeConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.token = config.token;
   }
@@ -400,20 +402,13 @@ export class SonarQubeMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {
     const page = (args.page as number) ?? 1;
     const pageSize = (args.pageSize as number) ?? 100;
     let url = `${this.baseUrl}/api/projects/search?p=${page}&ps=${pageSize}`;
     if (args.query) url += `&q=${encodeURIComponent(args.query as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list projects: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -430,7 +425,7 @@ export class SonarQubeMCPServer {
     let url = `${this.baseUrl}/api/measures/component?component=${encodeURIComponent(component)}&metricKeys=${encodeURIComponent(metricKeys)}`;
     if (args.branch) url += `&branch=${encodeURIComponent(args.branch as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get project measures: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -450,7 +445,7 @@ export class SonarQubeMCPServer {
     if (args.assignees) url += `&assignees=${encodeURIComponent(args.assignees as string)}`;
     if (args.branch) url += `&branch=${encodeURIComponent(args.branch as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list issues: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -465,7 +460,7 @@ export class SonarQubeMCPServer {
     }
     // SonarQube returns issue details via issues/search with the issues parameter
     const url = `${this.baseUrl}/api/issues/search?issues=${encodeURIComponent(issueKey)}&additionalFields=_all`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get issue: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -482,7 +477,7 @@ export class SonarQubeMCPServer {
     if (args.types) url += `&types=${encodeURIComponent(args.types as string)}`;
     if (args.severities) url += `&severities=${encodeURIComponent(args.severities as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list rules: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -496,7 +491,7 @@ export class SonarQubeMCPServer {
       return { content: [{ type: 'text', text: 'ruleKey is required' }], isError: true };
     }
     const url = `${this.baseUrl}/api/rules/show?key=${encodeURIComponent(ruleKey)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get rule: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -506,7 +501,7 @@ export class SonarQubeMCPServer {
 
   private async listQualityGates(): Promise<ToolResult> {
     const url = `${this.baseUrl}/api/qualitygates/list`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list quality gates: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -522,7 +517,7 @@ export class SonarQubeMCPServer {
     let url = `${this.baseUrl}/api/qualitygates/project_status?projectKey=${encodeURIComponent(projectKey)}`;
     if (args.branch) url += `&branch=${encodeURIComponent(args.branch as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get quality gate status: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -542,7 +537,7 @@ export class SonarQubeMCPServer {
     if (args.resolution) url += `&resolution=${encodeURIComponent(args.resolution as string)}`;
     if (args.branch) url += `&branch=${encodeURIComponent(args.branch as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to search hotspots: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -556,7 +551,7 @@ export class SonarQubeMCPServer {
       return { content: [{ type: 'text', text: 'hotspotKey is required' }], isError: true };
     }
     const url = `${this.baseUrl}/api/hotspots/show?hotspot=${encodeURIComponent(hotspotKey)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get hotspot: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -570,7 +565,7 @@ export class SonarQubeMCPServer {
       return { content: [{ type: 'text', text: 'project is required' }], isError: true };
     }
     const url = `${this.baseUrl}/api/project_branches/list?project=${encodeURIComponent(project)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list branches: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -582,7 +577,7 @@ export class SonarQubeMCPServer {
     const page = (args.page as number) ?? 1;
     const pageSize = (args.pageSize as number) ?? 100;
     const url = `${this.baseUrl}/api/metrics/search?p=${page}&ps=${pageSize}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list metrics: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -592,7 +587,7 @@ export class SonarQubeMCPServer {
 
   private async getSystemHealth(): Promise<ToolResult> {
     const url = `${this.baseUrl}/api/system/health`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get system health: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -602,7 +597,7 @@ export class SonarQubeMCPServer {
 
   private async getSystemInfo(): Promise<ToolResult> {
     const url = `${this.baseUrl}/api/system/info`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get system info: ${response.status} ${response.statusText}` }], isError: true };
     }

@@ -36,6 +36,7 @@
 //            create_pickup, cancel_pickup, get_capabilities
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DHLConfig {
   apiKey: string;          // Developer portal subscription key (Tracking + Location Finder APIs)
@@ -44,7 +45,7 @@ interface DHLConfig {
   baseUrl?: string;
 }
 
-export class DHLMCPServer {
+export class DHLMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly expressUsername: string;
   private readonly expressPassword: string;
@@ -52,6 +53,7 @@ export class DHLMCPServer {
   private readonly expressBaseUrl: string;
 
   constructor(config: DHLConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.expressUsername = config.expressUsername || '';
     this.expressPassword = config.expressPassword || '';
@@ -544,13 +546,6 @@ export class DHLMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async trackShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.tracking_number) {
       return { content: [{ type: 'text', text: 'tracking_number is required' }], isError: true };
@@ -559,7 +554,7 @@ export class DHLMCPServer {
     if (args.service) params.set('service', args.service as string);
     if (args.language) params.set('language', args.language as string);
 
-    const response = await fetch(`${this.baseUrl}/track/shipments?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/track/shipments?${params}`, {
       headers: this.authHeader,
     });
     if (!response.ok) {
@@ -576,7 +571,7 @@ export class DHLMCPServer {
     const params = new URLSearchParams({ trackingNumber: args.tracking_number as string });
     if (args.language) params.set('language', args.language as string);
 
-    const response = await fetch(`${this.baseUrl}/track/shipments?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/track/shipments?${params}`, {
       headers: this.authHeader,
     });
     if (!response.ok) {
@@ -601,7 +596,7 @@ export class DHLMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.service_type && args.service_type !== 'all') params.set('serviceType', args.service_type as string);
 
-    const response = await fetch(`${this.baseUrl}/location-finder/v1/find-by-address?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/location-finder/v1/find-by-address?${params}`, {
       headers: this.authHeader,
     });
     if (!response.ok) {
@@ -615,7 +610,7 @@ export class DHLMCPServer {
     if (!args.location_id || !args.country_code) {
       return { content: [{ type: 'text', text: 'location_id and country_code are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/location-finder/v1/locations/${encodeURIComponent(args.location_id as string)}?countryCode=${encodeURIComponent(args.country_code as string)}`,
       { headers: this.authHeader },
     );
@@ -645,7 +640,7 @@ export class DHLMCPServer {
     if (args.width) params.set('width', String(args.width));
     if (args.height) params.set('height', String(args.height));
 
-    const response = await fetch(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
+    const response = await this.fetchWithRetry(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -668,7 +663,7 @@ export class DHLMCPServer {
     if (args.origin_postal_code) params.set('originPostalCode', args.origin_postal_code as string);
     if (args.destination_postal_code) params.set('destinationPostalCode', args.destination_postal_code as string);
 
-    const response = await fetch(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
+    const response = await this.fetchWithRetry(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -724,7 +719,7 @@ export class DHLMCPServer {
         company: args.destination_company || '',
       },
     };
-    const response = await fetch(`${this.expressBaseUrl}/shipments`, {
+    const response = await this.fetchWithRetry(`${this.expressBaseUrl}/shipments`, {
       method: 'POST',
       headers: this.expressAuthHeader,
       body: JSON.stringify(body),
@@ -740,7 +735,7 @@ export class DHLMCPServer {
     if (!args.shipment_tracking_number) {
       return { content: [{ type: 'text', text: 'shipment_tracking_number is required' }], isError: true };
     }
-    const response = await fetch(`${this.expressBaseUrl}/shipments/${encodeURIComponent(args.shipment_tracking_number as string)}`, {
+    const response = await this.fetchWithRetry(`${this.expressBaseUrl}/shipments/${encodeURIComponent(args.shipment_tracking_number as string)}`, {
       method: 'DELETE',
       headers: this.expressAuthHeader,
     });
@@ -786,7 +781,7 @@ export class DHLMCPServer {
         },
       ],
     };
-    const response = await fetch(`${this.expressBaseUrl}/pickups`, {
+    const response = await this.fetchWithRetry(`${this.expressBaseUrl}/pickups`, {
       method: 'POST',
       headers: this.expressAuthHeader,
       body: JSON.stringify(body),
@@ -802,7 +797,7 @@ export class DHLMCPServer {
     if (!args.dispatch_confirmation_number || !args.origin_country) {
       return { content: [{ type: 'text', text: 'dispatch_confirmation_number and origin_country are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.expressBaseUrl}/pickups/${encodeURIComponent(args.dispatch_confirmation_number as string)}?originCountryCode=${encodeURIComponent(args.origin_country as string)}`,
       { method: 'DELETE', headers: this.expressAuthHeader },
     );
@@ -827,7 +822,7 @@ export class DHLMCPServer {
     if (args.origin_postal_code) params.set('originPostalCode', args.origin_postal_code as string);
     if (args.destination_postal_code) params.set('destinationPostalCode', args.destination_postal_code as string);
 
-    const response = await fetch(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
+    const response = await this.fetchWithRetry(`${this.expressBaseUrl}/rates?${params}`, { headers: this.expressAuthHeader });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

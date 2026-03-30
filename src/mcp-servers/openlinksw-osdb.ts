@@ -12,6 +12,7 @@
 // Spec: https://api.apis.guru/v2/specs/openlinksw.com/osdb/1.0.0/openapi.json
 
 import { ToolDefinition, ToolResult } from "./types.js";
+import { MCPAdapterBase } from "./base.js";
 
 interface OsdbConfig {
   /** Base URL of the OSDB server (default: https://osdb.openlinksw.com/osdb) */
@@ -20,11 +21,12 @@ interface OsdbConfig {
   bearerToken?: string;
 }
 
-export class OpenLinkOsdbMCPServer {
+export class OpenLinkOsdbMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly bearerToken: string | undefined;
 
   constructor(config: OsdbConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? "https://osdb.openlinksw.com/osdb";
     this.bearerToken = config.bearerToken;
   }
@@ -249,13 +251,6 @@ export class OpenLinkOsdbMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (this.bearerToken) headers["Authorization"] = `Bearer ${this.bearerToken}`;
@@ -273,7 +268,7 @@ export class OpenLinkOsdbMCPServer {
     if (body !== undefined) {
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (response.status === 204) {
       return { content: [{ type: "text", text: "Success (no content)" }], isError: false };
     }

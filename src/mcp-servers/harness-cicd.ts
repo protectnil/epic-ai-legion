@@ -29,6 +29,7 @@
 // Combined coverage: 17 REST tools + 50+ MCP tools (shared ~10)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HarnessCICDConfig {
   apiKey: string;
@@ -36,12 +37,13 @@ interface HarnessCICDConfig {
   baseUrl?: string;
 }
 
-export class HarnessCICDMCPServer {
+export class HarnessCICDMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly accountId: string;
   private readonly baseUrl: string;
 
   constructor(config: HarnessCICDConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.accountId = config.accountId;
     this.baseUrl = config.baseUrl || 'https://app.harness.io/v1';
@@ -612,17 +614,10 @@ export class HarnessCICDMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async harnessGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -634,7 +629,7 @@ export class HarnessCICDMCPServer {
   private async harnessPost(path: string, body: Record<string, unknown> = {}, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -735,7 +730,7 @@ export class HarnessCICDMCPServer {
       interruptType: 'AbortAll',
     });
     const url = `${nonV1Base}/pipeline/api/interrupts/${encodeURIComponent(args.execution_id as string)}?${params.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: this.headers,
     });

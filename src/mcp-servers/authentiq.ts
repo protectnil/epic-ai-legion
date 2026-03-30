@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented; standard OAuth2 provider limits apply
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AuthentiqConfig {
   /** Bearer token for client registration/management (client_registration_token scheme) */
@@ -27,13 +28,14 @@ interface AuthentiqConfig {
   baseUrl?: string;
 }
 
-export class AuthentiqMCPServer {
+export class AuthentiqMCPServer extends MCPAdapterBase {
   private readonly registrationToken: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
 
   constructor(config: AuthentiqConfig) {
+    super();
     this.registrationToken = config.registrationToken || '';
     this.clientId          = config.clientId || '';
     this.clientSecret      = config.clientSecret || '';
@@ -267,7 +269,7 @@ export class AuthentiqMCPServer {
     const clientSecret = String(args.client_secret || this.clientSecret);
     const authHeader   = 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
-    const response = await fetch(`${this.baseUrl}/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/token`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
@@ -288,7 +290,7 @@ export class AuthentiqMCPServer {
 
   private async getUserinfo(args: Record<string, unknown>): Promise<ToolResult> {
     const accessToken = String(args.access_token);
-    const response = await fetch(`${this.baseUrl}/userinfo`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/userinfo`, {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
     if (!response.ok) {
@@ -303,7 +305,7 @@ export class AuthentiqMCPServer {
   }
 
   private async listClients(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/client`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/client`, {
       headers: this.registrationHeaders(),
     });
     if (!response.ok) {
@@ -319,7 +321,7 @@ export class AuthentiqMCPServer {
 
   private async registerClient(args: Record<string, unknown>): Promise<ToolResult> {
     const body = this.buildClientBody(args);
-    const response = await fetch(`${this.baseUrl}/client`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/client`, {
       method: 'POST',
       headers: { ...this.registrationHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -337,7 +339,7 @@ export class AuthentiqMCPServer {
 
   private async getClient(args: Record<string, unknown>): Promise<ToolResult> {
     const clientId = String(args.client_id);
-    const response = await fetch(`${this.baseUrl}/client/${encodeURIComponent(clientId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/client/${encodeURIComponent(clientId)}`, {
       headers: this.registrationHeaders(),
     });
     if (!response.ok) {
@@ -354,7 +356,7 @@ export class AuthentiqMCPServer {
   private async updateClient(args: Record<string, unknown>): Promise<ToolResult> {
     const clientId = String(args.client_id);
     const body = this.buildClientBody(args);
-    const response = await fetch(`${this.baseUrl}/client/${encodeURIComponent(clientId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/client/${encodeURIComponent(clientId)}`, {
       method: 'PUT',
       headers: { ...this.registrationHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -372,7 +374,7 @@ export class AuthentiqMCPServer {
 
   private async deleteClient(args: Record<string, unknown>): Promise<ToolResult> {
     const clientId = String(args.client_id);
-    const response = await fetch(`${this.baseUrl}/client/${encodeURIComponent(clientId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/client/${encodeURIComponent(clientId)}`, {
       method: 'DELETE',
       headers: this.registrationHeaders(),
     });
@@ -427,10 +429,4 @@ export class AuthentiqMCPServer {
     return body;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 }

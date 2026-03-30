@@ -14,17 +14,19 @@
 // Rate limits: Determined by account plan; check dashboard.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TheSMSWorksConfig {
   jwt: string;
   baseUrl?: string;
 }
 
-export class TheSMSWorksUKMCPServer {
+export class TheSMSWorksUKMCPServer extends MCPAdapterBase {
   private readonly jwt: string;
   private readonly baseUrl: string;
 
   constructor(config: TheSMSWorksConfig) {
+    super();
     this.jwt = config.jwt;
     this.baseUrl = config.baseUrl ?? 'https://api.thesmsworks.co.uk/v1';
   }
@@ -516,18 +518,12 @@ export class TheSMSWorksUKMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
     body?: Record<string, unknown>,
   ): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: this.authHeaders,
       body: body ? JSON.stringify(body) : undefined,

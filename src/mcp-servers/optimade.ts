@@ -15,17 +15,19 @@
 // Spec: https://api.apis.guru/v2/specs/optimade.local/1.1.0~develop/openapi.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OptimadeConfig {
   baseUrl?: string;  // OPTIMADE provider base URL (default: http://optimade.local)
   apiKey?: string;   // Optional bearer token for providers that require auth
 }
 
-export class OptimadeMCPServer {
+export class OptimadeMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiKey?: string;
 
   constructor(config: OptimadeConfig = {}) {
+    super();
     this.baseUrl = (config.baseUrl ?? 'http://optimade.local').replace(/\/$/, '');
     this.apiKey = config.apiKey;
   }
@@ -236,7 +238,7 @@ export class OptimadeMCPServer {
   }
 
   private async optimadeRequest(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: this.buildHeaders(),
     });
 

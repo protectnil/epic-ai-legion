@@ -14,17 +14,19 @@
 // Rate limits: Not publicly documented; plan-dependent
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ScideasPerfectPDFConfig {
   apiKey: string;
   baseUrl?: string; // default: https://services.scideas.net
 }
 
-export class ScideasPerfectpdfMCPServer {
+export class ScideasPerfectpdfMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ScideasPerfectPDFConfig) {
+    super();
     this.apiKey  = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://services.scideas.net';
   }
@@ -84,15 +86,8 @@ export class ScideasPerfectpdfMCPServer {
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

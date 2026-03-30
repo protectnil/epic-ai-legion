@@ -26,6 +26,7 @@
 
 import { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ZuoraConfig {
   clientId: string;
@@ -37,7 +38,7 @@ interface ZuoraConfig {
   baseUrl?: string;
 }
 
-export class ZuoraMCPServer {
+export class ZuoraMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -45,6 +46,7 @@ export class ZuoraMCPServer {
   private tokenExpiresAt: number = 0;
 
   constructor(config: ZuoraConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://rest.zuora.com';
@@ -91,7 +93,7 @@ export class ZuoraMCPServer {
       client_secret: this.clientSecret,
     });
 
-    const response = await fetch(`${this.baseUrl}/oauth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -114,14 +116,6 @@ export class ZuoraMCPServer {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-  }
-
-  /** Truncate large JSON responses to 10 KB. */
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -556,7 +550,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'queryString is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/action/query`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/action/query`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ queryString }),
@@ -577,7 +571,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'account_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/accounts/${encodeURIComponent(accountKey)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/accounts/${encodeURIComponent(accountKey)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get account: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -600,7 +594,7 @@ export class ZuoraMCPServer {
     if (args.paymentTerm) body.paymentTerm = args.paymentTerm;
     if (args.notes) body.notes = args.notes;
 
-    const response = await fetch(`${this.baseUrl}/v1/accounts`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/accounts`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -621,7 +615,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'account_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/accounts/${encodeURIComponent(accountKey)}/summary`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/accounts/${encodeURIComponent(accountKey)}/summary`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get account summary: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -637,7 +631,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'account_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/subscriptions/accounts/${encodeURIComponent(accountKey)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/subscriptions/accounts/${encodeURIComponent(accountKey)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list subscriptions: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -653,7 +647,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'subscription_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/subscriptions/${encodeURIComponent(subscriptionKey)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/subscriptions/${encodeURIComponent(subscriptionKey)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get subscription: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -676,7 +670,7 @@ export class ZuoraMCPServer {
     if (args.term_type) body.termType = args.term_type;
     if (args.initial_term !== undefined) body.initialTerm = args.initial_term;
 
-    const response = await fetch(`${this.baseUrl}/v1/subscriptions`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/subscriptions`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -702,7 +696,7 @@ export class ZuoraMCPServer {
     const body: Record<string, unknown> = { cancellationPolicy };
     if (args.cancellation_effective_date) body.cancellationEffectiveDate = args.cancellation_effective_date;
 
-    const response = await fetch(`${this.baseUrl}/v1/subscriptions/${encodeURIComponent(subscriptionKey)}/cancel`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/subscriptions/${encodeURIComponent(subscriptionKey)}/cancel`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
@@ -729,7 +723,7 @@ export class ZuoraMCPServer {
 
     const url = `${this.baseUrl}/v1/orders${params.toString() ? '?' + params.toString() : ''}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list orders: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -751,7 +745,7 @@ export class ZuoraMCPServer {
     if (args.description) body.description = args.description;
     if (args.processing_options) body.processingOptions = args.processing_options;
 
-    const response = await fetch(`${this.baseUrl}/v1/orders`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/orders`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -772,7 +766,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'account_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/transactions/invoices/accounts/${encodeURIComponent(accountKey)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/transactions/invoices/accounts/${encodeURIComponent(accountKey)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list invoices: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -788,7 +782,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'invoice_id is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/invoices/${encodeURIComponent(invoiceId)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/invoices/${encodeURIComponent(invoiceId)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get invoice: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -804,7 +798,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/creditmemos?accountId=${encodeURIComponent(accountId)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/creditmemos?accountId=${encodeURIComponent(accountId)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list credit memos: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -820,7 +814,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'credit_memo_id is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/creditmemos/${encodeURIComponent(creditMemoId)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/creditmemos/${encodeURIComponent(creditMemoId)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get credit memo: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -836,7 +830,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'account_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/transactions/payments/accounts/${encodeURIComponent(accountKey)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/transactions/payments/accounts/${encodeURIComponent(accountKey)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list payments: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -857,7 +851,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'account_id, amount, currency, effective_date, and type are required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/payments`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/payments`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ accountId, amount, currency, effectiveDate, type }),
@@ -878,7 +872,7 @@ export class ZuoraMCPServer {
       return { content: [{ type: 'text', text: 'payment_id is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/payments/${encodeURIComponent(paymentId)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/payments/${encodeURIComponent(paymentId)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get payment: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -895,7 +889,7 @@ export class ZuoraMCPServer {
 
     const url = `${this.baseUrl}/v1/refunds${params.toString() ? '?' + params.toString() : ''}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list refunds: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -912,7 +906,7 @@ export class ZuoraMCPServer {
 
     const url = `${this.baseUrl}/v1/catalog/products${params.toString() ? '?' + params.toString() : ''}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list products: ${response.status} ${response.statusText}` }], isError: true };
     }

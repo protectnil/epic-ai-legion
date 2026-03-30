@@ -19,17 +19,19 @@
 // Rate limits: Not publicly documented; standard 429 responses on limit exceeded
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RipplingConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class RipplingMCPServer {
+export class RipplingMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: RipplingConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://rest.ripplingapis.com';
   }
@@ -374,16 +376,9 @@ export class RipplingMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
     const headers = this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

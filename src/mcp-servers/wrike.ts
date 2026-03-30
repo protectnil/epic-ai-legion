@@ -19,6 +19,7 @@
 // Rate limits: 100 req/min per access token (Enterprise: higher limits by plan)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WrikeConfig {
   /**
@@ -35,11 +36,12 @@ interface WrikeConfig {
   baseUrl?: string;
 }
 
-export class WrikeMCPServer {
+export class WrikeMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: WrikeConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = (config.baseUrl ?? 'https://www.wrike.com/api/v4').replace(/\/$/, '');
   }
@@ -311,15 +313,8 @@ export class WrikeMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.authHeaders(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders(), ...options });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `Wrike API error: ${response.status} ${response.statusText}` }],

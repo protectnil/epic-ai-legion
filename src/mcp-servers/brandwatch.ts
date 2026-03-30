@@ -28,6 +28,7 @@
 //   from the public documentation page content alone.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BrandwatchConfig {
   username: string;
@@ -35,7 +36,7 @@ interface BrandwatchConfig {
   baseUrl?: string;
 }
 
-export class BrandwatchMCPServer {
+export class BrandwatchMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
@@ -44,6 +45,7 @@ export class BrandwatchMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: BrandwatchConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl ?? 'https://api.brandwatch.com';
@@ -382,7 +384,7 @@ export class BrandwatchMCPServer {
     url.searchParams.set('grant_type', 'api-password');
     url.searchParams.set('client_id', 'brandwatch-api-client');
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ password: this.password }).toString(),
@@ -398,7 +400,7 @@ export class BrandwatchMCPServer {
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -410,7 +412,7 @@ export class BrandwatchMCPServer {
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -420,13 +422,6 @@ export class BrandwatchMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   // ── Tool implementations ──────────────────────────────────────────────────

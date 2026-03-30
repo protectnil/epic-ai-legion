@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; subject to plan tier limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TradermaticConfig {
   apiKey: string;
@@ -22,11 +23,12 @@ interface TradermaticConfig {
   baseUrl?: string;
 }
 
-export class TradermaticMCPServer {
+export class TradermaticMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: TradermaticConfig) {
+    super();
     this.apiKey  = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.tradematic.com';
   }
@@ -523,7 +525,7 @@ export class TradermaticMCPServer {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

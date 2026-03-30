@@ -17,17 +17,19 @@
 // Rate limits: Per-route buckets enforced by Discord; global limit 50 req/s per token.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DiscordConfig {
   botToken: string;
   baseUrl?: string;
 }
 
-export class DiscordMCPServer {
+export class DiscordMCPServer extends MCPAdapterBase {
   private readonly botToken: string;
   private readonly baseUrl: string;
 
   constructor(config: DiscordConfig) {
+    super();
     this.botToken = config.botToken;
     this.baseUrl = config.baseUrl ?? 'https://discord.com/api/v10';
   }
@@ -551,7 +553,7 @@ export class DiscordMCPServer {
   }
 
   private async request(path: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       ...options,
       headers: { ...this.headers, ...(options?.headers as Record<string, string> ?? {}) },
     });
@@ -713,7 +715,7 @@ export class DiscordMCPServer {
     if (args.username) body.username = args.username;
     if (args.avatar_url) body.avatar_url = args.avatar_url;
     // Webhooks use token auth in URL, not bot token header
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/webhooks/${encodeURIComponent(args.webhook_id as string)}/${encodeURIComponent(args.webhook_token as string)}`,
       {
         method: 'POST',

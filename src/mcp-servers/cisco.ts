@@ -18,17 +18,19 @@
 // Rate limits: Not publicly documented; handle 429 responses with backoff
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CiscoConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class CiscoMCPServer {
+export class CiscoMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CiscoConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.cisco.com';
   }
@@ -204,7 +206,7 @@ export class CiscoMCPServer {
 
   private async request(path: string): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
         Accept: 'application/json',

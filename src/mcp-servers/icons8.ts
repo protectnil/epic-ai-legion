@@ -15,17 +15,19 @@
 // Note: The v1.0.0 OpenAPI spec covers v3/v4 iconset endpoints. See new docs for current v2 API.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Icons8Config {
   token: string;
   baseUrl?: string;
 }
 
-export class Icons8MCPServer {
+export class Icons8MCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: Icons8Config) {
+    super();
     this.token   = config.token;
     this.baseUrl = config.baseUrl || 'https://api.icons8.com';
   }
@@ -294,18 +296,9 @@ export class Icons8MCPServer {
     }
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────────
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
     // Icons8 v3/v4 API encodes params directly in path segments
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {
@@ -319,7 +312,7 @@ export class Icons8MCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -11,16 +11,18 @@
 // Rate limits: Depends on plan; credits consumed per validation
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MailboxValidatorConfig {
   apiKey: string;
 }
 
-export class MailboxvalidatorValidationMCPServer {
+export class MailboxvalidatorValidationMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://api.mailboxvalidator.com';
 
   constructor(config: MailboxValidatorConfig) {
+    super();
     this.apiKey = config.apiKey;
   }
 
@@ -77,13 +79,6 @@ export class MailboxvalidatorValidationMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async validateEmail(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.email) {
       return { content: [{ type: 'text', text: 'email is required' }], isError: true };
@@ -93,7 +88,7 @@ export class MailboxvalidatorValidationMCPServer {
       key: this.apiKey,
       format: 'json',
     });
-    const response = await fetch(`${this.baseUrl}/v1/validation/single?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/validation/single?${params.toString()}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });

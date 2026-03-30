@@ -19,6 +19,7 @@
 // Rate limits: Varies by resource. generateContent: 60 QPM per model per project (default); batch jobs: async.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VertexAIConfig {
   projectId: string;
@@ -27,13 +28,14 @@ interface VertexAIConfig {
   baseUrl?: string;
 }
 
-export class GoogleVertexAIMCPServer {
+export class GoogleVertexAIMCPServer extends MCPAdapterBase {
   private readonly projectId: string;
   private readonly accessToken: string;
   private readonly location: string;
   private readonly baseUrl: string;
 
   constructor(config: VertexAIConfig) {
+    super();
     this.projectId = config.projectId;
     this.accessToken = config.accessToken;
     this.location = config.location || 'us-central1';
@@ -375,12 +377,6 @@ export class GoogleVertexAIMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildListParams(args: Record<string, unknown>): string {
     const params: string[] = [];
     if (args.filter) params.push(`filter=${encodeURIComponent(args.filter as string)}`);
@@ -398,7 +394,7 @@ export class GoogleVertexAIMCPServer {
     if (args.system_instruction) body.systemInstruction = args.system_instruction;
     if (args.generation_config) body.generationConfig = args.generation_config;
 
-    const response = await fetch(url, { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -411,7 +407,7 @@ export class GoogleVertexAIMCPServer {
     const publisher = (args.publisher as string) || 'google';
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/publishers/${publisher}/models/${encodeURIComponent(args.model as string)}:countTokens`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify({ contents: args.contents }),
@@ -426,7 +422,7 @@ export class GoogleVertexAIMCPServer {
 
   private async listModels(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/models${this.buildListParams(args)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -437,7 +433,7 @@ export class GoogleVertexAIMCPServer {
 
   private async getModel(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/models/${encodeURIComponent(args.model_id as string)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -448,7 +444,7 @@ export class GoogleVertexAIMCPServer {
 
   private async deleteModel(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/models/${encodeURIComponent(args.model_id as string)}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -459,7 +455,7 @@ export class GoogleVertexAIMCPServer {
 
   private async listEndpoints(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/endpoints${this.buildListParams(args)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -470,7 +466,7 @@ export class GoogleVertexAIMCPServer {
 
   private async getEndpoint(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/endpoints/${encodeURIComponent(args.endpoint_id as string)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -484,7 +480,7 @@ export class GoogleVertexAIMCPServer {
     const body: Record<string, unknown> = { instances: args.instances };
     if (args.parameters) body.parameters = args.parameters;
 
-    const response = await fetch(url, { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -502,7 +498,7 @@ export class GoogleVertexAIMCPServer {
       outputConfig: args.output_config,
     };
 
-    const response = await fetch(url, { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -513,7 +509,7 @@ export class GoogleVertexAIMCPServer {
 
   private async listBatchPredictionJobs(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/batchPredictionJobs${this.buildListParams(args)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -524,7 +520,7 @@ export class GoogleVertexAIMCPServer {
 
   private async getBatchPredictionJob(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/batchPredictionJobs/${encodeURIComponent(args.job_id as string)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -535,7 +531,7 @@ export class GoogleVertexAIMCPServer {
 
   private async listTuningJobs(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/tuningJobs${this.buildListParams(args)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -546,7 +542,7 @@ export class GoogleVertexAIMCPServer {
 
   private async getTuningJob(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/v1/projects/${this.projectId}/locations/${this.location}/tuningJobs/${encodeURIComponent(args.job_id as string)}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };

@@ -20,6 +20,7 @@
 // Rate limits: Varies by endpoint; metrics query ~300 req/hour; logs search ~300 req/hour
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DatadogObservabilityConfig {
   apiKey: string;
@@ -28,11 +29,12 @@ interface DatadogObservabilityConfig {
   site?: string;
 }
 
-export class DatadogObservabilityMCPServer {
+export class DatadogObservabilityMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
 
   constructor(config: DatadogObservabilityConfig) {
+    super();
     this.baseUrl = `https://api.${config.site ?? 'datadoghq.com'}`;
     this.headers = {
       'DD-API-KEY': config.apiKey,
@@ -485,13 +487,6 @@ export class DatadogObservabilityMCPServer {
 
   // ── Response helper ───────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): ToolResult {
-    const text = JSON.stringify(data, null, 2);
-    const truncated = text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-    return { content: [{ type: 'text', text: truncated }], isError: false };
-  }
 
   private async jsonOrError(res: Response, context: string): Promise<unknown> {
     if (!res.ok) throw new Error(`Datadog API error (${context}): ${res.status} ${res.statusText}`);
@@ -513,16 +508,16 @@ export class DatadogObservabilityMCPServer {
     if (to === undefined) throw new Error('to is required');
 
     const params = new URLSearchParams({ query, from: String(from), to: String(to) });
-    const res = await fetch(`${this.baseUrl}/api/v1/query?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'query_metrics'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/query?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'query_metrics')) }], isError: false };
   }
 
   private async listMetrics(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     // q param acts as a prefix/substring filter on metric names
     if (args.q) params.set('q', args.q as string);
-    const res = await fetch(`${this.baseUrl}/api/v1/metrics?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_metrics'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/metrics?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_metrics')) }], isError: false };
   }
 
   private async listMonitors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -531,15 +526,15 @@ export class DatadogObservabilityMCPServer {
     if (args.tags) params.set('monitor_tags', args.tags as string);
     params.set('page', String((args.page as number) ?? 0));
     params.set('page_size', String((args.page_size as number) ?? 100));
-    const res = await fetch(`${this.baseUrl}/api/v1/monitor?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_monitors'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/monitor?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_monitors')) }], isError: false };
   }
 
   private async getMonitor(args: Record<string, unknown>): Promise<ToolResult> {
     const monitor_id = args.monitor_id as number;
     if (!monitor_id) throw new Error('monitor_id is required');
-    const res = await fetch(`${this.baseUrl}/api/v1/monitor/${monitor_id}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'get_monitor'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/monitor/${monitor_id}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_monitor')) }], isError: false };
   }
 
   private async muteMonitor(args: Record<string, unknown>): Promise<ToolResult> {
@@ -548,22 +543,22 @@ export class DatadogObservabilityMCPServer {
     const body: Record<string, unknown> = {};
     if (args.end !== undefined) body.end = args.end;
     if (args.scope) body.scope = args.scope;
-    const res = await fetch(`${this.baseUrl}/api/v1/monitor/${monitor_id}/mute`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/monitor/${monitor_id}/mute`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
     });
-    return this.truncate(await this.jsonOrError(res, 'mute_monitor'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'mute_monitor')) }], isError: false };
   }
 
   private async unmuteMonitor(args: Record<string, unknown>): Promise<ToolResult> {
     const monitor_id = args.monitor_id as number;
     if (!monitor_id) throw new Error('monitor_id is required');
-    const res = await fetch(`${this.baseUrl}/api/v1/monitor/${monitor_id}/unmute`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/monitor/${monitor_id}/unmute`, {
       method: 'POST',
       headers: this.headers,
     });
-    return this.truncate(await this.jsonOrError(res, 'unmute_monitor'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'unmute_monitor')) }], isError: false };
   }
 
   private async searchLogs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -579,12 +574,12 @@ export class DatadogObservabilityMCPServer {
       options: { timezone: 'UTC' },
       page: { limit: (args.limit as number) ?? 100 },
     };
-    const res = await fetch(`${this.baseUrl}/api/v2/logs/events/search`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v2/logs/events/search`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
     });
-    return this.truncate(await this.jsonOrError(res, 'search_logs'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'search_logs')) }], isError: false };
   }
 
   private async listDashboards(args: Record<string, unknown>): Promise<ToolResult> {
@@ -593,18 +588,18 @@ export class DatadogObservabilityMCPServer {
     if (args.filter_deleted !== undefined) params.set('filter[deleted]', String(args.filter_deleted));
     if (args.count !== undefined) params.set('count', String(args.count));
     if (args.start !== undefined) params.set('start', String(args.start));
-    const res = await fetch(`${this.baseUrl}/api/v1/dashboard?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_dashboards'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/dashboard?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_dashboards')) }], isError: false };
   }
 
   private async getDashboard(args: Record<string, unknown>): Promise<ToolResult> {
     const dashboard_id = args.dashboard_id as string;
     if (!dashboard_id) throw new Error('dashboard_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/dashboard/${encodeURIComponent(dashboard_id)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_dashboard'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_dashboard')) }], isError: false };
   }
 
   private async listIncidents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -612,25 +607,25 @@ export class DatadogObservabilityMCPServer {
     if (args.page_size !== undefined) params.set('page[size]', String(args.page_size));
     if (args.page_offset !== undefined) params.set('page[offset]', String(args.page_offset));
     if (args.include) params.set('include', args.include as string);
-    const res = await fetch(`${this.baseUrl}/api/v2/incidents?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_incidents'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v2/incidents?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_incidents')) }], isError: false };
   }
 
   private async getIncident(args: Record<string, unknown>): Promise<ToolResult> {
     const incident_id = args.incident_id as string;
     if (!incident_id) throw new Error('incident_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/incidents/${encodeURIComponent(incident_id)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_incident'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_incident')) }], isError: false };
   }
 
   private async listDowntimes(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.current_only !== undefined) params.set('current_only', String(args.current_only));
-    const res = await fetch(`${this.baseUrl}/api/v2/downtime?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_downtimes'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v2/downtime?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_downtimes')) }], isError: false };
   }
 
   private async listHosts(args: Record<string, unknown>): Promise<ToolResult> {
@@ -640,13 +635,13 @@ export class DatadogObservabilityMCPServer {
     if (args.sort_dir) params.set('sort_dir', args.sort_dir as string);
     if (args.count !== undefined) params.set('count', String(args.count));
     if (args.start !== undefined) params.set('start', String(args.start));
-    const res = await fetch(`${this.baseUrl}/api/v1/hosts?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_hosts'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/hosts?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_hosts')) }], isError: false };
   }
 
   private async getHostTotals(): Promise<ToolResult> {
-    const res = await fetch(`${this.baseUrl}/api/v1/hosts/totals`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'get_host_totals'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/hosts/totals`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_host_totals')) }], isError: false };
   }
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -655,8 +650,8 @@ export class DatadogObservabilityMCPServer {
     if (args.end !== undefined) params.set('end', String(args.end));
     if (args.priority) params.set('priority', args.priority as string);
     if (args.tags) params.set('tags', args.tags as string);
-    const res = await fetch(`${this.baseUrl}/api/v1/events?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_events'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/events?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_events')) }], isError: false };
   }
 
   private async queryEvents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -671,12 +666,12 @@ export class DatadogObservabilityMCPServer {
       },
       page: { limit: (args.limit as number) ?? 100 },
     };
-    const res = await fetch(`${this.baseUrl}/api/v2/events/search`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v2/events/search`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
     });
-    return this.truncate(await this.jsonOrError(res, 'query_events'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'query_events')) }], isError: false };
   }
 
   private async listSlos(args: Record<string, unknown>): Promise<ToolResult> {
@@ -685,8 +680,8 @@ export class DatadogObservabilityMCPServer {
     if (args.tags_query) params.set('tags_query', args.tags_query as string);
     if (args.limit !== undefined) params.set('limit', String(args.limit));
     if (args.offset !== undefined) params.set('offset', String(args.offset));
-    const res = await fetch(`${this.baseUrl}/api/v1/slo?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_slos'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/slo?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_slos')) }], isError: false };
   }
 
   private async getSloHistory(args: Record<string, unknown>): Promise<ToolResult> {
@@ -698,10 +693,10 @@ export class DatadogObservabilityMCPServer {
     if (to_ts === undefined) throw new Error('to_ts is required');
 
     const params = new URLSearchParams({ from_ts: String(from_ts), to_ts: String(to_ts) });
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/slo/${encodeURIComponent(slo_id)}/history?${params}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_slo_history'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_slo_history')) }], isError: false };
   }
 }

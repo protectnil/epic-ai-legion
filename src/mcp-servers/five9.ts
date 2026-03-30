@@ -30,6 +30,7 @@
 // Rate limits: Not publicly documented — Five9 recommends exponential backoff.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Five9Config {
   username: string;
@@ -37,12 +38,13 @@ interface Five9Config {
   baseUrl?: string;
 }
 
-export class Five9MCPServer {
+export class Five9MCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: Five9Config) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl || 'https://app.five9.com/appsvcs/rs/svc';
@@ -324,15 +326,9 @@ export class Five9MCPServer {
     return `Basic ${btoa(`${this.username}:${this.password}`)}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: {
         Authorization: this.basicAuth,
@@ -348,7 +344,7 @@ export class Five9MCPServer {
   }
 
   private async apiPut(path: string, body?: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: {
         Authorization: this.basicAuth,
@@ -372,7 +368,7 @@ export class Five9MCPServer {
   private async getSupervisorStatistics(args: Record<string, unknown>): Promise<ToolResult> {
     const type = (args.statistics_type as string) || 'acds';
     const supBase = this.baseUrl.replace('/appsvcs/rs/svc', '/supsvcs/rs/svc');
-    const response = await fetch(`${supBase}/supervisors/statistics/${type}`, {
+    const response = await this.fetchWithRetry(`${supBase}/supervisors/statistics/${type}`, {
       method: 'GET',
       headers: {
         Authorization: this.basicAuth,

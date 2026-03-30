@@ -18,17 +18,19 @@
 //        list_event_ticket_classes, insert_jwt
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WalletObjectsConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class WalletobjectsGooglapisPayspassesMCPServer {
+export class WalletobjectsGooglapisPayspassesMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: WalletObjectsConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://walletobjects.googleapis.com';
   }
@@ -548,15 +550,8 @@ export class WalletobjectsGooglapisPayspassesMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<unknown> {
-    const response = await fetch(url, { ...options, headers: this.requestHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.requestHeaders() });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       throw new Error(`Google Wallet API error: ${response.status} ${response.statusText}${body ? ` — ${body.slice(0, 200)}` : ''}`);

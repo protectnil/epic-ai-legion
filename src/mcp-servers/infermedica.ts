@@ -14,6 +14,7 @@
 // Rate limits: Depends on plan. Free developer tier available. Contact Infermedica for production limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface InfermedicaConfig {
   /** Infermedica App-Id from developer dashboard */
@@ -24,12 +25,13 @@ interface InfermedicaConfig {
   baseUrl?: string;
 }
 
-export class InfermedicaMCPServer {
+export class InfermedicaMCPServer extends MCPAdapterBase {
   private readonly appId: string;
   private readonly appKey: string;
   private readonly baseUrl: string;
 
   constructor(config: InfermedicaConfig) {
+    super();
     this.appId = config.appId;
     this.appKey = config.appKey;
     this.baseUrl = config.baseUrl ?? 'https://api.infermedica.com/v2';
@@ -716,13 +718,6 @@ export class InfermedicaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private ageParams(args: Record<string, unknown>): URLSearchParams {
     const params = new URLSearchParams();
     if (args.age_value !== undefined) params.set('age.value', String(args.age_value));
@@ -734,7 +729,7 @@ export class InfermedicaMCPServer {
   private async doGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const qs = params?.toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -745,7 +740,7 @@ export class InfermedicaMCPServer {
   private async doPost(path: string, body: unknown, extraParams?: URLSearchParams): Promise<ToolResult> {
     const qs = extraParams?.toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),

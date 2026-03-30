@@ -12,17 +12,19 @@
 // Docs: https://webscraping.ai
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WebScrapingConfig {
   /** WebScraping.AI API key */
   apiKey: string;
 }
 
-export class WebScrapingMCPServer {
+export class WebScrapingMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://api.webscraping.ai';
 
   constructor(config: WebScrapingConfig) {
+    super();
     this.apiKey = config.apiKey;
   }
 
@@ -228,13 +230,6 @@ export class WebScrapingMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildParams(args: Record<string, unknown>, extra: Record<string, string> = {}): URLSearchParams {
     const qs = new URLSearchParams({ api_key: this.apiKey, ...extra });
     const optionals: Array<keyof typeof args> = ['js', 'proxy', 'country', 'device', 'timeout', 'js_timeout', 'error_on_404', 'error_on_redirect'];
@@ -246,7 +241,7 @@ export class WebScrapingMCPServer {
 
   private async get(path: string, qs: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}?${qs.toString()}`;
-    const response = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json, text/html' } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { 'Accept': 'application/json, text/html' } });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };

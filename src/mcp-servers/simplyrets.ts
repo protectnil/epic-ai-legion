@@ -12,6 +12,7 @@
 // Endpoints: /properties (MLS listings), /properties/{mlsId}, /openhouses, /openhouses/{openHouseKey}
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SimplyRetsConfig {
   username: string;
@@ -19,12 +20,13 @@ interface SimplyRetsConfig {
   baseUrl?: string;
 }
 
-export class SimplyRetsMCPServer {
+export class SimplyRetsMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: SimplyRetsConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl || 'https://api.simplyrets.com';
@@ -154,11 +156,6 @@ export class SimplyRetsMCPServer {
     return 'Basic ' + Buffer.from(`${this.username}:${this.password}`).toString('base64');
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private buildParams(args: Record<string, unknown>, keys: string[]): URLSearchParams {
     const params = new URLSearchParams();
     for (const key of keys) {
@@ -180,7 +177,7 @@ export class SimplyRetsMCPServer {
   private async get(path: string, params: URLSearchParams): Promise<ToolResult> {
     const qs = params.toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         Authorization: this.authHeader,
         Accept: 'application/json',

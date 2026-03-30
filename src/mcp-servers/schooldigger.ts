@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented; standard throttling applies per API key
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SchoolDiggerConfig {
   appID: string;
@@ -21,12 +22,13 @@ interface SchoolDiggerConfig {
   baseUrl?: string;
 }
 
-export class SchoolDiggerMCPServer {
+export class SchoolDiggerMCPServer extends MCPAdapterBase {
   private readonly appID: string;
   private readonly appKey: string;
   private readonly baseUrl: string;
 
   constructor(config: SchoolDiggerConfig) {
+    super();
     this.appID = config.appID;
     this.appKey = config.appKey;
     this.baseUrl = config.baseUrl || 'https://api.schooldigger.com';
@@ -207,13 +209,6 @@ export class SchoolDiggerMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildQs(params: Record<string, string | number | boolean | undefined>): string {
     const p = new URLSearchParams({ appID: this.appID, appKey: this.appKey });
     for (const [k, v] of Object.entries(params)) {
@@ -224,7 +219,7 @@ export class SchoolDiggerMCPServer {
 
   private async apiGet(path: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${this.buildQs(params)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) {

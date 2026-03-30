@@ -22,6 +22,7 @@
 // Recommendation: use-rest-api — No official Cybereason MCP server exists.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CybereasonConfig {
   /** Tenant hostname prefix, e.g. "mycompany" → mycompany.cybereason.net */
@@ -33,7 +34,7 @@ interface CybereasonConfig {
   sessionTtlMs?: number;
 }
 
-export class CybereasonMCPServer {
+export class CybereasonMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly username: string;
   private readonly password: string;
@@ -42,6 +43,7 @@ export class CybereasonMCPServer {
   private sessionExpiry: number = 0;
 
   constructor(config: CybereasonConfig) {
+    super();
     const port = config.port ?? 8443;
     this.baseUrl = `https://${config.host}.cybereason.net:${port}`;
     this.username = config.username;
@@ -396,7 +398,7 @@ export class CybereasonMCPServer {
 
   private async authenticate(): Promise<void> {
     const body = new URLSearchParams({ username: this.username, password: this.password }).toString();
-    const response = await fetch(`${this.baseUrl}/login.html`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/login.html`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -419,7 +421,7 @@ export class CybereasonMCPServer {
   }
 
   private async fetchWithReauth(url: string, options: RequestInit): Promise<Response> {
-    const res = await fetch(url, { ...options, headers: this.authHeaders });
+    const res = await this.fetchWithRetry(url, { ...options, headers: this.authHeaders });
     if (res.status === 401) {
       this.sessionCookie = null;
       this.sessionExpiry = 0;
@@ -431,13 +433,6 @@ export class CybereasonMCPServer {
 
   // ── Response helper ──────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): ToolResult {
-    const text = JSON.stringify(data, null, 2);
-    const truncated = text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-    return { content: [{ type: 'text', text: truncated }], isError: false };
-  }
 
   // ── Tool implementations ─────────────────────────────────────────────────────
 
@@ -453,7 +448,7 @@ export class CybereasonMCPServer {
 
     const res = await this.fetchWithReauth(url.toString(), { method: 'GET' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async getMalop(args: Record<string, unknown>): Promise<ToolResult> {
@@ -465,7 +460,7 @@ export class CybereasonMCPServer {
       { method: 'GET' },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async updateMalopStatus(args: Record<string, unknown>): Promise<ToolResult> {
@@ -482,7 +477,7 @@ export class CybereasonMCPServer {
       },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async getMalopProcesses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -494,7 +489,7 @@ export class CybereasonMCPServer {
       { method: 'GET' },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async getMalopAffectedMachines(args: Record<string, unknown>): Promise<ToolResult> {
@@ -506,7 +501,7 @@ export class CybereasonMCPServer {
       { method: 'GET' },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async listMachines(args: Record<string, unknown>): Promise<ToolResult> {
@@ -519,7 +514,7 @@ export class CybereasonMCPServer {
 
     const res = await this.fetchWithReauth(url.toString(), { method: 'GET' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async getMachine(args: Record<string, unknown>): Promise<ToolResult> {
@@ -531,7 +526,7 @@ export class CybereasonMCPServer {
       { method: 'GET' },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async getSensorStatus(args: Record<string, unknown>): Promise<ToolResult> {
@@ -543,7 +538,7 @@ export class CybereasonMCPServer {
       { method: 'GET' },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async isolateMachine(args: Record<string, unknown>): Promise<ToolResult> {
@@ -561,7 +556,7 @@ export class CybereasonMCPServer {
       },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async unisolateMachine(args: Record<string, unknown>): Promise<ToolResult> {
@@ -576,7 +571,7 @@ export class CybereasonMCPServer {
       },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async killProcess(args: Record<string, unknown>): Promise<ToolResult> {
@@ -593,7 +588,7 @@ export class CybereasonMCPServer {
       { method: 'POST', body: JSON.stringify(body) },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async queryProcesses(args: Record<string, unknown>): Promise<ToolResult> {
@@ -607,7 +602,7 @@ export class CybereasonMCPServer {
 
     const res = await this.fetchWithReauth(url.toString(), { method: 'GET' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async listUsers(args: Record<string, unknown>): Promise<ToolResult> {
@@ -620,7 +615,7 @@ export class CybereasonMCPServer {
 
     const res = await this.fetchWithReauth(url.toString(), { method: 'GET' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
@@ -632,7 +627,7 @@ export class CybereasonMCPServer {
       { method: 'GET' },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 
   private async listSensors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -647,6 +642,6 @@ export class CybereasonMCPServer {
 
     const res = await this.fetchWithReauth(url.toString(), { method: 'GET' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return this.truncate(await res.json());
+    return { content: [{ type: 'text', text: this.truncate(await res.json()) }], isError: false };
   }
 }

@@ -14,17 +14,19 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NprIdentityConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class NprIdentityMCPServer {
+export class NprIdentityMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: NprIdentityConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://identity.api.npr.org';
   }
@@ -155,11 +157,6 @@ export class NprIdentityMCPServer {
     };
   }
 
-  private truncate(text: string, maxBytes = 10240): string {
-    if (text.length <= maxBytes) return text;
-    return text.slice(0, maxBytes) + '\n...[truncated]';
-  }
-
   private async request(
     method: string,
     path: string,
@@ -180,7 +177,7 @@ export class NprIdentityMCPServer {
       init.body = JSON.stringify(body);
     }
 
-    const res = await fetch(url, init);
+    const res = await this.fetchWithRetry(url, init);
     let text = await res.text();
     text = this.truncate(text);
 

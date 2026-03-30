@@ -32,6 +32,7 @@
 //   general REST calls are throttled at service level per tenant
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PowerBIConfig {
   /**
@@ -48,11 +49,12 @@ interface PowerBIConfig {
   baseUrl?: string;
 }
 
-export class PowerBIMCPServer {
+export class PowerBIMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PowerBIConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://api.powerbi.com/v1.0/myorg').replace(/\/$/, '');
   }
@@ -444,15 +446,8 @@ export class PowerBIMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.authHeaders, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders, ...options });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       return {

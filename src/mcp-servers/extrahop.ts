@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented; standard REST backoff on 429 responses recommended
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ExtraHopConfig {
   apiKey: string;
@@ -26,12 +27,13 @@ interface ExtraHopConfig {
   authMode?: 'apikey' | 'bearer';
 }
 
-export class ExtraHopMCPServer {
+export class ExtraHopMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly authMode: 'apikey' | 'bearer';
 
   constructor(config: ExtraHopConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.authMode = config.authMode || 'apikey';
@@ -518,17 +520,10 @@ export class ExtraHopMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async ehGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
 
     if (!response.ok) {
       return {
@@ -542,7 +537,7 @@ export class ExtraHopMCPServer {
   }
 
   private async ehPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -566,7 +561,7 @@ export class ExtraHopMCPServer {
   }
 
   private async ehPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),

@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; governed by individual Yardi instance configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface YardiConfig {
   baseUrl: string;
@@ -26,7 +27,7 @@ interface YardiConfig {
   yardiPropertyId?: string;
 }
 
-export class YardiMCPServer {
+export class YardiMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly username: string;
   private readonly password: string;
@@ -36,6 +37,7 @@ export class YardiMCPServer {
   private readonly yardiPropertyId: string;
 
   constructor(config: YardiConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.username = config.username;
     this.password = config.password;
@@ -282,7 +284,6 @@ export class YardiMCPServer {
     }
   }
 
-
   private propId(args: Record<string, unknown>): string {
     return (args.property_id as string) || this.yardiPropertyId;
   }
@@ -313,7 +314,7 @@ export class YardiMCPServer {
 
   private async soapCall(endpoint: string, soapAction: string, bodyXml: string): Promise<ToolResult> {
     const url = `${this.baseUrl}/${endpoint}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',

@@ -25,17 +25,19 @@
 //              may negotiate higher limits with their account manager.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SimilarwebConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class SimilarwebMCPServer {
+export class SimilarwebMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: SimilarwebConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.similarweb.com/v1';
   }
@@ -395,18 +397,11 @@ export class SimilarwebMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async swGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const allParams = { ...params, api_key: this.apiKey };
     const qs = new URLSearchParams(allParams).toString();
     const url = `${this.baseUrl}${path}?${qs}`;
-    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const response = await this.fetchWithRetry(url, { headers: { 'Accept': 'application/json' } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

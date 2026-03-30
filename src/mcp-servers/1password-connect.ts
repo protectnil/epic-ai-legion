@@ -14,17 +14,19 @@
 // Rate limits: Not documented; depends on self-hosted server configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OnePasswordConnectConfig {
   connectToken: string;    // JWT token issued by the 1Password Connect server
   baseUrl?: string;        // Connect server base URL (default: http://localhost:8080/v1)
 }
 
-export class OnePasswordConnectMCPServer {
+export class OnePasswordConnectMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: OnePasswordConnectConfig) {
+    super();
     this.token = config.connectToken;
     this.baseUrl = config.baseUrl ?? 'http://localhost:8080/v1';
   }
@@ -369,13 +371,6 @@ export class OnePasswordConnectMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listVaults(args: Record<string, unknown>): Promise<ToolResult> {
     const filter = args.filter as string | undefined;
 
@@ -384,7 +379,7 @@ export class OnePasswordConnectMCPServer {
       url += `?filter=${encodeURIComponent(filter)}`;
     }
 
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
 
     if (!response.ok) {
       const errText = await response.text();
@@ -404,7 +399,7 @@ export class OnePasswordConnectMCPServer {
   private async getVault(args: Record<string, unknown>): Promise<ToolResult> {
     const vaultUuid = encodeURIComponent(args.vault_uuid as string);
 
-    const response = await fetch(`${this.baseUrl}/vaults/${vaultUuid}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vaults/${vaultUuid}`, {
       headers: this.authHeaders(),
     });
 
@@ -432,7 +427,7 @@ export class OnePasswordConnectMCPServer {
       url += `?filter=${encodeURIComponent(filter)}`;
     }
 
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
 
     if (!response.ok) {
       const errText = await response.text();
@@ -453,7 +448,7 @@ export class OnePasswordConnectMCPServer {
     const vaultUuid = encodeURIComponent(args.vault_uuid as string);
     const itemUuid = encodeURIComponent(args.item_uuid as string);
 
-    const response = await fetch(`${this.baseUrl}/vaults/${vaultUuid}/items/${itemUuid}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vaults/${vaultUuid}/items/${itemUuid}`, {
       headers: this.authHeaders(),
     });
 
@@ -485,7 +480,7 @@ export class OnePasswordConnectMCPServer {
     if (args.favorite !== undefined) body.favorite = args.favorite;
     if (args.urls !== undefined) body.urls = args.urls;
 
-    const response = await fetch(`${this.baseUrl}/vaults/${vaultUuid}/items`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vaults/${vaultUuid}/items`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -521,7 +516,7 @@ export class OnePasswordConnectMCPServer {
     if (args.favorite !== undefined) body.favorite = args.favorite;
     if (args.urls !== undefined) body.urls = args.urls;
 
-    const response = await fetch(`${this.baseUrl}/vaults/${vaultUuid}/items/${itemUuid}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vaults/${vaultUuid}/items/${itemUuid}`, {
       method: 'PUT',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -547,7 +542,7 @@ export class OnePasswordConnectMCPServer {
     const itemUuid = encodeURIComponent(args.item_uuid as string);
     const patches = args.patches;
 
-    const response = await fetch(`${this.baseUrl}/vaults/${vaultUuid}/items/${itemUuid}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vaults/${vaultUuid}/items/${itemUuid}`, {
       method: 'PATCH',
       headers: this.authHeaders(),
       body: JSON.stringify(patches),
@@ -572,7 +567,7 @@ export class OnePasswordConnectMCPServer {
     const vaultUuid = encodeURIComponent(args.vault_uuid as string);
     const itemUuid = encodeURIComponent(args.item_uuid as string);
 
-    const response = await fetch(`${this.baseUrl}/vaults/${vaultUuid}/items/${itemUuid}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vaults/${vaultUuid}/items/${itemUuid}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${this.token}`,
@@ -604,7 +599,7 @@ export class OnePasswordConnectMCPServer {
       url += `?inline_files=${inlineFiles}`;
     }
 
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
 
     if (!response.ok) {
       const errText = await response.text();
@@ -632,7 +627,7 @@ export class OnePasswordConnectMCPServer {
       url += `?inline_files=${inlineFiles}`;
     }
 
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
 
     if (!response.ok) {
       const errText = await response.text();
@@ -653,7 +648,7 @@ export class OnePasswordConnectMCPServer {
     const limit = (args.limit as number) ?? 50;
     const offset = (args.offset as number) ?? 0;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/activity?limit=${limit}&offset=${offset}`,
       { headers: this.authHeaders() },
     );
@@ -674,7 +669,7 @@ export class OnePasswordConnectMCPServer {
   }
 
   private async getServerHealth(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/health`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/health`, {
       headers: { 'Accept': 'application/json' },
     });
 

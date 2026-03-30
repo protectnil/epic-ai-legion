@@ -34,17 +34,19 @@
 // Rate limits: Varies by endpoint and tier; typically 600 req/min for most management endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OktaConfig {
   orgUrl: string;    // e.g. https://your-org.okta.com (no trailing slash)
   apiToken: string;  // Raw token, "SSWS <token>", or "Bearer <access_token>"
 }
 
-export class OktaMCPServer {
+export class OktaMCPServer extends MCPAdapterBase {
   private readonly orgUrl: string;
   private readonly authHeader: string;
 
   constructor(config: OktaConfig) {
+    super();
     this.orgUrl = config.orgUrl.replace(/\/$/, '');
     // Prepend "SSWS " if the token is not already prefixed
     this.authHeader =
@@ -525,22 +527,15 @@ export class OktaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.orgUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.orgUrl}${path}`, { method: 'GET', headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Okta returned non-JSON (HTTP ${response.status})`); }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
   }
 
   private async post(path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.orgUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.orgUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -554,7 +549,7 @@ export class OktaMCPServer {
   }
 
   private async put(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.orgUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.orgUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
     });
@@ -567,7 +562,7 @@ export class OktaMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.orgUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.orgUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (response.status === 204) {
       return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }], isError: false };
     }
@@ -616,7 +611,7 @@ export class OktaMCPServer {
     if (args.department) profile.department = args.department;
     if (args.title) profile.title = args.title;
 
-    const response = await fetch(`${this.orgUrl}/api/v1/users/${encodeURIComponent(args.user_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.orgUrl}/api/v1/users/${encodeURIComponent(args.user_id as string)}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ profile }),

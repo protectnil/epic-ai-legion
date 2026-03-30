@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented; ADP enforces quotas per API product subscription
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ADPConfig {
   clientId: string;
@@ -26,7 +27,7 @@ interface ADPConfig {
   accessToken?: string;
 }
 
-export class ADPMCPServer {
+export class ADPMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -34,6 +35,7 @@ export class ADPMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: ADPConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = (config.baseUrl || 'https://api.adp.com').replace(/\/$/, '');
@@ -47,7 +49,7 @@ export class ADPMCPServer {
     }
 
     const credentials = btoa(`${this.clientId}:${this.clientSecret}`);
-    const response = await fetch('https://accounts.adp.com/auth/oauth/v2/token', {
+    const response = await this.fetchWithRetry('https://accounts.adp.com/auth/oauth/v2/token', {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -288,7 +290,7 @@ export class ADPMCPServer {
 
   private async fetch(url: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,

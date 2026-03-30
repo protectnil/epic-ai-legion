@@ -16,17 +16,19 @@
 // Rate limits: See Clever docs — Data API is scoped to district data access
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CleverConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class CleverMCPServer {
+export class CleverMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CleverConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.clever.com/v1.2';
   }
@@ -583,13 +585,6 @@ export class CleverMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildQuery(params: Record<string, unknown>): string {
     const allowed = ['limit', 'starting_after', 'ending_before'];
     const parts: string[] = [];
@@ -603,7 +598,7 @@ export class CleverMCPServer {
 
   private async request(path: string): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${this.accessToken}`,

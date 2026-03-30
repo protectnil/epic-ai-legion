@@ -14,17 +14,19 @@
 // Rate limits: ~3600 requests/hour per API key for free accounts.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FlickrConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class FlickrMCPServer {
+export class FlickrMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: FlickrConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.flickr.com/services';
   }
@@ -415,12 +417,6 @@ export class FlickrMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private baseParams(method: string): URLSearchParams {
     return new URLSearchParams({
       method,
@@ -432,7 +428,7 @@ export class FlickrMCPServer {
 
   private async request(params: URLSearchParams): Promise<ToolResult> {
     const url = `${this.baseUrl}/rest?${params.toString()}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
 
     if (!response.ok) {
       let errText = '';

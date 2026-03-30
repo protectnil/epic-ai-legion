@@ -45,6 +45,7 @@
 // Rate limits: 1,200 requests per 5 minutes per API token (some endpoints have tighter limits).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CloudflareConfig {
   apiToken: string;
@@ -54,12 +55,13 @@ interface CloudflareConfig {
 
 const CLOUDFLARE_BASE_URL = 'https://api.cloudflare.com/client/v4';
 
-export class CloudflareMCPServer {
+export class CloudflareMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly accountId: string;
   private readonly baseUrl: string;
 
   constructor(config: CloudflareConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.accountId = config.accountId || '';
     this.baseUrl = (config.baseUrl || CLOUDFLARE_BASE_URL).replace(/\/$/, '');
@@ -92,14 +94,8 @@ export class CloudflareMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     let data: unknown;
     try { data = await response.json(); } catch { data = await response.text().catch(() => response.statusText); }
     return {
@@ -621,7 +617,7 @@ export class CloudflareMCPServer {
     if (!accountId) return { content: [{ type: 'text', text: 'accountId is required (set in config or pass as argument)' }], isError: true };
 
     const url = `${this.baseUrl}/accounts/${encodeURIComponent(accountId)}/storage/kv/namespaces/${encodeURIComponent(namespaceId)}/values/${encodeURIComponent(key)}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       let data: unknown;
       try { data = await response.json(); } catch { data = await response.text().catch(() => response.statusText); }
@@ -645,7 +641,7 @@ export class CloudflareMCPServer {
     if (args.expiration_ttl) params.set('expiration_ttl', String(args.expiration_ttl));
 
     const url = `${this.baseUrl}/accounts/${encodeURIComponent(accountId)}/storage/kv/namespaces/${encodeURIComponent(namespaceId)}/values/${encodeURIComponent(key)}${params.toString() ? `?${params.toString()}` : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: { ...this.headers, 'Content-Type': 'text/plain' },
       body: value,

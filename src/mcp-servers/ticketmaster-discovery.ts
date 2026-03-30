@@ -14,17 +14,19 @@
 // Rate limits: 5,000 API calls per day (default), 200 requests per second
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TicketmasterDiscoveryConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class TicketmasterDiscoveryMCPServer {
+export class TicketmasterDiscoveryMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: TicketmasterDiscoveryConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://www.ticketmaster.com/discovery/v2';
   }
@@ -277,13 +279,6 @@ export class TicketmasterDiscoveryMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildQs(params: Record<string, string | number | boolean | undefined>): string {
     const p = new URLSearchParams({ apikey: this.apiKey });
     for (const [k, v] of Object.entries(params)) {
@@ -294,7 +289,7 @@ export class TicketmasterDiscoveryMCPServer {
 
   private async apiGet(path: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${this.buildQs(params)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) {

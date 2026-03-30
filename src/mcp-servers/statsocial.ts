@@ -15,17 +15,19 @@
 // Rate limits: Rate limiting enforced (HTTP 403 when exceeded); avoid polling
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StatSocialConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class StatSocialMCPServer {
+export class StatSocialMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: StatSocialConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'http://api.statsocial.com/api';
   }
@@ -183,7 +185,7 @@ export class StatSocialMCPServer {
     const separator = path.includes('?') ? '&' : '?';
     const url = `${this.baseUrl}${path}${separator}key=${encodeURIComponent(this.apiKey)}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: {
         'Content-Type': 'application/json',

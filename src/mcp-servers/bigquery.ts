@@ -21,6 +21,7 @@
 // Rate limits: 300 concurrent API requests per project; query jobs subject to concurrent slot limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BigQueryConfig {
   /** OAuth2 access token or service account bearer token */
@@ -31,12 +32,13 @@ interface BigQueryConfig {
   baseUrl?: string;
 }
 
-export class BigQueryMCPServer {
+export class BigQueryMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly projectId: string;
   private readonly baseUrl: string;
 
   constructor(config: BigQueryConfig) {
+    super();
     this.token = config.token;
     this.projectId = config.projectId;
     this.baseUrl = config.baseUrl || 'https://bigquery.googleapis.com/bigquery/v2';
@@ -51,12 +53,6 @@ export class BigQueryMCPServer {
 
   private resolveProject(args: Record<string, unknown>): string {
     return String(args.projectId ?? this.projectId);
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -381,7 +377,7 @@ export class BigQueryMCPServer {
       maxResults: (args.maxResults as number) ?? 1000,
       timeoutMs: (args.timeoutMs as number) ?? 30000,
     };
-    const response = await fetch(`${this.baseUrl}/projects/${projectId}/queries`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/projects/${projectId}/queries`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -407,7 +403,7 @@ export class BigQueryMCPServer {
       };
       (configuration.query as Record<string, unknown>).writeDisposition = args.writeDisposition ?? 'WRITE_EMPTY';
     }
-    const response = await fetch(`${this.baseUrl}/projects/${projectId}/jobs`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/projects/${projectId}/jobs`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify({ configuration }),
@@ -423,7 +419,7 @@ export class BigQueryMCPServer {
     params.set('maxResults', String((args.maxResults as number) ?? 1000));
     params.set('timeoutMs', String((args.timeoutMs as number) ?? 10000));
     if (args.pageToken) params.set('pageToken', String(args.pageToken));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/queries/${encodeURIComponent(String(args.job_id))}?${params.toString()}`,
       { method: 'GET', headers: this.authHeaders },
     );
@@ -438,7 +434,7 @@ export class BigQueryMCPServer {
     if (args.maxResults) params.set('maxResults', String(args.maxResults));
     if (args.pageToken) params.set('pageToken', String(args.pageToken));
     if (args.all) params.set('all', 'true');
-    const response = await fetch(`${this.baseUrl}/projects/${projectId}/datasets?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/projects/${projectId}/datasets?${params.toString()}`, {
       method: 'GET', headers: this.authHeaders,
     });
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
@@ -448,7 +444,7 @@ export class BigQueryMCPServer {
   private async getDataset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.datasetId) return { content: [{ type: 'text', text: 'datasetId is required' }], isError: true };
     const projectId = this.resolveProject(args);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}`,
       { method: 'GET', headers: this.authHeaders },
     );
@@ -465,7 +461,7 @@ export class BigQueryMCPServer {
     };
     if (args.description) body.description = args.description;
     if (args.defaultTableExpirationMs) body.defaultTableExpirationMs = String(args.defaultTableExpirationMs);
-    const response = await fetch(`${this.baseUrl}/projects/${projectId}/datasets`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/projects/${projectId}/datasets`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -479,7 +475,7 @@ export class BigQueryMCPServer {
     const projectId = this.resolveProject(args);
     const params = new URLSearchParams();
     if (args.deleteContents) params.set('deleteContents', 'true');
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}?${params.toString()}`,
       { method: 'DELETE', headers: this.authHeaders },
     );
@@ -496,7 +492,7 @@ export class BigQueryMCPServer {
     const params = new URLSearchParams();
     if (args.maxResults) params.set('maxResults', String(args.maxResults));
     if (args.pageToken) params.set('pageToken', String(args.pageToken));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}/tables?${params.toString()}`,
       { method: 'GET', headers: this.authHeaders },
     );
@@ -507,7 +503,7 @@ export class BigQueryMCPServer {
   private async getTable(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.datasetId || !args.tableId) return { content: [{ type: 'text', text: 'datasetId and tableId are required' }], isError: true };
     const projectId = this.resolveProject(args);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}/tables/${encodeURIComponent(String(args.tableId))}`,
       { method: 'GET', headers: this.authHeaders },
     );
@@ -524,7 +520,7 @@ export class BigQueryMCPServer {
     if (args.schema) body.schema = args.schema;
     if (args.description) body.description = args.description;
     if (args.expirationMs) body.expirationTime = String(args.expirationMs);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}/tables`,
       { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) },
     );
@@ -535,7 +531,7 @@ export class BigQueryMCPServer {
   private async deleteTable(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.datasetId || !args.tableId) return { content: [{ type: 'text', text: 'datasetId and tableId are required' }], isError: true };
     const projectId = this.resolveProject(args);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}/tables/${encodeURIComponent(String(args.tableId))}`,
       { method: 'DELETE', headers: this.authHeaders },
     );
@@ -554,7 +550,7 @@ export class BigQueryMCPServer {
     const rows = (args.rows as unknown[]).map((row, i) => ({ insertId: String(i), json: row }));
     const body: Record<string, unknown> = { rows };
     if (args.skipInvalidRows) body.skipInvalidRows = args.skipInvalidRows;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}/tables/${encodeURIComponent(String(args.tableId))}/insertAll`,
       { method: 'POST', headers: this.authHeaders, body: JSON.stringify(body) },
     );
@@ -569,7 +565,7 @@ export class BigQueryMCPServer {
     params.set('maxResults', String((args.maxResults as number) ?? 100));
     if (args.pageToken) params.set('pageToken', String(args.pageToken));
     if (args.startIndex) params.set('startIndex', String(args.startIndex));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}/tables/${encodeURIComponent(String(args.tableId))}/data?${params.toString()}`,
       { method: 'GET', headers: this.authHeaders },
     );
@@ -585,7 +581,7 @@ export class BigQueryMCPServer {
     if (args.pageToken) params.set('pageToken', String(args.pageToken));
     if (args.allUsers) params.set('allUsers', 'true');
     if (args.projection) params.set('projection', String(args.projection));
-    const response = await fetch(`${this.baseUrl}/projects/${projectId}/jobs?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/projects/${projectId}/jobs?${params.toString()}`, {
       method: 'GET', headers: this.authHeaders,
     });
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
@@ -598,7 +594,7 @@ export class BigQueryMCPServer {
     const params = new URLSearchParams();
     if (args.location) params.set('location', String(args.location));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/jobs/${encodeURIComponent(String(args.job_id))}${qs}`,
       { method: 'GET', headers: this.authHeaders },
     );
@@ -612,7 +608,7 @@ export class BigQueryMCPServer {
     const params = new URLSearchParams();
     if (args.location) params.set('location', String(args.location));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/jobs/${encodeURIComponent(String(args.job_id))}/cancel${qs}`,
       { method: 'POST', headers: this.authHeaders },
     );
@@ -626,7 +622,7 @@ export class BigQueryMCPServer {
     const params = new URLSearchParams();
     if (args.maxResults) params.set('maxResults', String(args.maxResults));
     if (args.pageToken) params.set('pageToken', String(args.pageToken));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}/routines?${params.toString()}`,
       { method: 'GET', headers: this.authHeaders },
     );
@@ -637,7 +633,7 @@ export class BigQueryMCPServer {
   private async getRoutine(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.datasetId || !args.routineId) return { content: [{ type: 'text', text: 'datasetId and routineId are required' }], isError: true };
     const projectId = this.resolveProject(args);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${projectId}/datasets/${encodeURIComponent(String(args.datasetId))}/routines/${encodeURIComponent(String(args.routineId))}`,
       { method: 'GET', headers: this.authHeaders },
     );
@@ -649,7 +645,7 @@ export class BigQueryMCPServer {
     const params = new URLSearchParams();
     if (args.maxResults) params.set('maxResults', String(args.maxResults));
     if (args.pageToken) params.set('pageToken', String(args.pageToken));
-    const response = await fetch(`${this.baseUrl}/projects?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/projects?${params.toString()}`, {
       method: 'GET', headers: this.authHeaders,
     });
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));

@@ -27,17 +27,19 @@
 // Rate limits: 300 req/min per access token for most endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SmartsheetConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class SmartsheetMCPServer {
+export class SmartsheetMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SmartsheetConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.smartsheet.com/2.0';
   }
@@ -577,19 +579,12 @@ export class SmartsheetMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async ssGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     let url = `${this.baseUrl}${path}`;
     if (params && Object.keys(params).length) {
       url += '?' + new URLSearchParams(params).toString();
     }
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -599,7 +594,7 @@ export class SmartsheetMCPServer {
   }
 
   private async ssPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -613,7 +608,7 @@ export class SmartsheetMCPServer {
   }
 
   private async ssPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -627,7 +622,7 @@ export class SmartsheetMCPServer {
   }
 
   private async ssDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -688,7 +683,7 @@ export class SmartsheetMCPServer {
     if (!id || !Array.isArray(rows) || rows.length === 0) {
       return { content: [{ type: 'text', text: 'sheetId and rows (non-empty array) are required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/sheets/${encodeURIComponent(id)}/rows`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/sheets/${encodeURIComponent(id)}/rows`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(rows),
@@ -708,7 +703,7 @@ export class SmartsheetMCPServer {
       return { content: [{ type: 'text', text: 'sheetId and rowIds (non-empty array) are required' }], isError: true };
     }
     const idList = rowIds.join(',');
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/sheets/${encodeURIComponent(id)}/rows?ids=${encodeURIComponent(idList)}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -805,7 +800,7 @@ export class SmartsheetMCPServer {
     if (args.sendEmail === true) params.sendEmail = 'true';
     let url = `${this.baseUrl}/sheets/${encodeURIComponent(id)}/shares`;
     if (Object.keys(params).length) url += '?' + new URLSearchParams(params).toString();
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(shares),

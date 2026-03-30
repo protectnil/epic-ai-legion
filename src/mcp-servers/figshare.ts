@@ -10,6 +10,7 @@
 // Rate limits: Standard API rate limits per token
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FigshareConfig {
   /** OAuth2 access token */
@@ -18,11 +19,12 @@ interface FigshareConfig {
   baseUrl?: string;
 }
 
-export class FigshareMCPServer {
+export class FigshareMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: FigshareConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://api.figshare.com/v2';
   }
@@ -489,7 +491,7 @@ export class FigshareMCPServer {
     if (body !== undefined) {
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(`${this.baseUrl}${path}`, init);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Figshare API error ${response.status}: ${errText}` }], isError: true };
@@ -505,12 +507,6 @@ export class FigshareMCPServer {
       throw new Error(`Figshare API returned non-JSON response (HTTP ${response.status})`);
     }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 }

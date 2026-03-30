@@ -13,15 +13,17 @@
 // Rate limits: ~60 req/min per IP for public API
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ZalandoConfig {
   baseUrl?: string;
 }
 
-export class ZalandoMCPServer {
+export class ZalandoMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: ZalandoConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://api.zalando.com';
   }
 
@@ -273,13 +275,9 @@ export class ZalandoMCPServer {
     return { Accept: 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
 
   private async httpGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Zalando API error ${response.status}: ${errText}` }], isError: true };

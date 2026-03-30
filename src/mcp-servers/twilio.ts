@@ -26,6 +26,7 @@
 // Rate limits: Not globally enforced; Twilio applies per-product and per-account limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TwilioConfig {
   accountSid: string;
@@ -33,7 +34,7 @@ interface TwilioConfig {
   verifyServiceSid?: string;
 }
 
-export class TwilioMCPServer {
+export class TwilioMCPServer extends MCPAdapterBase {
   private readonly accountSid: string;
   private readonly authToken: string;
   private readonly verifyServiceSid: string;
@@ -42,6 +43,7 @@ export class TwilioMCPServer {
   private readonly lookupsUrl = 'https://lookups.twilio.com/v2';
 
   constructor(config: TwilioConfig) {
+    super();
     this.accountSid = config.accountSid;
     this.authToken = config.authToken;
     this.verifyServiceSid = config.verifyServiceSid ?? '';
@@ -87,7 +89,7 @@ export class TwilioMCPServer {
   // HTTP helpers — throw on non-OK
   // ──────────────────────────────────────────────
   private async reqForm(url: string, method: string, body?: URLSearchParams): Promise<unknown> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: { ...this.authHeaders, 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
       body: body?.toString(),
@@ -100,7 +102,7 @@ export class TwilioMCPServer {
   }
 
   private async reqGet(url: string): Promise<unknown> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { ...this.authHeaders, Accept: 'application/json' },
     });
     if (!response.ok) {
@@ -111,21 +113,11 @@ export class TwilioMCPServer {
   }
 
   private async reqDelete(url: string): Promise<void> {
-    const response = await fetch(url, { method: 'DELETE', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.authHeaders });
     if (!response.ok && response.status !== 204) {
       const errText = await response.text().catch(() => response.statusText);
       throw new Error(`Twilio API error ${response.status}: ${errText}`);
     }
-  }
-
-  // ──────────────────────────────────────────────
-  // Truncation helper
-  // ──────────────────────────────────────────────
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {

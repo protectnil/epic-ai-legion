@@ -23,6 +23,7 @@
 // Rate limits: Not publicly documented; use pagination to avoid large single-page responses
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DatadogSecurityConfig {
   apiKey: string;
@@ -31,11 +32,12 @@ interface DatadogSecurityConfig {
   site?: string;
 }
 
-export class DatadogSecurityMCPServer {
+export class DatadogSecurityMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
 
   constructor(config: DatadogSecurityConfig) {
+    super();
     this.baseUrl = `https://api.${config.site ?? 'datadoghq.com'}`;
     this.headers = {
       'DD-API-KEY': config.apiKey,
@@ -466,13 +468,6 @@ export class DatadogSecurityMCPServer {
 
   // ── Response helper ───────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): ToolResult {
-    const text = JSON.stringify(data, null, 2);
-    const truncated = text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-    return { content: [{ type: 'text', text: truncated }], isError: false };
-  }
 
   private async jsonOrError(res: Response, context: string): Promise<unknown> {
     if (!res.ok) throw new Error(`Datadog API error (${context}): ${res.status} ${res.statusText}`);
@@ -495,21 +490,21 @@ export class DatadogSecurityMCPServer {
     if (args.page_cursor) params.set('page[cursor]', args.page_cursor as string);
     params.set('sort', (args.sort as string) ?? '-timestamp');
 
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/signals?${params}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'list_security_signals'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_security_signals')) }], isError: false };
   }
 
   private async getSignal(args: Record<string, unknown>): Promise<ToolResult> {
     const signal_id = args.signal_id as string;
     if (!signal_id) throw new Error('signal_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/signals/${encodeURIComponent(signal_id)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_signal'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_signal')) }], isError: false };
   }
 
   private async triageSignal(args: Record<string, unknown>): Promise<ToolResult> {
@@ -521,7 +516,7 @@ export class DatadogSecurityMCPServer {
     const attributes: Record<string, unknown> = { state };
     if (args.archive_reason) attributes.archive_reason = args.archive_reason;
 
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/signals/${encodeURIComponent(signal_id)}/state`,
       {
         method: 'PATCH',
@@ -529,7 +524,7 @@ export class DatadogSecurityMCPServer {
         body: JSON.stringify({ data: { attributes, type: 'signal_triage_state' } }),
       },
     );
-    return this.truncate(await this.jsonOrError(res, 'triage_signal'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'triage_signal')) }], isError: false };
   }
 
   private async listDetectionRules(args: Record<string, unknown>): Promise<ToolResult> {
@@ -539,21 +534,21 @@ export class DatadogSecurityMCPServer {
     if (args.is_enabled !== undefined) params.set('filter[is_enabled]', String(args.is_enabled));
     if (args.type) params.set('filter[type]', args.type as string);
 
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/rules?${params}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'list_detection_rules'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_detection_rules')) }], isError: false };
   }
 
   private async getDetectionRule(args: Record<string, unknown>): Promise<ToolResult> {
     const rule_id = args.rule_id as string;
     if (!rule_id) throw new Error('rule_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/rules/${encodeURIComponent(rule_id)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_detection_rule'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_detection_rule')) }], isError: false };
   }
 
   private async createDetectionRule(args: Record<string, unknown>): Promise<ToolResult> {
@@ -570,12 +565,12 @@ export class DatadogSecurityMCPServer {
     if (args.message) body.message = args.message;
     if (args.tags) body.tags = args.tags;
 
-    const res = await fetch(`${this.baseUrl}/api/v2/security_monitoring/rules`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v2/security_monitoring/rules`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
     });
-    return this.truncate(await this.jsonOrError(res, 'create_detection_rule'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'create_detection_rule')) }], isError: false };
   }
 
   private async updateDetectionRule(args: Record<string, unknown>): Promise<ToolResult> {
@@ -588,7 +583,7 @@ export class DatadogSecurityMCPServer {
     if (args.message) body.message = args.message;
     if (args.tags) body.tags = args.tags;
 
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/rules/${encodeURIComponent(rule_id)}`,
       {
         method: 'PUT',
@@ -596,13 +591,13 @@ export class DatadogSecurityMCPServer {
         body: JSON.stringify(body),
       },
     );
-    return this.truncate(await this.jsonOrError(res, 'update_detection_rule'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'update_detection_rule')) }], isError: false };
   }
 
   private async deleteDetectionRule(args: Record<string, unknown>): Promise<ToolResult> {
     const rule_id = args.rule_id as string;
     if (!rule_id) throw new Error('rule_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/rules/${encodeURIComponent(rule_id)}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -614,11 +609,11 @@ export class DatadogSecurityMCPServer {
     const params = new URLSearchParams();
     params.set('page[size]', String((args.page_size as number) ?? 25));
     params.set('page[number]', String((args.page_number as number) ?? 0));
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/configuration/suppressions?${params}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'list_suppression_rules'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_suppression_rules')) }], isError: false };
   }
 
   private async createSuppressionRule(args: Record<string, unknown>): Promise<ToolResult> {
@@ -634,7 +629,7 @@ export class DatadogSecurityMCPServer {
     if (args.expiration_date) attributes.expiration_date = args.expiration_date;
     if (args.description) attributes.description = args.description;
 
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/configuration/suppressions`,
       {
         method: 'POST',
@@ -642,13 +637,13 @@ export class DatadogSecurityMCPServer {
         body: JSON.stringify({ data: { attributes, type: 'suppressions' } }),
       },
     );
-    return this.truncate(await this.jsonOrError(res, 'create_suppression_rule'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'create_suppression_rule')) }], isError: false };
   }
 
   private async deleteSuppressionRule(args: Record<string, unknown>): Promise<ToolResult> {
     const suppression_id = args.suppression_id as string;
     if (!suppression_id) throw new Error('suppression_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/configuration/suppressions/${encodeURIComponent(suppression_id)}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -666,11 +661,11 @@ export class DatadogSecurityMCPServer {
     params.set('page[limit]', String((args.page_limit as number) ?? 100));
     if (args.page_cursor) params.set('page[cursor]', args.page_cursor as string);
 
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security_monitoring/findings?${params}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_cloud_security_findings'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_cloud_security_findings')) }], isError: false };
   }
 
   private async listVulnerabilities(args: Record<string, unknown>): Promise<ToolResult> {
@@ -681,11 +676,11 @@ export class DatadogSecurityMCPServer {
     params.set('page[size]', String((args.page_size as number) ?? 25));
     params.set('page[number]', String((args.page_number as number) ?? 0));
 
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.baseUrl}/api/v2/security/vulnerabilities?${params}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'list_vulnerabilities'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_vulnerabilities')) }], isError: false };
   }
 
   private async listMonitors(args: Record<string, unknown>): Promise<ToolResult> {
@@ -695,7 +690,7 @@ export class DatadogSecurityMCPServer {
     params.set('page', String((args.page as number) ?? 0));
     params.set('page_size', String((args.page_size as number) ?? 100));
 
-    const res = await fetch(`${this.baseUrl}/api/v1/monitor?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_monitors'));
+    const res = await this.fetchWithRetry(`${this.baseUrl}/api/v1/monitor?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_monitors')) }], isError: false };
   }
 }

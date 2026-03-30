@@ -26,6 +26,7 @@
 
 import { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ZscalerConfig {
   /** Full base URL including cloud name, e.g. https://zsapi.zscaler.net/api/v1 */
@@ -35,7 +36,7 @@ interface ZscalerConfig {
   apiKey: string;
 }
 
-export class ZscalerMCPServer {
+export class ZscalerMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly username: string;
   private readonly apiKey: string;
@@ -45,6 +46,7 @@ export class ZscalerMCPServer {
   private static readonly SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
   constructor(config: ZscalerConfig) {
+    super();
     this.baseUrl = config.baseUrl;
     this.username = config.username;
     this.password = config.password;
@@ -103,7 +105,7 @@ export class ZscalerMCPServer {
     const timestamp = String(Date.now());
     const obfuscatedKey = this.obfuscateApiKey(this.apiKey, timestamp);
 
-    const response = await fetch(`${this.baseUrl}/authenticatedSession`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/authenticatedSession`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -141,14 +143,6 @@ export class ZscalerMCPServer {
       'Content-Type': 'application/json',
       Cookie: this.sessionCookie ?? '',
     };
-  }
-
-  /** Truncate large JSON responses to 10 KB. */
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -424,7 +418,7 @@ export class ZscalerMCPServer {
       ? `${this.baseUrl}/urlCategories?customOnly=true`
       : `${this.baseUrl}/urlCategories`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list URL categories: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -435,7 +429,7 @@ export class ZscalerMCPServer {
   }
 
   private async listUrlFilteringRules(headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/urlFilteringRules`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/urlFilteringRules`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list URL filtering rules: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -450,7 +444,7 @@ export class ZscalerMCPServer {
     const offset = (args.offset as number) ?? 0;
     const url = `${this.baseUrl}/firewallFilteringRules?limit=${limit}&offset=${offset}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list firewall rules: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -466,7 +460,7 @@ export class ZscalerMCPServer {
       ? `${this.baseUrl}/dlpDictionaries/${encodeURIComponent(dictionaryId)}`
       : `${this.baseUrl}/dlpDictionaries`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list DLP dictionaries: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -485,7 +479,7 @@ export class ZscalerMCPServer {
     const reportType = (args.report_type as string) ?? 'full';
     const url = `${this.baseUrl}/sandbox/report/${encodeURIComponent(fileHash)}?details=${encodeURIComponent(reportType)}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get sandbox report: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -500,7 +494,7 @@ export class ZscalerMCPServer {
     const offset = (args.offset as number) ?? 0;
     const url = `${this.baseUrl}/locations?limit=${limit}&offset=${offset}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list locations: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -520,7 +514,7 @@ export class ZscalerMCPServer {
 
     const url = `${this.baseUrl}/users?${params.toString()}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list users: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -536,7 +530,7 @@ export class ZscalerMCPServer {
       return { content: [{ type: 'text', text: 'userId is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/users/${encodeURIComponent(String(userId))}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/users/${encodeURIComponent(String(userId))}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get user: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -550,7 +544,7 @@ export class ZscalerMCPServer {
     const limit = (args.limit as number) ?? 100;
     const url = `${this.baseUrl}/groups?pageSize=${limit}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list groups: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -564,7 +558,7 @@ export class ZscalerMCPServer {
     const limit = (args.limit as number) ?? 100;
     const url = `${this.baseUrl}/departments?pageSize=${limit}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list departments: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -579,7 +573,7 @@ export class ZscalerMCPServer {
     const limit = (args.limit as number) ?? 100;
     const url = `${this.baseUrl}/adminUsers?includeAuditorUsers=${includeAuditorUsers}&pageSize=${limit}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list admin users: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -606,7 +600,7 @@ export class ZscalerMCPServer {
     }
     if (args.limit) params.set('pageSize', String(args.limit));
 
-    const response = await fetch(`${this.baseUrl}/auditlogEntryReport?${params.toString()}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/auditlogEntryReport?${params.toString()}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get audit logs: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -617,7 +611,7 @@ export class ZscalerMCPServer {
   }
 
   private async activateChanges(headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/status/activate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/status/activate`, {
       method: 'POST',
       headers,
       body: JSON.stringify({}),
@@ -633,7 +627,7 @@ export class ZscalerMCPServer {
   }
 
   private async getPolicyStatus(headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/status`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/status`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get policy status: ${response.status} ${response.statusText}` }], isError: true };
     }

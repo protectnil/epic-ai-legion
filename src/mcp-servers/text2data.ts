@@ -17,6 +17,7 @@
 // Rate limits: Depends on subscription tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Text2DataConfig {
   privateKey: string;
@@ -24,12 +25,13 @@ interface Text2DataConfig {
   baseUrl?: string;
 }
 
-export class Text2DataMCPServer {
+export class Text2DataMCPServer extends MCPAdapterBase {
   private readonly privateKey: string;
   private readonly secret: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: Text2DataConfig) {
+    super();
     this.privateKey = config.privateKey;
     this.secret = config.secret;
     this.baseUrl = config.baseUrl || 'http://api.text2data.org';
@@ -162,7 +164,7 @@ export class Text2DataMCPServer {
       Accept: 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),

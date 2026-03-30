@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented; InsightVM is self-hosted, limits depend on instance configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Rapid7Config {
   host: string;
@@ -21,11 +22,12 @@ interface Rapid7Config {
   port?: number;
 }
 
-export class Rapid7MCPServer {
+export class Rapid7MCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: Rapid7Config) {
+    super();
     const port = config.port ?? 3780;
     this.baseUrl = `https://${config.host}:${port}/api/3`;
     this.authHeader = `Basic ${btoa(`${config.username}:${config.password}`)}`;
@@ -58,12 +60,6 @@ export class Rapid7MCPServer {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -450,7 +446,7 @@ export class Rapid7MCPServer {
     url.searchParams.set('page', String(page));
     url.searchParams.set('size', String(size));
     url.searchParams.set('sort', sort);
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list vulnerabilities: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -462,7 +458,7 @@ export class Rapid7MCPServer {
   private async getVulnerability(args: Record<string, unknown>): Promise<ToolResult> {
     const vulnId = args.vulnerability_id as string;
     if (!vulnId) return { content: [{ type: 'text', text: 'vulnerability_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/vulnerabilities/${encodeURIComponent(vulnId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vulnerabilities/${encodeURIComponent(vulnId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get vulnerability: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -474,7 +470,7 @@ export class Rapid7MCPServer {
   private async getVulnerabilitySolutions(args: Record<string, unknown>): Promise<ToolResult> {
     const vulnId = args.vulnerability_id as string;
     if (!vulnId) return { content: [{ type: 'text', text: 'vulnerability_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/vulnerabilities/${encodeURIComponent(vulnId)}/solutions`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/vulnerabilities/${encodeURIComponent(vulnId)}/solutions`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get vulnerability solutions: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -490,7 +486,7 @@ export class Rapid7MCPServer {
     url.searchParams.set('page', String(page));
     url.searchParams.set('size', String(size));
     if (args.sort) url.searchParams.set('sort', args.sort as string);
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list assets: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -502,7 +498,7 @@ export class Rapid7MCPServer {
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
     const assetId = args.asset_id as string;
     if (!assetId) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/assets/${encodeURIComponent(assetId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/assets/${encodeURIComponent(assetId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get asset: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -519,7 +515,7 @@ export class Rapid7MCPServer {
     const url = new URL(`${this.baseUrl}/assets/${encodeURIComponent(assetId)}/vulnerabilities`);
     url.searchParams.set('page', String(page));
     url.searchParams.set('size', String(size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get asset vulnerabilities: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -540,7 +536,7 @@ export class Rapid7MCPServer {
       filters,
       match: (args.match as string) ?? 'all',
     };
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -560,7 +556,7 @@ export class Rapid7MCPServer {
     url.searchParams.set('page', String(page));
     url.searchParams.set('size', String(size));
     if (args.active !== undefined) url.searchParams.set('active', String(args.active));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list scans: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -572,7 +568,7 @@ export class Rapid7MCPServer {
   private async getScan(args: Record<string, unknown>): Promise<ToolResult> {
     const scanId = args.scan_id as string;
     if (!scanId) return { content: [{ type: 'text', text: 'scan_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/scans/${encodeURIComponent(scanId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/scans/${encodeURIComponent(scanId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get scan: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -587,7 +583,7 @@ export class Rapid7MCPServer {
     const body: Record<string, unknown> = {};
     if (args.scan_template_id) body.templateId = args.scan_template_id;
     if (args.name) body.name = args.name;
-    const response = await fetch(`${this.baseUrl}/sites/${encodeURIComponent(siteId)}/scans`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/sites/${encodeURIComponent(siteId)}/scans`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -606,7 +602,7 @@ export class Rapid7MCPServer {
     const url = new URL(`${this.baseUrl}/sites`);
     url.searchParams.set('page', String(page));
     url.searchParams.set('size', String(size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list sites: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -618,7 +614,7 @@ export class Rapid7MCPServer {
   private async getSite(args: Record<string, unknown>): Promise<ToolResult> {
     const siteId = args.site_id as string;
     if (!siteId) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/sites/${encodeURIComponent(siteId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/sites/${encodeURIComponent(siteId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get site: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -633,7 +629,7 @@ export class Rapid7MCPServer {
     const url = new URL(`${this.baseUrl}/reports`);
     url.searchParams.set('page', String(page));
     url.searchParams.set('size', String(size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list reports: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -645,7 +641,7 @@ export class Rapid7MCPServer {
   private async getReport(args: Record<string, unknown>): Promise<ToolResult> {
     const reportId = args.report_id as string;
     if (!reportId) return { content: [{ type: 'text', text: 'report_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/reports/${encodeURIComponent(reportId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/reports/${encodeURIComponent(reportId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get report: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -661,7 +657,7 @@ export class Rapid7MCPServer {
     url.searchParams.set('page', String(page));
     url.searchParams.set('size', String(size));
     if (args.type) url.searchParams.set('type', args.type as string);
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list asset groups: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -673,7 +669,7 @@ export class Rapid7MCPServer {
   private async getAssetGroup(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.asset_group_id as string;
     if (!id) return { content: [{ type: 'text', text: 'asset_group_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/asset_groups/${encodeURIComponent(id)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/asset_groups/${encodeURIComponent(id)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get asset group: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -689,7 +685,7 @@ export class Rapid7MCPServer {
     url.searchParams.set('page', String(page));
     url.searchParams.set('size', String(size));
     if (args.type) url.searchParams.set('type', args.type as string);
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list tags: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -701,7 +697,7 @@ export class Rapid7MCPServer {
   private async getTag(args: Record<string, unknown>): Promise<ToolResult> {
     const tagId = args.tag_id as string;
     if (!tagId) return { content: [{ type: 'text', text: 'tag_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/tags/${encodeURIComponent(tagId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/tags/${encodeURIComponent(tagId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get tag: ${response.status} ${response.statusText}` }], isError: true };
     }

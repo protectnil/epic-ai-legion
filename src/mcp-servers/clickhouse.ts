@@ -20,6 +20,7 @@
 //   max_concurrent_queries setting (default: 100).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClickHouseConfig {
   host: string;
@@ -35,13 +36,14 @@ interface ClickHouseConfig {
   baseUrl?: string;
 }
 
-export class ClickHouseMCPServer {
+export class ClickHouseMCPServer extends MCPAdapterBase {
   private readonly user: string;
   private readonly password: string;
   private readonly database: string;
   private readonly baseUrl: string;
 
   constructor(config: ClickHouseConfig) {
+    super();
     this.user = config.user;
     this.password = config.password;
     this.database = config.database ?? 'default';
@@ -83,12 +85,6 @@ export class ClickHouseMCPServer {
       },
       body: query,
     });
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async jsonQuery(query: string, database?: string): Promise<ToolResult> {
@@ -662,7 +658,7 @@ export class ClickHouseMCPServer {
 
   private async ping(): Promise<ToolResult> {
     const url = `${this.baseUrl}/ping`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         'X-ClickHouse-User': this.user,
         'X-ClickHouse-Key': this.password,

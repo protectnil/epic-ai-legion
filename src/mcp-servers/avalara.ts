@@ -28,6 +28,7 @@
 // Rate limits: Not published. Enterprise plans have dedicated limits; contact Avalara support.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AvalaraConfig {
   accountId: string;    // Avalara account number (numeric string)
@@ -35,11 +36,12 @@ interface AvalaraConfig {
   baseUrl?: string;     // default: https://rest.avatax.com; pass https://sandbox-rest.avatax.com for sandbox
 }
 
-export class AvalaraMCPServer {
+export class AvalaraMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: AvalaraConfig) {
+    super();
     this.authHeader = 'Basic ' + Buffer.from(`${config.accountId}:${config.licenseKey}`).toString('base64');
     this.baseUrl = config.baseUrl ?? 'https://rest.avatax.com';
   }
@@ -487,15 +489,8 @@ export class AvalaraMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     if (!response.ok) {
       let errText: string;
       try {

@@ -15,6 +15,7 @@
 // Rate limits: Plan-dependent; Developer plan or greater required for most endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AutoDealerDataConfig {
   apiID: string;
@@ -22,7 +23,7 @@ interface AutoDealerDataConfig {
   baseUrl?: string;
 }
 
-export class AutoDealerDataMCPServer {
+export class AutoDealerDataMCPServer extends MCPAdapterBase {
   private readonly apiID: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
@@ -31,6 +32,7 @@ export class AutoDealerDataMCPServer {
   private jwtExpiry: number = 0;
 
   constructor(config: AutoDealerDataConfig) {
+    super();
     this.apiID   = config.apiID;
     this.apiKey  = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.autodealerdata.com';
@@ -561,7 +563,7 @@ export class AutoDealerDataMCPServer {
       return this.jwt;
     }
     const qs = new URLSearchParams({ apiID: this.apiID, apiKey: this.apiKey }).toString();
-    const response = await fetch(`${this.baseUrl}/getToken?${qs}`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}/getToken?${qs}`, {});
     if (!response.ok) {
       throw new Error(`JWT request failed: ${response.status} ${response.statusText}`);
     }
@@ -598,18 +600,11 @@ export class AutoDealerDataMCPServer {
     return out;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const jwt = await this.getOrRefreshJWT();
     const allParams = { jwt, ...params };
     const qs = new URLSearchParams(allParams).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {});
     if (!response.ok) {
       const body = await response.text();
       throw new Error(`API error ${response.status}: ${body.slice(0, 500)}`);

@@ -18,6 +18,7 @@
 // Rate limits: Not formally documented; recommended to implement exponential backoff on 429 responses
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PrismaCloudConfig {
   username: string;
@@ -25,7 +26,7 @@ interface PrismaCloudConfig {
   baseUrl?: string;
 }
 
-export class PrismaCloudMCPServer {
+export class PrismaCloudMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly username: string;
   private readonly password: string;
@@ -33,6 +34,7 @@ export class PrismaCloudMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: PrismaCloudConfig) {
+    super();
     this.baseUrl = (config.baseUrl ?? 'https://api.prismacloud.io').replace(/\/$/, '');
     this.username = config.username;
     this.password = config.password;
@@ -403,7 +405,7 @@ export class PrismaCloudMCPServer {
     if (this.authToken && this.tokenExpiry > now) {
       return this.authToken;
     }
-    const response = await fetch(`${this.baseUrl}/login`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: this.username, password: this.password }),
@@ -431,16 +433,9 @@ export class PrismaCloudMCPServer {
     return { 'x-redlock-auth': token, 'Content-Type': 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doFetch(url: string, options?: RequestInit): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(url, { headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers, ...options });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       return {

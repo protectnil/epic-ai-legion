@@ -19,17 +19,19 @@
 // Rate limits: Not publicly documented; enforced server-side with standard 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LinearConfig {
   /** Personal API key from Linear Settings → API → Personal API keys. */
   apiKey: string;
 }
 
-export class LinearMCPServer {
+export class LinearMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly graphqlUrl = 'https://api.linear.app/graphql';
 
   constructor(config: LinearConfig) {
+    super();
     this.apiKey = config.apiKey;
   }
 
@@ -325,16 +327,9 @@ export class LinearMCPServer {
 
   // ---------------------------------------------------------------------------
   // Private helpers
-  // ---------------------------------------------------------------------------
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async gql(query: string, variables: Record<string, unknown> = {}): Promise<{ data: unknown; errors?: unknown[] }> {
-    const response = await fetch(this.graphqlUrl, {
+    const response = await this.fetchWithRetry(this.graphqlUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.apiKey}`,

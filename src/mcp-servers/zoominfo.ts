@@ -29,6 +29,7 @@
 
 import { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ZoomInfoConfig {
   username: string;
@@ -37,7 +38,7 @@ interface ZoomInfoConfig {
   baseUrl?: string;
 }
 
-export class ZoomInfoMCPServer {
+export class ZoomInfoMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
@@ -45,6 +46,7 @@ export class ZoomInfoMCPServer {
   private jwtExpiresAt: number = 0;
 
   constructor(config: ZoomInfoConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl ?? 'https://api.zoominfo.com';
@@ -80,7 +82,7 @@ export class ZoomInfoMCPServer {
       return this.jwtToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/authenticate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/authenticate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: this.username, password: this.password }),
@@ -113,14 +115,6 @@ export class ZoomInfoMCPServer {
       Authorization: `Bearer ${jwt}`,
       'Content-Type': 'application/json',
     };
-  }
-
-  /** Truncate large JSON responses to 10 KB to prevent context window bloat. */
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -446,7 +440,7 @@ export class ZoomInfoMCPServer {
     body.rpp = (args.rpp as number) ?? 25;
     body.page = (args.page as number) ?? 1;
 
-    const response = await fetch(`${this.baseUrl}/search/contact`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/search/contact`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -472,7 +466,7 @@ export class ZoomInfoMCPServer {
     const body: Record<string, unknown> = { matchPersonInput: args.matchPersonInput };
     if (args.outputFields) body.outputFields = args.outputFields;
 
-    const response = await fetch(`${this.baseUrl}/enrich/contact`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/enrich/contact`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -503,7 +497,7 @@ export class ZoomInfoMCPServer {
     body.rpp = (args.rpp as number) ?? 25;
     body.page = (args.page as number) ?? 1;
 
-    const response = await fetch(`${this.baseUrl}/search/company`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/search/company`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -529,7 +523,7 @@ export class ZoomInfoMCPServer {
     const body: Record<string, unknown> = { matchCompanyInput: args.matchCompanyInput };
     if (args.outputFields) body.outputFields = args.outputFields;
 
-    const response = await fetch(`${this.baseUrl}/enrich/company`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/enrich/company`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -559,7 +553,7 @@ export class ZoomInfoMCPServer {
     body.rpp = (args.rpp as number) ?? 25;
     body.page = (args.page as number) ?? 1;
 
-    const response = await fetch(`${this.baseUrl}/search/intent`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/search/intent`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -586,7 +580,7 @@ export class ZoomInfoMCPServer {
       return { content: [{ type: 'text', text: 'companyName or companyWebsite is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/enrich/intent`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/enrich/intent`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -612,7 +606,7 @@ export class ZoomInfoMCPServer {
     body.rpp = (args.rpp as number) ?? 25;
     body.page = (args.page as number) ?? 1;
 
-    const response = await fetch(`${this.baseUrl}/search/scoop`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/search/scoop`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -642,7 +636,7 @@ export class ZoomInfoMCPServer {
     body.rpp = (args.rpp as number) ?? 25;
     body.page = (args.page as number) ?? 1;
 
-    const response = await fetch(`${this.baseUrl}/search/news`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/search/news`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -668,7 +662,7 @@ export class ZoomInfoMCPServer {
     const body: Record<string, unknown> = { matchCompanyInput: args.matchCompanyInput };
     if (args.outputFields) body.outputFields = args.outputFields;
 
-    const response = await fetch(`${this.baseUrl}/enrich/technographics`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/enrich/technographics`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -708,7 +702,7 @@ export class ZoomInfoMCPServer {
       fetchOptions.body = JSON.stringify({ emailAddress });
     }
 
-    const response = await fetch(url, fetchOptions);
+    const response = await this.fetchWithRetry(url, fetchOptions);
 
     if (!response.ok) {
       return {

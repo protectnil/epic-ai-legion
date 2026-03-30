@@ -21,6 +21,7 @@
 //   Per-endpoint sub-limits apply (e.g., Create Ticket: 50/min Starter, 80/min Growth, 140/min Pro).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FreshserviceConfig {
   apiKey: string;
@@ -28,11 +29,12 @@ interface FreshserviceConfig {
   domain: string;
 }
 
-export class FreshserviceMCPServer {
+export class FreshserviceMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: FreshserviceConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = `https://${config.domain}/api/v2`;
   }
@@ -619,7 +621,7 @@ export class FreshserviceMCPServer {
   }
 
   private async fsRequest(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

@@ -17,6 +17,7 @@
 // Rate limits: Dynamic per endpoint. Roughly 100-500 req/30s depending on tier. HTTP 429 + Retry-After on breach.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SpotifyConfig {
   /** OAuth2 Bearer access token */
@@ -25,13 +26,13 @@ interface SpotifyConfig {
   baseUrl?: string;
 }
 
-const TRUNCATE = 10 * 1024;
 
-export class SpotifyMCPServer {
+export class SpotifyMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SpotifyConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://api.spotify.com/v1';
   }
@@ -496,13 +497,6 @@ export class SpotifyMCPServer {
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > TRUNCATE
-      ? text.slice(0, TRUNCATE) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private headers(): Record<string, string> {
     return {
       'Authorization': `Bearer ${this.accessToken}`,
@@ -517,7 +511,7 @@ export class SpotifyMCPServer {
     }
     const qsStr = qs.toString();
     const url = `${this.baseUrl}${path}${qsStr ? '?' + qsStr : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

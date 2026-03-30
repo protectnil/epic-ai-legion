@@ -29,6 +29,7 @@
 // Rate limits: Not publicly documented; enforce retry-after headers. API version: 20240415.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LaunchDarklyConfig {
   /**
@@ -44,11 +45,12 @@ interface LaunchDarklyConfig {
   baseUrl?: string;
 }
 
-export class LaunchDarklyMCPServer {
+export class LaunchDarklyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: LaunchDarklyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://app.launchdarkly.com').replace(/\/$/, '');
   }
@@ -401,16 +403,10 @@ export class LaunchDarklyMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const qs = params?.toString();
     const url = `${this.baseUrl}${path}${qs ? `?${qs}` : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.buildHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -420,7 +416,7 @@ export class LaunchDarklyMCPServer {
   }
 
   private async post(path: string, body: unknown, contentType = 'application/json'): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.buildHeaders(contentType),
       body: JSON.stringify(body),
@@ -434,7 +430,7 @@ export class LaunchDarklyMCPServer {
   }
 
   private async patch(path: string, body: unknown, contentType = 'application/json'): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.buildHeaders(contentType),
       body: JSON.stringify(body),
@@ -448,7 +444,7 @@ export class LaunchDarklyMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.buildHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

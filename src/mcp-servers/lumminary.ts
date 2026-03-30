@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented — contact Lumminary for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LumminaryConfig {
   apiKey?: string;
@@ -23,12 +24,13 @@ interface LumminaryConfig {
   baseUrl?: string;
 }
 
-export class LumminaryMCPServer {
+export class LumminaryMCPServer extends MCPAdapterBase {
   private apiKey: string;
   private bearerToken: string;
   private readonly baseUrl: string;
 
   constructor(config: LumminaryConfig) {
+    super();
     this.apiKey = config.apiKey ?? '';
     this.bearerToken = config.bearerToken ?? '';
     this.baseUrl = config.baseUrl ?? 'https://api.lumminary.com/v1';
@@ -384,13 +386,6 @@ export class LumminaryMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(): Record<string, string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.bearerToken) {
@@ -408,7 +403,7 @@ export class LumminaryMCPServer {
     }
     const query = qs.toString() ? `?${qs.toString()}` : '';
     const url = `${this.baseUrl}${path}${query}`;
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -437,7 +432,7 @@ export class LumminaryMCPServer {
         body: JSON.stringify(body),
       };
     }
-    const response = await fetch(url, fetchInit);
+    const response = await this.fetchWithRetry(url, fetchInit);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

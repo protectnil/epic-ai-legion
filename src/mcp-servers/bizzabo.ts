@@ -19,6 +19,7 @@
 //              Contact Bizzabo support for enterprise rate limit allocations.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BizzaboConfig {
   apiToken?: string;
@@ -28,7 +29,7 @@ interface BizzaboConfig {
   baseUrl?: string;
 }
 
-export class BizzaboMCPServer {
+export class BizzaboMCPServer extends MCPAdapterBase {
   private readonly apiToken: string | undefined;
   private readonly clientId: string | undefined;
   private readonly clientSecret: string | undefined;
@@ -39,6 +40,7 @@ export class BizzaboMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: BizzaboConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -504,7 +506,7 @@ export class BizzaboMCPServer {
     };
     if (this.accountId) bodyObj['account_id'] = Number(this.accountId);
 
-    const response = await fetch(tokenUrl, {
+    const response = await this.fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bodyObj),
@@ -522,19 +524,12 @@ export class BizzaboMCPServer {
 
   // ── HTTP helpers ──────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async bzGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params && Object.keys(params).length > 0
       ? '?' + new URLSearchParams(params).toString()
       : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -552,7 +547,7 @@ export class BizzaboMCPServer {
 
   private async bzPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -571,7 +566,7 @@ export class BizzaboMCPServer {
 
   private async bzPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,

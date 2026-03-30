@@ -15,17 +15,19 @@
 //   product details by ID, and API usage stats.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DropXConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class DropXMCPServer {
+export class DropXMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: DropXConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'http://dropx.io/api/v1';
   }
@@ -59,7 +61,7 @@ export class DropXMCPServer {
     const sep = path.includes('?') ? '&' : '?';
     const url = `${this.baseUrl}${path}${sep}api_key=${encodeURIComponent(this.apiKey)}`;
     try {
-      const resp = await fetch(url, {
+      const resp = await this.fetchWithRetry(url, {
         method,
         headers: { 'Accept': 'application/json' },
       });

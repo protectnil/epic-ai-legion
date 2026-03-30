@@ -32,6 +32,7 @@
 // Rate limits: Not publicly documented; contact Monte Carlo support for limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MonteCarloConfig {
   mcdId: string;
@@ -40,12 +41,13 @@ interface MonteCarloConfig {
   baseUrl?: string;
 }
 
-export class MonteCarloMCPServer {
+export class MonteCarloMCPServer extends MCPAdapterBase {
   private readonly mcdId: string;
   private readonly mcdToken: string;
   private readonly baseUrl: string;
 
   constructor(config: MonteCarloConfig) {
+    super();
     this.mcdId = config.mcdId;
     this.mcdToken = config.mcdToken;
     this.baseUrl = config.baseUrl ?? 'https://api.getmontecarlo.com/graphql';
@@ -71,12 +73,6 @@ export class MonteCarloMCPServer {
       description: 'Monte Carlo data observability: monitor data quality, manage incidents, query table lineage and field health, and configure SQL-rule monitors.',
       author: 'protectnil' as const,
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async graphql(query: string, variables?: Record<string, unknown>): Promise<Response> {

@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented; federal open data API
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GSAConfig {
   apiToken?: string;
@@ -20,10 +21,11 @@ interface GSAConfig {
   baseUrl?: string;
 }
 
-export class GSAMCPServer {
+export class GSAMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: GSAConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://discovery.gsa.gov';
   }
 
@@ -153,13 +155,6 @@ export class GSAMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, unknown> = {}): string {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -170,7 +165,7 @@ export class GSAMCPServer {
   }
 
   private async get(path: string, params: Record<string, unknown> = {}): Promise<ToolResult> {
-    const response = await fetch(this.buildUrl(path, params), {
+    const response = await this.fetchWithRetry(this.buildUrl(path, params), {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) {

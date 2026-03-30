@@ -21,17 +21,19 @@
 // Rate limits: 100 req/min per endpoint; global 2,000 req/hour per IP; Mira API (responses + MCP) 60 req/min shared
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MeltwaterConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class MeltwaterMCPServer {
+export class MeltwaterMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MeltwaterConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.meltwater.com/v3';
   }
@@ -389,16 +391,9 @@ export class MeltwaterMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async mwGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -410,7 +405,7 @@ export class MeltwaterMCPServer {
   }
 
   private async mwPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -423,7 +418,7 @@ export class MeltwaterMCPServer {
   }
 
   private async mwDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

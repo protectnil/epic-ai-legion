@@ -40,6 +40,7 @@
 // Rate limits: Not formally published; JSON:API endpoints use standard HTTP rate limit headers
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TerraformRegistryConfig {
   /** HCP Terraform / Terraform Enterprise API token */
@@ -50,13 +51,14 @@ interface TerraformRegistryConfig {
   cloudBaseUrl?: string;
 }
 
-export class TerraformRegistryMCPServer {
+export class TerraformRegistryMCPServer extends MCPAdapterBase {
   private readonly cloudBaseUrl: string;
   private readonly publicRegistryBaseUrl = 'https://registry.terraform.io/v1';
   private readonly token: string;
   private readonly organization: string;
 
   constructor(config: TerraformRegistryConfig) {
+    super();
     this.token = config.token;
     this.organization = config.organization;
     this.cloudBaseUrl = (config.cloudBaseUrl ?? 'https://app.terraform.io/api/v2').replace(/\/$/, '');
@@ -489,22 +491,15 @@ export class TerraformRegistryMCPServer {
     return { Accept: 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async cloudGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.cloudBaseUrl}${path}`, { headers: this.cloudHeaders });
+    const response = await this.fetchWithRetry(`${this.cloudBaseUrl}${path}`, { headers: this.cloudHeaders });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
   }
 
   private async cloudPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.cloudBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.cloudBaseUrl}${path}`, {
       method: 'POST',
       headers: this.cloudHeaders,
       body: JSON.stringify(body),
@@ -515,7 +510,7 @@ export class TerraformRegistryMCPServer {
   }
 
   private async cloudPatch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.cloudBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.cloudBaseUrl}${path}`, {
       method: 'PATCH',
       headers: this.cloudHeaders,
       body: JSON.stringify(body),
@@ -526,7 +521,7 @@ export class TerraformRegistryMCPServer {
   }
 
   private async publicGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.publicRegistryBaseUrl}${path}`, { headers: this.publicHeaders });
+    const response = await this.fetchWithRetry(`${this.publicRegistryBaseUrl}${path}`, { headers: this.publicHeaders });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

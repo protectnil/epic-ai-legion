@@ -22,6 +22,7 @@
 // Rate limits: 5,000 req/hr per token. Some endpoints have lower limits (e.g. create_droplet).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DigitalOceanConfig {
   /** Personal access token from cloud.digitalocean.com/account/api/tokens */
@@ -30,11 +31,12 @@ interface DigitalOceanConfig {
   baseUrl?: string;
 }
 
-export class DigitalOceanMCPServer {
+export class DigitalOceanMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: DigitalOceanConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = (config.baseUrl || 'https://api.digitalocean.com/v2').replace(/\/$/, '');
   }
@@ -671,14 +673,9 @@ export class DigitalOceanMCPServer {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(path: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       ...options,
       headers: { ...this.headers, ...(options.headers as Record<string, string> || {}) },

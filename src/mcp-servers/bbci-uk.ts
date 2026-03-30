@@ -11,17 +11,19 @@
 // Note: Unofficial spec; some endpoints may require a BBC API key in production.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BbciConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class BbciUkMCPServer {
+export class BbciUkMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BbciConfig = {}) {
+    super();
     this.apiKey = config.apiKey || '';
     this.baseUrl = config.baseUrl || 'https://ibl.api.bbci.co.uk/ibl/v1';
   }
@@ -465,7 +467,7 @@ export class BbciUkMCPServer {
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (this.apiKey) headers['x-api-key'] = this.apiKey;
 
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
 
     if (!response.ok) {
       let detail = '';

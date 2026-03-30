@@ -21,6 +21,7 @@
 //   Public API: 600 requests/min per workspace token.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SegmentConfig {
   /** Write Key for the Segment source — required for all tracking calls (track, identify, group, page, screen, alias, batch). */
@@ -34,13 +35,14 @@ interface SegmentConfig {
   publicApiBaseUrl?: string;
 }
 
-export class SegmentMCPServer {
+export class SegmentMCPServer extends MCPAdapterBase {
   private readonly writeKey: string;
   private readonly publicApiToken: string | undefined;
   private readonly ingestionBaseUrl: string;
   private readonly publicApiBaseUrl: string;
 
   constructor(config: SegmentConfig) {
+    super();
     this.writeKey = config.writeKey;
     this.publicApiToken = config.publicApiToken;
     this.ingestionBaseUrl = config.ingestionBaseUrl ?? 'https://api.segment.io/v1';
@@ -586,14 +588,8 @@ export class SegmentMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async postIngestion(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.ingestionBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.ingestionBaseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: this.writeKeyAuthHeader,
@@ -652,7 +648,7 @@ export class SegmentMCPServer {
     if (guard) return guard;
 
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.publicApiBaseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.publicApiBaseUrl}${path}${qs}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${this.publicApiToken!}`,
@@ -691,7 +687,7 @@ export class SegmentMCPServer {
     const guard = this.requirePublicApiToken();
     if (guard) return guard;
 
-    const response = await fetch(`${this.publicApiBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.publicApiBaseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.publicApiToken!}`,
@@ -731,7 +727,7 @@ export class SegmentMCPServer {
     const guard = this.requirePublicApiToken();
     if (guard) return guard;
 
-    const response = await fetch(`${this.publicApiBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.publicApiBaseUrl}${path}`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${this.publicApiToken!}`,
@@ -771,7 +767,7 @@ export class SegmentMCPServer {
     const guard = this.requirePublicApiToken();
     if (guard) return guard;
 
-    const response = await fetch(`${this.publicApiBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.publicApiBaseUrl}${path}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${this.publicApiToken!}`,

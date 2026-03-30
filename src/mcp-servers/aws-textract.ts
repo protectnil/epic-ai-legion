@@ -26,6 +26,7 @@
 
 import { createHmac, createHash } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AWSTextractConfig {
   accessKeyId: string;
@@ -35,7 +36,7 @@ interface AWSTextractConfig {
   baseUrl?: string;
 }
 
-export class AWSTextractMCPServer {
+export class AWSTextractMCPServer extends MCPAdapterBase {
   private readonly accessKeyId: string;
   private readonly secretAccessKey: string;
   private readonly region: string;
@@ -43,6 +44,7 @@ export class AWSTextractMCPServer {
   private readonly baseUrl: string;
 
   constructor(config: AWSTextractConfig) {
+    super();
     this.accessKeyId = config.accessKeyId;
     this.secretAccessKey = config.secretAccessKey;
     this.region = config.region || 'us-east-1';
@@ -712,7 +714,7 @@ export class AWSTextractMCPServer {
     const body = JSON.stringify(payload);
     const authHeaders = this.buildAuthHeaders(operation, body);
 
-    const response = await fetch(this.baseUrl, {
+    const response = await this.fetchWithRetry(this.baseUrl, {
       method: 'POST',
       headers: authHeaders,
       body,

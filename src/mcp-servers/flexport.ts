@@ -17,6 +17,7 @@
 //       update_purchase_order is POST /v3/purchase_orders/{id} (full-replace), not PATCH.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FlexportConfig {
   clientId: string;
@@ -24,7 +25,7 @@ interface FlexportConfig {
   baseUrl?: string;
 }
 
-export class FlexportMCPServer {
+export class FlexportMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -32,6 +33,7 @@ export class FlexportMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: FlexportConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://api.flexport.com';
@@ -458,7 +460,7 @@ export class FlexportMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/oauth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -482,16 +484,10 @@ export class FlexportMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -508,7 +504,7 @@ export class FlexportMCPServer {
 
   private async apiPost(path: string, body: Record<string, unknown>, version = '2'): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

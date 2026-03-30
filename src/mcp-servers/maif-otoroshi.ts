@@ -13,6 +13,7 @@
 // Rate limits: Not published; enforced per-deployment.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OtoroshiConfig {
   baseUrl: string;      // e.g. http://otoroshi-api.oto.tools
@@ -20,12 +21,13 @@ interface OtoroshiConfig {
   clientSecret: string; // Otoroshi-Client-Secret header value
 }
 
-export class MaifOtoroshiMCPServer {
+export class MaifOtoroshiMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
 
   constructor(config: OtoroshiConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -369,7 +371,7 @@ export class MaifOtoroshiMCPServer {
   }
 
   private async otoRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       ...options,
       headers: this.buildHeaders(),
     });

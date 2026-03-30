@@ -13,6 +13,7 @@
 // Rate limits: Not documented; self-hosted — depends on deployment
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MesheryConfig {
   apiToken: string;
@@ -20,11 +21,12 @@ interface MesheryConfig {
   baseUrl?: string;
 }
 
-export class MesheryMCPServer {
+export class MesheryMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: MesheryConfig) {
+    super();
     this.token = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'http://meshery.local';
   }
@@ -311,13 +313,6 @@ export class MesheryMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private headers(): Record<string, string> {
     return {
       'Cookie': `token=${this.token}`,
@@ -335,7 +330,7 @@ export class MesheryMCPServer {
   }
 
   private async get(path: string, params: Record<string, unknown> = {}): Promise<ToolResult> {
-    const response = await fetch(this.buildUrl(path, params), { headers: this.headers() });
+    const response = await this.fetchWithRetry(this.buildUrl(path, params), { headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -344,7 +339,7 @@ export class MesheryMCPServer {
   }
 
   private async post(path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers(),
       body: body ? JSON.stringify(body) : undefined,
@@ -357,7 +352,7 @@ export class MesheryMCPServer {
   }
 
   private async delete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

@@ -32,6 +32,7 @@
 // Rate limits: Standard Atlassian Cloud rate limiting applies; no hard limit documented publicly
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ConfluenceConfig {
   instance: string;
@@ -40,12 +41,13 @@ interface ConfluenceConfig {
   baseUrl?: string;
 }
 
-export class ConfluenceMCPServer {
+export class ConfluenceMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly baseUrlV1: string;
   private readonly authHeader: string;
 
   constructor(config: ConfluenceConfig) {
+    super();
     // Support explicit baseUrl override for Data Center or custom domains
     const rootBase = config.baseUrl
       ? config.baseUrl.replace(/\/$/, '').replace(/\/wiki\/api\/v2$/, '').replace(/\/wiki\/rest\/api$/, '')
@@ -492,14 +494,8 @@ export class ConfluenceMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     let data: unknown;
     try {
       data = await response.json();
@@ -591,7 +587,7 @@ export class ConfluenceMCPServer {
     if (!pageId) {
       return { content: [{ type: 'text', text: 'page_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/pages/${encodeURIComponent(pageId)}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/pages/${encodeURIComponent(pageId)}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };
@@ -675,7 +671,7 @@ export class ConfluenceMCPServer {
     }
     // Confluence REST API v2 has NO DELETE endpoint for labels — the v2 label API is read-only.
     // Must use v1: DELETE /wiki/rest/api/content/{id}/label/{label}
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrlV1}/content/${encodeURIComponent(pageId)}/label/${encodeURIComponent(label)}`,
       { method: 'DELETE', headers: this.headers },
     );

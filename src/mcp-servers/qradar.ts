@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; determined by deployment configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface QRadarConfig {
   /** QRadar hostname or IP (without protocol). Example: qradar.example.com */
@@ -31,12 +32,13 @@ interface QRadarConfig {
 const POLL_INTERVAL_MS = 2_000;
 const POLL_TIMEOUT_MS = 120_000;
 
-export class QRadarMCPServer {
+export class QRadarMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiVersion: string;
   private readonly headers: Record<string, string>;
 
   constructor(config: QRadarConfig) {
+    super();
     this.baseUrl = `https://${config.host}/api`;
     this.apiVersion = config.apiVersion ?? '20.0';
     this.headers = {

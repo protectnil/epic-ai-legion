@@ -32,17 +32,19 @@
 // Rate limits: Not publicly documented; respect 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CircleCIConfig {
   circleToken: string;
   baseUrl?: string;
 }
 
-export class CircleCIMCPServer {
+export class CircleCIMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: CircleCIConfig) {
+    super();
     this.token = config.circleToken;
     this.baseUrl = config.baseUrl || 'https://circleci.com/api/v2';
   }
@@ -370,12 +372,6 @@ export class CircleCIMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
@@ -425,7 +421,7 @@ export class CircleCIMCPServer {
   }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
     return {
       content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
@@ -434,7 +430,7 @@ export class CircleCIMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),

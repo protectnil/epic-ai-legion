@@ -12,17 +12,19 @@
 // Rate limits: Not publicly documented; CloudRF enforces per-account limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CloudRFConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CloudRFMCPServer {
+export class CloudRFMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CloudRFConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.cloudrf.com';
   }
@@ -261,7 +263,7 @@ export class CloudRFMCPServer {
 
   private async cloudRFRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

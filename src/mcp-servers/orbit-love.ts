@@ -12,6 +12,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OrbitLoveConfig {
   apiKey: string;
@@ -19,12 +20,13 @@ interface OrbitLoveConfig {
   baseUrl?: string;
 }
 
-export class OrbitLoveMCPServer {
+export class OrbitLoveMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly workspaceSlug: string;
   private readonly baseUrl: string;
 
   constructor(config: OrbitLoveConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.workspaceSlug = config.workspaceSlug;
     this.baseUrl = config.baseUrl || 'https://app.orbit.love/api/v1';
@@ -720,7 +722,7 @@ export class OrbitLoveMCPServer {
       Accept: 'application/json',
     };
 
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,

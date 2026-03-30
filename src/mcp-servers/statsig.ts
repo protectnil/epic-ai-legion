@@ -17,6 +17,7 @@
 // Rate limits: Console API mutation requests ~100/10s and ~900/15min per project (GET requests unthrottled)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StatsigConfig {
   apiKey: string;
@@ -25,13 +26,14 @@ interface StatsigConfig {
   consoleBaseUrl?: string;
 }
 
-export class StatsigMCPServer {
+export class StatsigMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly consoleApiKey: string;
   private readonly baseUrl: string;
   private readonly consoleBaseUrl: string;
 
   constructor(config: StatsigConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.consoleApiKey = config.consoleApiKey || config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.statsig.com/v1';
@@ -434,13 +436,6 @@ export class StatsigMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUser(args: Record<string, unknown>): Record<string, unknown> {
     const user: Record<string, unknown> = { userID: args.user_id as string };
     if (args.user_email) user.email = args.user_email;
@@ -450,7 +445,7 @@ export class StatsigMCPServer {
   }
 
   private async sdkPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.sdkHeaders(),
       body: JSON.stringify(body),
@@ -465,7 +460,7 @@ export class StatsigMCPServer {
   private async consoleGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.consoleBaseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.consoleHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.consoleHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -474,7 +469,7 @@ export class StatsigMCPServer {
   }
 
   private async consolePost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.consoleBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.consoleBaseUrl}${path}`, {
       method: 'POST',
       headers: this.consoleHeaders(),
       body: JSON.stringify(body),
@@ -487,7 +482,7 @@ export class StatsigMCPServer {
   }
 
   private async consolePatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.consoleBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.consoleBaseUrl}${path}`, {
       method: 'PATCH',
       headers: this.consoleHeaders(),
       body: JSON.stringify(body),
@@ -500,7 +495,7 @@ export class StatsigMCPServer {
   }
 
   private async consoleDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.consoleBaseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.consoleBaseUrl}${path}`, {
       method: 'DELETE',
       headers: this.consoleHeaders(),
     });

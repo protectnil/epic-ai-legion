@@ -39,17 +39,19 @@
 // Rate limits: Not publicly documented; Brevo enforces per-plan limits; treat as ~100 req/min
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BrevoConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class BrevoMCPServer {
+export class BrevoMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BrevoConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.brevo.com/v3';
   }
@@ -497,7 +499,7 @@ export class BrevoMCPServer {
 
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -508,7 +510,7 @@ export class BrevoMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -521,7 +523,7 @@ export class BrevoMCPServer {
   }
 
   private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -534,7 +536,7 @@ export class BrevoMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -542,13 +544,6 @@ export class BrevoMCPServer {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
     return { content: [{ type: 'text', text: JSON.stringify({ deleted: true }) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   // ── Tool implementations ──────────────────────────────────────────────────

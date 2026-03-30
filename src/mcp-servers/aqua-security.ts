@@ -29,6 +29,7 @@
 // Rate limits: Not publicly documented. Token is valid 240 minutes; adapter refreshes 10 min before expiry.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AquaSecurityConfig {
   aquaKey: string;
@@ -36,7 +37,7 @@ interface AquaSecurityConfig {
   baseUrl?: string;
 }
 
-export class AquaSecurityMCPServer {
+export class AquaSecurityMCPServer extends MCPAdapterBase {
   private readonly aquaKey: string;
   private readonly aquaSecret: string;
   private readonly baseUrl: string;
@@ -44,6 +45,7 @@ export class AquaSecurityMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: AquaSecurityConfig) {
+    super();
     this.aquaKey = config.aquaKey;
     this.aquaSecret = config.aquaSecret;
     this.baseUrl = config.baseUrl || 'https://api.cloudsploit.com';
@@ -54,7 +56,7 @@ export class AquaSecurityMCPServer {
       return this.cachedToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/v2/tokens`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/tokens`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -85,7 +87,7 @@ export class AquaSecurityMCPServer {
   private async request(path: string, method: string = 'GET', body?: unknown): Promise<ToolResult> {
     const token = await this.getToken();
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${token}`,

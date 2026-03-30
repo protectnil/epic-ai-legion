@@ -10,17 +10,19 @@
 // Endpoints: Routing, Matrix, Geocoding, Isochrone, Map Matching, Route Optimization, Cluster
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GraphHopperConfig {
   apiKey: string;
   baseUrl?: string; // default: https://graphhopper.com/api/1
 }
 
-export class GraphHopperMCPServer {
+export class GraphHopperMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GraphHopperConfig) {
+    super();
     this.apiKey  = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://graphhopper.com/api/1';
   }
@@ -407,15 +409,6 @@ export class GraphHopperMCPServer {
     }
   }
 
-  // ── Private helpers ──────────────────────────────────────────────────────────
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string | string[]> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams();
     qs.set('key', this.apiKey);
@@ -426,7 +419,7 @@ export class GraphHopperMCPServer {
         qs.set(k, v);
       }
     }
-    const response = await fetch(`${this.baseUrl}${path}?${qs.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs.toString()}`, {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {
@@ -440,7 +433,7 @@ export class GraphHopperMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}?key=${encodeURIComponent(this.apiKey)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?key=${encodeURIComponent(this.apiKey)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

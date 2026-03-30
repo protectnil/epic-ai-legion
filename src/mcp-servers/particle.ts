@@ -15,17 +15,19 @@
 // Rate limits: 10 req/sec per access token for device-specific calls; burst to 150 req/min
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ParticleConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class ParticleMCPServer {
+export class ParticleMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ParticleConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.particle.io/v1';
   }
@@ -403,17 +405,10 @@ export class ParticleMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.jsonHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.jsonHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -422,7 +417,7 @@ export class ParticleMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: new URLSearchParams(body).toString(),
@@ -435,7 +430,7 @@ export class ParticleMCPServer {
   }
 
   private async apiPostJson(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.jsonHeaders,
       body: JSON.stringify(body),
@@ -448,7 +443,7 @@ export class ParticleMCPServer {
   }
 
   private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.jsonHeaders,
       body: JSON.stringify(body),
@@ -461,7 +456,7 @@ export class ParticleMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.jsonHeaders,
     });

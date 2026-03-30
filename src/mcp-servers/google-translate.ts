@@ -19,6 +19,7 @@
 // Rate limits: 600 requests/min per project (translateText); batch operations are async and quota-based
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleTranslateConfig {
   accessToken: string;
@@ -26,12 +27,13 @@ interface GoogleTranslateConfig {
   baseUrl?: string;
 }
 
-export class GoogleTranslateMCPServer {
+export class GoogleTranslateMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly projectId: string;
   private readonly baseUrl: string;
 
   constructor(config: GoogleTranslateConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.projectId = config.projectId;
     this.baseUrl = config.baseUrl || 'https://translate.googleapis.com/v3';
@@ -356,12 +358,6 @@ export class GoogleTranslateMCPServer {
     return `projects/${this.projectId}/locations/${location}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async translateText(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.contents || !args.target_language_code) {
@@ -387,7 +383,7 @@ export class GoogleTranslateMCPServer {
       };
     }
 
-    const response = await fetch(`${this.baseUrl}/${parent}:translateText`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${parent}:translateText`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -415,7 +411,7 @@ export class GoogleTranslateMCPServer {
       mimeType: (args.mime_type as string) || 'text/plain',
     };
 
-    const response = await fetch(`${this.baseUrl}/${parent}:detectLanguage`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${parent}:detectLanguage`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -440,7 +436,7 @@ export class GoogleTranslateMCPServer {
     const qs = params.toString();
     const url = `${this.baseUrl}/${parent}/supportedLanguages${qs ? '?' + qs : ''}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -474,7 +470,7 @@ export class GoogleTranslateMCPServer {
       },
     };
 
-    const response = await fetch(`${this.baseUrl}/${parent}:batchTranslateText`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${parent}:batchTranslateText`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -508,7 +504,7 @@ export class GoogleTranslateMCPServer {
       },
     };
 
-    const response = await fetch(`${this.baseUrl}/${parent}/glossaries`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${parent}/glossaries`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -532,7 +528,7 @@ export class GoogleTranslateMCPServer {
     const parent = this.parentPath(location);
     const url = `${this.baseUrl}/${parent}/glossaries/${encodeURIComponent(args.glossary_id as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -553,7 +549,7 @@ export class GoogleTranslateMCPServer {
     if (args.filter) params.set('filter', args.filter as string);
 
     const url = `${this.baseUrl}/${parent}/glossaries?${params.toString()}`;
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -573,7 +569,7 @@ export class GoogleTranslateMCPServer {
     const parent = this.parentPath(location);
     const url = `${this.baseUrl}/${parent}/glossaries/${encodeURIComponent(args.glossary_id as string)}`;
 
-    const response = await fetch(url, { method: 'DELETE', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.authHeaders });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
@@ -597,7 +593,7 @@ export class GoogleTranslateMCPServer {
     const body: Record<string, unknown> = { contents };
     if (args.source_language_code) body.sourceLanguageCode = args.source_language_code;
 
-    const response = await fetch(`${this.baseUrl}/${parent}:romanizeText`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${parent}:romanizeText`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -627,7 +623,7 @@ export class GoogleTranslateMCPServer {
       body.inputConfig = { gcsSource: { inputUri: args.input_gcs_uri } };
     }
 
-    const response = await fetch(`${this.baseUrl}/${glossaryName}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${glossaryName}`, {
       method: 'PATCH',
       headers: this.authHeaders,
       body: JSON.stringify(body),

@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; standard OAuth2 token expiry applies (3600s).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EnodeConfig {
   /** OAuth2 client ID from Enode developer portal */
@@ -27,7 +28,7 @@ interface EnodeConfig {
   tokenUrl?: string;
 }
 
-export class EnodeMCPServer {
+export class EnodeMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -36,6 +37,7 @@ export class EnodeMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: EnodeConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://enode-api.production.enode.io';
@@ -591,7 +593,7 @@ export class EnodeMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -629,7 +631,7 @@ export class EnodeMCPServer {
     if (body !== undefined) {
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

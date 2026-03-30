@@ -16,6 +16,7 @@
 
 import { createHmac, createHash } from 'crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CombellConfig {
   /**
@@ -30,12 +31,13 @@ interface CombellConfig {
   baseUrl?: string;
 }
 
-export class CombellMCPServer {
+export class CombellMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly apiSecret: string;
   private readonly baseUrl: string;
 
   constructor(config: CombellConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.apiSecret = config.apiSecret;
     this.baseUrl = config.baseUrl || 'https://api.combell.com/v2';
@@ -349,16 +351,9 @@ export class CombellMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
     const headers = this.buildAuthHeader('get', `/v2${path}`);
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -372,7 +367,7 @@ export class CombellMCPServer {
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
     const bodyStr = JSON.stringify(body);
     const headers = this.buildAuthHeader('post', `/v2${path}`, bodyStr);
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: bodyStr,
@@ -403,7 +398,7 @@ export class CombellMCPServer {
   private async apiPut(path: string, body: unknown): Promise<ToolResult> {
     const bodyStr = JSON.stringify(body);
     const headers = this.buildAuthHeader('put', `/v2${path}`, bodyStr);
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers,
       body: bodyStr,
@@ -420,7 +415,7 @@ export class CombellMCPServer {
 
   private async apiDelete(path: string): Promise<ToolResult> {
     const headers = this.buildAuthHeader('delete', `/v2${path}`);
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

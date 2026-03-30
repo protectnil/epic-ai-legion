@@ -17,17 +17,19 @@
 // Rate limits: Free tier: 25 requests/day. Premium: varies by plan (up to unlimited/min)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AlphaVantageConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class AlphaVantageMCPServer {
+export class AlphaVantageMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: AlphaVantageConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://www.alphavantage.co/query';
   }
@@ -481,16 +483,9 @@ export class AlphaVantageMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async query(params: Record<string, string>): Promise<ToolResult> {
     const qs = new URLSearchParams({ ...params, apikey: this.apiKey }).toString();
-    const response = await fetch(`${this.baseUrl}?${qs}`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}?${qs}`, {});
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],

@@ -21,6 +21,7 @@
 // Rate limits: Not publicly documented; concurrency-limited by the Management Server itself
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CheckPointConfig {
   baseUrl: string;
@@ -28,7 +29,7 @@ interface CheckPointConfig {
   password: string;
 }
 
-export class CheckPointMCPServer {
+export class CheckPointMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly username: string;
   private readonly password: string;
@@ -37,6 +38,7 @@ export class CheckPointMCPServer {
   private static readonly SESSION_TTL_MS = 540_000; // 9 min — renew before 10 min server timeout
 
   constructor(config: CheckPointConfig) {
+    super();
     this.baseUrl = config.baseUrl;
     this.username = config.username;
     this.password = config.password;
@@ -404,7 +406,7 @@ export class CheckPointMCPServer {
   }
 
   private async login(): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/login`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: this.username, password: this.password }),
@@ -430,15 +432,8 @@ export class CheckPointMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async checkpointPost(endpoint: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${endpoint}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${endpoint}`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),

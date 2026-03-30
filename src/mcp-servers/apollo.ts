@@ -20,17 +20,19 @@
 //   (enrich) consume account credits separately from rate limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ApolloConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class ApolloMCPServer {
+export class ApolloMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ApolloConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.apollo.io/api/v1';
   }
@@ -41,12 +43,6 @@ export class ApolloMCPServer {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -494,7 +490,7 @@ export class ApolloMCPServer {
     if (args.page) body.page = args.page;
     if (args.per_page) body.per_page = args.per_page;
 
-    const response = await fetch(`${this.baseUrl}/mixed_people/api_search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/mixed_people/api_search`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -531,7 +527,7 @@ export class ApolloMCPServer {
       };
     }
 
-    const response = await fetch(`${this.baseUrl}/people/match`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/people/match`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -558,7 +554,7 @@ export class ApolloMCPServer {
     if (typeof args.reveal_personal_emails === 'boolean') body.reveal_personal_emails = args.reveal_personal_emails;
     if (typeof args.reveal_phone_number === 'boolean') body.reveal_phone_number = args.reveal_phone_number;
 
-    const response = await fetch(`${this.baseUrl}/people/bulk_match`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/people/bulk_match`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -581,7 +577,7 @@ export class ApolloMCPServer {
   private async enrichOrganization(args: Record<string, unknown>): Promise<ToolResult> {
     const domain = args.domain as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/organizations/enrich?domain=${encodeURIComponent(domain)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -611,7 +607,7 @@ export class ApolloMCPServer {
     if (args.page) body.page = args.page;
     if (args.per_page) body.per_page = args.per_page;
 
-    const response = await fetch(`${this.baseUrl}/mixed_companies/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/mixed_companies/search`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -639,7 +635,7 @@ export class ApolloMCPServer {
     if (args.page) body.page = args.page;
     if (args.per_page) body.per_page = args.per_page;
 
-    const response = await fetch(`${this.baseUrl}/contacts/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/contacts/search`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -671,7 +667,7 @@ export class ApolloMCPServer {
     if (args.account_id) body.account_id = args.account_id;
     if (args.phone_numbers) body.phone_numbers = args.phone_numbers;
 
-    const response = await fetch(`${this.baseUrl}/contacts`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/contacts`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -700,7 +696,7 @@ export class ApolloMCPServer {
     if (args.title) body.title = args.title;
     if (args.account_id) body.account_id = args.account_id;
 
-    const response = await fetch(`${this.baseUrl}/contacts/${encodeURIComponent(contactId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/contacts/${encodeURIComponent(contactId)}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -723,7 +719,7 @@ export class ApolloMCPServer {
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
     const accountId = args.account_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/accounts/${encodeURIComponent(accountId)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -750,7 +746,7 @@ export class ApolloMCPServer {
     if (args.page) body.page = args.page;
     if (args.per_page) body.per_page = args.per_page;
 
-    const response = await fetch(`${this.baseUrl}/accounts/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts/search`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -776,7 +772,7 @@ export class ApolloMCPServer {
     if (args.per_page) params.set('per_page', String(args.per_page));
     const qs = params.toString();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/emailer_campaigns${qs ? `?${qs}` : ''}`,
       { method: 'GET', headers: this.headers },
     );
@@ -804,7 +800,7 @@ export class ApolloMCPServer {
       body.send_email_from_email_address = args.send_email_from_email_address;
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/emailer_campaigns/${encodeURIComponent(sequenceId)}/add_contact_ids`,
       {
         method: 'POST',
@@ -833,7 +829,7 @@ export class ApolloMCPServer {
       emailer_campaign_id: args.sequence_id,
     };
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/emailer_campaigns/remove_or_stop_contact_ids`,
       {
         method: 'POST',
@@ -857,7 +853,7 @@ export class ApolloMCPServer {
   }
 
   private async listContactStages(): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/contact_stages`,
       { method: 'GET', headers: this.headers },
     );

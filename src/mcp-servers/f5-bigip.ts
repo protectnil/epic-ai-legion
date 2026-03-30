@@ -18,6 +18,7 @@
 // Rate limits: Not officially documented; practical limit ~100 concurrent REST requests per BIG-IP
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface F5BigIPConfig {
   host: string;             // BIG-IP management IP or hostname (e.g. 192.168.1.1 or bigip.example.com)
@@ -28,13 +29,14 @@ interface F5BigIPConfig {
   skipTlsVerify?: boolean;  // set true for self-signed certs in dev (not for production)
 }
 
-export class F5BigIPMCPServer {
+export class F5BigIPMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
   private readonly partition: string;
 
   constructor(config: F5BigIPConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl || `https://${config.host}/mgmt`;
@@ -502,15 +504,9 @@ export class F5BigIPMCPServer {
     return `Basic ${Buffer.from(`${this.username}:${this.password}`).toString('base64')}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async f5Get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: {
         'Authorization': this.authHeader,
         'Content-Type': 'application/json',
@@ -524,7 +520,7 @@ export class F5BigIPMCPServer {
   }
 
   private async f5Post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Authorization': this.authHeader,
@@ -541,7 +537,7 @@ export class F5BigIPMCPServer {
   }
 
   private async f5Patch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: {
         'Authorization': this.authHeader,
@@ -558,7 +554,7 @@ export class F5BigIPMCPServer {
   }
 
   private async f5Delete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: {
         'Authorization': this.authHeader,

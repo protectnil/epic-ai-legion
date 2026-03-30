@@ -14,6 +14,7 @@
 // Rate limits: Free public access. Register at https://developer.nrel.gov/ for an API key.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NrelBuildingCaseStudiesConfig {
   apiKey: string;
@@ -21,11 +22,12 @@ interface NrelBuildingCaseStudiesConfig {
   baseUrl?: string;
 }
 
-export class NrelBuildingCaseStudiesMCPServer {
+export class NrelBuildingCaseStudiesMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: NrelBuildingCaseStudiesConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://developer.nrel.gov/api/building-case-studies';
   }
@@ -121,17 +123,10 @@ export class NrelBuildingCaseStudiesMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async query(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams({ ...params, api_key: this.apiKey }).toString();
     const url = `${this.baseUrl}${path}?${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) {

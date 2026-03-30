@@ -22,6 +22,7 @@
 // Rate limits: 100 req/min on sandbox; production limits not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface PandaDocConfig {
@@ -30,11 +31,12 @@ interface PandaDocConfig {
   baseUrl?: string;
 }
 
-export class PandaDocMCPServer {
+export class PandaDocMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: PandaDocConfig) {
+    super();
     if (!config.apiKey && !config.accessToken) {
       throw new Error('PandaDocMCPServer requires either apiKey or accessToken');
     }
@@ -611,15 +613,8 @@ export class PandaDocMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       ...options,
       headers: { ...this.reqHeaders, ...(options.headers as Record<string, string> || {}) },
     });
@@ -702,7 +697,7 @@ export class PandaDocMCPServer {
   }
 
   private async deleteDocument(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/documents/${encodeURIComponent(args.document_id as string)}`,
       { method: 'DELETE', headers: this.reqHeaders },
     );
@@ -756,7 +751,7 @@ export class PandaDocMCPServer {
   }
 
   private async deleteTemplate(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/templates/${encodeURIComponent(args.template_uuid as string)}`,
       { method: 'DELETE', headers: this.reqHeaders },
     );
@@ -805,7 +800,7 @@ export class PandaDocMCPServer {
   }
 
   private async deleteContact(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/contacts/${encodeURIComponent(args.contact_id as string)}`,
       { method: 'DELETE', headers: this.reqHeaders },
     );
@@ -838,7 +833,7 @@ export class PandaDocMCPServer {
   }
 
   private async deleteWebhookSubscription(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/webhook-subscriptions/${encodeURIComponent(args.webhook_id as string)}`,
       { method: 'DELETE', headers: this.reqHeaders },
     );

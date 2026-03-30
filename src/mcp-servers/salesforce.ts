@@ -18,6 +18,7 @@
 // Rate limits: 15,000 API requests per 24 hours per org (default); configurable per edition
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SalesforceConfig {
   accessToken: string;
@@ -27,11 +28,12 @@ interface SalesforceConfig {
   baseUrl?: string;
 }
 
-export class SalesforceMCPServer {
+export class SalesforceMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SalesforceConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || `https://${config.instance}/services/data/v66.0`;
   }
@@ -386,14 +388,8 @@ export class SalesforceMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     if (!response.ok) {
       let detail: unknown;
       try { detail = await response.json(); } catch { detail = await response.text(); }

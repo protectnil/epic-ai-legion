@@ -17,17 +17,19 @@
 // Rate limits: Free tier ~800 calls/month; paid plans vary by subscription
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CloudmersiveOCRConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CloudmersiveOCRMCPServer {
+export class CloudmersiveOCRMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CloudmersiveOCRConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.cloudmersive.com';
   }
@@ -535,13 +537,6 @@ export class CloudmersiveOCRMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   /**
    * Build a multipart/form-data body from a base64-encoded file.
    * Returns { body, contentType } where contentType includes the boundary.
@@ -565,7 +560,7 @@ export class CloudmersiveOCRMCPServer {
   ): Promise<ToolResult> {
     const { body, contentType } = this.buildFormData(imageBase64, fieldName);
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': contentType },
       body,
@@ -707,7 +702,7 @@ export class CloudmersiveOCRMCPServer {
   private async receiptToCsv(args: Record<string, unknown>): Promise<ToolResult> {
     const { body, contentType } = this.buildFormData(String(args.imageBase64), 'imageFile');
 
-    const response = await fetch(`${this.baseUrl}/ocr/receipts/photo/to/csv`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ocr/receipts/photo/to/csv`, {
       method: 'POST',
       headers: { 'Apikey': this.apiKey, 'Content-Type': contentType, 'Accept': 'application/json' },
       body,

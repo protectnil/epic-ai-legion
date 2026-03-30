@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ExaVaultConfig {
   accountName: string;
@@ -23,12 +24,13 @@ interface ExaVaultConfig {
   baseUrl?: string;
 }
 
-export class ExaVaultMCPServer {
+export class ExaVaultMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ExaVaultConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || `https://${config.accountName}.exavault.com/api/v2`;
@@ -562,7 +564,7 @@ export class ExaVaultMCPServer {
       if (qs) url += `?${qs}`;
     }
 
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       method,
       headers: this.authHeaders(),
       body: body !== undefined ? JSON.stringify(body) : undefined,

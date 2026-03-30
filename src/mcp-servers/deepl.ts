@@ -19,17 +19,19 @@
 // Rate limits: HTTP 429 returned when limits exceeded; Free tier: 500,000 chars/month; Pro: plan-dependent
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DeepLConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class DeepLMCPServer {
+export class DeepLMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: DeepLConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.deepl.com';
   }
@@ -320,13 +322,6 @@ export class DeepLMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async translateText(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.text || !args.target_lang) {
       return { content: [{ type: 'text', text: 'text and target_lang are required' }], isError: true };
@@ -342,7 +337,7 @@ export class DeepLMCPServer {
     if (typeof args.preserve_formatting === 'boolean') body.preserve_formatting = args.preserve_formatting;
     if (args.tag_handling) body.tag_handling = args.tag_handling;
 
-    const response = await fetch(`${this.baseUrl}/v2/translate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/translate`, {
       method: 'POST',
       headers: this.authHeader,
       body: JSON.stringify(body),
@@ -360,7 +355,7 @@ export class DeepLMCPServer {
     }
     // Document translation requires multipart/form-data with file content.
     // We fetch the document from the provided URL and forward it to DeepL.
-    const fileResponse = await fetch(args.file_url as string);
+    const fileResponse = await this.fetchWithRetry(args.file_url as string, {});
     if (!fileResponse.ok) {
       return { content: [{ type: 'text', text: `Failed to fetch document: ${fileResponse.status} ${fileResponse.statusText}` }], isError: true };
     }
@@ -372,7 +367,7 @@ export class DeepLMCPServer {
     if (args.formality) formData.append('formality', args.formality as string);
     if (args.glossary_id) formData.append('glossary_id', args.glossary_id as string);
 
-    const response = await fetch(`${this.baseUrl}/v2/document`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/document`, {
       method: 'POST',
       headers: { 'Authorization': `DeepL-Auth-Key ${this.apiKey}` },
       body: formData,
@@ -395,7 +390,7 @@ export class DeepLMCPServer {
     if (args.writing_style) body.writing_style = args.writing_style;
     if (args.tone) body.tone = args.tone;
 
-    const response = await fetch(`${this.baseUrl}/v2/write/rephrase`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/write/rephrase`, {
       method: 'POST',
       headers: this.authHeader,
       body: JSON.stringify(body),
@@ -408,7 +403,7 @@ export class DeepLMCPServer {
   }
 
   private async getLanguages(type: 'source' | 'target'): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v2/languages?type=${type}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/languages?type=${type}`, {
       headers: this.authHeader,
     });
     if (!response.ok) {
@@ -419,7 +414,7 @@ export class DeepLMCPServer {
   }
 
   private async checkUsage(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v2/usage`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/usage`, {
       headers: this.authHeader,
     });
     if (!response.ok) {
@@ -430,7 +425,7 @@ export class DeepLMCPServer {
   }
 
   private async listGlossaries(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v2/glossaries`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/glossaries`, {
       headers: this.authHeader,
     });
     if (!response.ok) {
@@ -451,7 +446,7 @@ export class DeepLMCPServer {
       entries: args.entries,
       entries_format: (args.entries_format as string) || 'tsv',
     };
-    const response = await fetch(`${this.baseUrl}/v2/glossaries`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/glossaries`, {
       method: 'POST',
       headers: this.authHeader,
       body: JSON.stringify(body),
@@ -467,7 +462,7 @@ export class DeepLMCPServer {
     if (!args.glossary_id) {
       return { content: [{ type: 'text', text: 'glossary_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}`, {
       headers: this.authHeader,
     });
     if (!response.ok) {
@@ -481,7 +476,7 @@ export class DeepLMCPServer {
     if (!args.glossary_id) {
       return { content: [{ type: 'text', text: 'glossary_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}`, {
       method: 'DELETE',
       headers: this.authHeader,
     });
@@ -498,7 +493,7 @@ export class DeepLMCPServer {
     if (!args.glossary_id) {
       return { content: [{ type: 'text', text: 'glossary_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}/entries`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/glossaries/${encodeURIComponent(args.glossary_id as string)}/entries`, {
       headers: { ...this.authHeader, 'Accept': 'text/tab-separated-values' },
     });
     if (!response.ok) {
@@ -512,7 +507,7 @@ export class DeepLMCPServer {
   }
 
   private async listGlossaryLanguagePairs(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v2/glossary-language-pairs`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/glossary-language-pairs`, {
       headers: this.authHeader,
     });
     if (!response.ok) {

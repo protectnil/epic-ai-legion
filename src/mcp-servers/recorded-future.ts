@@ -21,13 +21,14 @@
 // Rate limits: Varies by subscription tier; not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RecordedFutureConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class RecordedFutureMCPServer {
+export class RecordedFutureMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
   // Alert API and Playbook Alert API have separate base URLs from the Connect API
@@ -35,6 +36,7 @@ export class RecordedFutureMCPServer {
   private readonly playbookAlertBaseUrl = 'https://api.recordedfuture.com/playbook-alert';
 
   constructor(config: RecordedFutureConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.recordedfuture.com/v2';
   }
@@ -64,12 +66,6 @@ export class RecordedFutureMCPServer {
       'X-RFToken': this.apiToken,
       'Content-Type': 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -402,7 +398,7 @@ export class RecordedFutureMCPServer {
     }
     const params = new URLSearchParams({ freetext: query });
     if (args.limit) params.set('limit', String(args.limit));
-    const response = await fetch(`${this.baseUrl}/${encodeURIComponent(indicatorType)}/search?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${encodeURIComponent(indicatorType)}/search?${params.toString()}`, {
       headers: this.headers,
     });
     let data: unknown;
@@ -418,7 +414,7 @@ export class RecordedFutureMCPServer {
     const params = new URLSearchParams();
     if (fields) params.set('fields', fields);
     const qs = params.toString();
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${encodeURIComponent(type)}/${encodeURIComponent(value)}${qs ? `?${qs}` : ''}`,
       { headers: this.headers }
     );
@@ -437,7 +433,7 @@ export class RecordedFutureMCPServer {
       return { content: [{ type: 'text', text: 'indicator and indicator_type are required' }], isError: true };
     }
     const params = new URLSearchParams({ fields: 'entity,risk' });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${encodeURIComponent(indicatorType)}/${encodeURIComponent(indicator)}?${params.toString()}`,
       { headers: this.headers }
     );
@@ -457,7 +453,7 @@ export class RecordedFutureMCPServer {
     if (args.offset) params.set('offset', String(args.offset));
     if (args.triggered) params.set('triggered', args.triggered as string);
     if (args.status) params.set('status', args.status as string);
-    const response = await fetch(`${this.alertBaseUrl}/v2/search?${params.toString()}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.alertBaseUrl}/v2/search?${params.toString()}`, { headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {
@@ -470,7 +466,7 @@ export class RecordedFutureMCPServer {
     // Alert API: GET /v2/{alert_id} at https://api.recordedfuture.com/alert
     const alertId = args.alert_id as string;
     if (!alertId) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    const response = await fetch(`${this.alertBaseUrl}/v2/${encodeURIComponent(alertId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.alertBaseUrl}/v2/${encodeURIComponent(alertId)}`, { headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {
@@ -489,7 +485,7 @@ export class RecordedFutureMCPServer {
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
     const params = new URLSearchParams({ freetext: query });
     if (args.limit) params.set('limit', String(args.limit));
-    const response = await fetch(`${this.baseUrl}/threatactor/search?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/threatactor/search?${params.toString()}`, {
       headers: this.headers,
     });
     let data: unknown;
@@ -503,7 +499,7 @@ export class RecordedFutureMCPServer {
   private async getThreatActor(args: Record<string, unknown>): Promise<ToolResult> {
     const actorId = args.actor_id as string;
     if (!actorId) return { content: [{ type: 'text', text: 'actor_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/threatactor/${encodeURIComponent(actorId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/threatactor/${encodeURIComponent(actorId)}`, { headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {
@@ -517,7 +513,7 @@ export class RecordedFutureMCPServer {
     if (!query) return { content: [{ type: 'text', text: 'query is required' }], isError: true };
     const params = new URLSearchParams({ freetext: query });
     if (args.limit) params.set('limit', String(args.limit));
-    const response = await fetch(`${this.baseUrl}/malware/search?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/malware/search?${params.toString()}`, {
       headers: this.headers,
     });
     let data: unknown;
@@ -531,7 +527,7 @@ export class RecordedFutureMCPServer {
   private async getMalware(args: Record<string, unknown>): Promise<ToolResult> {
     const malwareId = args.malware_id as string;
     if (!malwareId) return { content: [{ type: 'text', text: 'malware_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/malware/${encodeURIComponent(malwareId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/malware/${encodeURIComponent(malwareId)}`, { headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {
@@ -547,7 +543,7 @@ export class RecordedFutureMCPServer {
     if (args.offset) body.offset = args.offset;
     if (args.status) body.status = args.status;
     if (args.category) body.category = args.category;
-    const response = await fetch(`${this.playbookAlertBaseUrl}/search`, {
+    const response = await this.fetchWithRetry(`${this.playbookAlertBaseUrl}/search`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -564,7 +560,7 @@ export class RecordedFutureMCPServer {
     // Playbook Alert API: GET /common/{playbook_alert_id} at https://api.recordedfuture.com/playbook-alert
     const alertId = args.alert_id as string;
     if (!alertId) return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
-    const response = await fetch(`${this.playbookAlertBaseUrl}/common/${encodeURIComponent(alertId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.playbookAlertBaseUrl}/common/${encodeURIComponent(alertId)}`, { headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { throw new Error(`Non-JSON response (HTTP ${response.status})`); }
     return {

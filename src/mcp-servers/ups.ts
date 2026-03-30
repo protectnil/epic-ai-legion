@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented; UPS enforces per-account quotas. Sandbox: https://wwwcie.ups.com/api
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface UPSConfig {
   clientId: string;
@@ -25,7 +26,7 @@ interface UPSConfig {
   tokenUrl?: string;
 }
 
-export class UPSMCPServer {
+export class UPSMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -35,6 +36,7 @@ export class UPSMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: UPSConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://onlinetools.ups.com/api';
@@ -410,7 +412,7 @@ export class UPSMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -427,15 +429,9 @@ export class UPSMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async upsGet(path: string, token: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -451,7 +447,7 @@ export class UPSMCPServer {
   }
 
   private async upsPost(path: string, body: unknown, token: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -563,7 +559,7 @@ export class UPSMCPServer {
   private async voidShipment(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.shipment_id) return { content: [{ type: 'text', text: 'shipment_id is required' }], isError: true };
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}/shipments/v1/void/cancel/${encodeURIComponent(args.shipment_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/shipments/v1/void/cancel/${encodeURIComponent(args.shipment_id as string)}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -646,7 +642,7 @@ export class UPSMCPServer {
     const token = await this.getOrRefreshToken();
     // DELETE /shipments/v2409/pickup/{CancelBy} — PRN (pickup request number) sent in Prn header
     // CancelBy code 02 = Cancel by PRN (confirmation number). Ref: UPS Pickup API v2409.
-    const response = await fetch(`${this.baseUrl}/shipments/v2409/pickup/02`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/shipments/v2409/pickup/02`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,

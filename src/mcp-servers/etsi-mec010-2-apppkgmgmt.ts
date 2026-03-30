@@ -13,6 +13,7 @@
 // Docs: https://www.etsi.org/deliver/etsi_gs/MEC/001_099/01002/02.01.01_60/gs_MEC01002v020101p.pdf
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EtsiMec010AppPkgMgmtConfig {
   /** Base URL of the MEC orchestrator (default: https://localhost/app_pkgm/v1) */
@@ -21,11 +22,12 @@ interface EtsiMec010AppPkgMgmtConfig {
   bearerToken?: string;
 }
 
-export class EtsiMec0102AppPkgMgmtMCPServer {
+export class EtsiMec0102AppPkgMgmtMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly bearerToken?: string;
 
   constructor(config: EtsiMec010AppPkgMgmtConfig) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://localhost/app_pkgm/v1';
     this.bearerToken = config.bearerToken;
   }
@@ -413,13 +415,6 @@ export class EtsiMec0102AppPkgMgmtMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private headers(): Record<string, string> {
     const h: Record<string, string> = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
     if (this.bearerToken) h['Authorization'] = `Bearer ${this.bearerToken}`;
@@ -438,7 +433,7 @@ export class EtsiMec0102AppPkgMgmtMCPServer {
     }
     const init: RequestInit = { method, headers: this.headers() };
     if (body !== undefined) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

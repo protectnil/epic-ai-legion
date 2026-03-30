@@ -13,6 +13,7 @@
 // Rate limits: Depends on plan. Contact Geneea for enterprise quotas.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GeneeaConfig {
   apiKey: string;
@@ -20,11 +21,12 @@ interface GeneeaConfig {
   baseUrl?: string;
 }
 
-export class GeneeaMCPServer {
+export class GeneeaMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GeneeaConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.geneea.com';
   }
@@ -269,13 +271,6 @@ export class GeneeaMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(): Record<string, string> {
     return {
       'Authorization': `user_key ${this.apiKey}`,
@@ -284,7 +279,7 @@ export class GeneeaMCPServer {
   }
 
   private async getAccountInfo(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/account`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/account`, {
       method: 'GET',
       headers: this.authHeaders(),
     });
@@ -302,7 +297,7 @@ export class GeneeaMCPServer {
   }
 
   private async getServiceStatus(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/status`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/status`, {
       method: 'GET',
       headers: this.authHeaders(),
     });
@@ -328,7 +323,7 @@ export class GeneeaMCPServer {
     if (args.extractor !== undefined) body.extractor = args.extractor;
     if (args.returnTextInfo !== undefined) body.returnTextInfo = args.returnTextInfo;
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),

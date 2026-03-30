@@ -19,17 +19,19 @@
 // Rate limits: 240 req/min; 1,000 req/day without key; 120,000 req/day with key. Max 1,000 records per request.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenFDAConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class OpenFDAMCPServer {
+export class OpenFDAMCPServer extends MCPAdapterBase {
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: OpenFDAConfig = {}) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl || 'https://api.fda.gov').replace(/\/$/, '');
   }
@@ -487,13 +489,6 @@ export class OpenFDAMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildParams(args: Record<string, unknown>, extra?: Record<string, string>): Record<string, string> {
     const params: Record<string, string> = {};
     if (this.apiKey) params.api_key = this.apiKey;
@@ -508,7 +503,7 @@ export class OpenFDAMCPServer {
     const params = this.buildParams(args);
     if (!params.limit) params.limit = '10';
     const qs = new URLSearchParams(params).toString();
-    const response = await fetch(`${this.baseUrl}${endpoint}?${qs}`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${endpoint}?${qs}`, {});
     if (!response.ok) {
       const text = await response.text();
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText} — ${text}` }], isError: true };
@@ -524,7 +519,7 @@ export class OpenFDAMCPServer {
     params.count = args.count as string;
     if (args.limit !== undefined) params.limit = String(args.limit);
     const qs = new URLSearchParams(params).toString();
-    const response = await fetch(`${this.baseUrl}${endpoint}?${qs}`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${endpoint}?${qs}`, {});
     if (!response.ok) {
       const text = await response.text();
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText} — ${text}` }], isError: true };

@@ -18,6 +18,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RootlyConfig {
   apiToken: string;
@@ -25,11 +26,12 @@ interface RootlyConfig {
   baseUrl?: string;
 }
 
-export class RootlyMCPServer {
+export class RootlyMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: RootlyConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.rootly.com';
   }
@@ -477,12 +479,6 @@ export class RootlyMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildPageParams(args: Record<string, unknown>): URLSearchParams {
     const p = new URLSearchParams();
     if (args.page_number !== undefined) p.set('page[number]', String(args.page_number));
@@ -491,7 +487,7 @@ export class RootlyMCPServer {
   }
 
   private async fetchJson(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     if (!response.ok) {
       let detail: unknown;
       try { detail = await response.json(); } catch { detail = await response.text(); }

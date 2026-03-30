@@ -24,17 +24,19 @@
 // Rate limits: Not publicly documented; varies by plan. Contact Infobip for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface InfobipConfig {
   apiKey: string;
   baseUrl: string;  // Personal base URL prefix (e.g. "xyz123" for xyz123.api.infobip.com)
 }
 
-export class InfobipMCPServer {
+export class InfobipMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: InfobipConfig) {
+    super();
     this.apiKey = config.apiKey;
     // Accept full URL or just the subdomain prefix
     this.baseUrl = config.baseUrl.startsWith('https://')
@@ -548,17 +550,10 @@ export class InfobipMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async ibGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -567,7 +562,7 @@ export class InfobipMCPServer {
   }
 
   private async ibPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -662,7 +657,7 @@ export class InfobipMCPServer {
     if (args.html) form.append('html', args.html as string);
     if (args.reply_to) form.append('replyto', args.reply_to as string);
 
-    const response = await fetch(`${this.baseUrl}/email/3/send`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/email/3/send`, {
       method: 'POST',
       headers: {
         Authorization: `App ${this.apiKey}`,

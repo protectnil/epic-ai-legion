@@ -22,6 +22,7 @@
 // Rate limits: Documented per-endpoint; general guidance ~600 req/min on paid plans.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DeelConfig {
   /** Bearer API token (Personal or Organization token from Developer Center) */
@@ -30,11 +31,12 @@ interface DeelConfig {
   baseUrl?: string;
 }
 
-export class DeelMCPServer {
+export class DeelMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: DeelConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = (config.baseUrl || 'https://api.letsdeel.com').replace(/\/$/, '');
   }
@@ -520,14 +522,9 @@ export class DeelMCPServer {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(path: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       ...options,
       headers: { ...this.headers, ...(options.headers as Record<string, string> || {}) },

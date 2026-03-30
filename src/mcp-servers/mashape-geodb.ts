@@ -16,6 +16,7 @@
 // Keys: Acquire at https://rapidapi.com/wirefreethought/api/geodb-cities
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MashapeGeodbConfig {
   rapidApiKey: string;
@@ -23,11 +24,12 @@ interface MashapeGeodbConfig {
   baseUrl?: string;
 }
 
-export class MashapeGeodbMCPServer {
+export class MashapeGeodbMCPServer extends MCPAdapterBase {
   private readonly rapidApiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MashapeGeodbConfig) {
+    super();
     this.rapidApiKey = config.rapidApiKey;
     this.baseUrl = config.baseUrl ?? 'https://wft-geo-db.p.rapidapi.com/v1';
   }
@@ -351,13 +353,6 @@ export class MashapeGeodbMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | undefined>): string {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -369,7 +364,7 @@ export class MashapeGeodbMCPServer {
 
   private async apiFetch(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         'X-RapidAPI-Key': this.rapidApiKey,

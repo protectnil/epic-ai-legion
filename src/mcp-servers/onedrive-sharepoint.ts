@@ -24,6 +24,7 @@
 // Rate limits: Microsoft Graph — 10,000 requests per 10 minutes per app per tenant (Files scope)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OneDriveSharePointConfig {
   clientId: string;
@@ -32,7 +33,7 @@ interface OneDriveSharePointConfig {
   baseUrl?: string;
 }
 
-export class OneDriveSharePointMCPServer {
+export class OneDriveSharePointMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly tenantId: string;
@@ -41,6 +42,7 @@ export class OneDriveSharePointMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: OneDriveSharePointConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.tenantId = config.tenantId;
@@ -535,7 +537,7 @@ export class OneDriveSharePointMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `https://login.microsoftonline.com/${this.tenantId}/oauth2/v2.0/token`,
       {
         method: 'POST',
@@ -557,17 +559,10 @@ export class OneDriveSharePointMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async graphGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -579,7 +574,7 @@ export class OneDriveSharePointMCPServer {
 
   private async graphPost(path: string, body: Record<string, unknown>, contentType = 'application/json'): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': contentType },
       body: contentType === 'application/json' ? JSON.stringify(body) : (body.content as string),
@@ -595,7 +590,7 @@ export class OneDriveSharePointMCPServer {
 
   private async graphPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -609,7 +604,7 @@ export class OneDriveSharePointMCPServer {
 
   private async graphDelete(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -668,7 +663,7 @@ export class OneDriveSharePointMCPServer {
     const token = await this.getOrRefreshToken();
     const parentRef = args.parent_item_id ? `/items/${encodeURIComponent(args.parent_item_id as string)}` : '/root';
     const path = `/drives/${encodeURIComponent(args.drive_id as string)}${parentRef}:/${encodeURIComponent(args.file_name as string)}:/content`;
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'text/plain' },
       body: args.content as string,

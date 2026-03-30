@@ -14,6 +14,7 @@
 //        get_wfs_inventory, bulk_update_inventory
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WalmartInventoryConfig {
   accessToken: string;
@@ -21,12 +22,13 @@ interface WalmartInventoryConfig {
   baseUrl?: string;
 }
 
-export class WalmartInventoryMCPServer {
+export class WalmartInventoryMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly channelType: string;
   private readonly baseUrl: string;
 
   constructor(config: WalmartInventoryConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.channelType = config.channelType ?? '';
     this.baseUrl = config.baseUrl ?? 'https://marketplace.walmartapis.com';
@@ -253,15 +255,9 @@ export class WalmartInventoryMCPServer {
     return headers;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async fetchJson(url: string, options: RequestInit = {}): Promise<unknown> {
-    const response = await fetch(url, { ...options, headers: this.requestHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.requestHeaders() });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       throw new Error(`Walmart API error: ${response.status} ${response.statusText}${body ? ` — ${body.slice(0, 200)}` : ''}`);
@@ -361,7 +357,7 @@ export class WalmartInventoryMCPServer {
     formData.append('file', new Blob([feedContent], { type: 'application/octet-stream' }), 'inventory-feed');
     const headers = this.requestHeaders();
     delete headers['Content-Type'];
-    const response = await fetch(`${this.baseUrl}/v3/feeds?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v3/feeds?${params}`, {
       method: 'POST',
       headers,
       body: formData,

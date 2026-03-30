@@ -15,18 +15,20 @@
 // Rate limits: Free plan ~1,500 requests/month; paid plans higher.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ExchangeRateApiConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class ExchangeRateApiMCPServer {
+export class ExchangeRateApiMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly v6Base: string;
   private readonly v4Base: string;
 
   constructor(config: ExchangeRateApiConfig = {}) {
+    super();
     this.apiKey = config.apiKey ?? '';
     this.v6Base = config.baseUrl
       ? config.baseUrl
@@ -179,7 +181,7 @@ export class ExchangeRateApiMCPServer {
 
   private async fetchV6(path: string): Promise<ToolResult> {
     const url = `${this.v6Base}${path}`;
-    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const res = await this.fetchWithRetry(url, { headers: { 'Accept': 'application/json' } });
     const text = await res.text();
     const truncated = text.length > 10240 ? text.slice(0, 10240) + '\n… [truncated]' : text;
     if (!res.ok) {
@@ -205,7 +207,7 @@ export class ExchangeRateApiMCPServer {
   private async getLatestRatesFree(args: Record<string, unknown>): Promise<ToolResult> {
     const base = encodeURIComponent(String(args.base_currency).toUpperCase());
     const url = `${this.v4Base}/latest/${base}`;
-    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const res = await this.fetchWithRetry(url, { headers: { 'Accept': 'application/json' } });
     const text = await res.text();
     const truncated = text.length > 10240 ? text.slice(0, 10240) + '\n… [truncated]' : text;
     if (!res.ok) {

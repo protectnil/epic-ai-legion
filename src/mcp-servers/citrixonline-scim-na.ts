@@ -19,17 +19,19 @@
 // SCIM operations: Users (CRUD + list + me), Groups (CRUD + list), schema discovery, service config
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CitrixSCIMConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class CitrixonlineScimNaMCPServer {
+export class CitrixonlineScimNaMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly accessToken: string;
 
   constructor(config: CitrixSCIMConfig) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://api.citrixonline.com/identity/v1';
     this.accessToken = config.accessToken;
   }
@@ -345,15 +347,8 @@ export class CitrixonlineScimNaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     if (!response.ok) {
       let errText: string;
       try {

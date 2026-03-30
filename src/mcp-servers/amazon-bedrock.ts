@@ -21,6 +21,7 @@
 // Rate limits: Per-model and per-account; varies by region and model family
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BedrockConfig {
   region: string;
@@ -93,13 +94,14 @@ async function awsSigV4Sign(
   return finalHeaders;
 }
 
-export class AmazonBedrockMCPServer {
+export class AmazonBedrockMCPServer extends MCPAdapterBase {
   private readonly region: string;
   private readonly accessKeyId: string;
   private readonly secretAccessKey: string;
   private readonly sessionToken?: string;
 
   constructor(config: BedrockConfig) {
+    super();
     this.region = config.region;
     this.accessKeyId = config.accessKeyId;
     this.secretAccessKey = config.secretAccessKey;
@@ -122,16 +124,9 @@ export class AmazonBedrockMCPServer {
     return `https://bedrock-agent-runtime.${this.region}.amazonaws.com`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async signedGet(url: string): Promise<ToolResult> {
     const signedHeaders = await awsSigV4Sign('GET', url, {}, '', this.region, this.accessKeyId, this.secretAccessKey, this.sessionToken);
-    const response = await fetch(url, { method: 'GET', headers: signedHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: signedHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -144,7 +139,7 @@ export class AmazonBedrockMCPServer {
     const bodyStr = JSON.stringify(body);
     const baseHeaders = { 'Content-Type': contentType };
     const signedHeaders = await awsSigV4Sign('POST', url, baseHeaders, bodyStr, this.region, this.accessKeyId, this.secretAccessKey, this.sessionToken);
-    const response = await fetch(url, { method: 'POST', headers: signedHeaders, body: bodyStr });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: signedHeaders, body: bodyStr });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -155,7 +150,6 @@ export class AmazonBedrockMCPServer {
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
-
 
   get tools(): ToolDefinition[] {
     return [
@@ -588,7 +582,7 @@ export class AmazonBedrockMCPServer {
     const bodyStr = JSON.stringify(body);
     const baseHeaders = { 'Content-Type': 'application/json', Accept: accept };
     const signedHeaders = await awsSigV4Sign('POST', url, baseHeaders, bodyStr, this.region, this.accessKeyId, this.secretAccessKey, this.sessionToken);
-    const response = await fetch(url, { method: 'POST', headers: signedHeaders, body: bodyStr });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: signedHeaders, body: bodyStr });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };

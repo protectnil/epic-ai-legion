@@ -24,6 +24,7 @@
 // Rate limits: Not publicly documented; standard REST throttling applies.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PingIdentityConfig {
   bearerToken: string;
@@ -31,12 +32,13 @@ interface PingIdentityConfig {
   baseUrl?: string;
 }
 
-export class PingIdentityMCPServer {
+export class PingIdentityMCPServer extends MCPAdapterBase {
   private readonly bearerToken: string;
   private readonly environmentId: string;
   private readonly baseUrl: string;
 
   constructor(config: PingIdentityConfig) {
+    super();
     this.bearerToken = config.bearerToken;
     this.environmentId = config.environmentId;
     const rawBase = config.baseUrl || 'https://api.pingone.com';
@@ -511,15 +513,8 @@ export class PingIdentityMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers(), ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers(), ...init });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],

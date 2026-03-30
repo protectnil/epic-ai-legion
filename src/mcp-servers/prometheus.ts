@@ -20,6 +20,7 @@
 // Rate limits: No formal rate limiting; governed by server capacity and query timeout settings
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PrometheusConfig {
   /** Prometheus server host (e.g. "localhost" or "prometheus.internal"). Port defaults to 9090. */
@@ -34,13 +35,14 @@ interface PrometheusConfig {
   password?: string;
 }
 
-export class PrometheusMCPServer {
+export class PrometheusMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly bearerToken: string | undefined;
   private readonly username: string | undefined;
   private readonly password: string | undefined;
 
   constructor(config: PrometheusConfig) {
+    super();
     this.baseUrl = config.baseUrl
       ? config.baseUrl.replace(/\/$/, '')
       : `http://${config.host}:9090/api/v1`;
@@ -396,15 +398,8 @@ export class PrometheusMCPServer {
     return headers;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doFetch(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.reqHeaders });
+    const response = await this.fetchWithRetry(url, { headers: this.reqHeaders });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       return {

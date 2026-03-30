@@ -26,6 +26,7 @@
 //              250,000 (Max volume) calls/24-hr period. HTTP 429 on rate limit; Retry-After header provided.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BlackbaudConfig {
   accessToken: string;
@@ -36,7 +37,7 @@ interface BlackbaudConfig {
   baseUrl?: string;
 }
 
-export class BlackbaudMCPServer {
+export class BlackbaudMCPServer extends MCPAdapterBase {
   private accessToken: string;
   private readonly subscriptionKey: string;
   private readonly clientId: string | undefined;
@@ -45,6 +46,7 @@ export class BlackbaudMCPServer {
   private readonly baseUrl: string;
 
   constructor(config: BlackbaudConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.subscriptionKey = config.subscriptionKey;
     this.clientId = config.clientId;
@@ -607,7 +609,7 @@ export class BlackbaudMCPServer {
       client_id: this.clientId,
       client_secret: this.clientSecret,
     });
-    const response = await fetch('https://oauth2.sky.blackbaud.com/token', {
+    const response = await this.fetchWithRetry('https://oauth2.sky.blackbaud.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -631,18 +633,11 @@ export class BlackbaudMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async bbGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length > 0
       ? '?' + new URLSearchParams(params).toString()
       : '';
-    let response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    let response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -650,7 +645,7 @@ export class BlackbaudMCPServer {
     // Attempt token refresh on 401 if refresh credentials are available
     if (response.status === 401 && this.refreshToken) {
       await this.refreshAccessToken();
-      response = await fetch(`${this.baseUrl}${path}${qs}`, {
+      response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
         method: 'GET',
         headers: this.headers,
       });
@@ -665,7 +660,7 @@ export class BlackbaudMCPServer {
   }
 
   private async bbPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    let response = await fetch(`${this.baseUrl}${path}`, {
+    let response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -673,7 +668,7 @@ export class BlackbaudMCPServer {
 
     if (response.status === 401 && this.refreshToken) {
       await this.refreshAccessToken();
-      response = await fetch(`${this.baseUrl}${path}`, {
+      response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
         method: 'POST',
         headers: this.headers,
         body: JSON.stringify(body),
@@ -689,7 +684,7 @@ export class BlackbaudMCPServer {
   }
 
   private async bbPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    let response = await fetch(`${this.baseUrl}${path}`, {
+    let response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -697,7 +692,7 @@ export class BlackbaudMCPServer {
 
     if (response.status === 401 && this.refreshToken) {
       await this.refreshAccessToken();
-      response = await fetch(`${this.baseUrl}${path}`, {
+      response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
         method: 'PATCH',
         headers: this.headers,
         body: JSON.stringify(body),

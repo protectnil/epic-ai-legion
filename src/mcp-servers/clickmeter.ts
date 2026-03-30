@@ -14,17 +14,19 @@
 // Rate limits: Not specified in OpenAPI spec; enterprise plan-based limits apply.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClickMeterConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class ClickMeterMCPServer {
+export class ClickMeterMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ClickMeterConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://apiv2.clickmeter.com:80';
   }
@@ -1224,12 +1226,6 @@ export class ClickMeterMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private offsetParams(args: Record<string, unknown>): URLSearchParams | undefined {
     const params = new URLSearchParams();
     if (args.offset !== undefined) params.set('offset', String(args.offset as number));
@@ -1257,7 +1253,7 @@ export class ClickMeterMCPServer {
     params?: URLSearchParams,
   ): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method,
       headers: this.authHeaders,
       body: body ? JSON.stringify(body) : undefined,

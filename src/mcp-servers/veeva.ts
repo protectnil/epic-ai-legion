@@ -14,6 +14,7 @@
 // Rate limits: 2,000 API calls per 5 minutes and 100,000 calls per 24 hours per session.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VeevaConfig {
   username: string;
@@ -22,7 +23,7 @@ interface VeevaConfig {
   apiVersion?: string;
 }
 
-export class VeevaMCPServer {
+export class VeevaMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
@@ -31,6 +32,7 @@ export class VeevaMCPServer {
   private sessionExpiry: number = 0;
 
   constructor(config: VeevaConfig) {
+    super();
     const version = config.apiVersion || 'v25.1';
     this.username = config.username;
     this.password = config.password;
@@ -383,7 +385,7 @@ export class VeevaMCPServer {
     if (this.sessionId && this.sessionExpiry > now) {
       return this.sessionId;
     }
-    const response = await fetch(`${this.baseUrl}/auth`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
       body: new URLSearchParams({ username: this.username, password: this.password }).toString(),
@@ -401,17 +403,11 @@ export class VeevaMCPServer {
     return this.sessionId;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const sessionId = await this.getOrRefreshSession();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: { 'Authorization': sessionId, 'Accept': 'application/json' },
     });
     if (!response.ok) {
@@ -424,7 +420,7 @@ export class VeevaMCPServer {
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const sessionId = await this.getOrRefreshSession();
     const formBody = Object.entries(body).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Authorization': sessionId, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
       body: formBody,
@@ -439,7 +435,7 @@ export class VeevaMCPServer {
   private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const sessionId = await this.getOrRefreshSession();
     const formBody = Object.entries(body).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: { 'Authorization': sessionId, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
       body: formBody,
@@ -453,7 +449,7 @@ export class VeevaMCPServer {
 
   private async apiDelete(path: string): Promise<ToolResult> {
     const sessionId = await this.getOrRefreshSession();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: { 'Authorization': sessionId, 'Accept': 'application/json' },
     });

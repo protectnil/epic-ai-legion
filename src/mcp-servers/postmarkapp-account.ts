@@ -15,6 +15,7 @@
 //       For sending email, see the Postmark Server API (separate adapter / server token).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PostmarkAppAccountConfig {
   /** Postmark Account API token (from Account Settings → API Tokens → Account) */
@@ -23,11 +24,12 @@ interface PostmarkAppAccountConfig {
   baseUrl?: string;
 }
 
-export class PostmarkAppAccountMCPServer {
+export class PostmarkAppAccountMCPServer extends MCPAdapterBase {
   private readonly accountToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PostmarkAppAccountConfig) {
+    super();
     this.accountToken = config.accountToken;
     this.baseUrl = config.baseUrl ?? 'https://api.postmarkapp.com';
   }
@@ -418,7 +420,7 @@ export class PostmarkAppAccountMCPServer {
       init.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
 
     if (!response.ok) {
       const errText = await response.text().catch(() => '');

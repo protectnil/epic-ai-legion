@@ -12,17 +12,19 @@
 // Rate limits: Determined by individual ASPSP (bank) implementations
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenBankingProjectChConfig {
   bearerToken: string;
   baseUrl?: string;
 }
 
-export class OpenBankingProjectChMCPServer {
+export class OpenBankingProjectChMCPServer extends MCPAdapterBase {
   private readonly bearerToken: string;
   private readonly baseUrl: string;
 
   constructor(config: OpenBankingProjectChConfig) {
+    super();
     this.bearerToken = config.bearerToken;
     this.baseUrl = config.baseUrl || 'https://api.dev.openbankingproject.ch';
   }
@@ -382,13 +384,6 @@ export class OpenBankingProjectChMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -408,7 +403,7 @@ export class OpenBankingProjectChMCPServer {
     };
     if (body) headers['Content-Type'] = 'application/json';
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,

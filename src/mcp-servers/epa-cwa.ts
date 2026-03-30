@@ -16,15 +16,17 @@
 // Data: Regulated facilities under the Clean Water Act (CWA) / NPDES program.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EPACWAConfig {
   baseUrl?: string;
 }
 
-export class EPACWAMCPServer {
+export class EPACWAMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: EPACWAConfig = {}) {
+    super();
     this.baseUrl = (config.baseUrl || 'https://echodata.epa.gov/echo').replace(/\/$/, '');
   }
 
@@ -337,13 +339,6 @@ export class EPACWAMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {};
     // Default to JSON output unless caller specifies otherwise
@@ -355,7 +350,7 @@ export class EPACWAMCPServer {
     }
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}?${qs}`;
-    const response = await fetch(url);
+    const response = await this.fetchWithRetry(url, {});
     if (!response.ok) {
       const text = await response.text();
       return {

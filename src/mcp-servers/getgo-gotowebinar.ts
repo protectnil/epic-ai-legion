@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented. Standard GoTo API throttling applies.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoToWebinarConfig {
   /** OAuth2 access token */
@@ -25,12 +26,13 @@ interface GoToWebinarConfig {
   baseUrl?: string;
 }
 
-export class GoToWebinarMCPServer {
+export class GoToWebinarMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly organizerKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GoToWebinarConfig) {
+    super();
     this.token = config.accessToken;
     this.organizerKey = config.organizerKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.getgo.com/G2W/rest').replace(/\/+$/, '');
@@ -751,14 +753,8 @@ export class GoToWebinarMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -767,7 +763,7 @@ export class GoToWebinarMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -782,7 +778,7 @@ export class GoToWebinarMCPServer {
 
   private async put(path: string, body: unknown, query?: Record<string, string>): Promise<ToolResult> {
     const qs = query ? '?' + new URLSearchParams(query).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'PUT',
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -795,7 +791,7 @@ export class GoToWebinarMCPServer {
 
   private async del(path: string, query?: Record<string, string>): Promise<ToolResult> {
     const qs = query ? '?' + new URLSearchParams(query).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'DELETE',
       headers: this.headers(),
     });
@@ -867,7 +863,7 @@ export class GoToWebinarMCPServer {
     const resendConfirmation = args.resendConfirmation as boolean | undefined;
     const { webinarKey: _wk, resendConfirmation: _rc, ...body } = args;
     const qs = resendConfirmation !== undefined ? `?resendConfirmation=${resendConfirmation}` : '';
-    const response = await fetch(`${this.baseUrl}/organizers/${this.organizerKey}/webinars/${webinarKey}/registrants${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/organizers/${this.organizerKey}/webinars/${webinarKey}/registrants${qs}`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify(body),

@@ -20,6 +20,7 @@
 
 import { createHmac } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DarktraceConfig {
   /** Public token from Threat Visualizer → Admin → System Config → API Token */
@@ -32,12 +33,13 @@ interface DarktraceConfig {
   baseUrl?: string;
 }
 
-export class DarktraceMCPServer {
+export class DarktraceMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly publicToken: string;
   private readonly privateToken: string;
 
   constructor(config: DarktraceConfig) {
+    super();
     this.baseUrl = config.baseUrl ?? `https://${config.instance}`;
     this.publicToken = config.publicToken;
     this.privateToken = config.privateToken;
@@ -397,13 +399,6 @@ export class DarktraceMCPServer {
 
   // ── Response helper ───────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): ToolResult {
-    const text = JSON.stringify(data, null, 2);
-    const truncated = text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-    return { content: [{ type: 'text', text: truncated }], isError: false };
-  }
 
   private async jsonOrError(res: Response): Promise<unknown> {
     if (!res.ok) throw new Error(`Darktrace API error: ${res.status} ${res.statusText}`);
@@ -426,14 +421,14 @@ export class DarktraceMCPServer {
     if (args.endtime !== undefined) params.set('endtime', String(args.endtime));
 
     const endpoint = `/modelbreaches?${params.toString()}`;
-    return this.truncate(await this.jsonOrError(await this.dtFetch(endpoint)));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch(endpoint))) }], isError: false };
   }
 
   private async getModelBreach(args: Record<string, unknown>): Promise<ToolResult> {
     const pbid = args.pbid;
     if (pbid === undefined) throw new Error('pbid is required');
     const endpoint = `/modelbreaches/${encodeURIComponent(String(pbid))}`;
-    return this.truncate(await this.jsonOrError(await this.dtFetch(endpoint)));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch(endpoint))) }], isError: false };
   }
 
   private async acknowledgeModelBreach(args: Record<string, unknown>): Promise<ToolResult> {
@@ -445,7 +440,7 @@ export class DarktraceMCPServer {
       method: 'POST',
       body: JSON.stringify({ acknowledge }),
     });
-    return this.truncate(await this.jsonOrError(res));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res)) }], isError: false };
   }
 
   private async listDevices(args: Record<string, unknown>): Promise<ToolResult> {
@@ -455,14 +450,14 @@ export class DarktraceMCPServer {
     if (args.query) params.set('query', String(args.query));
 
     const endpoint = `/devices?${params.toString()}`;
-    return this.truncate(await this.jsonOrError(await this.dtFetch(endpoint)));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch(endpoint))) }], isError: false };
   }
 
   private async getDevice(args: Record<string, unknown>): Promise<ToolResult> {
     const did = args.did;
     if (did === undefined) throw new Error('did is required');
     const endpoint = `/devices?did=${encodeURIComponent(String(did))}`;
-    return this.truncate(await this.jsonOrError(await this.dtFetch(endpoint)));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch(endpoint))) }], isError: false };
   }
 
   private async getDeviceConnectionHistory(args: Record<string, unknown>): Promise<ToolResult> {
@@ -475,7 +470,7 @@ export class DarktraceMCPServer {
     params.set('endtime', String((args.endtime as number) ?? now));
 
     const endpoint = `/connections?${params.toString()}`;
-    return this.truncate(await this.jsonOrError(await this.dtFetch(endpoint)));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch(endpoint))) }], isError: false };
   }
 
   private async getAIAnalystIncidents(args: Record<string, unknown>): Promise<ToolResult> {
@@ -486,18 +481,18 @@ export class DarktraceMCPServer {
     if (args.endtime !== undefined) params.set('endtime', String(args.endtime));
 
     const endpoint = `/aianalyst/incidents?${params.toString()}`;
-    return this.truncate(await this.jsonOrError(await this.dtFetch(endpoint)));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch(endpoint))) }], isError: false };
   }
 
   private async getAIAnalystIncident(args: Record<string, unknown>): Promise<ToolResult> {
     const incidentId = args.incidentId as string;
     if (!incidentId) throw new Error('incidentId is required');
     const endpoint = `/aianalyst/incidents/${encodeURIComponent(incidentId)}`;
-    return this.truncate(await this.jsonOrError(await this.dtFetch(endpoint)));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch(endpoint))) }], isError: false };
   }
 
   private async listTags(): Promise<ToolResult> {
-    return this.truncate(await this.jsonOrError(await this.dtFetch('/tags')));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch('/tags'))) }], isError: false };
   }
 
   private async tagDevice(args: Record<string, unknown>): Promise<ToolResult> {
@@ -511,7 +506,7 @@ export class DarktraceMCPServer {
       method: 'POST',
       body: JSON.stringify({ did, tagId }),
     });
-    return this.truncate(await this.jsonOrError(res));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res)) }], isError: false };
   }
 
   private async untagDevice(args: Record<string, unknown>): Promise<ToolResult> {
@@ -522,15 +517,15 @@ export class DarktraceMCPServer {
 
     const endpoint = `/tags/entities?did=${encodeURIComponent(String(did))}&tagId=${encodeURIComponent(String(tagId))}`;
     const res = await this.dtFetch(endpoint, { method: 'DELETE' });
-    return this.truncate(await this.jsonOrError(res));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res)) }], isError: false };
   }
 
   private async listSubnets(): Promise<ToolResult> {
-    return this.truncate(await this.jsonOrError(await this.dtFetch('/subnets')));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch('/subnets'))) }], isError: false };
   }
 
   private async getSystemStatus(): Promise<ToolResult> {
-    return this.truncate(await this.jsonOrError(await this.dtFetch('/status')));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(await this.dtFetch('/status'))) }], isError: false };
   }
 
   private async triggerAntigenaAction(args: Record<string, unknown>): Promise<ToolResult> {
@@ -545,6 +540,6 @@ export class DarktraceMCPServer {
       method: 'POST',
       body: JSON.stringify({ did, action, active }),
     });
-    return this.truncate(await this.jsonOrError(res));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res)) }], isError: false };
   }
 }

@@ -15,17 +15,19 @@
 // Recommendation: use-rest-api — no official vendor MCP exists.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SecEdgarConfig {
   userAgent: string;   // Required by SEC: "CompanyName contact@example.com"
   baseUrl?: string;
 }
 
-export class SecEdgarMCPServer {
+export class SecEdgarMCPServer extends MCPAdapterBase {
   private readonly userAgent: string;
   private readonly baseUrl: string;
 
   constructor(config: SecEdgarConfig) {
+    super();
     this.userAgent = config.userAgent;
     this.baseUrl = config.baseUrl || 'https://data.sec.gov';
   }
@@ -249,15 +251,8 @@ export class SecEdgarMCPServer {
     return cik.replace(/^0+/, '').padStart(10, '0');
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async edgarGet(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -307,7 +302,7 @@ export class SecEdgarMCPServer {
     if (args.date_range_start) params.set('startdt', args.date_range_start as string);
     if (args.date_range_end) params.set('enddt', args.date_range_end as string);
     const url = `https://efts.sec.gov/LATEST/search-index?${params.toString()}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -323,7 +318,7 @@ export class SecEdgarMCPServer {
     const params: Record<string, string> = {};
     if (args.form_type) params.action = args.form_type as string;
     const url = `${this.baseUrl}/cgi-bin/browse-edgar?action=getcurrent&type=${encodeURIComponent((args.form_type as string) || '')}&dateb=&owner=include&count=${args.limit || 40}&search_text=&output=atom`;
-    const response = await fetch(url, { headers: { 'User-Agent': this.userAgent, 'Accept': 'application/xml' } });
+    const response = await this.fetchWithRetry(url, { headers: { 'User-Agent': this.userAgent, 'Accept': 'application/xml' } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

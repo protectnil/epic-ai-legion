@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface XtrfConfig {
   /** XTRF API access token */
@@ -23,11 +24,12 @@ interface XtrfConfig {
 
 const TRUNCATE = 10 * 1024;
 
-export class XtrfEuMCPServer {
+export class XtrfEuMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: XtrfConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl || 'https://presentation.s.xtrf.eu/home-api').replace(/\/$/, '');
   }
@@ -330,7 +332,7 @@ export class XtrfEuMCPServer {
 
   private async _fetch(path: string, options: RequestInit = {}): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       ...options,
       headers: {
         'X-AUTH-ACCESS-TOKEN': this.accessToken,

@@ -16,6 +16,7 @@
 //       This adapter covers the public read-only endpoints accessible without auth.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WikimediaConfig {
   /** Optional base URL override (default: https://en.wikipedia.org/api/rest_v1) */
@@ -24,11 +25,12 @@ interface WikimediaConfig {
   userAgent?: string;
 }
 
-export class WikimediaMCPServer {
+export class WikimediaMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly userAgent: string;
 
   constructor(config: WikimediaConfig = {}) {
+    super();
     this.baseUrl  = config.baseUrl  ?? 'https://en.wikipedia.org/api/rest_v1';
     this.userAgent = config.userAgent ?? 'EpicAI-WikimediaAdapter/1.0 (https://protectnil.com)';
   }
@@ -269,16 +271,10 @@ export class WikimediaMCPServer {
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         'User-Agent': this.userAgent,
         'Accept': 'application/json',
@@ -296,7 +292,7 @@ export class WikimediaMCPServer {
 
   private async getText(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         'User-Agent': this.userAgent,
         'Accept': 'text/html',
@@ -324,7 +320,7 @@ export class WikimediaMCPServer {
     const headers: Record<string, string> = {};
     if (typeof args['acceptLanguage'] === 'string') headers['Accept-Language'] = args['acceptLanguage'];
     const qs = Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/page/summary/${encodeURIComponent(title)}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/page/summary/${encodeURIComponent(title)}${qs}`, {
       headers: {
         'User-Agent': this.userAgent,
         'Accept': 'application/json',
@@ -408,7 +404,7 @@ export class WikimediaMCPServer {
     }
     const headers: Record<string, string> = {};
     if (typeof args['acceptLanguage'] === 'string') headers['Accept-Language'] = args['acceptLanguage'];
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/data/citation/${encodeURIComponent(format)}/${encodeURIComponent(query)}`,
       {
         headers: {

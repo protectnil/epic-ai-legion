@@ -25,6 +25,7 @@
 // Rate limits: Not publicly documented. Partner-tier access required.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AppleBusinessConnectConfig {
   clientId: string;
@@ -33,7 +34,7 @@ interface AppleBusinessConnectConfig {
   tokenUrl?: string;
 }
 
-export class AppleBusinessConnectMCPServer {
+export class AppleBusinessConnectMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -42,6 +43,7 @@ export class AppleBusinessConnectMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: AppleBusinessConnectConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://businessconnect.apple.com/api/v1';
@@ -420,7 +422,7 @@ export class AppleBusinessConnectMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -451,17 +453,10 @@ export class AppleBusinessConnectMCPServer {
 
   // ---- HTTP helpers ----
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async abcGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const hdrs = await this.authHeaders();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { headers: hdrs });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { headers: hdrs });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -472,7 +467,7 @@ export class AppleBusinessConnectMCPServer {
 
   private async abcPost(path: string, body: unknown): Promise<ToolResult> {
     const hdrs = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: hdrs,
       body: JSON.stringify(body),
@@ -487,7 +482,7 @@ export class AppleBusinessConnectMCPServer {
 
   private async abcPut(path: string, body: unknown): Promise<ToolResult> {
     const hdrs = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: hdrs,
       body: JSON.stringify(body),
@@ -502,7 +497,7 @@ export class AppleBusinessConnectMCPServer {
 
   private async abcPatch(path: string, body: unknown): Promise<ToolResult> {
     const hdrs = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: hdrs,
       body: JSON.stringify(body),
@@ -517,7 +512,7 @@ export class AppleBusinessConnectMCPServer {
 
   private async abcDelete(path: string, body?: unknown): Promise<ToolResult> {
     const hdrs = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: hdrs,
       body: body ? JSON.stringify(body) : undefined,

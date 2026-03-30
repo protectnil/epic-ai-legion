@@ -18,17 +18,19 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RumbleRunConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class RumbleRunMCPServer {
+export class RumbleRunMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: RumbleRunConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://console.rumble.run/api/v1.0';
   }
@@ -237,7 +239,7 @@ export class RumbleRunMCPServer {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

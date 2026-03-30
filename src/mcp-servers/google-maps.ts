@@ -21,6 +21,7 @@
 // Rate limits: Geocoding: 50 req/s; Places: 600 req/min; Directions: 50 req/s (per project)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleMapsConfig {
   apiKey: string;
@@ -28,12 +29,13 @@ interface GoogleMapsConfig {
   placesBaseUrl?: string;
 }
 
-export class GoogleMapsMCPServer {
+export class GoogleMapsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly placesBaseUrl: string;
 
   constructor(config: GoogleMapsConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://maps.googleapis.com/maps/api';
     this.placesBaseUrl = config.placesBaseUrl || 'https://places.googleapis.com/v1';
@@ -408,18 +410,11 @@ export class GoogleMapsMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async mapsGet(endpoint: string, params: Record<string, string>): Promise<ToolResult> {
     params.key = this.apiKey;
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/${endpoint}/json?${qs}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -437,7 +432,7 @@ export class GoogleMapsMCPServer {
     params.key = this.apiKey;
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/place/${path}/json?${qs}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -450,7 +445,6 @@ export class GoogleMapsMCPServer {
     }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
-
 
   private async geocode(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.address) return { content: [{ type: 'text', text: 'address is required' }], isError: true };
@@ -536,7 +530,7 @@ export class GoogleMapsMCPServer {
       'X-Goog-FieldMask': fieldMask,
     };
     if (args.language) headers['Accept-Language'] = args.language as string;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.placesBaseUrl}/places/${encodeURIComponent(args.place_id as string)}`,
       { method: 'GET', headers },
     );
@@ -587,7 +581,7 @@ export class GoogleMapsMCPServer {
       'x-goog-api-key': this.apiKey,
       'Content-Type': 'application/json',
     };
-    const response = await fetch('https://addressvalidation.googleapis.com/v1:validateAddress', {
+    const response = await this.fetchWithRetry('https://addressvalidation.googleapis.com/v1:validateAddress', {
       method: 'POST',
       headers,
       body: JSON.stringify(body),

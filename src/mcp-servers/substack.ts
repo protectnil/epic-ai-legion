@@ -20,6 +20,7 @@
 // Rate limits: Undocumented. Practical limit approximately 60 requests/min before throttling.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SubstackConfig {
   /**
@@ -29,11 +30,12 @@ interface SubstackConfig {
   sessionCookie?: string;
 }
 
-export class SubstackMCPServer {
+export class SubstackMCPServer extends MCPAdapterBase {
   private readonly globalApiBase = 'https://substack.com/api/v1';
   private readonly cookieHeader: string;
 
   constructor(config: SubstackConfig) {
+    super();
     this.cookieHeader = config.sessionCookie ? `connect.sid=${config.sessionCookie}` : '';
   }
 
@@ -260,14 +262,8 @@ export class SubstackMCPServer {
     return `https://${subdomain}.substack.com/api/v1`;
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(url: string): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'GET', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.buildHeaders() });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

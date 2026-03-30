@@ -13,17 +13,19 @@
 // Rate limits: Varies by subscription tier; Starter plan allows 10 concurrent requests
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ElevenLabsConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class ElevenLabsMCPServer {
+export class ElevenLabsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ElevenLabsConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.elevenlabs.io';
   }
@@ -401,15 +403,8 @@ export class ElevenLabsMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -427,7 +422,7 @@ export class ElevenLabsMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -454,7 +449,7 @@ export class ElevenLabsMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -565,7 +560,7 @@ export class ElevenLabsMCPServer {
     const voiceId = args.voice_id as string;
     const sampleId = args.sample_id as string;
     if (!voiceId || !sampleId) return { content: [{ type: 'text', text: 'voice_id and sample_id are required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/voices/${encodeURIComponent(voiceId)}/samples/${encodeURIComponent(sampleId)}/audio`,
       { headers: this.authHeaders },
     );
@@ -587,7 +582,7 @@ export class ElevenLabsMCPServer {
   private async getHistoryItemAudio(args: Record<string, unknown>): Promise<ToolResult> {
     const historyItemId = args.history_item_id as string;
     if (!historyItemId) return { content: [{ type: 'text', text: 'history_item_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/history/${encodeURIComponent(historyItemId)}/audio`,
       { headers: this.authHeaders },
     );

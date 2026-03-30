@@ -38,6 +38,7 @@
 // Rate limits: 50 req/s per token (default); varies by endpoint
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DynatraceConfig {
   environmentId: string;
@@ -52,12 +53,13 @@ interface DynatraceConfig {
   platformUrl?: string;
 }
 
-export class DynatraceMCPServer {
+export class DynatraceMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
   private readonly platformUrl: string;
 
   constructor(config: DynatraceConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl
       ? config.baseUrl.replace(/\/$/, '')
@@ -546,15 +548,8 @@ export class DynatraceMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetch2(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.authHeaders, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders, ...init });
     if (!response.ok) {
       let errBody = '';
       try { errBody = await response.text(); } catch { /* ignore */ }
@@ -716,7 +711,7 @@ export class DynatraceMCPServer {
     if (args.maxResultRecords) body.maxResultRecords = args.maxResultRecords;
     if (args.timezone) body.timezone = args.timezone;
 
-    const startResponse = await fetch(`${this.platformUrl}/query:execute`, {
+    const startResponse = await this.fetchWithRetry(`${this.platformUrl}/query:execute`, {
       method: 'POST',
       headers: { ...this.authHeaders },
       body: JSON.stringify(body),
@@ -742,7 +737,7 @@ export class DynatraceMCPServer {
       return { content: [{ type: 'text', text: this.truncate(startData) }], isError: false };
     }
     // Poll once for result
-    const pollResponse = await fetch(
+    const pollResponse = await this.fetchWithRetry(
       `${this.platformUrl}/query:poll?request-token=${encodeURIComponent(requestToken)}`,
       { headers: this.authHeaders },
     );

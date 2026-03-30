@@ -18,17 +18,19 @@
 //              Exceeding limits returns HTTP 429.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EasyPostConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class EasyPostMCPServer {
+export class EasyPostMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: EasyPostConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.easypost.com/v2';
   }
@@ -540,7 +542,7 @@ export class EasyPostMCPServer {
 
   private async epGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         'Authorization': this.authHeader,
         'Content-Type': 'application/json',
@@ -554,7 +556,7 @@ export class EasyPostMCPServer {
   }
 
   private async epPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Authorization': this.authHeader,
@@ -569,12 +571,6 @@ export class EasyPostMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private parseJson(value: unknown, fieldName: string): { ok: true; data: unknown } | { ok: false; result: ToolResult } {
     if (typeof value !== 'string') return { ok: true, data: value };

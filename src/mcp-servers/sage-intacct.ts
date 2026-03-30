@@ -21,6 +21,7 @@
 // Rate limits: Not publicly documented; Sage recommends reducing sync frequency for static objects
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SageIntacctConfig {
   senderId: string;
@@ -37,7 +38,7 @@ interface IntacctSession {
   endpoint: string;
 }
 
-export class SageIntacctMCPServer {
+export class SageIntacctMCPServer extends MCPAdapterBase {
   private readonly senderId: string;
   private readonly senderPassword: string;
   private readonly companyId: string;
@@ -47,6 +48,7 @@ export class SageIntacctMCPServer {
   private session: IntacctSession | null = null;
 
   constructor(config: SageIntacctConfig) {
+    super();
     this.senderId = config.senderId;
     this.senderPassword = config.senderPassword;
     this.companyId = config.companyId;
@@ -488,7 +490,7 @@ export class SageIntacctMCPServer {
     if (this.session) return this.session;
 
     const xml = this.buildEnvelope('<getAPISession/>');
-    const response = await fetch(this.gatewayUrl, {
+    const response = await this.fetchWithRetry(this.gatewayUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/xml' },
       body: xml,
@@ -514,7 +516,7 @@ export class SageIntacctMCPServer {
     const session = await this.getSession();
     const xml = this.buildEnvelope(functionXml, true);
 
-    const response = await fetch(session.endpoint, {
+    const response = await this.fetchWithRetry(session.endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/xml' },
       body: xml,

@@ -16,17 +16,19 @@
 //   allergies, problems, billing, and more.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DrChronoConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class DrChronoMCPServer {
+export class DrChronoMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: DrChronoConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://app.drchrono.com';
   }
@@ -105,7 +107,7 @@ export class DrChronoMCPServer {
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     try {
-      const resp = await fetch(url, {
+      const resp = await this.fetchWithRetry(url, {
         method,
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,

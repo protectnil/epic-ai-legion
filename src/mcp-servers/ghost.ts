@@ -26,18 +26,20 @@
 
 import { createHmac } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GhostConfig {
   adminApiKey: string;
   baseUrl: string;
 }
 
-export class GhostMCPServer {
+export class GhostMCPServer extends MCPAdapterBase {
   private readonly keyId: string;
   private readonly keySecret: string;
   private readonly baseUrl: string;
 
   constructor(config: GhostConfig) {
+    super();
     const parts = config.adminApiKey.split(':');
     if (parts.length !== 2 || !parts[0] || !parts[1]) {
       throw new Error('adminApiKey must be in the format "id:secret" (copy from Ghost Admin > Integrations)');
@@ -560,15 +562,8 @@ export class GhostMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/ghost/api/admin${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ghost/api/admin${path}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -580,7 +575,7 @@ export class GhostMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/ghost/api/admin${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ghost/api/admin${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -593,7 +588,7 @@ export class GhostMCPServer {
   }
 
   private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/ghost/api/admin${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ghost/api/admin${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -606,7 +601,7 @@ export class GhostMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/ghost/api/admin${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/ghost/api/admin${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

@@ -15,17 +15,19 @@
 // Rate limits: Not publicly documented. Loket.nl enforces per-token limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LoketNlV2Config {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class LoketNlV2MCPServer {
+export class LoketNlV2MCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: LoketNlV2Config) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.loket.nl/v2';
   }
@@ -468,7 +470,7 @@ export class LoketNlV2MCPServer {
   }
 
   private async loketRequest(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

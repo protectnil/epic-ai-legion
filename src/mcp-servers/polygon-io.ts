@@ -16,17 +16,19 @@
 // Rate limits: Free tier — 5 req/min. Starter — unlimited req/min (delayed data). Advanced — unlimited (real-time)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PolygonIoConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class PolygonIoMCPServer {
+export class PolygonIoMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: PolygonIoConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.polygon.io';
   }
@@ -288,17 +290,10 @@ export class PolygonIoMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetch(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     params.apiKey = this.apiKey;
     const qs = new URLSearchParams(params).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {});
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

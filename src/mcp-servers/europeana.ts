@@ -13,17 +13,19 @@
 // Rate limits: 10,000 requests/day (free tier).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EuropeanaConfig {
   wskey: string;
   baseUrl?: string;
 }
 
-export class EuropeanaMCPServer {
+export class EuropeanaMCPServer extends MCPAdapterBase {
   private readonly wskey: string;
   private readonly baseUrl: string;
 
   constructor(config: EuropeanaConfig) {
+    super();
     this.wskey = config.wskey;
     this.baseUrl = config.baseUrl || 'https://api.europeana.eu';
   }
@@ -175,7 +177,7 @@ export class EuropeanaMCPServer {
     const qs = new URLSearchParams(entries).toString();
     const url = `${this.baseUrl}${path}${qs ? `?${qs}` : ''}`;
 
-    const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    const res = await this.fetchWithRetry(url, { method: 'GET', headers: { Accept: 'application/json' } });
     const text = await res.text();
     const truncated = text.length > 10240 ? text.slice(0, 10240) + '\n[truncated]' : text;
 

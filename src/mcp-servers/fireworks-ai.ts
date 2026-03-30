@@ -17,6 +17,7 @@
 // Rate limits: Varies by model and account tier; not publicly documented per-endpoint
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FireworksAIConfig {
   apiKey: string;
@@ -24,12 +25,13 @@ interface FireworksAIConfig {
   accountId?: string;     // Fireworks account ID for account-specific operations
 }
 
-export class FireworksAIMCPServer {
+export class FireworksAIMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly accountId: string;
 
   constructor(config: FireworksAIConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.fireworks.ai/inference/v1';
     this.accountId = config.accountId || 'me';
@@ -465,15 +467,8 @@ export class FireworksAIMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fwPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -486,7 +481,6 @@ export class FireworksAIMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-
   // Account-level API uses a different base path
   private get accountBase(): string {
     // Strip /inference/v1 suffix for account management endpoints
@@ -495,7 +489,7 @@ export class FireworksAIMCPServer {
 
   private async fwAccountGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.accountBase}${path}${qs}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.accountBase}${path}${qs}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.json().catch(() => ({ error: response.statusText }));
       return { content: [{ type: 'text', text: `API error: ${response.status} ${JSON.stringify(err)}` }], isError: true };
@@ -505,7 +499,7 @@ export class FireworksAIMCPServer {
   }
 
   private async fwAccountPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.accountBase}${path}`, {
+    const response = await this.fetchWithRetry(`${this.accountBase}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -630,7 +624,7 @@ export class FireworksAIMCPServer {
     // Step 2: Upload JSONL content via multipart
     const formData = new FormData();
     formData.append('file', new Blob([args.jsonl_content as string], { type: 'application/jsonl' }), 'train.jsonl');
-    const response = await fetch(`${this.accountBase}/v1/accounts/${this.accountId}/datasets/${encodeURIComponent(args.dataset_id as string)}:upload`, {
+    const response = await this.fetchWithRetry(`${this.accountBase}/v1/accounts/${this.accountId}/datasets/${encodeURIComponent(args.dataset_id as string)}:upload`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${this.apiKey}` },
       body: formData,

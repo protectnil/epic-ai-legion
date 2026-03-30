@@ -29,6 +29,7 @@
 // Rate limits: Not publicly documented; governed by Atlassian tenant-level throttling
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface JiraServiceManagementConfig {
   /** Atlassian account email address */
@@ -39,11 +40,12 @@ interface JiraServiceManagementConfig {
   domain: string;
 }
 
-export class JiraServiceManagementMCPServer {
+export class JiraServiceManagementMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: JiraServiceManagementConfig) {
+    super();
     this.baseUrl = `https://${config.domain}`;
     this.authHeader = `Basic ${Buffer.from(`${config.email}:${config.apiToken}`).toString('base64')}`;
   }
@@ -485,14 +487,8 @@ export class JiraServiceManagementMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers(), ...options });
     if (!response.ok) {
       let errBody: unknown;
       try { errBody = await response.json(); } catch { errBody = response.statusText; }
@@ -701,7 +697,7 @@ export class JiraServiceManagementMCPServer {
     }
     // Transitions on JSM requests use the Jira REST API v3 endpoint
     const url = `${this.baseUrl}/rest/api/3/issue/${encodeURIComponent(issueIdOrKey)}/transitions`;
-    const response = await fetch(url, { method: 'POST', headers: this.headers(), body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.headers(), body: JSON.stringify(body) });
     if (!response.ok) {
       let errBody: unknown;
       try { errBody = await response.json(); } catch { errBody = response.statusText; }

@@ -21,6 +21,7 @@
 // Rate limits: 10 req/s per API key for write operations. Read operations are more permissive.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DevToConfig {
   /** API key from dev.to/settings/extensions */
@@ -29,11 +30,12 @@ interface DevToConfig {
   baseUrl?: string;
 }
 
-export class DevToMCPServer {
+export class DevToMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: DevToConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl || 'https://dev.to/api').replace(/\/$/, '');
   }
@@ -396,14 +398,9 @@ export class DevToMCPServer {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(path: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       ...options,
       headers: { ...this.headers, ...(options.headers as Record<string, string> || {}) },

@@ -13,6 +13,7 @@
 // Rate limits: Not published; use messagesPerMinute on bulk sends to self-throttle.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ZoomConnectConfig {
   email: string;
@@ -20,12 +21,13 @@ interface ZoomConnectConfig {
   baseUrl?: string;
 }
 
-export class ZoomConnectMCPServer {
+export class ZoomConnectMCPServer extends MCPAdapterBase {
   private readonly email: string;
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: ZoomConnectConfig) {
+    super();
     this.email = config.email;
     this.token = config.token;
     this.baseUrl = config.baseUrl ?? 'https://www.zoomconnect.com/app/api/rest/v1';
@@ -558,12 +560,6 @@ export class ZoomConnectMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -571,7 +567,7 @@ export class ZoomConnectMCPServer {
     params?: URLSearchParams,
   ): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method,
       headers: this.authHeaders,
       body: body ? JSON.stringify(body) : undefined,

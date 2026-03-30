@@ -31,17 +31,19 @@
 // Rate limits: 2,000 req/min (authenticated user); varies for tokens
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GitLabConfig {
   privateToken: string;
   baseUrl?: string;
 }
 
-export class GitLabMCPServer {
+export class GitLabMCPServer extends MCPAdapterBase {
   private readonly privateToken: string;
   private readonly baseUrl: string;
 
   constructor(config: GitLabConfig) {
+    super();
     this.privateToken = config.privateToken;
     this.baseUrl = (config.baseUrl ?? 'https://gitlab.com/api/v4').replace(/\/$/, '');
   }
@@ -727,14 +729,8 @@ export class GitLabMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -753,7 +749,7 @@ export class GitLabMCPServer {
   }
 
   private async getText(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -772,7 +768,7 @@ export class GitLabMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -792,7 +788,7 @@ export class GitLabMCPServer {
   }
 
   private async put(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.authHeaders,
       body: JSON.stringify(body),

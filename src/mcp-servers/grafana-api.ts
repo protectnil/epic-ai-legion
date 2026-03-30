@@ -40,6 +40,7 @@
 // Rate limits: Not officially documented; Grafana Cloud applies per-org limits. Self-hosted: no default limit.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GrafanaAPIConfig {
   serviceAccountToken: string;
@@ -49,11 +50,12 @@ interface GrafanaAPIConfig {
   baseUrl?: string;
 }
 
-export class GrafanaAPIMCPServer {
+export class GrafanaAPIMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string;
 
   constructor(config: GrafanaAPIConfig) {
+    super();
     this.token = config.serviceAccountToken;
     this.baseUrl = config.baseUrl
       ? config.baseUrl.replace(/\/$/, '')
@@ -512,12 +514,6 @@ export class GrafanaAPIMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async searchDashboards(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.query) params.set('query', args.query as string);
@@ -527,7 +523,7 @@ export class GrafanaAPIMCPServer {
     params.set('limit', String((args.limit as number) ?? 100));
     params.set('page', String((args.page as number) ?? 1));
 
-    const response = await fetch(`${this.baseUrl}/search?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/search?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -536,7 +532,7 @@ export class GrafanaAPIMCPServer {
   }
 
   private async getDashboard(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/dashboards/uid/${encodeURIComponent(args.uid as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/dashboards/uid/${encodeURIComponent(args.uid as string)}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -554,7 +550,7 @@ export class GrafanaAPIMCPServer {
     if (args.folder_uid) body.folderUid = args.folder_uid;
     if (args.message) body.message = args.message;
 
-    const response = await fetch(`${this.baseUrl}/dashboards/db`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/dashboards/db`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -567,7 +563,7 @@ export class GrafanaAPIMCPServer {
   }
 
   private async deleteDashboard(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/dashboards/uid/${encodeURIComponent(args.uid as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/dashboards/uid/${encodeURIComponent(args.uid as string)}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -583,7 +579,7 @@ export class GrafanaAPIMCPServer {
     params.set('limit', String((args.limit as number) ?? 100));
     params.set('page', String((args.page as number) ?? 1));
 
-    const response = await fetch(`${this.baseUrl}/folders?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/folders?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -595,7 +591,7 @@ export class GrafanaAPIMCPServer {
     const body: Record<string, unknown> = { title: args.title };
     if (args.uid) body.uid = args.uid;
 
-    const response = await fetch(`${this.baseUrl}/folders`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/folders`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -608,7 +604,7 @@ export class GrafanaAPIMCPServer {
   }
 
   private async getFolder(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/folders/${encodeURIComponent(args.uid as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/folders/${encodeURIComponent(args.uid as string)}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -619,7 +615,7 @@ export class GrafanaAPIMCPServer {
   }
 
   private async listDatasources(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/datasources`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/datasources`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -628,12 +624,12 @@ export class GrafanaAPIMCPServer {
   }
 
   private async getDatasource(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/datasources/uid/${encodeURIComponent(args.id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/datasources/uid/${encodeURIComponent(args.id as string)}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
       // Fall back to numeric ID path
-      const response2 = await fetch(`${this.baseUrl}/datasources/${encodeURIComponent(args.id as string)}`, {
+      const response2 = await this.fetchWithRetry(`${this.baseUrl}/datasources/${encodeURIComponent(args.id as string)}`, {
         headers: this.authHeaders,
       });
       if (!response2.ok) {
@@ -652,7 +648,7 @@ export class GrafanaAPIMCPServer {
     if (args.group) params.set('group', args.group as string);
     const qs = params.toString() ? `?${params}` : '';
 
-    const response = await fetch(`${this.baseUrl}/v1/provisioning/alert-rules${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/provisioning/alert-rules${qs}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -663,7 +659,7 @@ export class GrafanaAPIMCPServer {
   }
 
   private async getAlertRule(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v1/provisioning/alert-rules/${encodeURIComponent(args.uid as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/provisioning/alert-rules/${encodeURIComponent(args.uid as string)}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -674,7 +670,7 @@ export class GrafanaAPIMCPServer {
   }
 
   private async createAlertRule(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v1/provisioning/alert-rules`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/provisioning/alert-rules`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(args.rule),
@@ -687,7 +683,7 @@ export class GrafanaAPIMCPServer {
   }
 
   private async updateAlertRule(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v1/provisioning/alert-rules/${encodeURIComponent(args.uid as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/provisioning/alert-rules/${encodeURIComponent(args.uid as string)}`, {
       method: 'PUT',
       headers: this.authHeaders,
       body: JSON.stringify(args.rule),
@@ -700,7 +696,7 @@ export class GrafanaAPIMCPServer {
   }
 
   private async deleteAlertRule(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v1/provisioning/alert-rules/${encodeURIComponent(args.uid as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/provisioning/alert-rules/${encodeURIComponent(args.uid as string)}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -715,7 +711,7 @@ export class GrafanaAPIMCPServer {
     if (args.name) params.set('name', args.name as string);
     const qs = params.toString() ? `?${params}` : '';
 
-    const response = await fetch(`${this.baseUrl}/v1/provisioning/contact-points${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/provisioning/contact-points${qs}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -730,7 +726,7 @@ export class GrafanaAPIMCPServer {
     if (args.filter) params.set('filter', args.filter as string);
     const qs = params.toString() ? `?${params}` : '';
 
-    const response = await fetch(`${this.baseUrl}/alertmanager/grafana/api/v2/silences${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/alertmanager/grafana/api/v2/silences${qs}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -749,7 +745,7 @@ export class GrafanaAPIMCPServer {
       createdBy: (args.created_by as string) ?? 'epic-ai',
     };
 
-    const response = await fetch(`${this.baseUrl}/alertmanager/grafana/api/v2/silences`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/alertmanager/grafana/api/v2/silences`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -773,7 +769,7 @@ export class GrafanaAPIMCPServer {
     }
     params.set('limit', String((args.limit as number) ?? 100));
 
-    const response = await fetch(`${this.baseUrl}/annotations?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/annotations?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -791,7 +787,7 @@ export class GrafanaAPIMCPServer {
     if (args.dashboard_uid) body.dashboardUID = args.dashboard_uid;
     if (args.panel_id) body.panelId = args.panel_id;
 
-    const response = await fetch(`${this.baseUrl}/annotations`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/annotations`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),

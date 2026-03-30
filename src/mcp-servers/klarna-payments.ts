@@ -15,6 +15,7 @@
 // Rate limits: Not published; follow Retry-After header on 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface KlarnaPaymentsConfig {
   /** Klarna API user UID (used as Basic Auth username) */
@@ -29,11 +30,12 @@ interface KlarnaPaymentsConfig {
   baseUrl?: string;
 }
 
-export class KlarnaPaymentsMCPServer {
+export class KlarnaPaymentsMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: KlarnaPaymentsConfig) {
+    super();
     this.authHeader = 'Basic ' + Buffer.from(`${config.apiUser}:${config.apiPassword}`).toString('base64');
     this.baseUrl = config.baseUrl ?? 'https://api.klarna.com';
   }
@@ -279,15 +281,8 @@ export class KlarnaPaymentsMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -312,7 +307,7 @@ export class KlarnaPaymentsMCPServer {
   }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -333,7 +328,7 @@ export class KlarnaPaymentsMCPServer {
   }
 
   private async delete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

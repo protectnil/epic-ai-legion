@@ -23,6 +23,7 @@
 // Rate limits: Core 60 req/min, Pro 120/min, Teams 240/min, Enterprise 1,000/min. HTTP 429 on exceed.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MakeConfig {
   apiToken: string;
@@ -31,12 +32,13 @@ interface MakeConfig {
   teamId?: number;   // default team ID for team-scoped operations
 }
 
-export class MakeMCPServer {
+export class MakeMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
   private readonly teamId: number | undefined;
 
   constructor(config: MakeConfig) {
+    super();
     this.token = config.apiToken;
     this.teamId = config.teamId;
     if (config.baseUrl) {
@@ -423,19 +425,12 @@ export class MakeMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private resolveTeamId(args: Record<string, unknown>): number | undefined {
     return (args.team_id as number | undefined) ?? this.teamId;
   }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -444,7 +439,7 @@ export class MakeMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -458,7 +453,7 @@ export class MakeMCPServer {
   }
 
   private async apiPatch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -472,7 +467,7 @@ export class MakeMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

@@ -19,6 +19,7 @@
 // Rate limits: Free tier 1,000 result records/day. Paid tiers scale to millions. See pricing page.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VisualCrossingWeatherConfig {
   apiKey: string;
@@ -32,11 +33,12 @@ function truncate(text: string): string {
     : text;
 }
 
-export class VisualCrossingWeatherMCPServer {
+export class VisualCrossingWeatherMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: VisualCrossingWeatherConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://weather.visualcrossing.com').replace(/\/$/, '');
   }
@@ -281,7 +283,7 @@ export class VisualCrossingWeatherMCPServer {
 
   private async fetchWeather(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
       return {

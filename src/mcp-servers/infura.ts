@@ -19,6 +19,7 @@
 //              Throughput limit applies per second. Exceeding daily quota suspends access until reset.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface InfuraConfig {
   projectId: string;
@@ -26,12 +27,13 @@ interface InfuraConfig {
   network?: string;    // Ethereum network (default: mainnet)
 }
 
-export class InfuraMCPServer {
+export class InfuraMCPServer extends MCPAdapterBase {
   private readonly projectId: string;
   private readonly apiSecret: string | null;
   private readonly network: string;
 
   constructor(config: InfuraConfig) {
+    super();
     this.projectId = config.projectId;
     this.apiSecret = config.apiSecret ?? null;
     this.network = config.network || 'mainnet';
@@ -557,7 +559,7 @@ export class InfuraMCPServer {
       params,
       id: 1,
     };
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),

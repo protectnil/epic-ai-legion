@@ -12,6 +12,7 @@
 // Note: Spec sourced from https://raw.githubusercontent.com/alphagov/pay-publicapi/master/swagger/swagger.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface UKPaymentsConfig {
   /** API key from GOV.UK Pay console — sent as Bearer token in Authorization header */
@@ -20,11 +21,12 @@ interface UKPaymentsConfig {
   baseUrl?: string;
 }
 
-export class PaymentsServiceUKPaymentsMCPServer {
+export class PaymentsServiceUKPaymentsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: UKPaymentsConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://publicapi.payments.service.gov.uk';
   }
@@ -370,13 +372,6 @@ export class PaymentsServiceUKPaymentsMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, queryParams?: Record<string, unknown>): Promise<ToolResult> {
     let url = `${this.baseUrl}${path}`;
     if (queryParams && Object.keys(queryParams).length > 0) {
@@ -389,7 +384,7 @@ export class PaymentsServiceUKPaymentsMCPServer {
       const qs = q.toString();
       if (qs) url += `?${qs}`;
     }
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
     return this.handleResponse(response);
   }
 
@@ -401,7 +396,7 @@ export class PaymentsServiceUKPaymentsMCPServer {
     if (body !== undefined) {
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(`${this.baseUrl}${path}`, init);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, init);
     return this.handleResponse(response);
   }
 

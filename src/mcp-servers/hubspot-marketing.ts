@@ -25,17 +25,19 @@
 // Rate limits: 100 req/10 sec per token (Private App); burst up to 150 req/10 sec
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HubSpotMarketingConfig {
   privateAppToken: string;
   baseUrl?: string;
 }
 
-export class HubSpotMarketingMCPServer {
+export class HubSpotMarketingMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: HubSpotMarketingConfig) {
+    super();
     this.token = config.privateAppToken;
     this.baseUrl = config.baseUrl ?? 'https://api.hubapi.com';
   }
@@ -513,16 +515,9 @@ export class HubSpotMarketingMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -531,7 +526,7 @@ export class HubSpotMarketingMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -544,7 +539,7 @@ export class HubSpotMarketingMCPServer {
   }
 
   private async apiPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -555,7 +550,6 @@ export class HubSpotMarketingMCPServer {
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
-
 
   private async listCampaigns(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = { limit: String((args.limit as number) ?? 20) };

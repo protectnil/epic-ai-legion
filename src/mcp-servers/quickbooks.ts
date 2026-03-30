@@ -21,6 +21,7 @@
 // Rate limits: 500 req/min per OAuth2 token (throttled at Intuit gateway)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface QuickBooksConfig {
   /** OAuth2 access token obtained from the Intuit OAuth2 flow. */
@@ -34,11 +35,12 @@ interface QuickBooksConfig {
   sandbox?: boolean;
 }
 
-export class QuickBooksMCPServer {
+export class QuickBooksMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: QuickBooksConfig) {
+    super();
     this.accessToken = config.accessToken;
     const host = config.sandbox
       ? 'sandbox-quickbooks.api.intuit.com'
@@ -581,7 +583,7 @@ export class QuickBooksMCPServer {
   }
 
   private async fetchJson(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { ...init, headers: { ...this.authHeaders, ...(init?.headers as Record<string, string> | undefined) } });
+    const response = await this.fetchWithRetry(url, { ...init, headers: { ...this.authHeaders, ...(init?.headers as Record<string, string> | undefined) } });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `QuickBooks API error: ${response.status} ${response.statusText}` }],

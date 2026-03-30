@@ -17,17 +17,19 @@
 // Rate limits: Not publicly documented — consult Lansweeper support for enterprise rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LansweeperConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class LansweeperMCPServer {
+export class LansweeperMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: LansweeperConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.lansweeper.com/api/v2/graphql';
   }
@@ -369,15 +371,8 @@ export class LansweeperMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async graphql(query: string, variables: Record<string, unknown> = {}): Promise<ToolResult> {
-    const response = await fetch(this.baseUrl, {
+    const response = await this.fetchWithRetry(this.baseUrl, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ query, variables }),

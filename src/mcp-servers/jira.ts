@@ -29,6 +29,7 @@
 // Rate limits: Not publicly documented; Atlassian throttles at the tenant level
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface JiraConfig {
   /** Atlassian Cloud instance name, e.g. "mycompany" for mycompany.atlassian.net */
@@ -39,11 +40,12 @@ interface JiraConfig {
   api_token: string;
 }
 
-export class JiraMCPServer {
+export class JiraMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: JiraConfig) {
+    super();
     this.baseUrl = `https://${config.instance}.atlassian.net/rest/api/3`;
     this.authHeader = `Basic ${Buffer.from(`${config.email}:${config.api_token}`).toString('base64')}`;
   }
@@ -412,14 +414,8 @@ export class JiraMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers(), ...options });
     let data: unknown;
     try {
       data = await response.json();
@@ -484,7 +480,7 @@ export class JiraMCPServer {
     if (args.description !== undefined) fields.description = this.adf(args.description as string);
     if (args.priority !== undefined) fields.priority = { name: args.priority };
     if (args.assignee_account_id !== undefined) fields.assignee = { accountId: args.assignee_account_id };
-    const response = await fetch(`${this.baseUrl}/issue/${encodeURIComponent(issueKey)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/issue/${encodeURIComponent(issueKey)}`, {
       method: 'PUT',
       headers: this.headers(),
       body: JSON.stringify({ fields }),
@@ -502,7 +498,7 @@ export class JiraMCPServer {
     if (!issueKey) {
       return { content: [{ type: 'text', text: 'issue_key is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/issue/${encodeURIComponent(issueKey)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/issue/${encodeURIComponent(issueKey)}`, {
       method: 'DELETE',
       headers: this.headers(),
     });
@@ -518,7 +514,7 @@ export class JiraMCPServer {
     if (!issueKey || !transitionId) {
       return { content: [{ type: 'text', text: 'issue_key and transition_id are required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/issue/${encodeURIComponent(issueKey)}/transitions`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/issue/${encodeURIComponent(issueKey)}/transitions`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify({ transition: { id: String(transitionId) } }),

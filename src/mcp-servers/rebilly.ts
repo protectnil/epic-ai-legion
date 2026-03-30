@@ -13,17 +13,19 @@
 // Rate limits: Not publicly documented. Rebilly enforces per-account limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RebillyConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class RebillyMCPServer {
+export class RebillyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: RebillyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api-sandbox.rebilly.com';
   }
@@ -484,15 +486,8 @@ export class RebillyMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: this.headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

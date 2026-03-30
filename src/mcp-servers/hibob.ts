@@ -18,6 +18,7 @@
 // Rate limits: Not publicly documented; apply conservative backoff on 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HiBobConfig {
   /** Service user ID from Bob Settings > Integrations > Service Users. */
@@ -28,11 +29,12 @@ interface HiBobConfig {
   baseUrl?: string;
 }
 
-export class HiBobMCPServer {
+export class HiBobMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: HiBobConfig) {
+    super();
     const credentials = Buffer.from(`${config.serviceUserId}:${config.token}`).toString('base64');
     this.authHeader = `Basic ${credentials}`;
     this.baseUrl = (config.baseUrl ?? 'https://api.hibob.com/v1').replace(/\/$/, '');
@@ -341,15 +343,8 @@ export class HiBobMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async bobGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -362,7 +357,7 @@ export class HiBobMCPServer {
   }
 
   private async bobPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -377,7 +372,7 @@ export class HiBobMCPServer {
   }
 
   private async bobPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -392,7 +387,7 @@ export class HiBobMCPServer {
   }
 
   private async bobDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

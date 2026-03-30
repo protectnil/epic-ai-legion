@@ -12,17 +12,19 @@
 // Rate limits: Not publicly documented per endpoint. ShipEngine enforces per-account limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ShipEngineConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class ShipEngineMCPServer {
+export class ShipEngineMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ShipEngineConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.shipengine.com';
   }
@@ -473,7 +475,7 @@ export class ShipEngineMCPServer {
       init.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
 
     if (!response.ok) {
       let detail = '';

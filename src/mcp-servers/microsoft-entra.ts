@@ -24,6 +24,7 @@
 //   $search requires ConsistencyLevel: eventual header.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MicrosoftEntraConfig {
   tenantId: string;
@@ -32,7 +33,7 @@ interface MicrosoftEntraConfig {
   graphBaseUrl?: string;
 }
 
-export class MicrosoftEntraMCPServer {
+export class MicrosoftEntraMCPServer extends MCPAdapterBase {
   private readonly tenantId: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -41,6 +42,7 @@ export class MicrosoftEntraMCPServer {
   private tokenExpiry = 0;
 
   constructor(config: MicrosoftEntraConfig) {
+    super();
     this.tenantId = config.tenantId;
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -82,7 +84,7 @@ export class MicrosoftEntraMCPServer {
       scope: 'https://graph.microsoft.com/.default',
     });
 
-    const response = await fetch(tokenUrl, {
+    const response = await this.fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -96,12 +98,6 @@ export class MicrosoftEntraMCPServer {
     this.cachedToken = data.access_token;
     this.tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
     return this.cachedToken;
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -626,7 +622,7 @@ export class MicrosoftEntraMCPServer {
   }
 
   private async graphGet(path: string, headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.graphBaseUrl}${path}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.graphBaseUrl}${path}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -635,7 +631,7 @@ export class MicrosoftEntraMCPServer {
   }
 
   private async graphPost(path: string, headers: Record<string, string>, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.graphBaseUrl}${path}`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.graphBaseUrl}${path}`, { method: 'POST', headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -645,7 +641,7 @@ export class MicrosoftEntraMCPServer {
   }
 
   private async graphPatch(path: string, headers: Record<string, string>, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.graphBaseUrl}${path}`, { method: 'PATCH', headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.graphBaseUrl}${path}`, { method: 'PATCH', headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -653,7 +649,7 @@ export class MicrosoftEntraMCPServer {
   }
 
   private async graphDelete(path: string, headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.graphBaseUrl}${path}`, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(`${this.graphBaseUrl}${path}`, { method: 'DELETE', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }

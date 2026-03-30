@@ -39,6 +39,7 @@
 // Rate limits: Varies by endpoint; default 6000 req/min per token
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CrowdStrikeConfig {
   clientId: string;
@@ -46,7 +47,7 @@ interface CrowdStrikeConfig {
   baseUrl?: string;
 }
 
-export class CrowdStrikeMCPServer {
+export class CrowdStrikeMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -54,6 +55,7 @@ export class CrowdStrikeMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: CrowdStrikeConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://api.crowdstrike.com';
@@ -89,7 +91,7 @@ export class CrowdStrikeMCPServer {
     const now = Date.now();
     if (this.bearerToken && this.tokenExpiry > now) return this.bearerToken;
 
-    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -111,7 +113,7 @@ export class CrowdStrikeMCPServer {
 
   private async get(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
@@ -127,7 +129,7 @@ export class CrowdStrikeMCPServer {
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -144,7 +146,7 @@ export class CrowdStrikeMCPServer {
 
   private async patch(path: string, body: unknown): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -161,7 +163,7 @@ export class CrowdStrikeMCPServer {
 
   private async del(path: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     });

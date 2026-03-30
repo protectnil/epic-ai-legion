@@ -13,6 +13,7 @@
 // Rate limits: 700 req/min (Enterprise), 400 req/min (Professional), 200 req/min (Team/Essential)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ZendeskConfig {
   /** Agent email address used for authentication. */
@@ -25,12 +26,13 @@ interface ZendeskConfig {
   baseUrl?: string;
 }
 
-export class ZendeskMCPServer {
+export class ZendeskMCPServer extends MCPAdapterBase {
   private readonly email: string;
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ZendeskConfig) {
+    super();
     this.email = config.email;
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || `https://${config.subdomain}.zendesk.com/api/v2`;
@@ -652,15 +654,8 @@ export class ZendeskMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: this.headers(),
       body: body !== undefined ? JSON.stringify(body) : undefined,

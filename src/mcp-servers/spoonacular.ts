@@ -16,6 +16,7 @@
 //   HTTP 402 returned when daily quota is exceeded.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SpoonacularConfig {
   /** Spoonacular API key — passed as apiKey query parameter */
@@ -24,13 +25,13 @@ interface SpoonacularConfig {
   baseUrl?: string;
 }
 
-const TRUNCATE = 10 * 1024;
 
-export class SpoonacularMCPServer {
+export class SpoonacularMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: SpoonacularConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.spoonacular.com';
   }
@@ -513,13 +514,6 @@ export class SpoonacularMCPServer {
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > TRUNCATE
-      ? text.slice(0, TRUNCATE) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | number | boolean | undefined> = {}): string {
     const qs = new URLSearchParams({ apiKey: this.apiKey });
     for (const [k, v] of Object.entries(params)) {
@@ -530,7 +524,7 @@ export class SpoonacularMCPServer {
 
   private async get(path: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -541,7 +535,7 @@ export class SpoonacularMCPServer {
 
   private async post(path: string, body: Record<string, unknown>, params: Record<string, string | number | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams(Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)]))).toString(),

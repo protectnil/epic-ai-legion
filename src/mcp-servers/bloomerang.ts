@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; treat conservatively (~60 req/min)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BloomerangConfig {
   apiToken?: string;
@@ -23,7 +24,7 @@ interface BloomerangConfig {
   baseUrl?: string;
 }
 
-export class BloomerangMCPServer {
+export class BloomerangMCPServer extends MCPAdapterBase {
   private readonly apiToken: string | null;
   private readonly clientId: string | null;
   private readonly clientSecret: string | null;
@@ -33,6 +34,7 @@ export class BloomerangMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: BloomerangConfig) {
+    super();
     this.apiToken = config.apiToken ?? null;
     this.clientId = config.clientId ?? null;
     this.clientSecret = config.clientSecret ?? null;
@@ -477,7 +479,7 @@ export class BloomerangMCPServer {
       return { 'Authorization': `Bearer ${this.bearerToken}` };
     }
 
-    const response = await fetch('https://crm.bloomerang.co/oauth/token', {
+    const response = await this.fetchWithRetry('https://crm.bloomerang.co/oauth/token', {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -495,7 +497,7 @@ export class BloomerangMCPServer {
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const authHeaders = await this.getAuthHeaders();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: { ...authHeaders, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -507,7 +509,7 @@ export class BloomerangMCPServer {
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const authHeaders = await this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -521,7 +523,7 @@ export class BloomerangMCPServer {
 
   private async put(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const authHeaders = await this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -531,13 +533,6 @@ export class BloomerangMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   // ── Tool implementations ──────────────────────────────────────────────────

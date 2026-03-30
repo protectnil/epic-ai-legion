@@ -19,6 +19,7 @@
 // Required header: X-CSRF-Header: - (must be present on all mutating calls)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RelativityConfig {
   /**
@@ -33,11 +34,12 @@ interface RelativityConfig {
   baseUrl: string;
 }
 
-export class RelativityMCPServer {
+export class RelativityMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: RelativityConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
   }
@@ -466,15 +468,8 @@ export class RelativityMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async httpPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),

@@ -22,6 +22,7 @@
 // Rate limits: Not publicly documented — varies by entitlement tier; tokens reusable within 60-min window
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MorningstarConfig {
   username: string;
@@ -30,7 +31,7 @@ interface MorningstarConfig {
   baseUrl?: string;
 }
 
-export class MorningstarMCPServer {
+export class MorningstarMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
@@ -39,6 +40,7 @@ export class MorningstarMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: MorningstarConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     if (config.baseUrl) {
@@ -426,7 +428,7 @@ export class MorningstarMCPServer {
     }
 
     const credentials = btoa(`${this.username}:${this.password}`);
-    const response = await fetch(`${this.baseUrl}/token/oauth`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/token/oauth`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -445,17 +447,10 @@ export class MorningstarMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async msGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}${qs}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -472,7 +467,7 @@ export class MorningstarMCPServer {
 
   private async msPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

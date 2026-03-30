@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented; contact SlideRoom support for limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SlideRoomConfig {
   apiKey: string;
@@ -20,11 +21,12 @@ interface SlideRoomConfig {
   baseUrl?: string;
 }
 
-export class SlideRoomMCPServer {
+export class SlideRoomMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: SlideRoomConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.slideroom.com';
   }
@@ -292,13 +294,6 @@ export class SlideRoomMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | undefined> = {}): string {
     const qs = new URLSearchParams({ apiKey: this.apiKey });
     for (const [k, v] of Object.entries(params)) {
@@ -309,7 +304,7 @@ export class SlideRoomMCPServer {
 
   private async apiGet(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url);
+    const response = await this.fetchWithRetry(url, {});
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -319,7 +314,7 @@ export class SlideRoomMCPServer {
 
   private async apiPost(path: string, body: unknown, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -333,7 +328,7 @@ export class SlideRoomMCPServer {
 
   private async apiDelete(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'DELETE' });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -417,7 +412,7 @@ export class SlideRoomMCPServer {
     if (args.roundType) params.roundType = args.roundType as string;
     if (args.roundName) params.roundName = args.roundName as string;
     const url = this.buildUrl('/api/v2/application/request-export', params);
-    const response = await fetch(url, { method: 'POST' });
+    const response = await this.fetchWithRetry(url, { method: 'POST' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -435,7 +430,7 @@ export class SlideRoomMCPServer {
       `/api/v2/application/${encodeURIComponent(String(args.applicationId))}/request-export`,
       params,
     );
-    const response = await fetch(url, { method: 'POST' });
+    const response = await this.fetchWithRetry(url, { method: 'POST' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

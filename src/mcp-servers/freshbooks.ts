@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented. FreshBooks enforces per-account limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FreshBooksConfig {
   accessToken: string;
@@ -25,13 +26,14 @@ interface FreshBooksConfig {
   baseUrl?: string;
 }
 
-export class FreshBooksMCPServer {
+export class FreshBooksMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly accountId: string;
   private readonly businessId: string;
   private readonly baseUrl: string;
 
   constructor(config: FreshBooksConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.accountId = config.accountId;
     this.businessId = config.businessId || '';
@@ -519,7 +521,7 @@ export class FreshBooksMCPServer {
   }
 
   private async fbRequest(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

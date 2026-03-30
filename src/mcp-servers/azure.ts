@@ -21,6 +21,7 @@
 // Rate limits: ~12,000 req/hour per subscription for read operations; write limits vary by resource type
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AzureConfig {
   /**
@@ -46,11 +47,12 @@ function truncate(text: string): string {
     : text;
 }
 
-export class AzureMCPServer {
+export class AzureMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly subscriptionId: string;
 
   constructor(config: AzureConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.subscriptionId = config.subscriptionId ?? '';
   }
@@ -359,7 +361,7 @@ export class AzureMCPServer {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private async fetchJSON(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers(), ...options });
     let data: unknown;
     try { data = await response.json(); } catch { data = await response.text(); }
     return {
@@ -397,7 +399,7 @@ export class AzureMCPServer {
     const sub = encodeURIComponent(this.subId(args));
     const rg = encodeURIComponent(String(args.resourceGroupName));
     const url = `${BASE}/subscriptions/${sub}/resourcegroups/${rg}?api-version=${RM_API}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       let data: unknown;
       try { data = await response.json(); } catch { data = await response.text(); }
@@ -427,7 +429,7 @@ export class AzureMCPServer {
     const apiVer = (args.apiVersion as string) || RM_API;
     const resourceId = String(args.resourceId).replace(/^\//, '');
     const url = `${BASE}/${resourceId}?api-version=${apiVer}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       let data: unknown;
       try { data = await response.json(); } catch { data = await response.text(); }
@@ -458,7 +460,7 @@ export class AzureMCPServer {
     const rg = encodeURIComponent(String(args.resourceGroupName));
     const vmName = encodeURIComponent(String(args.vmName));
     const url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Compute/virtualMachines/${vmName}/start?api-version=${COMPUTE_API}`;
-    const response = await fetch(url, { method: 'POST', headers: this.headers(), body: '{}' });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.headers(), body: '{}' });
     if (!response.ok) {
       let data: unknown;
       try { data = await response.json(); } catch { data = await response.text(); }
@@ -472,7 +474,7 @@ export class AzureMCPServer {
     const rg = encodeURIComponent(String(args.resourceGroupName));
     const vmName = encodeURIComponent(String(args.vmName));
     const url = `${BASE}/subscriptions/${sub}/resourceGroups/${rg}/providers/Microsoft.Compute/virtualMachines/${vmName}/deallocate?api-version=${COMPUTE_API}`;
-    const response = await fetch(url, { method: 'POST', headers: this.headers(), body: '{}' });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.headers(), body: '{}' });
     if (!response.ok) {
       let data: unknown;
       try { data = await response.json(); } catch { data = await response.text(); }

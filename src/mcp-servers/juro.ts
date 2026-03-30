@@ -19,17 +19,19 @@
 // Rate limits: Contract creation rate-limited at 5 req/s with burst of 10; overall limits not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface JuroConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class JuroMCPServer {
+export class JuroMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: JuroConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.juro.com/v3';
   }
@@ -343,15 +345,8 @@ export class JuroMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<{ ok: boolean; status: number; statusText: string; data: unknown }> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     let data: unknown;
     try {
       data = await response.json();
@@ -413,7 +408,7 @@ export class JuroMCPServer {
   }
 
   private async deleteContract(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/contracts/${encodeURIComponent(args.contract_id as string)}`,
       { method: 'DELETE', headers: this.headers }
     );
@@ -433,7 +428,7 @@ export class JuroMCPServer {
 
     // Send without Content-Type header so fetch sets multipart boundary automatically
     const uploadHeaders: Record<string, string> = { 'x-api-key': this.apiKey, 'Accept': 'application/json' };
-    const response = await fetch(`${this.baseUrl}/contracts/upload`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/contracts/upload`, {
       method: 'POST',
       headers: uploadHeaders,
       body: formData,

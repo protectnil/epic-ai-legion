@@ -17,17 +17,19 @@
 // Rate limits: 100 req/10 sec (Free/Starter private app); 190 req/10 sec (Pro/Enterprise private app)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HubSpotConfig {
   privateAppToken: string;
   baseUrl?: string;
 }
 
-export class HubSpotMCPServer {
+export class HubSpotMCPServer extends MCPAdapterBase {
   private readonly privateAppToken: string;
   private readonly baseUrl: string;
 
   constructor(config: HubSpotConfig) {
+    super();
     this.privateAppToken = config.privateAppToken;
     this.baseUrl = config.baseUrl ?? 'https://api.hubapi.com';
   }
@@ -354,19 +356,12 @@ export class HubSpotMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchCrmList(objectType: string, args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) ?? 10;
     const params = new URLSearchParams({ limit: String(limit) });
     if (args.after) params.set('after', args.after as string);
     if (args.properties) params.set('properties', args.properties as string);
-    const response = await fetch(`${this.baseUrl}/crm/v3/objects/${objectType}?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/crm/v3/objects/${objectType}?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -378,7 +373,7 @@ export class HubSpotMCPServer {
     const params = new URLSearchParams();
     if (properties) params.set('properties', properties);
     const qs = params.toString();
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/crm/v3/objects/${objectType}/${encodeURIComponent(id)}${qs ? `?${qs}` : ''}`,
       { headers: this.authHeaders },
     );
@@ -390,7 +385,7 @@ export class HubSpotMCPServer {
   }
 
   private async createCrmObject(objectType: string, properties: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/crm/v3/objects/${objectType}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/crm/v3/objects/${objectType}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify({ properties }),
@@ -403,7 +398,7 @@ export class HubSpotMCPServer {
   }
 
   private async patchCrmObject(objectType: string, id: string, properties: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/crm/v3/objects/${objectType}/${encodeURIComponent(id)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/crm/v3/objects/${objectType}/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: this.authHeaders,
       body: JSON.stringify({ properties }),
@@ -444,7 +439,7 @@ export class HubSpotMCPServer {
       limit: (args.limit as number) ?? 10,
     };
     if (args.after) body.after = args.after;
-    const response = await fetch(`${this.baseUrl}/crm/v3/objects/contacts/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/crm/v3/objects/contacts/search`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -516,7 +511,7 @@ export class HubSpotMCPServer {
     const params = new URLSearchParams({ limit: String((args.limit as number) ?? 100) });
     if (args.after) params.set('after', args.after as string);
     if (args.email) params.set('email', args.email as string);
-    const response = await fetch(`${this.baseUrl}/crm/v3/owners?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/crm/v3/owners?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -526,7 +521,7 @@ export class HubSpotMCPServer {
 
   private async listPipelines(args: Record<string, unknown>): Promise<ToolResult> {
     const objectType = (args.object_type as string) ?? 'deals';
-    const response = await fetch(`${this.baseUrl}/crm/v3/pipelines/${encodeURIComponent(objectType)}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/crm/v3/pipelines/${encodeURIComponent(objectType)}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }], isError: true };
     }
@@ -542,7 +537,7 @@ export class HubSpotMCPServer {
     }
     const body: Record<string, unknown> = { query, limit: (args.limit as number) ?? 10 };
     if (args.after) body.after = args.after;
-    const response = await fetch(`${this.baseUrl}/crm/v3/objects/${encodeURIComponent(objectType)}/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/crm/v3/objects/${encodeURIComponent(objectType)}/search`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),

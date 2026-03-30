@@ -16,6 +16,7 @@
 // Rate limits: See Co-WIN / MoHFW terms
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CoWinCertConfig {
   /** Bearer token obtained via DIVOC Keycloak OAuth2 authorization_code flow */
@@ -23,11 +24,12 @@ interface CoWinCertConfig {
   baseUrl?: string;
 }
 
-export class CoWinCinCowincertMCPServer {
+export class CoWinCinCowincertMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CoWinCertConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://cowin.gov.cin/cert/external';
   }
@@ -96,12 +98,6 @@ export class CoWinCinCowincertMCPServer {
     return `Bearer ${this.accessToken}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(
     method: 'GET' | 'POST',
@@ -118,7 +114,7 @@ export class CoWinCinCowincertMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

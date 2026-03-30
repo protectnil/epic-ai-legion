@@ -39,6 +39,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BarracudaConfig {
   /** Hostname or IP of the Barracuda appliance or cloud instance, e.g. "mail.example.com" */
@@ -51,13 +52,14 @@ interface BarracudaConfig {
   useHttps?: boolean;
 }
 
-export class BarracudaMCPServer {
+export class BarracudaMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly email: string;
   private readonly password: string;
   private authToken: string | null = null;
 
   constructor(config: BarracudaConfig) {
+    super();
     const protocol = config.useHttps !== false ? 'https' : 'http';
     this.baseUrl = `${protocol}://${config.host}/api/v1`;
     this.email = config.email;
@@ -66,7 +68,7 @@ export class BarracudaMCPServer {
 
   private async login(): Promise<string> {
     const body = new URLSearchParams({ email: this.email, password: this.password });
-    const response = await fetch(`${this.baseUrl}/api_login`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api_login`, {
       method: 'POST',
       headers: { accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -94,20 +96,14 @@ export class BarracudaMCPServer {
       headers: { 'auth-api': token, 'Content-Type': 'application/json' } as Record<string, string>,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     };
-    let response = await fetch(url, opts);
+    let response = await this.fetchWithRetry(url, opts);
     if (response.status === 401) {
       this.authToken = null;
       opts.headers['auth-api'] = await this.getToken();
-      response = await fetch(url, opts);
+      response = await this.fetchWithRetry(url, opts);
     }
     if (!response.ok) throw new Error(`Barracuda API error: ${response.status} ${response.statusText}`);
     return response.json();
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {

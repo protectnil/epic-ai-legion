@@ -13,6 +13,7 @@
 // Rate limits: Not applicable — self-hosted system; limits depend on operator configuration.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SliceboxConfig {
   username: string;
@@ -21,13 +22,14 @@ interface SliceboxConfig {
   baseUrl?: string;
 }
 
-export class SliceboxMCPServer {
+export class SliceboxMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
   private sessionCookie: string | null = null;
 
   constructor(config: SliceboxConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl ?? 'http://slicebox.local/api';
@@ -416,13 +418,6 @@ export class SliceboxMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(): Record<string, string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.sessionCookie) headers['Cookie'] = this.sessionCookie;
@@ -440,7 +435,7 @@ export class SliceboxMCPServer {
 
   private async apiGet(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -450,7 +445,7 @@ export class SliceboxMCPServer {
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
     const url = this.buildUrl(path);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
@@ -466,7 +461,7 @@ export class SliceboxMCPServer {
 
   private async doLogin(): Promise<ToolResult> {
     const url = this.buildUrl('/users/login');
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: this.username, password: this.password }),
@@ -483,7 +478,7 @@ export class SliceboxMCPServer {
 
   private async getHealth(): Promise<ToolResult> {
     const url = this.buildUrl('/system/health');
-    const response = await fetch(url, { headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Health check failed: ${response.status} ${response.statusText}` }], isError: true };
     }

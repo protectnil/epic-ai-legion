@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented per-endpoint
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FireHydrantConfig {
   /** FireHydrant bot token or user API key */
@@ -25,11 +26,12 @@ interface FireHydrantConfig {
   baseUrl?: string;
 }
 
-export class FireHydrantMCPServer {
+export class FireHydrantMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: FireHydrantConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.firehydrant.io/v1').replace(/\/$/, '');
   }
@@ -62,12 +64,6 @@ export class FireHydrantMCPServer {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {

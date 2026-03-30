@@ -15,17 +15,19 @@
 // Rate limits: Throttled without a token. Tokens provide higher limits per Socrata policy.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenDataNetworkConfig {
   appToken?: string;
   baseUrl?: string;
 }
 
-export class OpenDataNetworkMCPServer {
+export class OpenDataNetworkMCPServer extends MCPAdapterBase {
   private readonly appToken: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: OpenDataNetworkConfig = {}) {
+    super();
     this.appToken = config.appToken;
     this.baseUrl = (config.baseUrl || 'http://api.opendatanetwork.com').replace(/\/$/, '');
   }
@@ -317,13 +319,6 @@ export class OpenDataNetworkMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {};
     if (this.appToken) params.app_token = this.appToken;
@@ -336,7 +331,7 @@ export class OpenDataNetworkMCPServer {
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
     const headers: Record<string, string> = {};
     if (this.appToken) headers['X-App-Token'] = this.appToken;
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     if (!response.ok) {
       const text = await response.text();
       return {

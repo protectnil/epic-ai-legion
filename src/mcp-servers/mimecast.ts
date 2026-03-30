@@ -26,6 +26,7 @@
 // Note: All API 1.0 endpoints use POST with JSON request body. GET is not used.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MimecastConfig {
   clientId: string;
@@ -33,7 +34,7 @@ interface MimecastConfig {
   baseUrl?: string;
 }
 
-export class MimecastMCPServer {
+export class MimecastMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -41,6 +42,7 @@ export class MimecastMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: MimecastConfig) {
+    super();
     this.baseUrl = (config.baseUrl || 'https://api.mimecast.com').replace(/\/$/, '');
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -80,7 +82,7 @@ export class MimecastMCPServer {
       return this.accessToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/oauth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -102,7 +104,7 @@ export class MimecastMCPServer {
 
   private async request(endpoint: string, body: unknown): Promise<unknown> {
     const token = await this.ensureToken();
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -116,12 +118,6 @@ export class MimecastMCPServer {
     }
 
     return response.json();
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {

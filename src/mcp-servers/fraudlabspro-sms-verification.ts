@@ -14,17 +14,19 @@
 // Spec: https://api.apis.guru/v2/specs/fraudlabspro.com/sms-verification/1.0/openapi.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FraudLabsProSMSConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class FraudLabsProSMSVerificationMCPServer {
+export class FraudLabsProSMSVerificationMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: FraudLabsProSMSConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.fraudlabspro.com';
   }
@@ -143,12 +145,6 @@ export class FraudLabsProSMSVerificationMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async sendSmsVerification(args: Record<string, unknown>): Promise<ToolResult> {
     const tel = args.tel as string;
     if (!tel) {
@@ -165,7 +161,7 @@ export class FraudLabsProSMSVerificationMCPServer {
     if (args.mesg) params.set('mesg', args.mesg as string);
     if (args.format) params.set('format', args.format as string);
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/verification/send?${params.toString()}`,
       { method: 'POST' },
     );
@@ -217,7 +213,7 @@ export class FraudLabsProSMSVerificationMCPServer {
     params.set('otp', otp);
     if (args.format) params.set('format', args.format as string);
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/verification/result?${params.toString()}`,
       { method: 'GET' },
     );

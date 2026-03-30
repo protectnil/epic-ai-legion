@@ -18,26 +18,21 @@
 //   Monte Carlo calculations. Plans are scoped by planId query parameter on most endpoints.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NaviplanCentralPlanConfig {
   baseUrl?: string;
   sessionCookie?: string;
 }
 
-export class NaviplanCentralPlanMCPServer {
+export class NaviplanCentralPlanMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private sessionCookie: string;
 
   constructor(config: NaviplanCentralPlanConfig) {
+    super();
     this.baseUrl = (config.baseUrl || 'https://demo.uat.naviplancentral.com/plan').replace(/\/$/, '');
     this.sessionCookie = config.sessionCookie || '';
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private buildHeaders(extra?: Record<string, string>): Record<string, string> {
@@ -68,7 +63,7 @@ export class NaviplanCentralPlanMCPServer {
 
     let response: Response;
     try {
-      response = await fetch(url, init);
+      response = await this.fetchWithRetry(url, init);
     } catch (err) {
       return {
         content: [{ type: 'text', text: `Network error: ${err instanceof Error ? err.message : String(err)}` }],

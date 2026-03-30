@@ -16,6 +16,7 @@
 // Sandbox: https://sandbox.surevoip.co.uk (data is 24 hours behind production)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SureVoIPUKConfig {
   /** HTTP Basic Auth username (your SureVoIP account ID or email) */
@@ -26,11 +27,12 @@ interface SureVoIPUKConfig {
   baseUrl?: string;
 }
 
-export class SureVoIPUKMCPServer {
+export class SureVoIPUKMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: SureVoIPUKConfig) {
+    super();
     this.authHeader = 'Basic ' + Buffer.from(`${config.username}:${config.password}`).toString('base64');
     this.baseUrl = config.baseUrl ?? 'https://api.surevoip.co.uk';
   }
@@ -417,17 +419,10 @@ export class SureVoIPUKMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const url = new URL(`${this.baseUrl}${path}`);
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: { Authorization: this.authHeader, Accept: 'application/json' },
     });
@@ -440,7 +435,7 @@ export class SureVoIPUKMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,
@@ -460,7 +455,7 @@ export class SureVoIPUKMCPServer {
   }
 
   private async httpDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: { Authorization: this.authHeader, Accept: 'application/json' },
     });
@@ -483,7 +478,7 @@ export class SureVoIPUKMCPServer {
     );
     const epilogue = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');
     const bodyBuffer = Buffer.concat([preamble, fileBuffer, epilogue]);
-    const response = await fetch(`${this.baseUrl}/announcements`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/announcements`, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,

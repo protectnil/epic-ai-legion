@@ -29,6 +29,7 @@
 // Rate limits: Not publicly documented; subject to AWS service limits per account/region.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RedshiftConfig {
   /** AWS region, e.g. "us-east-1" */
@@ -41,11 +42,12 @@ interface RedshiftConfig {
   signRequest: (target: string, body: string) => Promise<Record<string, string>>;
 }
 
-export class RedshiftMCPServer {
+export class RedshiftMCPServer extends MCPAdapterBase {
   private readonly endpoint: string;
   private readonly signRequest: RedshiftConfig['signRequest'];
 
   constructor(config: RedshiftConfig) {
+    super();
     this.endpoint = `https://redshift-data.${config.region}.amazonaws.com`;
     this.signRequest = config.signRequest;
   }
@@ -527,7 +529,7 @@ export class RedshiftMCPServer {
     const bodyStr = JSON.stringify(body);
     const sigHeaders = await this.signRequest(target, bodyStr);
 
-    const response = await fetch(this.endpoint, {
+    const response = await this.fetchWithRetry(this.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-amz-json-1.1',

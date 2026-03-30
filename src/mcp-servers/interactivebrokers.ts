@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented. IBKR enforces per-account server-side limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface InteractiveBrokersConfig {
   accessToken: string;
@@ -20,11 +21,12 @@ interface InteractiveBrokersConfig {
   baseUrl?: string;
 }
 
-export class InteractiveBrokersMCPServer {
+export class InteractiveBrokersMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: InteractiveBrokersConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://www.interactivebrokers.com/tradingapi/v1';
   }
@@ -318,7 +320,7 @@ export class InteractiveBrokersMCPServer {
   }
 
   private async ibRequest(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

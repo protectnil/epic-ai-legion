@@ -21,6 +21,7 @@
 // Rate limits: Not officially published; Cribl.Cloud enforces per-workspace throttling
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CriblConfig {
   /**
@@ -38,7 +39,7 @@ interface CriblConfig {
   bearerToken?: string;
 }
 
-export class CriblMCPServer {
+export class CriblMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly clientId: string | undefined;
   private readonly clientSecret: string | undefined;
@@ -46,6 +47,7 @@ export class CriblMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: CriblConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -93,7 +95,7 @@ export class CriblMCPServer {
     if (this.bearerToken && this.tokenExpiry === 0) return this.bearerToken;
 
     if (this.clientId && this.clientSecret) {
-      const resp = await fetch('https://login.cribl.cloud/oauth/token', {
+      const resp = await this.fetchWithRetry('https://login.cribl.cloud/oauth/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,7 +127,7 @@ export class CriblMCPServer {
     };
     const init: RequestInit = { method, headers };
     if (body !== undefined) init.body = JSON.stringify(body);
-    const response = await fetch(`${this.baseUrl}/api/v1${path}`, init);
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v1${path}`, init);
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error ${response.status}: ${response.statusText}` }],

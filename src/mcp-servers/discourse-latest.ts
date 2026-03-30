@@ -14,6 +14,7 @@
 // Rate limits: Default 60 req/min global, 10 req/min per user. Configurable in admin settings.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DiscourseConfig {
   /** Your Discourse instance base URL, e.g. https://forum.example.com */
@@ -24,12 +25,13 @@ interface DiscourseConfig {
   apiUsername: string;
 }
 
-export class DiscourseMCPServer {
+export class DiscourseMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly apiUsername: string;
 
   constructor(config: DiscourseConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/+$/, '');
     this.apiKey = config.apiKey;
     this.apiUsername = config.apiUsername;
@@ -923,14 +925,8 @@ export class DiscourseMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -939,7 +935,7 @@ export class DiscourseMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -953,7 +949,7 @@ export class DiscourseMCPServer {
   }
 
   private async put(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -967,7 +963,7 @@ export class DiscourseMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers(),
     });
@@ -1164,7 +1160,7 @@ export class DiscourseMCPServer {
   private async removeGroupMembers(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.id as number;
     const usernames = args.usernames as string;
-    const response = await fetch(`${this.baseUrl}/groups/${id}/members.json`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/groups/${id}/members.json`, {
       method: 'DELETE',
       headers: this.headers(),
       body: JSON.stringify({ usernames }),
@@ -1232,7 +1228,7 @@ export class DiscourseMCPServer {
 
     // Don't set Content-Type — fetch sets it with boundary for FormData
     const headers: Record<string, string> = { 'Api-Key': this.apiKey, 'Api-Username': this.apiUsername };
-    const response = await fetch(`${this.baseUrl}/uploads.json`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/uploads.json`, {
       method: 'POST',
       headers,
       body: formData,

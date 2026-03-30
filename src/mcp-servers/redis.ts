@@ -33,6 +33,7 @@
 // Transactions: POST /multi-exec for atomic multi-command execution.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RedisConfig {
   /** Full Upstash REST endpoint URL, e.g. https://us1-abc.upstash.io */
@@ -41,11 +42,12 @@ interface RedisConfig {
   token: string;
 }
 
-export class RedisMCPServer {
+export class RedisMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string;
 
   constructor(config: RedisConfig) {
+    super();
     this.token = config.token;
     // Normalize: strip trailing slash, ensure https scheme
     this.baseUrl = config.endpoint.replace(/\/$/, '');
@@ -718,15 +720,8 @@ export class RedisMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async runCommand(command: unknown[]): Promise<ToolResult> {
-    const response = await fetch(this.baseUrl, {
+    const response = await this.fetchWithRetry(this.baseUrl, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(command),
@@ -799,7 +794,7 @@ export class RedisMCPServer {
 
   private async runPipeline(args: Record<string, unknown>): Promise<ToolResult> {
     const commands = args.commands as unknown[][];
-    const response = await fetch(`${this.baseUrl}/pipeline`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/pipeline`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(commands),

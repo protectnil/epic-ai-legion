@@ -33,6 +33,7 @@
 // Rate limits: 60 req/min per access token; 10,000 req/day per app
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface XeroConfig {
   /** OAuth2 Bearer access token from Xero identity server */
@@ -43,12 +44,13 @@ interface XeroConfig {
   baseUrl?: string;
 }
 
-export class XeroMCPServer {
+export class XeroMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly tenantId: string;
   private readonly baseUrl: string;
 
   constructor(config: XeroConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.tenantId = config.tenantId;
     this.baseUrl = (config.baseUrl ?? 'https://api.xero.com/api.xro/2.0').replace(/\/$/, '');
@@ -316,15 +318,8 @@ export class XeroMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.authHeaders(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.authHeaders(), ...options });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `Xero API error: ${response.status} ${response.statusText}` }],

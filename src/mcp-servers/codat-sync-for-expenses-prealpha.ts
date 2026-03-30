@@ -21,17 +21,19 @@
 // Rate limits: Not publicly documented; respect 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CodatExpenseConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CodatSyncForExpensesPrealphaMCPServer {
+export class CodatSyncForExpensesPrealphaMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CodatExpenseConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.codat.io';
   }
@@ -349,14 +351,8 @@ export class CodatSyncForExpensesPrealphaMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
     return {
       content: [{ type: 'text', text: this.truncate(JSON.stringify(data, null, 2)) }],
@@ -365,7 +361,7 @@ export class CodatSyncForExpensesPrealphaMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -481,7 +477,7 @@ export class CodatSyncForExpensesPrealphaMCPServer {
     }
     const fileBuffer = Buffer.from(fileContent, 'base64');
     const path = `/companies/${encodeURIComponent(companyId)}/sync/expenses/syncs/${encodeURIComponent(syncId)}/transactions/${encodeURIComponent(transactionId)}/attachments`;
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.apiKey}`,

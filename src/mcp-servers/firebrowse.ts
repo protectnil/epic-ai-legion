@@ -15,15 +15,17 @@
 // Note: API serves data from The Cancer Genome Atlas (TCGA) program.
 
 import { ToolDefinition, ToolResult } from "./types.js";
+import { MCPAdapterBase } from './base.js';
 
 interface FirebrowseConfig {
   baseUrl?: string; // default: http://firebrowse.org/api/v1
 }
 
-export class FirebrowseMCPServer {
+export class FirebrowseMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: FirebrowseConfig = {}) {
+    super();
     this.baseUrl = (config.baseUrl ?? "http://firebrowse.org/api/v1").replace(/\/$/, "");
   }
 
@@ -549,7 +551,7 @@ export class FirebrowseMCPServer {
   }
 
   private async firebrowseRequest(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: { "Accept": "application/json" },
     });
 

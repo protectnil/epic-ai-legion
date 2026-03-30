@@ -18,6 +18,7 @@
 //   and branch details, and provides API usage quota tracking.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface IbanapiConfig {
   /** IBANAPI API key — obtain from https://ibanapi.com */
@@ -26,11 +27,12 @@ interface IbanapiConfig {
   baseUrl?: string;
 }
 
-export class IbanapiMCPServer {
+export class IbanapiMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: IbanapiConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.ibanapi.com/v1').replace(/\/$/, '');
   }
@@ -113,16 +115,9 @@ export class IbanapiMCPServer {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams({ api_key: this.apiKey, ...params });
-    const response = await fetch(`${this.baseUrl}${path}?${qs.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs.toString()}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });

@@ -13,15 +13,17 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LandRegistryUKDeedConfig {
   baseUrl?: string;
 }
 
-export class LandRegistryUKDeedMCPServer {
+export class LandRegistryUKDeedMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: LandRegistryUKDeedConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://api.landregistry.gov.uk/v1';
   }
 
@@ -120,13 +122,6 @@ export class LandRegistryUKDeedMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private parseJsonArg(value: unknown, fieldName: string): [unknown, null] | [null, ToolResult] {
     if (typeof value === 'string') {
       try {
@@ -166,7 +161,7 @@ export class LandRegistryUKDeedMCPServer {
     }
 
     const url = `${this.baseUrl}/deed/`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(body),
@@ -191,7 +186,7 @@ export class LandRegistryUKDeedMCPServer {
     }
     const ref = encodeURIComponent(args.deed_reference as string);
     const url = `${this.baseUrl}/deed/${ref}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });

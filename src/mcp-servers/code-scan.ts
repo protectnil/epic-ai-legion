@@ -18,6 +18,7 @@
 // Rate limits: Not publicly documented; respect 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CodeScanConfig {
   subscriptionId: string;
@@ -25,12 +26,13 @@ interface CodeScanConfig {
   baseUrl?: string;
 }
 
-export class CodeScanMCPServer {
+export class CodeScanMCPServer extends MCPAdapterBase {
   private readonly subscriptionId: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CodeScanConfig) {
+    super();
     this.subscriptionId = config.subscriptionId;
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://app.code-scan.com/api';
@@ -129,19 +131,13 @@ export class CodeScanMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getJob(args: Record<string, unknown>): Promise<ToolResult> {
     const jobId = args.jobId as string;
     if (!jobId) {
       return { content: [{ type: 'text', text: 'jobId is required' }], isError: true };
     }
     const params = new URLSearchParams({ jobId });
-    const response = await fetch(`${this.baseUrl}/job?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/job?${params.toString()}`, {
       headers: this.headers,
     });
     const data = await response.json().catch(() => ({ status: response.status, statusText: response.statusText }));
@@ -163,7 +159,7 @@ export class CodeScanMCPServer {
     if (args.analysisMode) body.analysisMode = args.analysisMode;
     if (args.emailReportTo) body.emailReportTo = args.emailReportTo;
 
-    const response = await fetch(`${this.baseUrl}/job`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/job`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),

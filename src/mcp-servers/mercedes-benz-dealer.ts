@@ -15,17 +15,19 @@
 // Spec: https://api.apis.guru/v2/specs/mercedes-benz.com/dealer/1.0/swagger.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MercedesBenzDealerConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class MercedesBenzDealerMCPServer {
+export class MercedesBenzDealerMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MercedesBenzDealerConfig) {
+    super();
     this.apiKey  = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.mercedes-benz.com/dealer_tryout/v1';
   }
@@ -178,16 +180,9 @@ export class MercedesBenzDealerMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
         Accept: 'application/json',

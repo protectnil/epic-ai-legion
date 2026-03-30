@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CenitConfig {
   accessKey: string;
@@ -20,12 +21,13 @@ interface CenitConfig {
   baseUrl?: string;
 }
 
-export class CenitMCPServer {
+export class CenitMCPServer extends MCPAdapterBase {
   private readonly accessKey: string;
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CenitConfig) {
+    super();
     this.accessKey = config.accessKey;
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://cenit.io/api/v1').replace(/\/$/, '');
@@ -288,13 +290,8 @@ export class CenitMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented; governed by PI server configuration.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OsisoftConfig {
   username: string;
@@ -21,11 +22,12 @@ interface OsisoftConfig {
   baseUrl?: string;
 }
 
-export class OsisoftMCPServer {
+export class OsisoftMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: OsisoftConfig) {
+    super();
     const encoded = Buffer.from(`${config.username}:${config.password}`).toString('base64');
     this.authHeader = `Basic ${encoded}`;
     this.baseUrl = config.baseUrl || 'https://devdata.osisoft.com/piwebapi';
@@ -261,11 +263,6 @@ export class OsisoftMCPServer {
     };
   }
 
-  private truncate(text: string, maxBytes = 10240): string {
-    if (text.length <= maxBytes) return text;
-    return text.slice(0, maxBytes) + '\n...[truncated]';
-  }
-
   private async request(
     method: string,
     path: string,
@@ -289,7 +286,7 @@ export class OsisoftMCPServer {
       init.body = JSON.stringify(body);
     }
 
-    const res = await fetch(url, init);
+    const res = await this.fetchWithRetry(url, init);
     let text = await res.text();
     text = this.truncate(text);
 

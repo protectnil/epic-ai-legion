@@ -24,6 +24,7 @@
 // Rate limits: 60 req/min for most endpoints; 200 req/min for reporting endpoints.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HelpScoutConfig {
   /** OAuth2 client_id from Help Scout app settings. */
@@ -34,7 +35,7 @@ interface HelpScoutConfig {
   baseUrl?: string;
 }
 
-export class HelpScoutMCPServer {
+export class HelpScoutMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -43,6 +44,7 @@ export class HelpScoutMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: HelpScoutConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = (config.baseUrl ?? 'https://api.helpscout.net/v2').replace(/\/$/, '');
@@ -370,7 +372,7 @@ export class HelpScoutMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -397,16 +399,9 @@ export class HelpScoutMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async hsGet(path: string): Promise<ToolResult> {
     const headers = await this.buildHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       return { content: [{ type: 'text', text: `API error ${response.status} ${response.statusText}: ${body}` }], isError: true };
@@ -417,7 +412,7 @@ export class HelpScoutMCPServer {
 
   private async hsPost(path: string, body: unknown): Promise<ToolResult> {
     const headers = await this.buildHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -436,7 +431,7 @@ export class HelpScoutMCPServer {
 
   private async hsPatch(path: string, body: unknown): Promise<ToolResult> {
     const headers = await this.buildHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(body),
@@ -450,7 +445,7 @@ export class HelpScoutMCPServer {
 
   private async hsDelete(path: string): Promise<ToolResult> {
     const headers = await this.buildHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers });
     if (!response.ok) {
       const errBody = await response.text().catch(() => '');
       return { content: [{ type: 'text', text: `API error ${response.status} ${response.statusText}: ${errBody}` }], isError: true };

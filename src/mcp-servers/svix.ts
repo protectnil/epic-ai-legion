@@ -17,6 +17,7 @@
 // Rate limits: Varies by plan; standard tier allows ~1000 req/min
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SvixConfig {
   /** Svix authentication token from the dashboard */
@@ -25,11 +26,12 @@ interface SvixConfig {
   baseUrl?: string;
 }
 
-export class SvixMCPServer {
+export class SvixMCPServer extends MCPAdapterBase {
   private readonly authToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SvixConfig) {
+    super();
     this.authToken = config.authToken;
     this.baseUrl = config.baseUrl ?? 'https://api.svix.com';
   }
@@ -366,7 +368,7 @@ export class SvixMCPServer {
 
   private async request(method: string, path: string, body?: unknown): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       method,
       headers: {
         Authorization: `Bearer ${this.authToken}`,

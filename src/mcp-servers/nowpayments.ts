@@ -13,17 +13,19 @@
 // Rate limits: Not publicly documented; standard API key limits apply
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NOWPaymentsConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class NOWPaymentsMCPServer {
+export class NOWPaymentsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: NOWPaymentsConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.nowpayments.io';
   }
@@ -431,13 +433,6 @@ export class NOWPaymentsMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private headers(): Record<string, string> {
     return {
       'x-api-key': this.apiKey,
@@ -454,7 +449,7 @@ export class NOWPaymentsMCPServer {
         }
       }
     }
-    const response = await fetch(url.toString(), { headers: this.headers() });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers() });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -466,7 +461,7 @@ export class NOWPaymentsMCPServer {
   }
 
   private async post(path: string, body?: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers(),
       body: body ? JSON.stringify(body) : undefined,
@@ -482,7 +477,7 @@ export class NOWPaymentsMCPServer {
   }
 
   private async patch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -498,7 +493,7 @@ export class NOWPaymentsMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers(),
     });

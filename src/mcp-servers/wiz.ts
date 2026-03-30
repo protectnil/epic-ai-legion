@@ -23,6 +23,7 @@
 // Rate limits: Not publicly documented; Wiz recommends staying under 10 req/s per service account.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WizConfig {
   clientId: string;
@@ -33,7 +34,7 @@ interface WizConfig {
   audience?: string;
 }
 
-export class WizMCPServer {
+export class WizMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -42,6 +43,7 @@ export class WizMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: WizConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = (config.baseUrl ?? 'https://api.us1.app.wiz.io/graphql').replace(/\/$/, '');
@@ -272,7 +274,7 @@ export class WizMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch('https://auth.app.wiz.io/oauth/token', {
+    const response = await this.fetchWithRetry('https://auth.app.wiz.io/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -294,7 +296,7 @@ export class WizMCPServer {
   }
 
   private async gql(headers: Record<string, string>, query: string, variables: Record<string, unknown>): Promise<unknown> {
-    const response = await fetch(this.baseUrl, {
+    const response = await this.fetchWithRetry(this.baseUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify({ query, variables }),
@@ -312,12 +314,6 @@ export class WizMCPServer {
     return data.data;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async listIssues(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
     const variables: Record<string, unknown> = {

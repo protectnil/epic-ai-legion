@@ -20,6 +20,7 @@
 
 import { createHmac } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ThreatConnectConfig {
   accessId: string;
@@ -27,12 +28,13 @@ interface ThreatConnectConfig {
   baseUrl?: string;
 }
 
-export class ThreatConnectMCPServer {
+export class ThreatConnectMCPServer extends MCPAdapterBase {
   private readonly accessId: string;
   private readonly secretKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ThreatConnectConfig) {
+    super();
     this.accessId = config.accessId;
     this.secretKey = config.secretKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.threatconnect.com').replace(/\/$/, '') + '/v3';
@@ -94,7 +96,7 @@ export class ThreatConnectMCPServer {
     const parsed = new URL(url);
     const signingPath = parsed.pathname + (parsed.search ? parsed.search : '');
     const headers = this.buildAuthHeader(signingPath, method);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -109,13 +111,6 @@ export class ThreatConnectMCPServer {
   // ──────────────────────────────────────────────
   // Truncation helper
   // ──────────────────────────────────────────────
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   get tools(): ToolDefinition[] {
     return [
       // ── Indicators ──────────────────────────────

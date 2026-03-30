@@ -20,17 +20,19 @@
 //   Completions API (legacy), file content download (GET /v1/files/{id}/content)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AnthropicConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class AnthropicMCPServer {
+export class AnthropicMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: AnthropicConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.anthropic.com/v1';
   }
@@ -48,12 +50,6 @@ export class AnthropicMCPServer {
       ...this.headers,
       'anthropic-beta': 'files-api-2025-04-14',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -402,7 +398,7 @@ export class AnthropicMCPServer {
     if (args.tool_choice !== undefined) body.tool_choice = args.tool_choice;
     if (args.metadata !== undefined) body.metadata = args.metadata;
 
-    const response = await fetch(`${this.baseUrl}/messages`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/messages`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -430,7 +426,7 @@ export class AnthropicMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     const qs = params.toString();
 
-    const response = await fetch(`${this.baseUrl}/models${qs ? `?${qs}` : ''}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/models${qs ? `?${qs}` : ''}`, {
       headers: this.headers,
     });
 
@@ -450,7 +446,7 @@ export class AnthropicMCPServer {
 
   private async getModel(args: Record<string, unknown>): Promise<ToolResult> {
     const modelId = args.model_id as string;
-    const response = await fetch(`${this.baseUrl}/models/${encodeURIComponent(modelId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/models/${encodeURIComponent(modelId)}`, {
       headers: this.headers,
     });
 
@@ -476,7 +472,7 @@ export class AnthropicMCPServer {
     if (args.system !== undefined) body.system = args.system;
     if (args.tools !== undefined) body.tools = args.tools;
 
-    const response = await fetch(`${this.baseUrl}/messages/count_tokens`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/messages/count_tokens`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -498,7 +494,7 @@ export class AnthropicMCPServer {
   }
 
   private async createMessageBatch(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/messages/batches`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/messages/batches`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ requests: args.requests }),
@@ -526,7 +522,7 @@ export class AnthropicMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     const qs = params.toString();
 
-    const response = await fetch(`${this.baseUrl}/messages/batches${qs ? `?${qs}` : ''}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/messages/batches${qs ? `?${qs}` : ''}`, {
       headers: this.headers,
     });
 
@@ -545,7 +541,7 @@ export class AnthropicMCPServer {
   }
 
   private async getMessageBatch(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}`, {
       headers: this.headers,
     });
 
@@ -564,7 +560,7 @@ export class AnthropicMCPServer {
   }
 
   private async cancelMessageBatch(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}/cancel`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}/cancel`, {
       method: 'POST',
       headers: this.headers,
     });
@@ -584,7 +580,7 @@ export class AnthropicMCPServer {
   }
 
   private async deleteMessageBatch(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -604,7 +600,7 @@ export class AnthropicMCPServer {
   }
 
   private async getMessageBatchResults(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}/results`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/messages/batches/${encodeURIComponent(String(args.batch_id))}/results`, {
       headers: this.headers,
     });
 
@@ -650,7 +646,7 @@ export class AnthropicMCPServer {
       offset += part.length;
     }
 
-    const response = await fetch(`${this.baseUrl}/files`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files`, {
       method: 'POST',
       headers: {
         'x-api-key': this.apiKey,
@@ -683,7 +679,7 @@ export class AnthropicMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     const qs = params.toString();
 
-    const response = await fetch(`${this.baseUrl}/files${qs ? `?${qs}` : ''}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files${qs ? `?${qs}` : ''}`, {
       headers: this.filesHeaders,
     });
 
@@ -702,7 +698,7 @@ export class AnthropicMCPServer {
   }
 
   private async getFileMetadata(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(String(args.file_id))}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(String(args.file_id))}`, {
       headers: this.filesHeaders,
     });
 
@@ -721,7 +717,7 @@ export class AnthropicMCPServer {
   }
 
   private async deleteFile(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(String(args.file_id))}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(String(args.file_id))}`, {
       method: 'DELETE',
       headers: this.filesHeaders,
     });

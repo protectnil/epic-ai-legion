@@ -27,6 +27,7 @@
 // API Version: 2022-06-28 (stable); 2026-03-11 is the current latest version as of 2026-03-28
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NotionConfig {
   apiKey: string;        // Internal Integration Token (secret_...)
@@ -34,12 +35,13 @@ interface NotionConfig {
   notionVersion?: string;
 }
 
-export class NotionMCPServer {
+export class NotionMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly notionVersion: string;
 
   constructor(config: NotionConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.notion.com/v1';
     this.notionVersion = config.notionVersion ?? '2022-06-28';
@@ -443,22 +445,15 @@ export class NotionMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -469,7 +464,7 @@ export class NotionMCPServer {
   }
 
   private async patch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -480,7 +475,7 @@ export class NotionMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

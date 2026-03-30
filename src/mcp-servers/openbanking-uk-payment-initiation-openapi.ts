@@ -12,6 +12,7 @@
 // Rate limits: Determined by individual ASPSP (bank) implementations
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenBankingUKPaymentInitiationConfig {
   bearerToken: string;
@@ -19,12 +20,13 @@ interface OpenBankingUKPaymentInitiationConfig {
   financialId?: string;
 }
 
-export class OpenBankingUkPaymentInitiationOpenapiMCPServer {
+export class OpenBankingUkPaymentInitiationOpenapiMCPServer extends MCPAdapterBase {
   private readonly bearerToken: string;
   private readonly baseUrl: string;
   private readonly financialId: string;
 
   constructor(config: OpenBankingUKPaymentInitiationConfig) {
+    super();
     this.bearerToken = config.bearerToken;
     this.baseUrl = config.baseUrl || 'https://openbanking.org.uk/open-banking/v3.1/pisp';
     this.financialId = config.financialId || '';
@@ -780,13 +782,6 @@ export class OpenBankingUkPaymentInitiationOpenapiMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildDomesticAccount(sortCode: string, accountNumber: string): Record<string, unknown> {
     return {
       SchemeName: 'UK.OBIE.SortCodeAccountNumber',
@@ -808,7 +803,7 @@ export class OpenBankingUkPaymentInitiationOpenapiMCPServer {
     if (this.financialId) headers['x-fapi-financial-id'] = this.financialId;
     if (body) headers['Content-Type'] = 'application/json';
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,

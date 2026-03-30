@@ -22,6 +22,7 @@
 
 import { createSign, randomUUID } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RedoxConfig {
   clientId: string;
@@ -30,7 +31,7 @@ interface RedoxConfig {
   baseUrl?: string;
 }
 
-export class RedoxMCPServer {
+export class RedoxMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly privateKey: string;
   private readonly baseUrl: string;
@@ -38,6 +39,7 @@ export class RedoxMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: RedoxConfig) {
+    super();
     this.clientId = config.clientId;
     this.privateKey = config.privateKey;
     this.baseUrl = config.baseUrl || 'https://api.redoxengine.com';
@@ -316,7 +318,7 @@ export class RedoxMCPServer {
     const signature = sign.sign(this.privateKey, 'base64url');
     const assertion = `${signingInput}.${signature}`;
 
-    const response = await fetch(tokenUrl, {
+    const response = await this.fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -335,13 +337,6 @@ export class RedoxMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private fhirBase(connectionId: string): string {
     return `${this.baseUrl}/fhir/R4/${connectionId}`;
   }
@@ -349,7 +344,7 @@ export class RedoxMCPServer {
   private async fhirGet(connectionId: string, resource: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.fhirBase(connectionId)}/${resource}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.fhirBase(connectionId)}/${resource}${qs}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/fhir+json',
@@ -365,7 +360,7 @@ export class RedoxMCPServer {
 
   private async fhirPost(connectionId: string, resource: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.fhirBase(connectionId)}/${resource}`, {
+    const response = await this.fetchWithRetry(`${this.fhirBase(connectionId)}/${resource}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

@@ -14,6 +14,7 @@
 // Note: baseUrl must be set to the ASPSP's (bank's) host + /open-banking/v3.1/aisp
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenBankingUKConfig {
   accessToken: string;
@@ -21,12 +22,13 @@ interface OpenBankingUKConfig {
   xFapiInteractionId?: string;
 }
 
-export class OpenBankingUkAccountInfoOpenapiMCPServer {
+export class OpenBankingUkAccountInfoOpenapiMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
   private readonly xFapiInteractionId: string;
 
   constructor(config: OpenBankingUKConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://openbanking.org.uk/open-banking/v3.1/aisp';
     this.xFapiInteractionId = config.xFapiInteractionId || '';
@@ -443,7 +445,7 @@ export class OpenBankingUkAccountInfoOpenapiMCPServer {
   }
 
   private async obRequest(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

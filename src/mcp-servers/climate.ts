@@ -15,6 +15,7 @@
 // Rate limits: 429 responses controlled by X-Api-Key throttling.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClimateConfig {
   accessToken: string;
@@ -22,12 +23,13 @@ interface ClimateConfig {
   baseUrl?: string;
 }
 
-export class ClimateMCPServer {
+export class ClimateMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ClimateConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.apiKey = config.apiKey ?? '';
     this.baseUrl = config.baseUrl ?? 'https://platform.climate.com';
@@ -701,12 +703,6 @@ export class ClimateMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -716,7 +712,7 @@ export class ClimateMCPServer {
   ): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
     const headers = { ...this.authHeaders, ...extraHeaders };
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -965,7 +961,7 @@ export class ClimateMCPServer {
       'Content-Range': contentRange,
     };
     if (this.apiKey) headers['X-Api-Key'] = this.apiKey;
-    const response = await fetch(`${this.baseUrl}/v4/uploads/${encodeURIComponent(uploadId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v4/uploads/${encodeURIComponent(uploadId)}`, {
       method: 'PUT',
       headers,
       body: bytes,

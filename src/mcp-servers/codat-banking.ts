@@ -12,18 +12,20 @@
 // Rate limits: Not publicly documented for banking endpoints.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CodatBankingConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CodatBankingMCPServer {
+export class CodatBankingMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: CodatBankingConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.codat.io';
     // Codat uses Basic auth: base64(apiKey + ":")
@@ -255,7 +257,7 @@ export class CodatBankingMCPServer {
     const qs = params && params.toString() ? `?${params}` : '';
     const url = `${this.baseUrl}${path}${qs}`;
 
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: this.authHeader,

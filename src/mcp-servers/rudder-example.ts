@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RudderConfig {
   /** Rudder API token */
@@ -23,11 +24,12 @@ interface RudderConfig {
   apiVersion?: string;
 }
 
-export class RudderExampleMCPServer {
+export class RudderExampleMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: RudderConfig) {
+    super();
     this.apiToken = config.apiToken;
     const version = config.apiVersion ?? 'latest';
     this.baseUrl = `https://${config.rudderServer}/rudder/api/${version}`;
@@ -828,7 +830,7 @@ export class RudderExampleMCPServer {
   }
 
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: {
         'X-API-Token': this.apiToken,

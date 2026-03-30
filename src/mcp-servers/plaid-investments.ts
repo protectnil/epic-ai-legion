@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented for Investments product; contact Plaid for production rate limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PlaidInvestmentsConfig {
   clientId: string;
@@ -23,26 +24,21 @@ interface PlaidInvestmentsConfig {
   baseUrl?: string;
 }
 
-export class PlaidInvestmentsMCPServer {
+export class PlaidInvestmentsMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly secret: string;
   private readonly baseUrl: string;
 
   constructor(config: PlaidInvestmentsConfig) {
+    super();
     this.clientId = config.clientId;
     this.secret = config.secret;
     this.baseUrl = (config.baseUrl || 'https://production.plaid.com').replace(/\/$/, '');
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const payload = { client_id: this.clientId, secret: this.secret, ...body };
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

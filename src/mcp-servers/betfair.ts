@@ -19,6 +19,7 @@
 // Rate limits: Varies by tier. REST: ~5 req/sec default. Streaming: persistent SSL socket.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BetfairConfig {
   /** Betfair session token obtained from Betfair login API */
@@ -31,13 +32,14 @@ interface BetfairConfig {
   streamBaseUrl?: string;
 }
 
-export class BetfairMCPServer {
+export class BetfairMCPServer extends MCPAdapterBase {
   private readonly sessionToken: string;
   private readonly appKey: string;
   private readonly restBaseUrl: string;
   private readonly streamBaseUrl: string;
 
   constructor(config: BetfairConfig) {
+    super();
     this.sessionToken = config.sessionToken;
     this.appKey = config.appKey;
     this.restBaseUrl = config.restBaseUrl ?? 'https://api.betfair.com/exchange/betting/json-rpc/v1';
@@ -365,13 +367,6 @@ export class BetfairMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(): Record<string, string> {
     return {
       'X-Authentication': this.sessionToken,
@@ -383,7 +378,7 @@ export class BetfairMCPServer {
 
   private async rpcCall(method: string, params: Record<string, unknown>): Promise<ToolResult> {
     const body = JSON.stringify([{ jsonrpc: '2.0', method: `SportsAPING/v1.0/${method}`, params, id: 1 }]);
-    const response = await fetch(this.restBaseUrl, {
+    const response = await this.fetchWithRetry(this.restBaseUrl, {
       method: 'POST',
       headers: this.authHeaders(),
       body,

@@ -21,6 +21,7 @@
 // Rate limits: None documented. Governed by Kubernetes API server limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ArgoWorkflowsConfig {
   baseUrl?: string;
@@ -28,12 +29,13 @@ interface ArgoWorkflowsConfig {
   defaultNamespace?: string;
 }
 
-export class ArgoWorkflowsMCPServer {
+export class ArgoWorkflowsMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string;
   private readonly defaultNamespace: string;
 
   constructor(config: ArgoWorkflowsConfig) {
+    super();
     this.baseUrl = (config.baseUrl || 'https://localhost:2746').replace(/\/$/, '');
     this.token = config.token;
     this.defaultNamespace = config.defaultNamespace || 'argo';
@@ -48,12 +50,6 @@ export class ArgoWorkflowsMCPServer {
 
   private ns(args: Record<string, unknown>): string {
     return (args.namespace as string) || this.defaultNamespace;
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -521,7 +517,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.continueToken) params.append('listOptions.continue', args.continueToken as string);
     const qs = params.toString();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}${qs ? `?${qs}` : ''}`,
       { method: 'GET', headers: this.headers },
     );
@@ -547,7 +543,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.getTemplates) params.append('getTemplates', 'true');
     const qs = params.toString();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}/${encodeURIComponent(workflowName)}${qs ? `?${qs}` : ''}`,
       { method: 'GET', headers: this.headers },
     );
@@ -569,7 +565,7 @@ export class ArgoWorkflowsMCPServer {
   private async createWorkflow(args: Record<string, unknown>): Promise<ToolResult> {
     const ns = this.ns(args);
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}`,
       {
         method: 'POST',
@@ -603,7 +599,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.parameters) body.parameters = args.parameters;
     if (args.labels) body.labels = args.labels;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}/submit`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -626,7 +622,7 @@ export class ArgoWorkflowsMCPServer {
     const ns = this.ns(args);
     const workflowName = args.name as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}/${encodeURIComponent(workflowName)}/terminate`,
       { method: 'PUT', headers: this.headers, body: JSON.stringify({}) },
     );
@@ -652,7 +648,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.message) body.message = args.message;
     if (args.nodeFieldSelector) body.nodeFieldSelector = args.nodeFieldSelector;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}/${encodeURIComponent(workflowName)}/stop`,
       { method: 'PUT', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -678,7 +674,7 @@ export class ArgoWorkflowsMCPServer {
     if (typeof args.restartSuccessful === 'boolean') body.restartSuccessful = args.restartSuccessful;
     if (args.nodeFieldSelector) body.nodeFieldSelector = args.nodeFieldSelector;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}/${encodeURIComponent(workflowName)}/retry`,
       { method: 'PUT', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -703,7 +699,7 @@ export class ArgoWorkflowsMCPServer {
     const body: Record<string, unknown> = { namespace: ns };
     if (typeof args.memoized === 'boolean') body.memoized = args.memoized;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}/${encodeURIComponent(workflowName)}/resubmit`,
       { method: 'PUT', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -726,7 +722,7 @@ export class ArgoWorkflowsMCPServer {
     const ns = this.ns(args);
     const workflowName = args.name as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}/${encodeURIComponent(workflowName)}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -754,7 +750,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.grep) params.append('grep', args.grep as string);
     const qs = params.toString();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflows/${encodeURIComponent(ns)}/${encodeURIComponent(workflowName)}/log${qs ? `?${qs}` : ''}`,
       { method: 'GET', headers: this.headers },
     );
@@ -779,7 +775,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.labelSelector) params.append('listOptions.labelSelector', args.labelSelector as string);
     const qs = params.toString();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflow-templates/${encodeURIComponent(ns)}${qs ? `?${qs}` : ''}`,
       { method: 'GET', headers: this.headers },
     );
@@ -802,7 +798,7 @@ export class ArgoWorkflowsMCPServer {
     const ns = this.ns(args);
     const name = args.name as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/workflow-templates/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -826,7 +822,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.labelSelector) params.append('listOptions.labelSelector', args.labelSelector as string);
     const qs = params.toString();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/cluster-workflow-templates${qs ? `?${qs}` : ''}`,
       { method: 'GET', headers: this.headers },
     );
@@ -851,7 +847,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.labelSelector) params.append('listOptions.labelSelector', args.labelSelector as string);
     const qs = params.toString();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/cron-workflows/${encodeURIComponent(ns)}${qs ? `?${qs}` : ''}`,
       { method: 'GET', headers: this.headers },
     );
@@ -874,7 +870,7 @@ export class ArgoWorkflowsMCPServer {
     const ns = this.ns(args);
     const name = args.name as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/cron-workflows/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -897,7 +893,7 @@ export class ArgoWorkflowsMCPServer {
     const ns = this.ns(args);
     const name = args.name as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/cron-workflows/${encodeURIComponent(ns)}/${encodeURIComponent(name)}/suspend`,
       { method: 'PUT', headers: this.headers, body: JSON.stringify({}) },
     );
@@ -920,7 +916,7 @@ export class ArgoWorkflowsMCPServer {
     const ns = this.ns(args);
     const name = args.name as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/cron-workflows/${encodeURIComponent(ns)}/${encodeURIComponent(name)}/resume`,
       { method: 'PUT', headers: this.headers, body: JSON.stringify({}) },
     );
@@ -946,7 +942,7 @@ export class ArgoWorkflowsMCPServer {
     if (args.limit) params.append('listOptions.limit', String(args.limit));
     const qs = params.toString();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/archived-workflows${qs ? `?${qs}` : ''}`,
       { method: 'GET', headers: this.headers },
     );
@@ -966,7 +962,7 @@ export class ArgoWorkflowsMCPServer {
   }
 
   private async getServerInfo(): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/v1/version`,
       { method: 'GET', headers: this.headers },
     );

@@ -14,6 +14,7 @@
 // Rate limits: Not officially documented by Atlassian/Statuspage
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StatuspageConfig {
   /**
@@ -30,12 +31,13 @@ interface StatuspageConfig {
   baseUrl?: string;
 }
 
-export class StatuspageMCPServer {
+export class StatuspageMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly pageId: string;
   private readonly baseUrl: string;
 
   constructor(config: StatuspageConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.pageId = config.pageId;
     this.baseUrl = config.baseUrl ?? 'https://api.statuspage.io/v1';
@@ -383,18 +385,12 @@ export class StatuspageMCPServer {
     return `${this.baseUrl}/pages/${encodeURIComponent(this.pageId)}`;
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
     body?: unknown,
   ): Promise<ToolResult> {
-    const response = await fetch(path, {
+    const response = await this.fetchWithRetry(path, {
       method,
       headers: this.authHeaders,
       body: body !== undefined ? JSON.stringify(body) : undefined,

@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented. Contact support@symanto.net for details.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SymantoConfig {
   apiKey: string;
@@ -22,11 +23,12 @@ interface SymantoConfig {
   baseUrl?: string;
 }
 
-export class SymantoMCPServer {
+export class SymantoMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: SymantoConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.symanto.net';
   }
@@ -269,19 +271,12 @@ export class SymantoMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async post(path: string, body: unknown, query?: Record<string, string>): Promise<ToolResult> {
     let url = `${this.baseUrl}${path}`;
     if (query && Object.keys(query).length > 0) {
       url += '?' + new URLSearchParams(query).toString();
     }
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

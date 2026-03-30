@@ -28,6 +28,7 @@
 // Rate limits: Not publicly documented; HTTP 429 returned when limits exceeded
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WixConfig {
   accessToken: string;
@@ -36,13 +37,14 @@ interface WixConfig {
   baseUrl?: string;
 }
 
-export class WixMCPServer {
+export class WixMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly siteId: string;
   private readonly accountId: string;
   private readonly baseUrl: string;
 
   constructor(config: WixConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.siteId = config.siteId || '';
     this.accountId = config.accountId || '';
@@ -356,13 +358,9 @@ export class WixMCPServer {
     return h;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -371,7 +369,7 @@ export class WixMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -384,7 +382,7 @@ export class WixMCPServer {
   }
 
   private async patch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -397,7 +395,7 @@ export class WixMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -419,7 +417,7 @@ export class WixMCPServer {
   private async getSite(args: Record<string, unknown>): Promise<ToolResult> {
     const siteId = (args.site_id as string) || this.siteId;
     if (!siteId) return { content: [{ type: 'text', text: 'site_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/site-properties/v4/properties`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/site-properties/v4/properties`, {
       headers: { ...this.headers, 'wix-site-id': siteId },
     });
     if (!response.ok) {
@@ -568,7 +566,7 @@ export class WixMCPServer {
 
   private async listSitePages(args: Record<string, unknown>): Promise<ToolResult> {
     const siteId = (args.site_id as string) || this.siteId;
-    const response = await fetch(`${this.baseUrl}/site-structure/v1/pages`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/site-structure/v1/pages`, {
       headers: siteId ? { ...this.headers, 'wix-site-id': siteId } : this.headers,
     });
     if (!response.ok) {

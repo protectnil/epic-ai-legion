@@ -16,6 +16,7 @@
 // Rate limits: Contact NPROneEnterprise@npr.org for rate limit details.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NprListeningConfig {
   accessToken: string;
@@ -23,11 +24,12 @@ interface NprListeningConfig {
   baseUrl?: string;
 }
 
-export class NprListeningMCPServer {
+export class NprListeningMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: NprListeningConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://listening.api.npr.org';
   }
@@ -243,13 +245,6 @@ export class NprListeningMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(advertisingId?: string, channel?: string): Record<string, string> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.accessToken}`,
@@ -268,7 +263,7 @@ export class NprListeningMCPServer {
     const qstr = qs.toString();
     const url = `${this.baseUrl}${path}${qstr ? `?${qstr}` : ''}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { ...this.authHeaders(), ...extraHeaders },
     });
@@ -355,7 +350,7 @@ export class NprListeningMCPServer {
     if (args.advertising_id) extraHeaders['X-Advertising-ID'] = args.advertising_id as string;
     if (args.channel) extraHeaders['X-NPR-Channel'] = args.channel as string;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { ...this.authHeaders(), ...extraHeaders },
       body: JSON.stringify(args.ratings),

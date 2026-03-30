@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented; contact OnSched support for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OnSchedConsumerConfig {
   /** OAuth2 Bearer token obtained via client_credentials grant */
@@ -24,11 +25,12 @@ interface OnSchedConsumerConfig {
   baseUrl?: string;
 }
 
-export class OnSchedConsumerMCPServer {
+export class OnSchedConsumerMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: OnSchedConsumerConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://sandbox-api.onsched.com';
   }
@@ -439,13 +441,6 @@ export class OnSchedConsumerMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | number | undefined> = {}): string {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -465,7 +460,7 @@ export class OnSchedConsumerMCPServer {
 
   private async fetchGet(path: string, params: Record<string, string | number | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -476,7 +471,7 @@ export class OnSchedConsumerMCPServer {
 
   private async fetchPost(path: string, body: unknown = {}, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -491,7 +486,7 @@ export class OnSchedConsumerMCPServer {
 
   private async fetchPut(path: string, body: unknown = {}): Promise<ToolResult> {
     const url = this.buildUrl(path);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -506,7 +501,7 @@ export class OnSchedConsumerMCPServer {
 
   private async fetchDelete(path: string): Promise<ToolResult> {
     const url = this.buildUrl(path);
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

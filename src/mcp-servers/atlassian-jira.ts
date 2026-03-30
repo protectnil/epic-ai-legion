@@ -15,6 +15,7 @@
 // Rate limits: REST API v3 — 10 requests/second per user, 300 concurrent requests
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AtlassianJiraConfig {
   /** Atlassian account email (for Basic auth) */
@@ -27,13 +28,14 @@ interface AtlassianJiraConfig {
   authType?: 'basic' | 'bearer';
 }
 
-export class AtlassianJiraMCPServer {
+export class AtlassianJiraMCPServer extends MCPAdapterBase {
   private readonly email: string;
   private readonly apiToken: string;
   private readonly baseUrl: string;
   private readonly authType: 'basic' | 'bearer';
 
   constructor(config: AtlassianJiraConfig) {
+    super();
     this.email = config.email ?? '';
     this.apiToken = config.apiToken;
     this.baseUrl = `https://${config.domain}/rest/api/3`;
@@ -434,13 +436,6 @@ export class AtlassianJiraMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeader(): string {
     if (this.authType === 'bearer') {
       return `Bearer ${this.apiToken}`;
@@ -466,7 +461,7 @@ export class AtlassianJiraMCPServer {
   }
 
   private async get(path: string, params: Record<string, unknown> = {}): Promise<ToolResult> {
-    const response = await fetch(this.buildUrl(path, params), { headers: this.headers() });
+    const response = await this.fetchWithRetry(this.buildUrl(path, params), { headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -475,7 +470,7 @@ export class AtlassianJiraMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -489,7 +484,7 @@ export class AtlassianJiraMCPServer {
   }
 
   private async put(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -503,7 +498,7 @@ export class AtlassianJiraMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

@@ -16,6 +16,7 @@
 // Rate limits: Determined by server configuration. No hard limits by default on self-hosted instances.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TraccarConfig {
   email: string;
@@ -24,12 +25,13 @@ interface TraccarConfig {
   baseUrl?: string;
 }
 
-export class TraccarMCPServer {
+export class TraccarMCPServer extends MCPAdapterBase {
   private readonly email: string;
   private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: TraccarConfig) {
+    super();
     this.email = config.email;
     this.password = config.password;
     this.baseUrl = config.baseUrl ?? 'https://demo.traccar.org/api';
@@ -348,13 +350,6 @@ export class TraccarMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeader(): string {
     return 'Basic ' + Buffer.from(`${this.email}:${this.password}`).toString('base64');
   }
@@ -370,7 +365,7 @@ export class TraccarMCPServer {
 
   private async fetchApi(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: this.authHeader(),

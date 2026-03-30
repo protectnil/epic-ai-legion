@@ -40,6 +40,7 @@
 //              Suppressions: 10,000/min. Routes: 1,000/min.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MailgunConfig {
   apiKey: string;
@@ -47,12 +48,13 @@ interface MailgunConfig {
   baseUrl?: string;         // override for EU: https://api.eu.mailgun.net
 }
 
-export class MailgunMCPServer {
+export class MailgunMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly domain: string;
   private readonly baseUrl: string;
 
   constructor(config: MailgunConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.domain = config.domain ?? '';
     this.baseUrl = (config.baseUrl ?? 'https://api.mailgun.net').replace(/\/$/, '');
@@ -523,19 +525,12 @@ export class MailgunMCPServer {
     return `Basic ${btoa(`api:${this.apiKey}`)}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private resolveDomain(args: Record<string, unknown>): string | null {
     return (args.domain as string | undefined) ?? (this.domain || null);
   }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: { Authorization: this.authHeader },
     });
     if (!response.ok) {
@@ -547,7 +542,7 @@ export class MailgunMCPServer {
 
   private async apiPost(path: string, form: Record<string, string>): Promise<ToolResult> {
     const body = new URLSearchParams(form);
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,
@@ -564,7 +559,7 @@ export class MailgunMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: { Authorization: this.authHeader },
     });
@@ -645,7 +640,7 @@ export class MailgunMCPServer {
   private async verifyDomain(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.domain) return { content: [{ type: 'text', text: 'domain is required' }], isError: true };
     // Vendor docs: PUT /v4/domains/{name}/verify (not POST, not v3)
-    const response = await fetch(`${this.baseUrl.replace('/v3', '')}/v4/domains/${encodeURIComponent(args.domain as string)}/verify`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl.replace('/v3', '')}/v4/domains/${encodeURIComponent(args.domain as string)}/verify`, {
       method: 'PUT',
       headers: { Authorization: this.authHeader },
     });

@@ -17,16 +17,18 @@
 //   supported to reduce unnecessary data transfer.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenBankingUKConfig {
   /** Override base URL; defaults to the Open Banking reference implementation endpoint */
   baseUrl?: string;
 }
 
-export class OpenBankingUkMCPServer {
+export class OpenBankingUkMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: OpenBankingUKConfig = {}) {
+    super();
     this.baseUrl = (config.baseUrl || 'https://developer.openbanking.org.uk/reference-implementation/open-banking/v1.3').replace(/\/$/, '');
   }
 
@@ -192,13 +194,6 @@ export class OpenBankingUkMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(args: Record<string, unknown>): Record<string, string> {
     const headers: Record<string, string> = {
       'Accept': 'application/prs.openbanking.opendata.v1.3+json, application/json',
@@ -213,7 +208,7 @@ export class OpenBankingUkMCPServer {
   }
 
   private async get(path: string, args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: this.buildHeaders(args),
     });
 

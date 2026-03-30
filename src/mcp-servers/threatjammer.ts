@@ -14,6 +14,7 @@
 // Rate limits: Depends on subscription tier. Free tier includes limited daily queries.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ThreatJammerConfig {
   apiToken: string;
@@ -21,11 +22,12 @@ interface ThreatJammerConfig {
   baseUrl?: string;
 }
 
-export class ThreatJammerMCPServer {
+export class ThreatJammerMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ThreatJammerConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://dublin.api.threatjammer.com';
   }
@@ -207,13 +209,6 @@ export class ThreatJammerMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private get authHeaders(): Record<string, string> {
     return {
       'Authorization': `Bearer ${this.apiToken}`,
@@ -222,7 +217,7 @@ export class ThreatJammerMCPServer {
   }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -235,7 +230,7 @@ export class ThreatJammerMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

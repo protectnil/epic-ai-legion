@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GSMTasksConfig {
   apiToken: string;
@@ -20,11 +21,12 @@ interface GSMTasksConfig {
   baseUrl?: string;
 }
 
-export class GSMTasksMCPServer {
+export class GSMTasksMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: GSMTasksConfig) {
+    super();
     this.token = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://gsmtasks.com';
   }
@@ -302,13 +304,6 @@ export class GSMTasksMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private headers(): Record<string, string> {
     return {
       'Authorization': `Token ${this.token}`,
@@ -326,7 +321,7 @@ export class GSMTasksMCPServer {
   }
 
   private async get(path: string, params: Record<string, unknown> = {}): Promise<ToolResult> {
-    const response = await fetch(this.buildUrl(path, params), { headers: this.headers() });
+    const response = await this.fetchWithRetry(this.buildUrl(path, params), { headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -335,7 +330,7 @@ export class GSMTasksMCPServer {
   }
 
   private async post(path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers(),
       body: body ? JSON.stringify(body) : undefined,
@@ -348,7 +343,7 @@ export class GSMTasksMCPServer {
   }
 
   private async patch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers(),
       body: JSON.stringify(body),

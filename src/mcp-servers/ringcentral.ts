@@ -19,6 +19,7 @@
 // NOTE: send_fax uses multipart/form-data (not JSON) per RingCentral Fax API docs.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RingCentralConfig {
   clientId: string;
@@ -26,7 +27,7 @@ interface RingCentralConfig {
   baseUrl?: string;
 }
 
-export class RingCentralMCPServer {
+export class RingCentralMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -34,6 +35,7 @@ export class RingCentralMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: RingCentralConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://platform.ringcentral.com/restapi/v1.0';
@@ -571,7 +573,7 @@ export class RingCentralMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch('https://platform.ringcentral.com/restapi/oauth/token', {
+    const response = await this.fetchWithRetry('https://platform.ringcentral.com/restapi/oauth/token', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -596,16 +598,9 @@ export class RingCentralMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -615,7 +610,7 @@ export class RingCentralMCPServer {
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -629,7 +624,7 @@ export class RingCentralMCPServer {
 
   private async apiDelete(path: string): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -781,7 +776,7 @@ export class RingCentralMCPServer {
     const headers = await this.authHeaders();
     // Remove Content-Type to let fetch set multipart boundary automatically
     delete (headers as Record<string, string>)['Content-Type'];
-    const response = await fetch(`${this.baseUrl}${this.extPath(extId)}/fax`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${this.extPath(extId)}/fax`, {
       method: 'POST',
       headers,
       body: formData,

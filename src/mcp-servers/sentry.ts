@@ -26,6 +26,7 @@
 // Rate limits: Per-endpoint, per-caller fixed-window limits (not a single global rate). Polling discouraged; use webhooks.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface SentryConfig {
@@ -33,11 +34,12 @@ interface SentryConfig {
   baseUrl?: string;
 }
 
-export class SentryMCPServer {
+export class SentryMCPServer extends MCPAdapterBase {
   private readonly authToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SentryConfig) {
+    super();
     this.authToken = config.authToken;
     this.baseUrl = config.baseUrl
       ? config.baseUrl.replace(/\/$/, '')
@@ -450,15 +452,8 @@ export class SentryMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<unknown> {
-    const response = await fetch(url, { ...options, headers: this.authHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.authHeaders() });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       throw new Error(`Sentry API error: ${response.status} ${response.statusText}${body ? ` — ${body.slice(0, 200)}` : ''}`);

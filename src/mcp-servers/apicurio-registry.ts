@@ -13,6 +13,7 @@
 // Rate limits: Self-hosted; no published limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ApicurioRegistryConfig {
   baseUrl: string;  // e.g. http://registry.example.com
@@ -21,13 +22,14 @@ interface ApicurioRegistryConfig {
   password?: string;
 }
 
-export class ApicurioRegistryMCPServer {
+export class ApicurioRegistryMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token?: string;
   private readonly username?: string;
   private readonly password?: string;
 
   constructor(config: ApicurioRegistryConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.token = config.token;
     this.username = config.username;
@@ -303,13 +305,8 @@ export class ApicurioRegistryMCPServer {
     return h;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

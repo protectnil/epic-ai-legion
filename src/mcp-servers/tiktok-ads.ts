@@ -18,17 +18,19 @@
 // Rate limits: Approximately 600 requests/min per advertiser for most endpoints; 429 returned on breach.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TikTokAdsConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class TikTokAdsMCPServer {
+export class TikTokAdsMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TikTokAdsConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://business-api.tiktok.com/open_api/v1.3';
   }
@@ -572,7 +574,7 @@ export class TikTokAdsMCPServer {
   private async ttdGet(path: string, params: Record<string, string>): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -581,7 +583,7 @@ export class TikTokAdsMCPServer {
   }
 
   private async ttdPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -591,13 +593,6 @@ export class TikTokAdsMCPServer {
     }
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private async getAdvertiserInfo(args: Record<string, unknown>): Promise<ToolResult> {

@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented; standard eBay API limits apply (5,000 calls/day on Basic plan)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EbayFinancesConfig {
   /** OAuth2 access token with scope https://api.ebay.com/oauth/api_scope/sell.finances */
@@ -24,12 +25,13 @@ interface EbayFinancesConfig {
   baseUrl?: string;
 }
 
-export class ApizEbaySellFinancesMCPServer {
+export class ApizEbaySellFinancesMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly marketplaceId: string;
   private readonly baseUrl: string;
 
   constructor(config: EbayFinancesConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.marketplaceId = config.marketplaceId ?? 'EBAY_US';
     this.baseUrl = config.baseUrl ?? 'https://apiz.ebay.com/sell/finances/v1';
@@ -225,7 +227,7 @@ export class ApizEbaySellFinancesMCPServer {
 
     const qs = params.toString();
     const url = `${this.baseUrl}/payout${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.buildHeaders() });
 
     if (!response.ok) {
       return {
@@ -253,7 +255,7 @@ export class ApizEbaySellFinancesMCPServer {
     }
 
     const url = `${this.baseUrl}/payout/${encodeURIComponent(payoutId)}`;
-    const response = await fetch(url, { headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.buildHeaders() });
 
     if (!response.ok) {
       return {
@@ -275,7 +277,7 @@ export class ApizEbaySellFinancesMCPServer {
 
     const qs = params.toString();
     const url = `${this.baseUrl}/payout_summary${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.buildHeaders() });
 
     if (!response.ok) {
       return {
@@ -293,7 +295,7 @@ export class ApizEbaySellFinancesMCPServer {
 
   private async getSellerFundsSummary(): Promise<ToolResult> {
     const url = `${this.baseUrl}/seller_funds_summary`;
-    const response = await fetch(url, { headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.buildHeaders() });
 
     if (!response.ok) {
       return {
@@ -318,7 +320,7 @@ export class ApizEbaySellFinancesMCPServer {
 
     const qs = params.toString();
     const url = `${this.baseUrl}/transaction${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.buildHeaders() });
 
     if (!response.ok) {
       return {
@@ -342,7 +344,7 @@ export class ApizEbaySellFinancesMCPServer {
 
     const qs = params.toString();
     const url = `${this.baseUrl}/transaction_summary${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.buildHeaders() });
 
     if (!response.ok) {
       return {
@@ -368,7 +370,7 @@ export class ApizEbaySellFinancesMCPServer {
     }
 
     const url = `${this.baseUrl}/transfer/${encodeURIComponent(transferId)}`;
-    const response = await fetch(url, { headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { headers: this.buildHeaders() });
 
     if (!response.ok) {
       return {

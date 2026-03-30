@@ -13,6 +13,7 @@
 // Rate limits: Not documented. JSON payload per request should not exceed 3KB (3072 bytes).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Opto22PACConfig {
   /** IP address or hostname of the SNAP-PAC-R or SNAP-PAC-S series controller */
@@ -25,11 +26,12 @@ interface Opto22PACConfig {
   baseUrl?: string;
 }
 
-export class Opto22PACMCPServer {
+export class Opto22PACMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: Opto22PACConfig) {
+    super();
     this.baseUrl = config.baseUrl ?? `https://${config.controllerHost}/api/v1`;
     this.authHeader = `Basic ${Buffer.from(`${config.apiKeyId}:${config.apiKeyValue}`).toString('base64')}`;
   }
@@ -821,20 +823,13 @@ export class Opto22PACMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, query: Record<string, string | number | undefined> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(query)) {
       if (v !== undefined) qs.set(k, String(v));
     }
     const url = `${this.baseUrl}${path}${qs.toString() ? '?' + qs.toString() : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { 'Authorization': this.authHeader, 'Accept': 'application/json' },
     });
     if (!response.ok) {
@@ -850,7 +845,7 @@ export class Opto22PACMCPServer {
       if (v !== undefined) qs.set(k, String(v));
     }
     const url = `${this.baseUrl}${path}${qs.toString() ? '?' + qs.toString() : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'Authorization': this.authHeader,

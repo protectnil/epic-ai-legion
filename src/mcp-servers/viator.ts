@@ -13,18 +13,20 @@
 // Rate limits: Not publicly documented; sandbox limits apply in test environment
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ViatorConfig {
   apiKey: string;
   environment?: 'production' | 'sandbox';
 }
 
-export class ViatorMCPServer {
+export class ViatorMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly isSandbox: boolean;
 
   constructor(config: ViatorConfig) {
+    super();
     this.isSandbox = (config.environment ?? 'production') === 'sandbox';
     this.baseUrl = this.isSandbox
       ? 'https://viatorapi.sandbox.viator.com/service'
@@ -286,13 +288,9 @@ export class ViatorMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
 
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

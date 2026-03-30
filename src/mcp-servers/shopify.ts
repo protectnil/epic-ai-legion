@@ -18,6 +18,7 @@
 // Rate limits: 40 requests/min per app per store; replenishes at 2 req/s. 10x higher limit for Shopify Plus stores.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ShopifyConfig {
   store: string;
@@ -26,11 +27,12 @@ interface ShopifyConfig {
   baseUrl?: string;
 }
 
-export class ShopifyMCPServer {
+export class ShopifyMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ShopifyConfig) {
+    super();
     this.accessToken = config.accessToken;
     const version = config.apiVersion ?? '2025-01';
     this.baseUrl = config.baseUrl || `https://${config.store}.myshopify.com/admin/api/${version}`;
@@ -567,15 +569,8 @@ export class ShopifyMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<unknown> {
-    const response = await fetch(url, { ...options, headers: this.requestHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.requestHeaders() });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       throw new Error(`Shopify API error: ${response.status} ${response.statusText}${body ? ` — ${body.slice(0, 200)}` : ''}`);

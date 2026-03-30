@@ -14,6 +14,7 @@
 // Registration API: Returns vehicle make, model, year, color, fuel type, engine size, MOT status.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RegCheckUKConfig {
   username: string;
@@ -22,12 +23,13 @@ interface RegCheckUKConfig {
   baseUrl?: string;
 }
 
-export class RegCheckUKMCPServer {
+export class RegCheckUKMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: RegCheckUKConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl ?? 'https://www.regcheck.org.uk/api/json.aspx';
@@ -188,13 +190,6 @@ export class RegCheckUKMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(searchString: string, extraParams: Record<string, string> = {}): string {
     const qs = new URLSearchParams({
       RegistrationNumber: searchString,
@@ -207,7 +202,7 @@ export class RegCheckUKMCPServer {
 
   private async fetchVehicle(searchString: string, extraParams: Record<string, string> = {}): Promise<ToolResult> {
     const url = this.buildUrl(searchString, extraParams);
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

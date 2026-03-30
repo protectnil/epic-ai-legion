@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented; apply reasonable backoff on 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CultureAmpConfig {
   clientId: string;
@@ -23,7 +24,7 @@ interface CultureAmpConfig {
   baseUrl?: string;
 }
 
-export class CultureAmpMCPServer {
+export class CultureAmpMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -31,6 +32,7 @@ export class CultureAmpMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: CultureAmpConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://api.cultureamp.com/v1';
@@ -429,7 +431,7 @@ export class CultureAmpMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -446,18 +448,12 @@ export class CultureAmpMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
     const url = `${this.baseUrl}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

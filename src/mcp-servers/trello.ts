@@ -15,6 +15,7 @@
 // Rate limits: Approximately 100 requests per 10 seconds per token.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TrelloConfig {
   /** Trello API key obtained from https://trello.com/app-key */
@@ -25,12 +26,13 @@ interface TrelloConfig {
   baseUrl?: string;
 }
 
-export class TrelloMCPServer {
+export class TrelloMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TrelloConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://trello.com/1';
@@ -640,12 +642,6 @@ export class TrelloMCPServer {
     return { key: this.apiKey, token: this.apiToken };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private buildQuery(params: Record<string, string | undefined>): string {
     const qs = new URLSearchParams({ ...this.authParams });
@@ -657,7 +653,7 @@ export class TrelloMCPServer {
 
   private async get(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}${this.buildQuery(params)}`;
-    const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -668,7 +664,7 @@ export class TrelloMCPServer {
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const qs = new URLSearchParams(this.authParams).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -683,7 +679,7 @@ export class TrelloMCPServer {
 
   private async put(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const qs = new URLSearchParams(this.authParams).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -698,7 +694,7 @@ export class TrelloMCPServer {
 
   private async del(path: string): Promise<ToolResult> {
     const qs = new URLSearchParams(this.authParams).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -785,7 +781,7 @@ export class TrelloMCPServer {
   private async archiveList(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
     const qs = new URLSearchParams(this.authParams).toString();
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/lists/${encodeURIComponent(args.id as string)}/archiveAllCards?${qs}`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' } }
     );

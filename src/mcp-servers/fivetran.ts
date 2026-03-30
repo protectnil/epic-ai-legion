@@ -32,6 +32,7 @@
 // Rate limits: Not publicly documented; Fivetran applies per-account rate limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FivetranConfig {
   /** Fivetran API key */
@@ -42,11 +43,12 @@ interface FivetranConfig {
   baseUrl?: string;
 }
 
-export class FivetranMCPServer {
+export class FivetranMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: FivetranConfig) {
+    super();
     this.baseUrl = (config.baseUrl ?? 'https://api.fivetran.com/v1').replace(/\/$/, '');
     const encoded = Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64');
     this.authHeader = `Basic ${encoded}`;
@@ -81,12 +83,6 @@ export class FivetranMCPServer {
       'Content-Type': 'application/json;version=2',
       Accept: 'application/json;version=2',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {

@@ -16,6 +16,7 @@
 // Covers 181 countries, 14,000+ US sales tax, VAT, and GST rates.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TaxRatesConfig {
   /** Your taxrates.io domain/API key identifier (passed as `domain` query param) */
@@ -24,11 +25,12 @@ interface TaxRatesConfig {
   baseUrl?: string;
 }
 
-export class TaxRatesMCPServer {
+export class TaxRatesMCPServer extends MCPAdapterBase {
   private readonly domain: string;
   private readonly baseUrl: string;
 
   constructor(config: TaxRatesConfig) {
+    super();
     this.domain = config.domain;
     this.baseUrl = config.baseUrl ?? 'https://api.taxrates.io/api';
   }
@@ -197,7 +199,7 @@ export class TaxRatesMCPServer {
   }
 
   private async get(url: string): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });

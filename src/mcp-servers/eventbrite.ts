@@ -21,17 +21,19 @@
 //   document exact rate limits on their developer portal)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EventbriteConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class EventbriteMCPServer {
+export class EventbriteMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: EventbriteConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://www.eventbriteapi.com/v3';
   }
@@ -549,17 +551,10 @@ export class EventbriteMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async ebGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
 
     if (!response.ok) {
       return {
@@ -573,7 +568,7 @@ export class EventbriteMCPServer {
   }
 
   private async ebPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -650,7 +645,7 @@ export class EventbriteMCPServer {
     if (args.start_utc) eventBody.start = { utc: args.start_utc };
     if (args.end_utc) eventBody.end = { utc: args.end_utc };
     if (args.capacity) eventBody.capacity = args.capacity;
-    const response = await fetch(`${this.baseUrl}/events/${encodeURIComponent(args.event_id as string)}/`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/events/${encodeURIComponent(args.event_id as string)}/`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ event: eventBody }),

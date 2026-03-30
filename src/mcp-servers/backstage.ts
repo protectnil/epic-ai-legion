@@ -22,6 +22,7 @@
 // Rate limits: Not documented — dependent on Backstage deployment configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BackstageConfig {
   /**
@@ -43,11 +44,12 @@ function truncate(text: string): string {
     : text;
 }
 
-export class BackstageMCPServer {
+export class BackstageMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string | undefined;
 
   constructor(config: BackstageConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.token = config.token;
   }
@@ -359,7 +361,7 @@ export class BackstageMCPServer {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private async fetchJSON(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.buildHeaders(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.buildHeaders(), ...options });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -464,7 +466,7 @@ export class BackstageMCPServer {
 
   private async deleteLocation(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.catalogBase}/locations/${encodeURIComponent(String(args.locationId))}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.buildHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -475,7 +477,7 @@ export class BackstageMCPServer {
 
   private async deleteEntity(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.catalogBase}/entities/by-uid/${encodeURIComponent(String(args.uid))}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.buildHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -483,7 +485,7 @@ export class BackstageMCPServer {
   }
 
   private async refreshEntity(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.catalogBase}/refresh`, {
+    const response = await this.fetchWithRetry(`${this.catalogBase}/refresh`, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify({ entityRef: args.entityRef }),

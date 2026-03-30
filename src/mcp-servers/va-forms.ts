@@ -13,6 +13,7 @@
 // Rate limits: Reduced limit in sandbox; production limits not published — standard VA Lighthouse throttling (429 on excess)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VAFormsConfig {
   apiKey: string;
@@ -20,11 +21,12 @@ interface VAFormsConfig {
   baseUrl?: string;
 }
 
-export class VAFormsMCPServer {
+export class VAFormsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: VAFormsConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.va.gov/services/va_forms/v0';
   }
@@ -102,13 +104,6 @@ export class VAFormsMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const url = new URL(`${this.baseUrl}${path}`);
     if (params) {
@@ -117,7 +112,7 @@ export class VAFormsMCPServer {
       }
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       headers: {
         'apikey': this.apiKey,
         'Accept': 'application/json',

@@ -13,6 +13,7 @@
 // Rate limits: Not documented by vendor.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Opto22GroovConfig {
   /** Hostname or IP address of the groov View server */
@@ -23,11 +24,12 @@ interface Opto22GroovConfig {
   baseUrl?: string;
 }
 
-export class Opto22GroovMCPServer {
+export class Opto22GroovMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
   constructor(config: Opto22GroovConfig) {
+    super();
     this.baseUrl = config.baseUrl ?? `https://${config.groovHost}/api`;
     this.apiKey = config.apiKey;
   }
@@ -225,13 +227,6 @@ export class Opto22GroovMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | number | undefined> = {}, withAuth = true): string {
     const qs = new URLSearchParams();
     if (withAuth) qs.set('api_key', this.apiKey);
@@ -243,7 +238,7 @@ export class Opto22GroovMCPServer {
 
   private async getJson(path: string, params: Record<string, string | number | undefined> = {}, withAuth = true): Promise<ToolResult> {
     const url = this.buildUrl(path, params, withAuth);
-    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const response = await this.fetchWithRetry(url, { headers: { 'Accept': 'application/json' } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -253,7 +248,7 @@ export class Opto22GroovMCPServer {
 
   private async postJson(path: string, body: unknown): Promise<ToolResult> {
     const url = this.buildUrl(path);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -267,7 +262,7 @@ export class Opto22GroovMCPServer {
 
   private async getText(path: string, params: Record<string, string | number | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { headers: { 'Accept': 'text/plain' } });
+    const response = await this.fetchWithRetry(url, { headers: { 'Accept': 'text/plain' } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -321,7 +316,7 @@ export class Opto22GroovMCPServer {
     const qs = new URLSearchParams({ api_key: this.apiKey, value: String(args.value) });
     if (args.index !== undefined) qs.set('index', String(args.index));
     const url = `${this.baseUrl}/v1/data-store/write/${encodeURIComponent(String(args.tag_id))}?${qs.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Accept': 'application/json' },
     });

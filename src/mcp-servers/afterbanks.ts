@@ -17,31 +17,26 @@
 //   spec level but responses are locale-independent.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AfterbanksConfig {
   servicekey: string;
   baseUrl?: string;
 }
 
-export class AfterbanksMCPServer {
+export class AfterbanksMCPServer extends MCPAdapterBase {
   private readonly servicekey: string;
   private readonly baseUrl: string;
 
   constructor(config: AfterbanksConfig) {
+    super();
     this.servicekey = config.servicekey;
     this.baseUrl = (config.baseUrl || 'https://www.afterbanks.com').replace(/\/$/, '');
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async postForm(path: string, params: Record<string, string>): Promise<ToolResult> {
     const body = new URLSearchParams(params);
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -64,7 +59,7 @@ export class AfterbanksMCPServer {
 
   private async get(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { method: 'GET' });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { method: 'GET' });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

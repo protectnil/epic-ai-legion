@@ -10,6 +10,7 @@
 // Docs: https://postmarkapp.com/developer/api/overview
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PostmarkServerConfig {
   /** Postmark server token. Obtain from Postmark account → Server → API Tokens. */
@@ -18,11 +19,12 @@ interface PostmarkServerConfig {
   baseUrl?: string;
 }
 
-export class PostmarkServerMCPServer {
+export class PostmarkServerMCPServer extends MCPAdapterBase {
   private readonly serverToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PostmarkServerConfig) {
+    super();
     this.serverToken = config.serverToken;
     this.baseUrl = config.baseUrl || 'https://api.postmarkapp.com';
   }
@@ -480,34 +482,29 @@ export class PostmarkServerMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async apiPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'PUT', headers: this.headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'PUT', headers: this.headers, body: JSON.stringify(body) });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     try { const data = await response.json(); return { content: [{ type: 'text', text: this.truncate(data) }], isError: false }; }
     catch { return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }], isError: false }; }
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }], isError: false };
   }
@@ -569,7 +566,7 @@ export class PostmarkServerMCPServer {
   private async updateTemplate(args: Record<string, unknown>): Promise<ToolResult> {
     const { templateIdOrAlias, ...rest } = args;
     if (!templateIdOrAlias) return { content: [{ type: 'text', text: 'templateIdOrAlias is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/templates/${encodeURIComponent(templateIdOrAlias as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/templates/${encodeURIComponent(templateIdOrAlias as string)}`, {
       method: 'PUT', headers: this.headers, body: JSON.stringify(rest),
     });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };

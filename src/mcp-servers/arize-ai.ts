@@ -33,17 +33,19 @@
 // Rate limits: Not published; depends on Phoenix Cloud plan or self-hosted resources
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ArizeAIConfig {
   apiKey: string;
   baseUrl?: string; // default: https://app.phoenix.arize.com; self-hosted e.g. http://localhost:6006
 }
 
-export class ArizeAIMCPServer {
+export class ArizeAIMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ArizeAIConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://app.phoenix.arize.com';
   }
@@ -286,15 +288,8 @@ export class ArizeAIMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -332,7 +327,7 @@ export class ArizeAIMCPServer {
   }
 
   private async deleteProject(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/projects/${encodeURIComponent(String(args.project_id))}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -386,7 +381,7 @@ export class ArizeAIMCPServer {
   }
 
   private async deleteDataset(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/datasets/${encodeURIComponent(String(args.dataset_id))}`,
       { method: 'DELETE', headers: this.headers },
     );

@@ -33,6 +33,7 @@
 // Rate limits: Azure ARM throttles at 1,200 reads/hr and 1,200 writes/hr per subscription.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SAFE_NAME_RE = /^[a-zA-Z0-9_\-. ]+$/;
@@ -51,13 +52,14 @@ interface SentinelConfig {
   workspaceId?: string;
 }
 
-export class SentinelMCPServer {
+export class SentinelMCPServer extends MCPAdapterBase {
   private readonly armBase: string;
   private readonly siBase: string;
   private readonly queryBase: string;
   private readonly headers: Record<string, string>;
 
   constructor(config: SentinelConfig) {
+    super();
     if (!UUID_RE.test(config.subscriptionId)) {
       throw new Error('SentinelMCPServer: subscriptionId must be a valid UUID');
     }
@@ -666,16 +668,10 @@ export class SentinelMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async armGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const baseUrl = this.withApiVersion(`${this.siBase}${path}`);
     const qs = params && params.toString() ? `&${params.toString()}` : '';
-    const response = await fetch(`${baseUrl}${qs}`, {
+    const response = await this.fetchWithRetry(`${baseUrl}${qs}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -709,7 +705,7 @@ export class SentinelMCPServer {
 
   private async armPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const url = this.withApiVersion(`${this.siBase}${path}`);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -744,7 +740,7 @@ export class SentinelMCPServer {
 
   private async armPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const url = this.withApiVersion(`${this.siBase}${path}`);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -779,7 +775,7 @@ export class SentinelMCPServer {
 
   private async armDelete(path: string): Promise<ToolResult> {
     const url = this.withApiVersion(`${this.siBase}${path}`);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -941,7 +937,7 @@ export class SentinelMCPServer {
       timespan: (args.timespan as string) ?? 'PT24H',
     };
 
-    const response = await fetch(this.queryBase, {
+    const response = await this.fetchWithRetry(this.queryBase, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(requestBody),

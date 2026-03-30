@@ -18,6 +18,7 @@
 // Rate limits: Free tier — 500 Document Transactions/month. Paid tiers vary by contract.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AdobeAcrobatConfig {
   /** Adobe API client ID (credential from Adobe Developer Console) */
@@ -28,7 +29,7 @@ interface AdobeAcrobatConfig {
   baseUrl?: string;
 }
 
-export class AdobeAcrobatAPIMCPServer {
+export class AdobeAcrobatAPIMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -36,6 +37,7 @@ export class AdobeAcrobatAPIMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: AdobeAcrobatConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://pdf-services.adobe.io';
@@ -80,7 +82,7 @@ export class AdobeAcrobatAPIMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch('https://ims-na1.adobelogin.com/ims/token/v3', {
+    const response = await this.fetchWithRetry('https://ims-na1.adobelogin.com/ims/token/v3', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -542,13 +544,6 @@ export class AdobeAcrobatAPIMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async authHeaders(): Promise<Record<string, string>> {
     const token = await this.getOrRefreshToken();
     return {
@@ -560,7 +555,7 @@ export class AdobeAcrobatAPIMCPServer {
 
   private async submitJob(endpoint: string, body: unknown): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -597,7 +592,7 @@ export class AdobeAcrobatAPIMCPServer {
   private async uploadAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.media_type) return { content: [{ type: 'text', text: 'media_type is required' }], isError: true };
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/assets`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/assets`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ mediaType: args.media_type }),
@@ -622,7 +617,7 @@ export class AdobeAcrobatAPIMCPServer {
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.asset_id) return { content: [{ type: 'text', text: 'asset_id is required' }], isError: true };
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/assets/${encodeURIComponent(args.asset_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/assets/${encodeURIComponent(args.asset_id as string)}`, {
       method: 'GET',
       headers,
     });
@@ -811,7 +806,7 @@ export class AdobeAcrobatAPIMCPServer {
       return { content: [{ type: 'text', text: `Invalid polling_url: must start with ${this.baseUrl}` }], isError: true };
     }
     const headers = await this.authHeaders();
-    const response = await fetch(pollingUrl, {
+    const response = await this.fetchWithRetry(pollingUrl, {
       method: 'GET',
       headers,
     });

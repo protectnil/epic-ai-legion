@@ -36,6 +36,7 @@
 // Rate limits: Not formally documented; Cloud applies per-site throttling at high request volumes
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TableauConfig {
   /**
@@ -57,7 +58,7 @@ interface TableauConfig {
   siteContentUrl: string;
 }
 
-export class TableauMCPServer {
+export class TableauMCPServer extends MCPAdapterBase {
   private readonly serverUrl: string;
   private readonly apiVersion: string;
   private readonly patName: string;
@@ -68,6 +69,7 @@ export class TableauMCPServer {
   private tokenExpiresAt = 0;
 
   constructor(config: TableauConfig) {
+    super();
     this.serverUrl = config.serverUrl.replace(/\/$/, '');
     this.apiVersion = config.apiVersion;
     this.patName = config.patName;
@@ -434,13 +436,6 @@ export class TableauMCPServer {
     return `${this.serverUrl}/api/${this.apiVersion}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   /** Sign in using Personal Access Token; cache for 240 minutes with 60s early renewal. */
   private async getCredentialsToken(): Promise<{ token: string; siteId: string }> {
     const now = Date.now();
@@ -448,7 +443,7 @@ export class TableauMCPServer {
       return { token: this.credentialsToken, siteId: this.siteId };
     }
 
-    const response = await fetch(`${this.apiBase}/auth/signin`, {
+    const response = await this.fetchWithRetry(`${this.apiBase}/auth/signin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
@@ -478,7 +473,7 @@ export class TableauMCPServer {
   }
 
   private async simpleGet(url: string, headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -488,7 +483,7 @@ export class TableauMCPServer {
   }
 
   private async simplePost(url: string, body: unknown, headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -523,7 +518,7 @@ export class TableauMCPServer {
   private async cancelJob(base: string, args: Record<string, unknown>, headers: Record<string, string>): Promise<ToolResult> {
     const url = `${base}/jobs/${encodeURIComponent(args.job_id as string)}`;
     // Tableau REST API: PUT with no request body (docs confirmed — response body is also empty, returns 200)
-    const response = await fetch(url, { method: 'PUT', headers });
+    const response = await this.fetchWithRetry(url, { method: 'PUT', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }

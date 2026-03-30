@@ -21,17 +21,19 @@
 // Rate limits: 600 req/min for create prediction; 3000 req/min for all other endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ReplicateConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class ReplicateMCPServer {
+export class ReplicateMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ReplicateConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.replicate.com/v1';
   }
@@ -350,15 +352,8 @@ export class ReplicateMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -367,7 +362,7 @@ export class ReplicateMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -426,7 +421,7 @@ export class ReplicateMCPServer {
     if (!args.prediction_id) {
       return { content: [{ type: 'text', text: 'prediction_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/predictions/${encodeURIComponent(args.prediction_id as string)}/cancel`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/predictions/${encodeURIComponent(args.prediction_id as string)}/cancel`, {
       method: 'POST',
       headers: this.headers,
     });

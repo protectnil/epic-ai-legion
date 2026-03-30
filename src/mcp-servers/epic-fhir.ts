@@ -26,6 +26,7 @@
 // Recommendation: use-rest-api — no official Epic MCP server exists.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EpicFhirConfig {
   clientId: string;
@@ -36,7 +37,7 @@ interface EpicFhirConfig {
   tokenUrl?: string;
 }
 
-export class EpicFhirMCPServer {
+export class EpicFhirMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -45,6 +46,7 @@ export class EpicFhirMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: EpicFhirConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4';
@@ -587,7 +589,7 @@ export class EpicFhirMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -606,19 +608,13 @@ export class EpicFhirMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async fhirGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/${path}${qs ? '?' + qs : ''}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/fhir+json',

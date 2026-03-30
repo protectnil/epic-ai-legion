@@ -16,6 +16,7 @@
 // Rate limits: Extra-throttled endpoints noted per tool (e.g. invoice creation: 1/5 min per order)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BillbeeConfig {
   apiKey: string;
@@ -26,13 +27,14 @@ interface BillbeeConfig {
   baseUrl?: string;
 }
 
-export class BillbeeMCPServer {
+export class BillbeeMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly username: string;
   private readonly apiPassword: string;
   private readonly baseUrl: string;
 
   constructor(config: BillbeeConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.username = config.username;
     this.apiPassword = config.apiPassword;
@@ -924,19 +926,13 @@ export class BillbeeMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const init: RequestInit = { method, headers: this.headers };
     if (body !== undefined && method !== 'GET' && method !== 'DELETE') {
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (response.status === 204) {
       return { content: [{ type: 'text', text: 'Success (no content)' }], isError: false };
     }

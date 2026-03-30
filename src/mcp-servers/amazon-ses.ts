@@ -20,6 +20,7 @@
 
 import { createHmac, createHash } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AmazonSESConfig {
   accessKeyId: string;
@@ -28,13 +29,14 @@ interface AmazonSESConfig {
   baseUrl?: string;
 }
 
-export class AmazonSESMCPServer {
+export class AmazonSESMCPServer extends MCPAdapterBase {
   private readonly accessKeyId: string;
   private readonly secretAccessKey: string;
   private readonly region: string;
   private readonly baseUrl: string;
 
   constructor(config: AmazonSESConfig) {
+    super();
     this.accessKeyId = config.accessKeyId;
     this.secretAccessKey = config.secretAccessKey;
     this.region = config.region ?? 'us-east-1';
@@ -494,13 +496,6 @@ export class AmazonSESMCPServer {
     return headers;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async sesRequest(
     method: string,
     path: string,
@@ -516,7 +511,7 @@ export class AmazonSESMCPServer {
     const signedHeaders = this.sign(method, path, query, headers, bodyStr);
     const url = `${this.baseUrl}${path}${query ? '?' + query : ''}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: signedHeaders,
       body: bodyStr || undefined,

@@ -31,6 +31,7 @@
 // Rate limits: Varies by plan. Enterprise: ~3,600 req/hr per token. Developer: lower limits apply.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DbtCloudConfig {
   /** Service token or personal access token */
@@ -46,12 +47,13 @@ interface DbtCloudConfig {
   accountId: number;
 }
 
-export class DbtCloudMCPServer {
+export class DbtCloudMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
   private readonly accountId: number;
 
   constructor(config: DbtCloudConfig) {
+    super();
     this.baseUrl = (config.baseUrl || 'https://cloud.getdbt.com/api/v2').replace(/\/$/, '');
     this.authHeader = `Token ${config.serviceToken}`;
     this.accountId = config.accountId;
@@ -571,14 +573,9 @@ export class DbtCloudMCPServer {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async request(path: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       ...options,
       headers: { ...this.headers, ...(options.headers as Record<string, string> || {}) },
     });

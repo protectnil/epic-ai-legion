@@ -31,6 +31,7 @@
 // Rate limits: Not publicly documented; sandbox is rate-limited. Contact Marqeta for production limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MarqetaConfig {
   applicationToken: string;   // Basic auth username
@@ -39,11 +40,12 @@ interface MarqetaConfig {
   programShortCode?: string;  // Optional program identifier for multi-program setups
 }
 
-export class MarqetaMCPServer {
+export class MarqetaMCPServer extends MCPAdapterBase {
   private readonly appToken: string;
   private readonly accessToken: string;
   private readonly baseUrl: string;
   constructor(config: MarqetaConfig) {
+    super();
     this.appToken = config.applicationToken;
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://shared-sandbox-api.marqeta.com/v3').replace(/\/$/, '');
@@ -680,13 +682,6 @@ export class MarqetaMCPServer {
     return `Basic ${btoa(`${this.appToken}:${this.accessToken}`)}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildPaginationParams(args: Record<string, unknown>): URLSearchParams {
     const params = new URLSearchParams();
     params.set('count', String((args.count as number) ?? 5));
@@ -696,7 +691,7 @@ export class MarqetaMCPServer {
 
   private async apiGet(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         Authorization: this.authHeader,
         'Content-Type': 'application/json',
@@ -711,7 +706,7 @@ export class MarqetaMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,
@@ -728,7 +723,7 @@ export class MarqetaMCPServer {
   }
 
   private async apiPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: {
         Authorization: this.authHeader,

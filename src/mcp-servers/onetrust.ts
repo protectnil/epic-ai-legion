@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; OneTrust recommends contacting support for limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OneTrustConfig {
   /** OAuth2 client ID from OneTrust Global Settings */
@@ -25,7 +26,7 @@ interface OneTrustConfig {
   baseUrl: string;
 }
 
-export class OneTrustMCPServer {
+export class OneTrustMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -33,6 +34,7 @@ export class OneTrustMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: OneTrustConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -400,7 +402,7 @@ export class OneTrustMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/v1/oauth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -429,13 +431,6 @@ export class OneTrustMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listAssessments(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     params.set('page', String(args.page ?? 0));
@@ -443,7 +438,7 @@ export class OneTrustMCPServer {
     if (args.status) params.set('status', String(args.status));
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/privacyautomation/v1/assessments?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/privacyautomation/v1/assessments?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -452,7 +447,7 @@ export class OneTrustMCPServer {
 
   private async getAssessment(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.getHeaders();
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/privacyautomation/v1/assessments/${encodeURIComponent(String(args.assessmentId))}`,
       { headers }
     );
@@ -467,7 +462,7 @@ export class OneTrustMCPServer {
     if (args.respondentEmail) body.respondentEmail = args.respondentEmail;
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/privacyautomation/v1/assessments`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/privacyautomation/v1/assessments`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -486,7 +481,7 @@ export class OneTrustMCPServer {
     if (args.requestType) params.set('requestType', String(args.requestType));
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/dsar/v1/requests?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/dsar/v1/requests?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -495,7 +490,7 @@ export class OneTrustMCPServer {
 
   private async getPrivacyRequest(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.getHeaders();
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/dsar/v1/requests/${encodeURIComponent(String(args.requestId))}`,
       { headers }
     );
@@ -515,7 +510,7 @@ export class OneTrustMCPServer {
     if (args.regulation) body.regulation = args.regulation;
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/dsar/v1/requests`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/dsar/v1/requests`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -533,7 +528,7 @@ export class OneTrustMCPServer {
     if (args.search) params.set('search', String(args.search));
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/datamap/v1/processing-activities?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/datamap/v1/processing-activities?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -542,7 +537,7 @@ export class OneTrustMCPServer {
 
   private async getDataMap(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.getHeaders();
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/datamap/v1/processing-activities/${encodeURIComponent(String(args.dataMapId))}`,
       { headers }
     );
@@ -559,7 +554,7 @@ export class OneTrustMCPServer {
     if (args.collectionPointId) params.set('collectionPointId', String(args.collectionPointId));
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/consent/v2/purposes?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/consent/v2/purposes?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -572,7 +567,7 @@ export class OneTrustMCPServer {
     if (args.identifierType) params.set('identifierType', String(args.identifierType));
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/consent/v2/preferences?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/consent/v2/preferences?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -586,7 +581,7 @@ export class OneTrustMCPServer {
     if (args.status) params.set('status', String(args.status));
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/privacyautomation/v1/tasks?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/privacyautomation/v1/tasks?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -600,7 +595,7 @@ export class OneTrustMCPServer {
     if (args.note) body.note = args.note;
 
     const headers = await this.getHeaders();
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/privacyautomation/v1/tasks/${encodeURIComponent(String(args.taskId))}`,
       { method: 'PATCH', headers, body: JSON.stringify(body) }
     );
@@ -618,7 +613,7 @@ export class OneTrustMCPServer {
     if (args.status) params.set('status', String(args.status));
 
     const headers = await this.getHeaders();
-    const response = await fetch(`${this.baseUrl}/thirdparty/v1/vendors?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/thirdparty/v1/vendors?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -627,7 +622,7 @@ export class OneTrustMCPServer {
 
   private async getVendor(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.getHeaders();
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/thirdparty/v1/vendors/${encodeURIComponent(String(args.vendorId))}`,
       { headers }
     );

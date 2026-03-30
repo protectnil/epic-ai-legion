@@ -11,16 +11,18 @@
 // Rate limits: Not publicly specified; Mandrill enforces per-account sending quotas
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MandrillConfig {
   apiKey: string;
 }
 
-export class MandrillappMCPServer {
+export class MandrillappMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://mandrillapp.com/api/1.0';
 
   constructor(config: MandrillConfig) {
+    super();
     this.apiKey = config.apiKey;
   }
 
@@ -410,16 +412,9 @@ export class MandrillappMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const payload = { ...body, key: this.apiKey };
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

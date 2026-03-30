@@ -15,6 +15,7 @@
 //   snapshots, scripts, analytics, experiments, and push notifications.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GameSparksConfig {
   /** JWT access token */
@@ -25,11 +26,12 @@ interface GameSparksConfig {
   baseUrl?: string;
 }
 
-export class GameSparksGameDetailsMCPServer {
+export class GameSparksGameDetailsMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: GameSparksConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://config2.gamesparks.net';
     // apiKey stored via accessToken/JWT; individual tool calls pass apiKey per request
@@ -78,7 +80,7 @@ export class GameSparksGameDetailsMCPServer {
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     try {
-      const resp = await fetch(url, {
+      const resp = await this.fetchWithRetry(url, {
         method,
         headers: {
           'Authorization': this.authHeader,

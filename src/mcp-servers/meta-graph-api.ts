@@ -19,17 +19,19 @@
 //              Marketing API: BUC-based (Billion Units of Computation) — varies by tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MetaGraphAPIConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class MetaGraphAPIMCPServer {
+export class MetaGraphAPIMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: MetaGraphAPIConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://graph.facebook.com/v25.0';
   }
@@ -502,18 +504,11 @@ export class MetaGraphAPIMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async graphGet(path: string, params: Record<string, string>): Promise<ToolResult> {
     params.access_token = this.accessToken;
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}/${path}?${qs}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -525,7 +520,7 @@ export class MetaGraphAPIMCPServer {
   private async graphPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     body.access_token = this.accessToken;
     const url = `${this.baseUrl}/${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

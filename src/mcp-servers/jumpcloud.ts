@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented; JumpCloud recommends exponential backoff on 429
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface JumpCloudConfig {
   apiKey: string;
@@ -24,12 +25,13 @@ interface JumpCloudConfig {
   baseUrlV2?: string;
 }
 
-export class JumpCloudMCPServer {
+export class JumpCloudMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrlV1: string;
   private readonly baseUrlV2: string;
 
   constructor(config: JumpCloudConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrlV1 = config.baseUrlV1 ?? 'https://console.jumpcloud.com/api';
     this.baseUrlV2 = config.baseUrlV2 ?? 'https://console.jumpcloud.com/api/v2';
@@ -522,15 +524,8 @@ export class JumpCloudMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<{ ok: boolean; status: number; statusText: string; data: unknown }> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     let data: unknown;
     try {
       data = await response.json();
@@ -597,7 +592,7 @@ export class JumpCloudMCPServer {
   }
 
   private async deleteUser(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrlV1}/systemusers/${encodeURIComponent(args.id as string)}`,
       { method: 'DELETE', headers: this.headers }
     );

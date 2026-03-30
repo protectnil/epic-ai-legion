@@ -14,6 +14,7 @@
 // Rate limits: Not specified in OpenAPI spec; standard account-based limits apply.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClickSendConfig {
   username: string;
@@ -21,12 +22,13 @@ interface ClickSendConfig {
   baseUrl?: string;
 }
 
-export class ClickSendMCPServer {
+export class ClickSendMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ClickSendConfig) {
+    super();
     this.username = config.username;
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://rest.clicksend.com/v3';
@@ -1250,12 +1252,6 @@ export class ClickSendMCPServer {
     }
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private pageParams(args: Record<string, unknown>): URLSearchParams | undefined {
     const params = new URLSearchParams();
     if (args.page) params.set('page', String(args.page as number));
@@ -1270,7 +1266,7 @@ export class ClickSendMCPServer {
     params?: URLSearchParams,
   ): Promise<ToolResult> {
     const qs = params && params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method,
       headers: this.authHeaders,
       body: body ? JSON.stringify(body) : undefined,

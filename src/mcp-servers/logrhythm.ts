@@ -25,6 +25,7 @@
 // Exabeam API reference (the reference page requires login). Tool is marked UNVERIFIED.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LogRhythmConfig {
   /** LogRhythm host (hostname or IP). Do not include the scheme or port. */
@@ -35,11 +36,12 @@ interface LogRhythmConfig {
   port?: number;
 }
 
-export class LogRhythmMCPServer {
+export class LogRhythmMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
 
   constructor(config: LogRhythmConfig) {
+    super();
     const port = config.port ?? 8501;
     this.baseUrl = `https://${config.host}:${port}`;
     this.headers = {
@@ -297,19 +299,12 @@ export class LogRhythmMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     path: string,
     method: string = 'GET',
     body?: unknown,
   ): Promise<unknown> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: this.headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -333,7 +328,7 @@ export class LogRhythmMCPServer {
     if (args.priority) url.searchParams.set('priority', args.priority as string);
     if (args.alarmRuleName) url.searchParams.set('alarmRuleName', args.alarmRuleName as string);
 
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -381,7 +376,7 @@ export class LogRhythmMCPServer {
     if (args.status !== undefined) url.searchParams.set('status', String(args.status));
     if (args.priority !== undefined) url.searchParams.set('priority', String(args.priority));
 
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -492,7 +487,7 @@ export class LogRhythmMCPServer {
     if (args.limit) url.searchParams.set('count', String(args.limit));
     if (args.offset) url.searchParams.set('offset', String(args.offset));
 
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -507,7 +502,7 @@ export class LogRhythmMCPServer {
     if (args.limit) url.searchParams.set('count', String(args.limit));
     if (args.offset) url.searchParams.set('offset', String(args.offset));
 
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

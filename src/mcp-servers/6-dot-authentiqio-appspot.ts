@@ -14,15 +14,17 @@
 // Rate limits: Not documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AuthentiqConfig {
   baseUrl?: string;
 }
 
-export class AuthentiqMCPServer {
+export class AuthentiqMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: AuthentiqConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://6-dot-authentiqio.appspot.com';
   }
 
@@ -301,7 +303,7 @@ export class AuthentiqMCPServer {
   private async registerKey(args: Record<string, unknown>): Promise<ToolResult> {
     const jwt = args.jwt as string;
 
-    const response = await fetch(`${this.baseUrl}/key`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/key`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/jwt' },
       body: jwt,
@@ -325,7 +327,7 @@ export class AuthentiqMCPServer {
   private async getKey(args: Record<string, unknown>): Promise<ToolResult> {
     const pk = encodeURIComponent(args.pk as string);
 
-    const response = await fetch(`${this.baseUrl}/key/${pk}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/key/${pk}`, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });
@@ -349,7 +351,7 @@ export class AuthentiqMCPServer {
     const pk = encodeURIComponent(args.pk as string);
     const jwt = args.jwt as string;
 
-    const response = await fetch(`${this.baseUrl}/key/${pk}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/key/${pk}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/jwt' },
       body: jwt,
@@ -374,7 +376,7 @@ export class AuthentiqMCPServer {
     const pk = encodeURIComponent(args.pk as string);
     const jwt = args.jwt as string;
 
-    const response = await fetch(`${this.baseUrl}/key/${pk}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/key/${pk}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/jwt' },
       body: jwt,
@@ -399,7 +401,7 @@ export class AuthentiqMCPServer {
     const pk = encodeURIComponent(args.pk as string);
     const secret = encodeURIComponent(args.secret as string);
 
-    const response = await fetch(`${this.baseUrl}/key/${pk}?secret=${secret}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/key/${pk}?secret=${secret}`, {
       method: 'DELETE',
       headers: { 'Accept': 'application/json' },
     });
@@ -429,7 +431,7 @@ export class AuthentiqMCPServer {
       url += `&code=${encodeURIComponent(code)}`;
     }
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'DELETE',
       headers: { 'Accept': 'application/json' },
     });
@@ -458,7 +460,7 @@ export class AuthentiqMCPServer {
       url += `?callback=${encodeURIComponent(callback)}`;
     }
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/jwt' },
       body: jwt,
@@ -488,7 +490,7 @@ export class AuthentiqMCPServer {
       url += `?test=${test}`;
     }
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/jwt' },
       body: jwt,
@@ -512,7 +514,7 @@ export class AuthentiqMCPServer {
   private async getScopeVerification(args: Record<string, unknown>): Promise<ToolResult> {
     const job = encodeURIComponent(args.job as string);
 
-    const response = await fetch(`${this.baseUrl}/scope/${job}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/scope/${job}`, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });
@@ -540,7 +542,7 @@ export class AuthentiqMCPServer {
   private async confirmScopeVerification(args: Record<string, unknown>): Promise<ToolResult> {
     const job = encodeURIComponent(args.job as string);
 
-    const response = await fetch(`${this.baseUrl}/scope/${job}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/scope/${job}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -564,7 +566,7 @@ export class AuthentiqMCPServer {
     const job = encodeURIComponent(args.job as string);
     const jwt = args.jwt as string;
 
-    const response = await fetch(`${this.baseUrl}/scope/${job}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/scope/${job}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/jwt' },
       body: jwt,
@@ -588,7 +590,7 @@ export class AuthentiqMCPServer {
   private async deleteScopeVerification(args: Record<string, unknown>): Promise<ToolResult> {
     const job = encodeURIComponent(args.job as string);
 
-    const response = await fetch(`${this.baseUrl}/scope/${job}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/scope/${job}`, {
       method: 'DELETE',
       headers: { 'Accept': 'application/json' },
     });

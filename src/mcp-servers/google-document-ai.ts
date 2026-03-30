@@ -18,6 +18,7 @@
 //              batch processing is async and limited by quota per region.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleDocumentAIConfig {
   accessToken: string;
@@ -26,13 +27,14 @@ interface GoogleDocumentAIConfig {
   baseUrl?: string;
 }
 
-export class GoogleDocumentAIMCPServer {
+export class GoogleDocumentAIMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly projectId: string;
   private readonly location: string;
   private readonly baseUrl: string;
 
   constructor(config: GoogleDocumentAIConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.projectId = config.projectId;
     this.location = config.location || 'us';
@@ -459,13 +461,6 @@ export class GoogleDocumentAIMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private resolveProject(args: Record<string, unknown>): string {
     return (args.project_id as string) || this.projectId;
   }
@@ -477,7 +472,7 @@ export class GoogleDocumentAIMCPServer {
   private async docaiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };
@@ -487,7 +482,7 @@ export class GoogleDocumentAIMCPServer {
   }
 
   private async docaiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -501,7 +496,7 @@ export class GoogleDocumentAIMCPServer {
   }
 
   private async docaiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };

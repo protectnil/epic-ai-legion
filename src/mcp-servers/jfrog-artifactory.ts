@@ -39,6 +39,7 @@
 // Rate limits: Not publicly documented; governed by Artifactory server configuration
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface JFrogArtifactoryConfig {
   /** JFrog Platform base URL, e.g. https://mycompany.jfrog.io (no trailing slash) */
@@ -47,11 +48,12 @@ interface JFrogArtifactoryConfig {
   accessToken: string;
 }
 
-export class JFrogArtifactoryMCPServer {
+export class JFrogArtifactoryMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly accessToken: string;
 
   constructor(config: JFrogArtifactoryConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.accessToken = config.accessToken;
   }
@@ -380,14 +382,8 @@ export class JFrogArtifactoryMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers(), ...options });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `Artifactory API error: ${response.status} ${response.statusText}` }],
@@ -455,7 +451,7 @@ export class JFrogArtifactoryMCPServer {
       .join(';');
     const recursive = args.recursive === true ? '&recursive=1' : '';
     const url = `${this.baseUrl}/artifactory/api/storage/${encodeURIComponent(repoKey)}/${artifactPath}?properties=${propString}${recursive}`;
-    const response = await fetch(url, { method: 'PUT', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'PUT', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Artifactory API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -468,7 +464,7 @@ export class JFrogArtifactoryMCPServer {
       return { content: [{ type: 'text', text: 'aqlQuery is required' }], isError: true };
     }
     const headers = { ...this.headers(), 'Content-Type': 'text/plain' };
-    const response = await fetch(`${this.baseUrl}/artifactory/api/search/aql`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/artifactory/api/search/aql`, {
       method: 'POST',
       headers,
       body: aqlQuery,
@@ -502,7 +498,7 @@ export class JFrogArtifactoryMCPServer {
       return { content: [{ type: 'text', text: 'sourceRepoKey, sourcePath, targetRepoKey, and targetPath are required' }], isError: true };
     }
     const url = `${this.baseUrl}/artifactory/api/copy/${encodeURIComponent(sourceRepoKey)}/${sourcePath}?to=/${encodeURIComponent(targetRepoKey)}/${targetPath}`;
-    const response = await fetch(url, { method: 'POST', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Artifactory copy error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -520,7 +516,7 @@ export class JFrogArtifactoryMCPServer {
       return { content: [{ type: 'text', text: 'sourceRepoKey, sourcePath, targetRepoKey, and targetPath are required' }], isError: true };
     }
     const url = `${this.baseUrl}/artifactory/api/move/${encodeURIComponent(sourceRepoKey)}/${sourcePath}?to=/${encodeURIComponent(targetRepoKey)}/${targetPath}`;
-    const response = await fetch(url, { method: 'POST', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Artifactory move error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -536,7 +532,7 @@ export class JFrogArtifactoryMCPServer {
       return { content: [{ type: 'text', text: 'repoKey and artifactPath are required' }], isError: true };
     }
     const url = `${this.baseUrl}/artifactory/${encodeURIComponent(repoKey)}/${artifactPath}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Artifactory delete error: ${response.status} ${response.statusText}` }], isError: true };
     }

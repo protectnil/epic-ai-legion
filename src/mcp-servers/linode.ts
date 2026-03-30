@@ -13,16 +13,18 @@
 // Rate limits: 800 requests per minute per token
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LinodeConfig {
   apiToken: string;
 }
 
-export class LinodeMCPServer {
+export class LinodeMCPServer extends MCPAdapterBase {
   private readonly baseUrl = 'https://api.linode.com/v4';
   private readonly authHeader: string;
 
   constructor(config: LinodeConfig) {
+    super();
     this.authHeader = `Bearer ${config.apiToken}`;
   }
 
@@ -57,12 +59,6 @@ export class LinodeMCPServer {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -332,7 +328,7 @@ export class LinodeMCPServer {
     const url = new URL(`${this.baseUrl}/linode/instances`);
     if (args.page) url.searchParams.set('page', String(args.page));
     if (args.page_size) url.searchParams.set('page_size', String(args.page_size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list instances: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -344,7 +340,7 @@ export class LinodeMCPServer {
   private async getInstance(args: Record<string, unknown>): Promise<ToolResult> {
     const linodeId = args.linode_id as number;
     if (!linodeId) return { content: [{ type: 'text', text: 'linode_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/linode/instances/${linodeId}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/linode/instances/${linodeId}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get instance: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -366,7 +362,7 @@ export class LinodeMCPServer {
     };
     if (args.label) body.label = args.label;
     if (args.booted !== undefined) body.booted = args.booted;
-    const response = await fetch(`${this.baseUrl}/linode/instances`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/linode/instances`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -382,7 +378,7 @@ export class LinodeMCPServer {
   private async rebootInstance(args: Record<string, unknown>): Promise<ToolResult> {
     const linodeId = args.linode_id as number;
     if (!linodeId) return { content: [{ type: 'text', text: 'linode_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/linode/instances/${linodeId}/reboot`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/linode/instances/${linodeId}/reboot`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({}),
@@ -396,7 +392,7 @@ export class LinodeMCPServer {
   private async shutdownInstance(args: Record<string, unknown>): Promise<ToolResult> {
     const linodeId = args.linode_id as number;
     if (!linodeId) return { content: [{ type: 'text', text: 'linode_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/linode/instances/${linodeId}/shutdown`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/linode/instances/${linodeId}/shutdown`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({}),
@@ -411,7 +407,7 @@ export class LinodeMCPServer {
     const url = new URL(`${this.baseUrl}/volumes`);
     if (args.page) url.searchParams.set('page', String(args.page));
     if (args.page_size) url.searchParams.set('page_size', String(args.page_size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list volumes: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -423,7 +419,7 @@ export class LinodeMCPServer {
   private async getVolume(args: Record<string, unknown>): Promise<ToolResult> {
     const volumeId = args.volume_id as number;
     if (!volumeId) return { content: [{ type: 'text', text: 'volume_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/volumes/${volumeId}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/volumes/${volumeId}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get volume: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -442,7 +438,7 @@ export class LinodeMCPServer {
       region: args.region,
     };
     if (args.linode_id) body.linode_id = args.linode_id;
-    const response = await fetch(`${this.baseUrl}/volumes`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/volumes`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -459,7 +455,7 @@ export class LinodeMCPServer {
     const url = new URL(`${this.baseUrl}/domains`);
     if (args.page) url.searchParams.set('page', String(args.page));
     if (args.page_size) url.searchParams.set('page_size', String(args.page_size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list domains: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -471,7 +467,7 @@ export class LinodeMCPServer {
   private async getDomain(args: Record<string, unknown>): Promise<ToolResult> {
     const domainId = args.domain_id as number;
     if (!domainId) return { content: [{ type: 'text', text: 'domain_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/domains/${domainId}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/domains/${domainId}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get domain: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -486,7 +482,7 @@ export class LinodeMCPServer {
     const url = new URL(`${this.baseUrl}/domains/${domainId}/records`);
     if (args.page) url.searchParams.set('page', String(args.page));
     if (args.page_size) url.searchParams.set('page_size', String(args.page_size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list domain records: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -499,7 +495,7 @@ export class LinodeMCPServer {
     const url = new URL(`${this.baseUrl}/nodebalancers`);
     if (args.page) url.searchParams.set('page', String(args.page));
     if (args.page_size) url.searchParams.set('page_size', String(args.page_size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list nodebalancers: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -511,7 +507,7 @@ export class LinodeMCPServer {
   private async getNodebalancer(args: Record<string, unknown>): Promise<ToolResult> {
     const nbId = args.nodebalancer_id as number;
     if (!nbId) return { content: [{ type: 'text', text: 'nodebalancer_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/nodebalancers/${nbId}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/nodebalancers/${nbId}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get nodebalancer: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -524,7 +520,7 @@ export class LinodeMCPServer {
     const url = new URL(`${this.baseUrl}/networking/firewalls`);
     if (args.page) url.searchParams.set('page', String(args.page));
     if (args.page_size) url.searchParams.set('page_size', String(args.page_size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list firewalls: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -536,7 +532,7 @@ export class LinodeMCPServer {
   private async getFirewall(args: Record<string, unknown>): Promise<ToolResult> {
     const firewallId = args.firewall_id as number;
     if (!firewallId) return { content: [{ type: 'text', text: 'firewall_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/networking/firewalls/${firewallId}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/networking/firewalls/${firewallId}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get firewall: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -548,7 +544,7 @@ export class LinodeMCPServer {
   private async getFirewallRules(args: Record<string, unknown>): Promise<ToolResult> {
     const firewallId = args.firewall_id as number;
     if (!firewallId) return { content: [{ type: 'text', text: 'firewall_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/networking/firewalls/${firewallId}/rules`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/networking/firewalls/${firewallId}/rules`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get firewall rules: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -561,7 +557,7 @@ export class LinodeMCPServer {
     const url = new URL(`${this.baseUrl}/images`);
     if (args.page) url.searchParams.set('page', String(args.page));
     if (args.page_size) url.searchParams.set('page_size', String(args.page_size));
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list images: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -573,7 +569,7 @@ export class LinodeMCPServer {
   private async getImage(args: Record<string, unknown>): Promise<ToolResult> {
     const imageId = args.image_id as string;
     if (!imageId) return { content: [{ type: 'text', text: 'image_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/images/${encodeURIComponent(imageId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/images/${encodeURIComponent(imageId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get image: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -583,7 +579,7 @@ export class LinodeMCPServer {
   }
 
   private async listRegions(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/regions`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/regions`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list regions: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -593,7 +589,7 @@ export class LinodeMCPServer {
   }
 
   private async listTypes(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/linode/types`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/linode/types`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list types: ${response.status} ${response.statusText}` }], isError: true };
     }

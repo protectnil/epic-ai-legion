@@ -19,6 +19,7 @@
 // Rate limits: Not publicly documented; varies by API contract and plan tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SabreConfig {
   clientId: string;
@@ -26,7 +27,7 @@ interface SabreConfig {
   baseUrl?: string;
 }
 
-export class SabreMCPServer {
+export class SabreMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -34,6 +35,7 @@ export class SabreMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: SabreConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://api.havail.sabre.com';
@@ -430,7 +432,7 @@ export class SabreMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/v2/auth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/auth/token`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -455,16 +457,9 @@ export class SabreMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -478,7 +473,7 @@ export class SabreMCPServer {
 
   private async apiGet(path: string): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -639,7 +634,7 @@ export class SabreMCPServer {
   private async cancelPnr(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.record_locator) return { content: [{ type: 'text', text: 'record_locator is required' }], isError: true };
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v1/passenger/records/${encodeURIComponent(args.record_locator as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/passenger/records/${encodeURIComponent(args.record_locator as string)}`, {
       method: 'DELETE',
       headers,
     });

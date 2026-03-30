@@ -10,17 +10,19 @@
 // Rate limits: Varies by plan
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TaxamoConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class TaxamoMCPServer {
+export class TaxamoMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: TaxamoConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.taxamo.com';
   }
@@ -365,13 +367,6 @@ export class TaxamoMCPServer {
     return { 'Token': this.apiKey, 'Content-Type': 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private async apiGet(path: string, params?: Record<string, unknown>): Promise<ToolResult> {
     let url = `${this.baseUrl}${path}`;
     if (params && Object.keys(params).length > 0) {
@@ -381,7 +376,7 @@ export class TaxamoMCPServer {
       }
       url += '?' + qs.toString();
     }
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Taxamo API error ${response.status}: ${errText}` }], isError: true };
@@ -392,7 +387,7 @@ export class TaxamoMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -407,7 +402,7 @@ export class TaxamoMCPServer {
   }
 
   private async apiPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -422,7 +417,7 @@ export class TaxamoMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Taxamo API error ${response.status}: ${errText}` }], isError: true };

@@ -29,6 +29,7 @@
 // Rate limits: Not publicly documented; PayPal recommends exponential backoff on 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PayPalConfig {
   clientId: string;
@@ -36,7 +37,7 @@ interface PayPalConfig {
   baseUrl?: string;
 }
 
-export class PayPalMCPServer {
+export class PayPalMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -44,6 +45,7 @@ export class PayPalMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: PayPalConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://api-m.paypal.com';
@@ -795,7 +797,7 @@ export class PayPalMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/v1/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/oauth2/token`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -822,13 +824,6 @@ export class PayPalMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   // ── Orders ────────────────────────────────────────────────────────────────
 
   private async createOrder(args: Record<string, unknown>): Promise<ToolResult> {
@@ -841,7 +836,7 @@ export class PayPalMCPServer {
         ...(args.reference_id ? { reference_id: args.reference_id } : {}),
       }],
     };
-    const response = await fetch(`${this.baseUrl}/v2/checkout/orders`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/checkout/orders`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -855,7 +850,7 @@ export class PayPalMCPServer {
 
   private async getOrder(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v2/checkout/orders/${encodeURIComponent(args.order_id as string)}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/checkout/orders/${encodeURIComponent(args.order_id as string)}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -865,7 +860,7 @@ export class PayPalMCPServer {
 
   private async captureOrder(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v2/checkout/orders/${encodeURIComponent(args.order_id as string)}/capture`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/checkout/orders/${encodeURIComponent(args.order_id as string)}/capture`, {
       method: 'POST',
       headers,
       body: '{}',
@@ -879,7 +874,7 @@ export class PayPalMCPServer {
 
   private async authorizeOrder(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v2/checkout/orders/${encodeURIComponent(args.order_id as string)}/authorize`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/checkout/orders/${encodeURIComponent(args.order_id as string)}/authorize`, {
       method: 'POST',
       headers,
       body: '{}',
@@ -901,7 +896,7 @@ export class PayPalMCPServer {
     if (args.transaction_status) params.set('transaction_status', args.transaction_status as string);
     if (args.page_size) params.set('page_size', String(args.page_size));
     if (args.page) params.set('page', String(args.page));
-    const response = await fetch(`${this.baseUrl}/v1/reporting/transactions?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/reporting/transactions?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -926,7 +921,7 @@ export class PayPalMCPServer {
         unit_amount: { currency_code: args.currency_code, value: args.item_unit_amount },
       }],
     };
-    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/invoicing/invoices`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -940,7 +935,7 @@ export class PayPalMCPServer {
 
   private async getInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -951,7 +946,7 @@ export class PayPalMCPServer {
   private async sendInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
     const body = { send_to_recipient: args.send_to_recipient !== false };
-    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/send`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/send`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -969,7 +964,7 @@ export class PayPalMCPServer {
     if (args.subject) notification.subject = args.subject;
     if (args.note) notification.note = args.note;
     const body = { notification };
-    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/remind`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/remind`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -987,7 +982,7 @@ export class PayPalMCPServer {
       width: (args.width as number) ?? 400,
       height: (args.height as number) ?? 400,
     };
-    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/generate-qr-code`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/generate-qr-code`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -1005,7 +1000,7 @@ export class PayPalMCPServer {
     params.set('page', String(args.page ?? 1));
     params.set('page_size', String(args.page_size ?? 20));
     if (args.status) params.set('status', args.status as string);
-    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/invoicing/invoices?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1017,7 +1012,7 @@ export class PayPalMCPServer {
     const headers = await this.authHeaders();
     const body: Record<string, unknown> = {};
     if (args.cancellation_note) body.cancellation_note = args.cancellation_note;
-    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/cancel`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/invoicing/invoices/${encodeURIComponent(args.invoice_id as string)}/cancel`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -1033,7 +1028,7 @@ export class PayPalMCPServer {
 
   private async getDispute(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v1/customer/disputes/${encodeURIComponent(args.dispute_id as string)}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/customer/disputes/${encodeURIComponent(args.dispute_id as string)}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1049,7 +1044,7 @@ export class PayPalMCPServer {
     if (args.dispute_state) params.set('dispute_state', args.dispute_state as string);
     if (args.page_size) params.set('page_size', String(args.page_size));
     if (args.next_page_token) params.set('next_page_token', args.next_page_token as string);
-    const response = await fetch(`${this.baseUrl}/v1/customer/disputes?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/customer/disputes?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1061,7 +1056,7 @@ export class PayPalMCPServer {
     const headers = await this.authHeaders();
     const body: Record<string, unknown> = {};
     if (args.note) body.note = args.note;
-    const response = await fetch(`${this.baseUrl}/v1/customer/disputes/${encodeURIComponent(args.dispute_id as string)}/accept-claim`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/customer/disputes/${encodeURIComponent(args.dispute_id as string)}/accept-claim`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -1082,7 +1077,7 @@ export class PayPalMCPServer {
       body.amount = { value: args.amount_value, currency_code: args.currency_code };
     }
     if (args.note_to_payer) body.note_to_payer = args.note_to_payer;
-    const response = await fetch(`${this.baseUrl}/v2/payments/captures/${encodeURIComponent(args.capture_id as string)}/refund`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/payments/captures/${encodeURIComponent(args.capture_id as string)}/refund`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -1096,7 +1091,7 @@ export class PayPalMCPServer {
 
   private async getRefund(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v2/payments/refunds/${encodeURIComponent(args.refund_id as string)}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/payments/refunds/${encodeURIComponent(args.refund_id as string)}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1115,7 +1110,7 @@ export class PayPalMCPServer {
     if (args.tracking_number) tracker.tracking_number = args.tracking_number;
     if (args.carrier) tracker.carrier = args.carrier;
     if (args.carrier_name_other) tracker.carrier_name_other = args.carrier_name_other;
-    const response = await fetch(`${this.baseUrl}/v1/shipping/trackers-batch`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/shipping/trackers-batch`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ trackers: [tracker] }),
@@ -1130,7 +1125,7 @@ export class PayPalMCPServer {
   private async getShipmentTracking(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
     const trackerId = `${encodeURIComponent(args.transaction_id as string)}-${encodeURIComponent(args.tracking_number as string)}`;
-    const response = await fetch(`${this.baseUrl}/v1/shipping/trackers/${trackerId}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/shipping/trackers/${trackerId}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1146,7 +1141,7 @@ export class PayPalMCPServer {
     if (args.description) body.description = args.description;
     if (args.category) body.category = args.category;
     if (args.image_url) body.image_url = args.image_url;
-    const response = await fetch(`${this.baseUrl}/v1/catalogs/products`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/catalogs/products`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -1163,7 +1158,7 @@ export class PayPalMCPServer {
     const params = new URLSearchParams();
     params.set('page_size', String(args.page_size ?? 10));
     params.set('page', String(args.page ?? 1));
-    const response = await fetch(`${this.baseUrl}/v1/catalogs/products?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/catalogs/products?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1173,7 +1168,7 @@ export class PayPalMCPServer {
 
   private async getProduct(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v1/catalogs/products/${encodeURIComponent(args.product_id as string)}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/catalogs/products/${encodeURIComponent(args.product_id as string)}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1187,7 +1182,7 @@ export class PayPalMCPServer {
     if (args.description !== undefined) patch.push({ op: 'replace', path: '/description', value: args.description });
     if (args.category !== undefined) patch.push({ op: 'replace', path: '/category', value: args.category });
     if (args.image_url !== undefined) patch.push({ op: 'replace', path: '/image_url', value: args.image_url });
-    const response = await fetch(`${this.baseUrl}/v1/catalogs/products/${encodeURIComponent(args.product_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/catalogs/products/${encodeURIComponent(args.product_id as string)}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(patch),
@@ -1221,7 +1216,7 @@ export class PayPalMCPServer {
       payment_preferences: { auto_bill_outstanding: true },
     };
     if (args.description) body.description = args.description;
-    const response = await fetch(`${this.baseUrl}/v1/billing/plans`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/billing/plans`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -1239,7 +1234,7 @@ export class PayPalMCPServer {
     if (args.product_id) params.set('product_id', args.product_id as string);
     params.set('page_size', String(args.page_size ?? 10));
     params.set('page', String(args.page ?? 1));
-    const response = await fetch(`${this.baseUrl}/v1/billing/plans?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/billing/plans?${params}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1249,7 +1244,7 @@ export class PayPalMCPServer {
 
   private async getSubscriptionPlan(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v1/billing/plans/${encodeURIComponent(args.plan_id as string)}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/billing/plans/${encodeURIComponent(args.plan_id as string)}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1274,7 +1269,7 @@ export class PayPalMCPServer {
       }
       body.subscriber = subscriber;
     }
-    const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/billing/subscriptions`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -1288,7 +1283,7 @@ export class PayPalMCPServer {
 
   private async getSubscription(args: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${encodeURIComponent(args.subscription_id as string)}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/billing/subscriptions/${encodeURIComponent(args.subscription_id as string)}`, { headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -1300,7 +1295,7 @@ export class PayPalMCPServer {
     const headers = await this.authHeaders();
     const body: Record<string, unknown> = {};
     if (args.reason) body.reason = args.reason;
-    const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${encodeURIComponent(args.subscription_id as string)}/cancel`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/billing/subscriptions/${encodeURIComponent(args.subscription_id as string)}/cancel`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),

@@ -22,6 +22,7 @@
 //   Supports both sandbox testing (with sandbox-id header) and production usage.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NbgGrConfig {
   accessToken: string;
@@ -30,13 +31,14 @@ interface NbgGrConfig {
   sandboxId?: string;
 }
 
-export class NbgGrMCPServer {
+export class NbgGrMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly clientId: string;
   private readonly baseUrl: string;
   private readonly sandboxId: string | undefined;
 
   constructor(config: NbgGrConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.clientId = config.clientId;
     this.baseUrl = (
@@ -44,13 +46,6 @@ export class NbgGrMCPServer {
       'https://apis.nbg.gr/sandbox/uk.openbanking.accountinfo/oauth2/v3.1.5'
     ).replace(/\/$/, '');
     this.sandboxId = config.sandboxId;
-  }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private buildHeaders(extra?: Record<string, string>): Record<string, string> {
@@ -82,7 +77,7 @@ export class NbgGrMCPServer {
 
     let response: Response;
     try {
-      response = await fetch(url, init);
+      response = await this.fetchWithRetry(url, init);
     } catch (err) {
       return {
         content: [{ type: 'text', text: `Network error: ${err instanceof Error ? err.message : String(err)}` }],

@@ -12,6 +12,7 @@
 // Docs: https://developers.facebook.com/docs/whatsapp
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WhatsAppConfig {
   /** Base URL of the WhatsApp Business API container, e.g. https://wa.example.com/v1 */
@@ -20,11 +21,12 @@ interface WhatsAppConfig {
   token: string;
 }
 
-export class WhatsAppMCPServer {
+export class WhatsAppMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string;
 
   constructor(config: WhatsAppConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/+$/, '');
     this.token = config.token;
   }
@@ -257,13 +259,6 @@ export class WhatsAppMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -271,7 +266,7 @@ export class WhatsAppMCPServer {
     }
     const query = qs.toString();
     const url = `${this.baseUrl}${path}${query ? '?' + query : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -281,7 +276,7 @@ export class WhatsAppMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -342,7 +337,7 @@ export class WhatsAppMCPServer {
     const { file_url, content_type } = args as { file_url: string; content_type: string };
     // WhatsApp /media expects multipart/form-data; since we only have fetch, we post JSON with the link form
     // The API accepts a URL-based upload via form-data. We send it as JSON body (link field).
-    const response = await fetch(`${this.baseUrl}/media`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/media`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${this.token}`, 'Content-Type': content_type },
       body: JSON.stringify({ url: file_url }),

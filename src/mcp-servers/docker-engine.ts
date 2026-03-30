@@ -16,16 +16,18 @@
 // Rate limits: None — local Unix socket API
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DockerEngineConfig {
   baseUrl?: string;
   apiToken?: string;
 }
 
-export class DockerEngineMCPServer {
+export class DockerEngineMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: DockerEngineConfig) {
+    super();
     this.baseUrl = config.baseUrl || 'http://localhost/v1.33';
   }
 
@@ -1139,12 +1141,6 @@ export class DockerEngineMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private buildQuery(params: Record<string, unknown>): string {
     const q = Object.entries(params)
@@ -1168,7 +1164,7 @@ export class DockerEngineMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

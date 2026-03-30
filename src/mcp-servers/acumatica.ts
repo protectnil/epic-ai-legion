@@ -21,6 +21,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AcumaticaConfig {
   /** Full instance URL, e.g. https://mycompany.acumatica.com */
@@ -37,7 +38,7 @@ interface AcumaticaConfig {
   apiVersion?: string;
 }
 
-export class AcumaticaMCPServer {
+export class AcumaticaMCPServer extends MCPAdapterBase {
   private readonly instanceUrl: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -48,6 +49,7 @@ export class AcumaticaMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: AcumaticaConfig) {
+    super();
     this.instanceUrl = config.instanceUrl.replace(/\/+$/, '');
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -100,7 +102,7 @@ export class AcumaticaMCPServer {
       scope: 'api offline_access',
     });
 
-    const response = await fetch(tokenUrl, {
+    const response = await this.fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -625,13 +627,6 @@ export class AcumaticaMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildOdata(params: {
     filter?: string;
     top?: number;
@@ -650,7 +645,7 @@ export class AcumaticaMCPServer {
   private async apiGet(entity: string, filter?: string, top = 20, skip = 0): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.entityBase}/${entity}${this.buildOdata({ filter, top, skip })}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -668,7 +663,7 @@ export class AcumaticaMCPServer {
   private async apiGetSingle(entity: string, key: string): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.entityBase}/${entity}/${encodeURIComponent(key)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -688,7 +683,7 @@ export class AcumaticaMCPServer {
     const url = key
       ? `${this.entityBase}/${entity}/${encodeURIComponent(key)}`
       : `${this.entityBase}/${entity}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -708,7 +703,7 @@ export class AcumaticaMCPServer {
   private async apiPost(entity: string, action: string, body: unknown): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const url = `${this.entityBase}/${entity}/${action}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

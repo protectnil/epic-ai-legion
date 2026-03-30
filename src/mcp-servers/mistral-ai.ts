@@ -18,17 +18,19 @@
 // Rate limits: Varies by model tier and plan; see https://docs.mistral.ai/deployment/laplateforme/tier/
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MistralConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class MistralAIMCPServer {
+export class MistralAIMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MistralConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.mistral.ai/v1';
   }
@@ -637,14 +639,8 @@ export class MistralAIMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };
@@ -654,7 +650,7 @@ export class MistralAIMCPServer {
   }
 
   private async doPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -668,7 +664,7 @@ export class MistralAIMCPServer {
   }
 
   private async doDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };
@@ -753,7 +749,7 @@ export class MistralAIMCPServer {
       `${content}${CRLF}` +
       `--${boundary}--${CRLF}`;
 
-    const response = await fetch(`${this.baseUrl}/files`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.apiKey}`,

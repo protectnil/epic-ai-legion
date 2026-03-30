@@ -21,6 +21,7 @@
 // Rate limits: Not publicly documented; contact Atlassian support for current limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpsgenieConfig {
   apiKey: string;
@@ -28,11 +29,12 @@ interface OpsgenieConfig {
   baseUrl?: string;
 }
 
-export class OpsgenieMCPServer {
+export class OpsgenieMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: OpsgenieConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.opsgenie.com';
   }
@@ -662,13 +664,6 @@ export class OpsgenieMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private qs(params: URLSearchParams): string {
     const s = params.toString();
     return s ? '?' + s : '';
@@ -681,7 +676,7 @@ export class OpsgenieMCPServer {
     if (args.limit !== undefined) params.set('limit', String(args.limit));
     if (args.sort) params.set('sort', String(args.sort));
     if (args.order) params.set('order', String(args.order));
-    const response = await fetch(`${this.baseUrl}/v2/alerts${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/alerts${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -691,7 +686,7 @@ export class OpsgenieMCPServer {
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.identifierType) params.set('identifierType', String(args.identifierType));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/alerts/${encodeURIComponent(String(args.identifier))}${this.qs(params)}`,
       { headers: this.getHeaders() }
     );
@@ -710,7 +705,7 @@ export class OpsgenieMCPServer {
     if (args.entity) body.entity = args.entity;
     if (args.source) body.source = args.source;
     if (args.note) body.note = args.note;
-    const response = await fetch(`${this.baseUrl}/v2/alerts`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/alerts`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -728,7 +723,7 @@ export class OpsgenieMCPServer {
     if (args.note) body.note = args.note;
     if (args.source) body.source = args.source;
     if (args.user) body.user = args.user;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/alerts/${encodeURIComponent(String(args.identifier))}/acknowledge${this.qs(params)}`,
       { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) }
     );
@@ -745,7 +740,7 @@ export class OpsgenieMCPServer {
     if (args.note) body.note = args.note;
     if (args.source) body.source = args.source;
     if (args.user) body.user = args.user;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/alerts/${encodeURIComponent(String(args.identifier))}/close${this.qs(params)}`,
       { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) }
     );
@@ -761,7 +756,7 @@ export class OpsgenieMCPServer {
     const body: Record<string, unknown> = { note: args.note };
     if (args.source) body.source = args.source;
     if (args.user) body.user = args.user;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/alerts/${encodeURIComponent(String(args.identifier))}/notes${this.qs(params)}`,
       { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) }
     );
@@ -777,7 +772,7 @@ export class OpsgenieMCPServer {
     const body: Record<string, unknown> = { endTime: args.endTime };
     if (args.note) body.note = args.note;
     if (args.user) body.user = args.user;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/alerts/${encodeURIComponent(String(args.identifier))}/snooze${this.qs(params)}`,
       { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) }
     );
@@ -795,7 +790,7 @@ export class OpsgenieMCPServer {
     };
     if (args.note) body.note = args.note;
     if (args.user) body.user = args.user;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/alerts/${encodeURIComponent(String(args.identifier))}/assign${this.qs(params)}`,
       { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) }
     );
@@ -812,7 +807,7 @@ export class OpsgenieMCPServer {
     if (args.limit !== undefined) params.set('limit', String(args.limit));
     if (args.sort) params.set('sort', String(args.sort));
     if (args.order) params.set('order', String(args.order));
-    const response = await fetch(`${this.baseUrl}/v1/incidents${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/incidents${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -822,7 +817,7 @@ export class OpsgenieMCPServer {
   private async getIncident(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.identifierType) params.set('identifierType', String(args.identifierType));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/incidents/${encodeURIComponent(String(args.identifier))}${this.qs(params)}`,
       { headers: this.getHeaders() }
     );
@@ -837,7 +832,7 @@ export class OpsgenieMCPServer {
     if (args.description) body.description = args.description;
     if (args.priority) body.priority = args.priority;
     if (args.tags) body.tags = args.tags;
-    const response = await fetch(`${this.baseUrl}/v1/incidents/create`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/incidents/create`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -853,7 +848,7 @@ export class OpsgenieMCPServer {
     if (args.identifierType) params.set('identifierType', String(args.identifierType));
     const body: Record<string, unknown> = {};
     if (args.note) body.note = args.note;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v1/incidents/${encodeURIComponent(String(args.identifier))}/close${this.qs(params)}`,
       { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) }
     );
@@ -866,7 +861,7 @@ export class OpsgenieMCPServer {
   private async listSchedules(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.expand) params.set('expand', String(args.expand));
-    const response = await fetch(`${this.baseUrl}/v2/schedules${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/schedules${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -876,7 +871,7 @@ export class OpsgenieMCPServer {
   private async getSchedule(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.identifierType) params.set('identifierType', String(args.identifierType));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/schedules/${encodeURIComponent(String(args.identifier))}${this.qs(params)}`,
       { headers: this.getHeaders() }
     );
@@ -890,7 +885,7 @@ export class OpsgenieMCPServer {
     const params = new URLSearchParams();
     if (args.scheduleIdentifierType) params.set('scheduleIdentifierType', String(args.scheduleIdentifierType));
     if (typeof args.flat === 'boolean') params.set('flat', String(args.flat));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/schedules/${encodeURIComponent(String(args.scheduleIdentifier))}/on-calls${this.qs(params)}`,
       { headers: this.getHeaders() }
     );
@@ -901,7 +896,7 @@ export class OpsgenieMCPServer {
   }
 
   private async listTeams(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v2/teams`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/teams`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -911,7 +906,7 @@ export class OpsgenieMCPServer {
   private async getTeam(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.identifierType) params.set('identifierType', String(args.identifierType));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/teams/${encodeURIComponent(String(args.identifier))}${this.qs(params)}`,
       { headers: this.getHeaders() }
     );
@@ -928,7 +923,7 @@ export class OpsgenieMCPServer {
     if (args.limit !== undefined) params.set('limit', String(args.limit));
     if (args.sort) params.set('sort', String(args.sort));
     if (args.order) params.set('order', String(args.order));
-    const response = await fetch(`${this.baseUrl}/v2/users${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/users${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -936,7 +931,7 @@ export class OpsgenieMCPServer {
   }
 
   private async getUser(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/users/${encodeURIComponent(String(args.identifier))}`,
       { headers: this.getHeaders() }
     );
@@ -947,7 +942,7 @@ export class OpsgenieMCPServer {
   }
 
   private async listEscalations(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v2/escalations`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/escalations`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -957,7 +952,7 @@ export class OpsgenieMCPServer {
   private async getEscalation(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.identifierType) params.set('identifierType', String(args.identifierType));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/escalations/${encodeURIComponent(String(args.identifier))}${this.qs(params)}`,
       { headers: this.getHeaders() }
     );
@@ -968,7 +963,7 @@ export class OpsgenieMCPServer {
   }
 
   private async listHeartbeats(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v2/heartbeats`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/heartbeats`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -976,7 +971,7 @@ export class OpsgenieMCPServer {
   }
 
   private async pingHeartbeat(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/heartbeats/${encodeURIComponent(String(args.name))}/ping`,
       { method: 'GET', headers: this.getHeaders() }
     );
@@ -991,7 +986,7 @@ export class OpsgenieMCPServer {
     if (args.query) params.set('query', String(args.query));
     if (args.offset !== undefined) params.set('offset', String(args.offset));
     if (args.limit !== undefined) params.set('limit', String(args.limit));
-    const response = await fetch(`${this.baseUrl}/v1/services${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/services${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

@@ -15,6 +15,7 @@
 // Rate limits: Free plan — 2,000 requests/day. Commercial plans vary.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MusixmatchConfig {
   /** Musixmatch API key. Obtain at https://developer.musixmatch.com/signup */
@@ -23,11 +24,12 @@ interface MusixmatchConfig {
   baseUrl?: string;
 }
 
-export class MusixmatchMCPServer {
+export class MusixmatchMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MusixmatchConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.musixmatch.com/ws/1.1').replace(/\/$/, '');
   }
@@ -314,16 +316,9 @@ export class MusixmatchMCPServer {
     return `${this.baseUrl}/${endpoint}?${qs.toString()}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(endpoint: string, params: Record<string, unknown> = {}): Promise<ToolResult> {
     const url = this.buildUrl(endpoint, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) {

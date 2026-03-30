@@ -16,6 +16,7 @@
 // Rate limits: 480 requests per hour per user (token bucket per-functionality; headers: RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LaceworkConfig {
   account: string;
@@ -24,7 +25,7 @@ interface LaceworkConfig {
   baseUrl?: string;
 }
 
-export class LaceworkMCPServer {
+export class LaceworkMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly keyId: string;
   private readonly secret: string;
@@ -32,6 +33,7 @@ export class LaceworkMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: LaceworkConfig) {
+    super();
     this.keyId = config.keyId;
     this.secret = config.secret;
     this.baseUrl = config.baseUrl ?? `https://${config.account}.lacework.net/api/v2`;
@@ -410,7 +412,7 @@ export class LaceworkMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/access/tokens`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/access/tokens`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -438,13 +440,6 @@ export class LaceworkMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildTimeFilter(args: Record<string, unknown>): Record<string, unknown> {
     const filters: Record<string, unknown> = {};
     if (args.start_time || args.end_time) {
@@ -465,7 +460,7 @@ export class LaceworkMCPServer {
     if (args.status) fieldFilters.push({ field: 'status', expression: 'eq', value: args.status });
     if (fieldFilters.length > 0) body.filters = fieldFilters;
 
-    const response = await fetch(`${this.baseUrl}/Alerts/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Alerts/search`, {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -479,7 +474,7 @@ export class LaceworkMCPServer {
   private async getAlert(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
     const scope = (args.scope as string) ?? 'Details';
     const params = new URLSearchParams({ scope });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/Alerts/${encodeURIComponent(String(args.alertId))}?${params}`,
       { method: 'GET', headers }
     );
@@ -495,7 +490,7 @@ export class LaceworkMCPServer {
     const params = new URLSearchParams();
     if (args.type) params.set('type', args.type as string);
     const qs = params.toString();
-    const response = await fetch(`${this.baseUrl}/AlertChannels${qs ? `?${qs}` : ''}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/AlertChannels${qs ? `?${qs}` : ''}`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);
@@ -514,7 +509,7 @@ export class LaceworkMCPServer {
     if (args.status) fieldFilters.push({ field: 'fixInfo.fixAvailable', expression: 'eq', value: args.status });
     if (fieldFilters.length > 0) body.filters = fieldFilters;
 
-    const response = await fetch(`${this.baseUrl}/Vulnerabilities/Hosts/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Vulnerabilities/Hosts/search`, {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -535,7 +530,7 @@ export class LaceworkMCPServer {
     if (args.image_id) fieldFilters.push({ field: 'imageId', expression: 'eq', value: args.image_id });
     if (fieldFilters.length > 0) body.filters = fieldFilters;
 
-    const response = await fetch(`${this.baseUrl}/Vulnerabilities/Containers/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Vulnerabilities/Containers/search`, {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -550,7 +545,7 @@ export class LaceworkMCPServer {
     const params = new URLSearchParams({ primaryQueryId: args.primary_query_id as string });
     if (args.account_id) params.set('accountId', args.account_id as string);
 
-    const response = await fetch(`${this.baseUrl}/Configs/ComplianceEvaluations?${params}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Configs/ComplianceEvaluations?${params}`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);
@@ -562,7 +557,7 @@ export class LaceworkMCPServer {
   private async listComplianceFrameworks(headers: Record<string, string>, _args: Record<string, unknown>): Promise<ToolResult> {
     // GET /api/v2/Schemas/ComplianceEvaluations returns the available compliance evaluation schema types.
     // cloudProvider filtering is not a supported query param on this endpoint.
-    const response = await fetch(`${this.baseUrl}/Schemas/ComplianceEvaluations`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Schemas/ComplianceEvaluations`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);
@@ -574,7 +569,7 @@ export class LaceworkMCPServer {
   private async listPolicies(headers: Record<string, string>, _args: Record<string, unknown>): Promise<ToolResult> {
     // GET /api/v2/Policies returns all policies; no query-param filtering is supported.
     // Filtering by enabled/severity requires POST /api/v2/Policies/search (not implemented here).
-    const response = await fetch(`${this.baseUrl}/Policies`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Policies`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);
@@ -584,7 +579,7 @@ export class LaceworkMCPServer {
   }
 
   private async getPolicy(headers: Record<string, string>, args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/Policies/${encodeURIComponent(args.policy_id as string)}`,
       { headers }
     );
@@ -601,7 +596,7 @@ export class LaceworkMCPServer {
     if (typeof args.enabled === 'boolean') body.enabled = args.enabled;
     if (args.severity) body.severity = args.severity;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/Policies/${encodeURIComponent(args.policy_id as string)}`,
       { method: 'PATCH', headers, body: JSON.stringify(body) }
     );
@@ -618,7 +613,7 @@ export class LaceworkMCPServer {
     if (args.source) params.set('querySource', args.source as string);
     const qs = params.toString();
 
-    const response = await fetch(`${this.baseUrl}/Queries${qs ? `?${qs}` : ''}`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Queries${qs ? `?${qs}` : ''}`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);
@@ -637,7 +632,7 @@ export class LaceworkMCPServer {
       options: { limit: (args.limit as number) ?? 100 },
     };
 
-    const response = await fetch(`${this.baseUrl}/Queries/execute`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Queries/execute`, {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -656,7 +651,7 @@ export class LaceworkMCPServer {
       body.filters = [{ field: 'hostname', expression: 'ilike', value: `%${encodeURIComponent(args.hostname as string)}%` }];
     }
 
-    const response = await fetch(`${this.baseUrl}/Entities/Machines/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Entities/Machines/search`, {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -676,7 +671,7 @@ export class LaceworkMCPServer {
     if (args.namespace) fieldFilters.push({ field: 'props.NAMESPACE', expression: 'eq', value: args.namespace });
     if (fieldFilters.length > 0) body.filters = fieldFilters;
 
-    const response = await fetch(`${this.baseUrl}/Entities/Containers/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Entities/Containers/search`, {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -688,7 +683,7 @@ export class LaceworkMCPServer {
   }
 
   private async listAgentAccessTokens(headers: Record<string, string>, _args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/AgentAccessTokens`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/AgentAccessTokens`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);
@@ -698,7 +693,7 @@ export class LaceworkMCPServer {
   }
 
   private async listDatasources(headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/Datasources`, { headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Datasources`, { headers });
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`Lacework API error ${response.status}: ${text}`);

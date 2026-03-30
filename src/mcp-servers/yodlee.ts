@@ -14,6 +14,7 @@
 // Rate limits: Depends on enterprise plan.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface YodleeConfig {
   /** Yodlee access token (obtained via generateAccessToken) */
@@ -25,12 +26,13 @@ interface YodleeConfig {
 
 const TRUNCATE = 10 * 1024;
 
-export class YodleeMCPServer {
+export class YodleeMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly loginName: string;
   private readonly baseUrl: string;
 
   constructor(config: YodleeConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.loginName = config.loginName || '';
     this.baseUrl = (config.baseUrl || 'https://production.api.yodlee.com/ysl').replace(/\/$/, '');
@@ -436,7 +438,7 @@ export class YodleeMCPServer {
     const authHeader = this.loginName
       ? `${this.loginName} Bearer ${this.accessToken}`
       : `Bearer ${this.accessToken}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       ...options,
       headers: {
         Authorization: authHeader,

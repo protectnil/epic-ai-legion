@@ -14,17 +14,19 @@
 // Rate limits: Not publicly documented; use responsibly
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BandsintownConfig {
   appId: string;
   baseUrl?: string; // default: https://rest.bandsintown.com
 }
 
-export class BandsintownMCPServer {
+export class BandsintownMCPServer extends MCPAdapterBase {
   private readonly appId: string;
   private readonly baseUrl: string;
 
   constructor(config: BandsintownConfig) {
+    super();
     this.appId   = config.appId;
     this.baseUrl = config.baseUrl || 'https://rest.bandsintown.com';
   }
@@ -104,16 +106,9 @@ export class BandsintownMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const query = new URLSearchParams({ app_id: this.appId, ...params });
-    const response = await fetch(`${this.baseUrl}${path}?${query.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${query.toString()}`, {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {

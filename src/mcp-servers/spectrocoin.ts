@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented; treat as standard merchant API (avoid burst)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SpectroCoinConfig {
   merchantId: string;
@@ -24,12 +25,13 @@ interface SpectroCoinConfig {
   baseUrl?: string;
 }
 
-export class SpectroCoinMCPServer {
+export class SpectroCoinMCPServer extends MCPAdapterBase {
   private readonly merchantId: string;
   private readonly apiId: string;
   private readonly baseUrl: string;
 
   constructor(config: SpectroCoinConfig) {
+    super();
     this.merchantId = config.merchantId;
     this.apiId = config.apiId;
     this.baseUrl = config.baseUrl ?? 'https://spectrocoin.com/api/merchant/1';
@@ -150,7 +152,7 @@ export class SpectroCoinMCPServer {
     if (args.payerName) payload.payerName = args.payerName;
     if (args.payerSurname) payload.payerSurname = args.payerSurname;
 
-    const response = await fetch(`${this.baseUrl}/createOrder`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/createOrder`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

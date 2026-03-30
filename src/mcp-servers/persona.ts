@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented; Persona returns HTTP 429 on limit breach
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PersonaConfig {
   apiKey: string;
@@ -24,12 +25,13 @@ interface PersonaConfig {
   baseUrl?: string;
 }
 
-export class PersonaMCPServer {
+export class PersonaMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly apiVersion: string;
   private readonly baseUrl: string;
 
   constructor(config: PersonaConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.apiVersion = config.apiVersion || '2023-01-05';
     this.baseUrl = config.baseUrl || 'https://api.withpersona.com/api/v1';
@@ -442,17 +444,10 @@ export class PersonaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -461,7 +456,7 @@ export class PersonaMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -474,7 +469,7 @@ export class PersonaMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

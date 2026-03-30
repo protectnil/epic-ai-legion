@@ -17,17 +17,19 @@
 // Rate limits: Not publicly documented; use pagination and avoid polling
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AbnormalSecurityConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class AbnormalSecurityMCPServer {
+export class AbnormalSecurityMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: AbnormalSecurityConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.abnormalplatform.com';
   }
@@ -315,7 +317,7 @@ export class AbnormalSecurityMCPServer {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

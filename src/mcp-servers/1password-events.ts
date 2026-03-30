@@ -18,17 +18,19 @@
 // Rate limits: Not publicly documented; use cursor-based pagination
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OnePasswordEventsConfig {
   jwtToken: string;
   baseUrl?: string;
 }
 
-export class OnePasswordEventsMCPServer {
+export class OnePasswordEventsMCPServer extends MCPAdapterBase {
   private readonly jwtToken: string;
   private readonly baseUrl: string;
 
   constructor(config: OnePasswordEventsConfig) {
+    super();
     this.jwtToken = config.jwtToken;
     this.baseUrl = config.baseUrl || 'https://events.1password.com';
   }
@@ -115,7 +117,7 @@ export class OnePasswordEventsMCPServer {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

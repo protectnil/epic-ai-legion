@@ -13,17 +13,19 @@
 // Rate limits: DEMO_KEY: 30 req/hr, 50 req/day. Personal key: 1,000 req/hr.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FecConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class FecMCPServer {
+export class FecMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: FecConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.open.fec.gov/v1';
   }
@@ -485,12 +487,6 @@ export class FecMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async get(path: string, params: Record<string, string | number | undefined>): Promise<ToolResult> {
     const qs = new URLSearchParams();
@@ -501,7 +497,7 @@ export class FecMCPServer {
       }
     }
     const url = `${this.baseUrl}${path}?${qs.toString()}`;
-    const response = await fetch(url);
+    const response = await this.fetchWithRetry(url, {});
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `FEC API error: ${response.status} ${response.statusText}` }],

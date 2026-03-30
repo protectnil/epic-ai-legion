@@ -14,17 +14,19 @@
 // Rate limits: Depends on RapidAPI plan (free tier: 150 req/month)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MediumConfig {
   /** RapidAPI key for the Medium API (x-rapidapi-key header) */
   apiKey: string;
 }
 
-export class MediumMCPServer {
+export class MediumMCPServer extends MCPAdapterBase {
   private readonly baseUrl = 'https://medium2.p.rapidapi.com';
   private readonly apiKey: string;
 
   constructor(config: MediumConfig) {
+    super();
     this.apiKey = config.apiKey;
   }
 
@@ -532,14 +534,8 @@ export class MediumMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.buildHeaders(),
     });

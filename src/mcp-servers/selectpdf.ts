@@ -16,6 +16,7 @@
 // Rate limits: Varies by plan. Free plan allows limited conversions per month.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SelectPdfConfig {
   apiKey: string;
@@ -23,11 +24,12 @@ interface SelectPdfConfig {
   baseUrl?: string;
 }
 
-export class SelectpdfMCPServer {
+export class SelectpdfMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: SelectPdfConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://selectpdf.com';
   }
@@ -190,20 +192,13 @@ export class SelectpdfMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildBody(fields: Record<string, unknown>): Record<string, unknown> {
     return { key: this.apiKey, ...fields };
   }
 
   private async fetchConvert(body: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/api2/convert`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

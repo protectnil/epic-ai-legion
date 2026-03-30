@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BritBoxUKConfig {
   /** Optional Bearer token for authenticated account/profile operations */
@@ -25,11 +26,12 @@ interface BritBoxUKConfig {
   baseUrl?: string;
 }
 
-export class BritBoxUKMCPServer {
+export class BritBoxUKMCPServer extends MCPAdapterBase {
   private readonly accessToken: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: BritBoxUKConfig = {}) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://isl.britbox.co.uk/api').replace(/\/+$/, '');
   }
@@ -516,13 +518,6 @@ export class BritBoxUKMCPServer {
     return h;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async httpGet(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -530,7 +525,7 @@ export class BritBoxUKMCPServer {
     }
     const query = qs.toString();
     const url = `${this.baseUrl}${path}${query ? '?' + query : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -540,7 +535,7 @@ export class BritBoxUKMCPServer {
   }
 
   private async httpPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -561,7 +556,7 @@ export class BritBoxUKMCPServer {
     }
     const query = qs.toString();
     const url = `${this.baseUrl}${path}${query ? '?' + query : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: this.authHeaders,
       body: body ? JSON.stringify(body) : undefined,
@@ -575,7 +570,7 @@ export class BritBoxUKMCPServer {
   }
 
   private async httpDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

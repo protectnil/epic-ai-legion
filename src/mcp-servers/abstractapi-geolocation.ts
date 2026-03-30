@@ -14,6 +14,7 @@
 // Rate limits: Free tier — 1 req/sec, 20,000 req/month. Paid tiers vary.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AbstractApiGeolocationConfig {
   /** Abstract API geolocation API key */
@@ -22,11 +23,12 @@ interface AbstractApiGeolocationConfig {
   baseUrl?: string;
 }
 
-export class AbstractApiGeolocationMCPServer {
+export class AbstractApiGeolocationMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: AbstractApiGeolocationConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://ipgeolocation.abstractapi.com';
   }
@@ -102,16 +104,9 @@ export class AbstractApiGeolocationMCPServer {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doGet(params: Record<string, string>): Promise<ToolResult> {
     const qs = new URLSearchParams({ api_key: this.apiKey, ...params });
-    const response = await fetch(`${this.baseUrl}/v1/?${qs.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/?${qs.toString()}`, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });

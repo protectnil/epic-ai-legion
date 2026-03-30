@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented. Token-scoped. Contact Netlify support for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NetlifyConfig {
   accessToken: string;
@@ -22,11 +23,12 @@ interface NetlifyConfig {
   baseUrl?: string;
 }
 
-export class NetlifyMCPServer {
+export class NetlifyMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: NetlifyConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://api.netlify.com/api/v1';
   }
@@ -447,13 +449,6 @@ export class NetlifyMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | number | undefined> = {}): string {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -483,7 +478,7 @@ export class NetlifyMCPServer {
       headers: this.headers(),
     };
     if (body !== undefined) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (response.status === 204) return { content: [{ type: 'text', text: 'Success (no content)' }], isError: false };
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

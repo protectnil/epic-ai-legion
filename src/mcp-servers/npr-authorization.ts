@@ -15,15 +15,17 @@
 // Rate limits: Not publicly documented; production use requires NPR API key
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NprAuthorizationConfig {
   baseUrl?: string; // default: https://authorization.api.npr.org
 }
 
-export class NprAuthorizationMCPServer {
+export class NprAuthorizationMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: NprAuthorizationConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://authorization.api.npr.org';
   }
 
@@ -170,15 +172,8 @@ export class NprAuthorizationMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async postForm(path: string, body: Record<string, string>, headers: Record<string, string> = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

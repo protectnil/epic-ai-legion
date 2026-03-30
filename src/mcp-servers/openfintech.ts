@@ -13,15 +13,17 @@
 // Spec: https://api.apis.guru/v2/specs/openfintech.io/2017-08-24/swagger.json (Swagger 2.0)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenFinTechConfig {
   baseUrl?: string;
 }
 
-export class OpenFinTechMCPServer {
+export class OpenFinTechMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: OpenFinTechConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://api.openfintech.io/v1';
   }
 
@@ -335,7 +337,7 @@ export class OpenFinTechMCPServer {
     }
     const qs = params.toString();
     const url = `${this.baseUrl}${path}${qs ? `?${qs}` : ''}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       headers: { Accept: 'application/vnd.api+json' },
     });
     const text = await res.text();
@@ -362,7 +364,7 @@ export class OpenFinTechMCPServer {
     }
     const qs = params.toString();
     const url = `${this.baseUrl}${path}/${encodeURIComponent(String(id))}${qs ? `?${qs}` : ''}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       headers: { Accept: 'application/vnd.api+json' },
     });
     const text = await res.text();

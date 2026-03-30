@@ -28,6 +28,7 @@
 // Rate limits: Not publicly documented; serverless per-request billing model.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface UpstashConfig {
   email: string;
@@ -35,12 +36,13 @@ interface UpstashConfig {
   baseUrl?: string;
 }
 
-export class UpstashMCPServer {
+export class UpstashMCPServer extends MCPAdapterBase {
   private readonly email: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: UpstashConfig) {
+    super();
     this.email = config.email;
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.upstash.com/v2';
@@ -339,15 +341,9 @@ export class UpstashMCPServer {
     return `Basic ${btoa(`${this.email}:${this.apiKey}`)}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       headers: { 'Authorization': this.authHeader, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -358,7 +354,7 @@ export class UpstashMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Authorization': this.authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -371,7 +367,7 @@ export class UpstashMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: { 'Authorization': this.authHeader, 'Content-Type': 'application/json' },
     });

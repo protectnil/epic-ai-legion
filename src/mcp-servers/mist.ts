@@ -15,6 +15,7 @@
 // Rate limits: Contact Juniper/Mist sales for limits. Applies per org.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MistConfig {
   apiToken: string;
@@ -22,11 +23,12 @@ interface MistConfig {
   baseUrl?: string;
 }
 
-export class MistMCPServer {
+export class MistMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: MistConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://api.mist.com';
   }
@@ -360,13 +362,6 @@ export class MistMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiFetch(path: string, method = 'GET', body?: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
@@ -375,7 +370,7 @@ export class MistMCPServer {
     };
     const options: RequestInit = { method, headers };
     if (body !== undefined) options.body = JSON.stringify(body);
-    const response = await fetch(url, options);
+    const response = await this.fetchWithRetry(url, options);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

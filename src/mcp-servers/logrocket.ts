@@ -20,6 +20,7 @@
 // Rate limits: Not publicly documented; Pro and Enterprise plans have higher limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LogRocketConfig {
   apiKey: string;
@@ -28,13 +29,14 @@ interface LogRocketConfig {
   baseUrl?: string;
 }
 
-export class LogRocketMCPServer {
+export class LogRocketMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly organizationSlug: string;
   private readonly appSlug: string;
   private readonly baseUrl: string;
 
   constructor(config: LogRocketConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.organizationSlug = config.organizationSlug;
     this.appSlug = config.appSlug;
@@ -362,17 +364,10 @@ export class LogRocketMCPServer {
     return `${this.baseUrl}/orgs/${this.organizationSlug}/apps/${this.appSlug}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(url: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const fullUrl = `${url}${qs ? '?' + qs : ''}`;
-    const response = await fetch(fullUrl, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(fullUrl, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -381,7 +376,7 @@ export class LogRocketMCPServer {
   }
 
   private async apiPost(url: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

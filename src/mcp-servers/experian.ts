@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; contact Experian for production rate limit details
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ExperianConfig {
   clientId: string;
@@ -27,7 +28,7 @@ interface ExperianConfig {
   tokenUrl?: string;
 }
 
-export class ExperianMCPServer {
+export class ExperianMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly username: string;
@@ -38,6 +39,7 @@ export class ExperianMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: ExperianConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.username = config.username;
@@ -526,7 +528,7 @@ export class ExperianMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -547,16 +549,10 @@ export class ExperianMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async experianPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

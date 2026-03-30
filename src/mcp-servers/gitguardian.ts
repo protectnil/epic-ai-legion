@@ -31,17 +31,19 @@
 // Rate limits: Not officially published; recommended < 300 req/min for SaaS
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GitGuardianConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class GitGuardianMCPServer {
+export class GitGuardianMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GitGuardianConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.gitguardian.com').replace(/\/$/, '');
   }
@@ -344,14 +346,8 @@ export class GitGuardianMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(path: string, method: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: this.authHeaders,
       body: body !== undefined ? JSON.stringify(body) : undefined,

@@ -14,17 +14,19 @@
 // Docs: https://wso2apistore.com
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Wso2ApistoreTransformConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class Wso2ApistoreTransformMCPServer {
+export class Wso2ApistoreTransformMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: Wso2ApistoreTransformConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://gateway.wso2apistore.com/transform/1.0.0';
   }
@@ -124,7 +126,7 @@ export class Wso2ApistoreTransformMCPServer {
   private async fetch(path: string, options: RequestInit): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     try {
-      const res = await fetch(url, {
+      const res = await this.fetchWithRetry(url, {
         ...options,
         headers: {
           Authorization: `Bearer ${this.accessToken}`,

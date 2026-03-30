@@ -16,16 +16,18 @@
 // returned QID with get_qid (paginate), get_map (spatial clusters), or get_download (CSV export).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EpaEchoConfig {
   /** Optional base URL override (default: https://echodata.epa.gov/echo) */
   baseUrl?: string;
 }
 
-export class EpaEchoMCPServer {
+export class EpaEchoMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: EpaEchoConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://echodata.epa.gov/echo';
   }
 
@@ -438,13 +440,6 @@ export class EpaEchoMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | undefined>): string {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -456,7 +451,7 @@ export class EpaEchoMCPServer {
 
   private async fetchGet(path: string, params: Record<string, string | undefined>): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

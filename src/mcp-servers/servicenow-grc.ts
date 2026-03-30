@@ -16,6 +16,7 @@
 // Rate limits: Default 3,000 req/10min per instance; configurable per instance
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface ServiceNowGRCConfig {
@@ -26,11 +27,12 @@ interface ServiceNowGRCConfig {
   baseUrl?: string;
 }
 
-export class ServiceNowGRCMCPServer {
+export class ServiceNowGRCMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: ServiceNowGRCConfig) {
+    super();
     this.baseUrl = config.baseUrl || `https://${config.instance}.service-now.com/api/now`;
 
     if (config.bearerToken) {
@@ -430,13 +432,6 @@ export class ServiceNowGRCMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchTable(
     table: string,
     args: Record<string, unknown>,
@@ -455,7 +450,7 @@ export class ServiceNowGRCMCPServer {
     if (args.sysparm_query) queryParts.push(String(args.sysparm_query));
     if (queryParts.length > 0) params.set('sysparm_query', queryParts.join('^'));
 
-    const response = await fetch(`${this.baseUrl}/table/${table}?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/table/${table}?${params}`, {
       method: 'GET',
       headers: this.requestHeaders(),
     });
@@ -468,7 +463,7 @@ export class ServiceNowGRCMCPServer {
   }
 
   private async fetchRecord(table: string, sysId: string): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/table/${table}/${encodeURIComponent(sysId)}`,
       { method: 'GET', headers: this.requestHeaders() },
     );
@@ -503,7 +498,7 @@ export class ServiceNowGRCMCPServer {
     if (args.state) body['state'] = args.state;
     if (args.owner) body['owner'] = args.owner;
 
-    const response = await fetch(`${this.baseUrl}/table/sn_risk_risk`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/table/sn_risk_risk`, {
       method: 'POST',
       headers: this.requestHeaders(),
       body: JSON.stringify(body),
@@ -522,7 +517,7 @@ export class ServiceNowGRCMCPServer {
     if (!riskId || !fields) {
       return { content: [{ type: 'text', text: 'risk_id and fields are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/table/sn_risk_risk/${encodeURIComponent(riskId)}`,
       { method: 'PATCH', headers: this.requestHeaders(), body: JSON.stringify(fields) },
     );

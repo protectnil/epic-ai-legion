@@ -17,17 +17,19 @@
 // Rate limits: Not formally published; use cursor-based pagination for large datasets.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BrexConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class BrexMCPServer {
+export class BrexMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: BrexConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.brex.com';
   }
@@ -531,15 +533,10 @@ export class BrexMCPServer {
     return { Authorization: `Bearer ${this.accessToken}`, 'Content-Type': 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async get(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const qs = params?.toString();
     const url = `${this.baseUrl}${path}${qs ? `?${qs}` : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -548,7 +545,7 @@ export class BrexMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'POST', headers: this.headers(), body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'POST', headers: this.headers(), body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -557,7 +554,7 @@ export class BrexMCPServer {
   }
 
   private async put(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -811,7 +808,7 @@ export class BrexMCPServer {
   }
 
   private async deleteVendor(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/v1/vendors/${encodeURIComponent(args.vendor_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/vendors/${encodeURIComponent(args.vendor_id as string)}`, {
       method: 'DELETE',
       headers: this.headers(),
     });

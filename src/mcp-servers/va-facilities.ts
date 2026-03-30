@@ -13,6 +13,7 @@
 // Rate limits: Standard VA Lighthouse throttling — 429 returned on excess; no published per-minute limit
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VAFacilitiesConfig {
   apiKey: string;
@@ -20,11 +21,12 @@ interface VAFacilitiesConfig {
   baseUrl?: string;
 }
 
-export class VAFacilitiesMCPServer {
+export class VAFacilitiesMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: VAFacilitiesConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.va.gov/services/va_facilities/v0';
   }
@@ -163,13 +165,6 @@ export class VAFacilitiesMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const url = new URL(`${this.baseUrl}${path}`);
     if (params) {
@@ -178,7 +173,7 @@ export class VAFacilitiesMCPServer {
       }
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       headers: {
         'apikey': this.apiKey,
         'Accept': 'application/json',
@@ -230,7 +225,7 @@ export class VAFacilitiesMCPServer {
       }
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       headers: {
         'apikey': this.apiKey,
         'Accept': 'application/json',

@@ -37,6 +37,7 @@
 //              HTTP 503 (Server Busy) or 429 returned when throttled — exponential backoff recommended.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AzureBlobConfig {
   tenantId: string;
@@ -46,7 +47,7 @@ interface AzureBlobConfig {
   baseUrl?: string;
 }
 
-export class AzureBlobMCPServer {
+export class AzureBlobMCPServer extends MCPAdapterBase {
   private readonly tenantId: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -56,6 +57,7 @@ export class AzureBlobMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: AzureBlobConfig) {
+    super();
     this.tenantId = config.tenantId;
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -471,7 +473,7 @@ export class AzureBlobMCPServer {
       scope: 'https://storage.azure.com/.default',
     });
 
-    const response = await fetch(tokenUrl, {
+    const response = await this.fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -499,13 +501,6 @@ export class AzureBlobMCPServer {
 
   // ── HTTP helpers ──────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async blobRequest(
     method: string,
     path: string,
@@ -522,7 +517,7 @@ export class AzureBlobMCPServer {
       authHeaders['Content-Length'] = String(Buffer.byteLength(body, 'utf8'));
     }
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: authHeaders,
       body: body !== undefined ? body : undefined,
@@ -685,7 +680,7 @@ export class AzureBlobMCPServer {
     if (!args.container_name || !args.blob_name) {
       return { content: [{ type: 'text', text: 'container_name and blob_name are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${encodeURIComponent(args.container_name as string)}/${encodeURIComponent(args.blob_name as string)}`,
       { method: 'HEAD', headers: await this.getHeaders() },
     );

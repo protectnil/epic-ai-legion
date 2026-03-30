@@ -14,17 +14,19 @@
 // Rate limits: None specified — self-hosted, resource-bounded per deployment.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MicrocksConfig {
   baseUrl: string;
   bearerToken: string;
 }
 
-export class MicrocksMCPServer {
+export class MicrocksMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly bearerToken: string;
 
   constructor(config: MicrocksConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.bearerToken = config.bearerToken;
   }
@@ -316,13 +318,6 @@ export class MicrocksMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiFetch(path: string, method = 'GET', body?: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
@@ -331,7 +326,7 @@ export class MicrocksMCPServer {
     };
     const options: RequestInit = { method, headers };
     if (body !== undefined) options.body = JSON.stringify(body);
-    const response = await fetch(url, options);
+    const response = await this.fetchWithRetry(url, options);
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

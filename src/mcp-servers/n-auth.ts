@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NAuthConfig {
   apiKey: string;
@@ -23,12 +24,13 @@ interface NAuthConfig {
   baseUrl?: string;
 }
 
-export class NAuthMCPServer {
+export class NAuthMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly suRole: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: NAuthConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.suRole = config.suRole;
     this.baseUrl = config.baseUrl || 'https://api.nextauth.com';
@@ -502,7 +504,7 @@ export class NAuthMCPServer {
     nonce?: string,
   ): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: this.buildHeaders(nonce),
       body: body !== undefined ? JSON.stringify(body) : undefined,

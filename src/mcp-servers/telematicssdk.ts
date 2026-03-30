@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented. Contact Datamotion for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TelematicsSDKConfig {
   /** JWT DeviceToken for user-level API calls */
@@ -31,7 +32,7 @@ interface TelematicsSDKConfig {
   mobileSdkBaseUrl?: string;
 }
 
-export class TelematicsSDKMCPServer {
+export class TelematicsSDKMCPServer extends MCPAdapterBase {
   private readonly deviceToken: string;
   private readonly instanceId: string;
   private readonly appId: string;
@@ -40,6 +41,7 @@ export class TelematicsSDKMCPServer {
   private readonly mobileSdkBaseUrl: string;
 
   constructor(config: TelematicsSDKConfig) {
+    super();
     this.deviceToken = config.deviceToken;
     this.instanceId = config.instanceId ?? '';
     this.appId = config.appId ?? '';
@@ -385,7 +387,7 @@ export class TelematicsSDKMCPServer {
   }
 
   private async get(url: string): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });

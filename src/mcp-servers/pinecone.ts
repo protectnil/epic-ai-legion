@@ -17,6 +17,7 @@
 // Rate limits: Varies by plan. See https://docs.pinecone.io/reference/limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PineconeConfig {
   apiKey: string;
@@ -25,12 +26,13 @@ interface PineconeConfig {
   indexHost?: string;
 }
 
-export class PineconeMCPServer {
+export class PineconeMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly controllerBase: string;
   private readonly indexHost: string | undefined;
 
   constructor(config: PineconeConfig) {
+    super();
     this.apiKey = config.apiKey;
     const env = config.environment || 'us-east1-gcp';
     this.controllerBase = `https://controller.${env}.pinecone.io`;
@@ -419,13 +421,6 @@ export class PineconeMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async controllerRequest(
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
     path: string,
@@ -434,7 +429,7 @@ export class PineconeMCPServer {
     const url = `${this.controllerBase}${path}`;
     const init: RequestInit = { method, headers: this.authHeaders };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {
@@ -463,7 +458,7 @@ export class PineconeMCPServer {
     const url = `${this.indexHost}${path}`;
     const init: RequestInit = { method, headers: this.authHeaders };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

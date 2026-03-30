@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented; subject to tenant-level throttling agreements
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DuckCreekConfig {
   clientId: string;
@@ -23,7 +24,7 @@ interface DuckCreekConfig {
   baseUrl: string; // e.g. https://mycarrier.duckcreek.net — no default, tenant-specific
 }
 
-export class DuckCreekMCPServer {
+export class DuckCreekMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -31,6 +32,7 @@ export class DuckCreekMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: DuckCreekConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -520,7 +522,7 @@ export class DuckCreekMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -540,7 +542,7 @@ export class DuckCreekMCPServer {
   private async dcGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -555,7 +557,7 @@ export class DuckCreekMCPServer {
 
   private async dcPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -572,7 +574,7 @@ export class DuckCreekMCPServer {
 
   private async dcPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -587,12 +589,6 @@ export class DuckCreekMCPServer {
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async listPolicies(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {

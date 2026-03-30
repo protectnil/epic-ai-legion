@@ -14,17 +14,19 @@
 // Rate limits: Not publicly documented; varies by deployment
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LGTMConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class LGTMMCPServer {
+export class LGTMMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: LGTMConfig) {
+    super();
     this.baseUrl = (config.baseUrl ?? 'https://lgtm.com/api/v1.0').replace(/\/$/, '');
     this.authHeader = `Bearer ${config.accessToken}`;
   }
@@ -58,12 +60,6 @@ export class LGTMMCPServer {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -255,7 +251,7 @@ export class LGTMMCPServer {
     const url = new URL(`${this.baseUrl}/projects`);
     if (args.limit) url.searchParams.set('limit', String(args.limit));
     if (args.start) url.searchParams.set('start', args.start as string);
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list projects: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -267,7 +263,7 @@ export class LGTMMCPServer {
   private async getProject(args: Record<string, unknown>): Promise<ToolResult> {
     const projectId = args.project_id as number;
     if (!projectId) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/projects/${projectId}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/projects/${projectId}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get project: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -281,7 +277,7 @@ export class LGTMMCPServer {
     const org = args.org as string;
     const name = args.name as string;
     if (!provider || !org || !name) return { content: [{ type: 'text', text: 'provider, org, and name are required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/projects/${encodeURIComponent(provider)}/${encodeURIComponent(org)}/${encodeURIComponent(name)}`,
       { headers: this.headers }
     );
@@ -296,7 +292,7 @@ export class LGTMMCPServer {
   private async getAnalysis(args: Record<string, unknown>): Promise<ToolResult> {
     const analysisId = args.analysis_id as string;
     if (!analysisId) return { content: [{ type: 'text', text: 'analysis_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/analyses/${encodeURIComponent(analysisId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/analyses/${encodeURIComponent(analysisId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get analysis: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -310,7 +306,7 @@ export class LGTMMCPServer {
     if (!analysisId) return { content: [{ type: 'text', text: 'analysis_id is required' }], isError: true };
     const url = new URL(`${this.baseUrl}/analyses/${encodeURIComponent(analysisId)}/alerts`);
     if (args.start) url.searchParams.set('start', args.start as string);
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get analysis alerts: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -327,7 +323,7 @@ export class LGTMMCPServer {
     const url = new URL(`${this.baseUrl}/analyses/${projectId}/commits/${encodeURIComponent(commitId)}`);
     const body: Record<string, unknown> = {};
     if (args.language) body.language = args.language;
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -345,7 +341,7 @@ export class LGTMMCPServer {
     const alertKey = args.alert_key as string;
     if (!projectId) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
     if (!alertKey) return { content: [{ type: 'text', text: 'alert_key is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/issues/${projectId}/${encodeURIComponent(alertKey)}`,
       { headers: this.headers }
     );
@@ -365,7 +361,7 @@ export class LGTMMCPServer {
       query: args.query,
     };
     if (args.project_filter) body.projectFilter = args.project_filter;
-    const response = await fetch(`${this.baseUrl}/queryjobs`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/queryjobs`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -381,7 +377,7 @@ export class LGTMMCPServer {
   private async getQueryJob(args: Record<string, unknown>): Promise<ToolResult> {
     const queryjobId = args.queryjob_id as string;
     if (!queryjobId) return { content: [{ type: 'text', text: 'queryjob_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/queryjobs/${encodeURIComponent(queryjobId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/queryjobs/${encodeURIComponent(queryjobId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get query job: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -395,7 +391,7 @@ export class LGTMMCPServer {
     if (!queryjobId) return { content: [{ type: 'text', text: 'queryjob_id is required' }], isError: true };
     const url = new URL(`${this.baseUrl}/queryjobs/${encodeURIComponent(queryjobId)}/results`);
     if (args.start) url.searchParams.set('start', args.start as string);
-    const response = await fetch(url.toString(), { headers: this.headers });
+    const response = await this.fetchWithRetry(url.toString(), { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get query job results: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -409,7 +405,7 @@ export class LGTMMCPServer {
     const projectId = args.project_id as number;
     if (!queryjobId) return { content: [{ type: 'text', text: 'queryjob_id is required' }], isError: true };
     if (!projectId) return { content: [{ type: 'text', text: 'project_id is required' }], isError: true };
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/queryjobs/${encodeURIComponent(queryjobId)}/results/${projectId}`,
       { headers: this.headers }
     );
@@ -424,7 +420,7 @@ export class LGTMMCPServer {
   private async getOperation(args: Record<string, unknown>): Promise<ToolResult> {
     const operationId = args.operation_id as string;
     if (!operationId) return { content: [{ type: 'text', text: 'operation_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/operations/${encodeURIComponent(operationId)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/operations/${encodeURIComponent(operationId)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get operation: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -434,7 +430,7 @@ export class LGTMMCPServer {
   }
 
   private async getSystemHealth(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/system/health`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/system/health`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get system health: ${response.status} ${response.statusText}` }], isError: true };
     }

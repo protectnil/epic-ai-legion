@@ -22,6 +22,7 @@
 // Rate limits: Burst limit varies by plan; contact DocuSign support for production limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DocuSignConfig {
   accessToken: string;
@@ -30,12 +31,13 @@ interface DocuSignConfig {
   baseUrl?: string;     // optional full override — bypasses basePath construction
 }
 
-export class DocuSignMCPServer {
+export class DocuSignMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
   private readonly accountId: string;
 
   constructor(config: DocuSignConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? `https://${config.basePath}/restapi/v2.1`;
     this.accountId = config.accountId;
@@ -474,7 +476,7 @@ export class DocuSignMCPServer {
   }
 
   private async request(path: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(`${this.acctBase}${path}`, {
+    const response = await this.fetchWithRetry(`${this.acctBase}${path}`, {
       ...options,
       headers: { ...this.headers, ...(options?.headers as Record<string, string> ?? {}) },
     });

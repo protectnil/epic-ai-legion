@@ -20,6 +20,7 @@
 // Note: Expense API requires Navan to enable Public API on your account. Contact Navan support.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NavanConfig {
   clientId: string;
@@ -27,7 +28,7 @@ interface NavanConfig {
   baseUrl?: string;
 }
 
-export class NavanMCPServer {
+export class NavanMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -35,6 +36,7 @@ export class NavanMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: NavanConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://api.navan.com';
@@ -341,7 +343,7 @@ export class NavanMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/reauthenticate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/reauthenticate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ client_id: this.clientId, client_secret: this.clientSecret }),
@@ -362,7 +364,7 @@ export class NavanMCPServer {
     const token = await this.getOrRefreshToken();
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

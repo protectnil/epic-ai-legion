@@ -23,17 +23,19 @@
 // Rate limits: Not publicly documented. Census recommends polling sync runs at reasonable intervals.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CensusConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class CensusMCPServer {
+export class CensusMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CensusConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://app.getcensus.com/api/v1';
   }
@@ -382,16 +384,9 @@ export class CensusMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async censusGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const body = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} — ${body}` }], isError: true };
@@ -401,7 +396,7 @@ export class CensusMCPServer {
   }
 
   private async censusPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -415,7 +410,7 @@ export class CensusMCPServer {
   }
 
   private async censusPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -429,7 +424,7 @@ export class CensusMCPServer {
   }
 
   private async censusDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

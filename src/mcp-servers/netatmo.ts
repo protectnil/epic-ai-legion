@@ -16,17 +16,19 @@
 // Rate limits: See Netatmo developer docs — typically 500 req/hour per user
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NetatmoConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class NetatmoMCPServer {
+export class NetatmoMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: NetatmoConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.netatmo.net/api';
   }
@@ -583,13 +585,6 @@ export class NetatmoMCPServer {
     return `Bearer ${this.accessToken}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildQueryString(params: Record<string, unknown>): string {
     const parts: string[] = [];
     for (const [k, v] of Object.entries(params)) {
@@ -606,7 +601,7 @@ export class NetatmoMCPServer {
   private async get(path: string, params: Record<string, unknown>): Promise<ToolResult> {
     const qs = this.buildQueryString(params);
     const url = `${this.baseUrl}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: this.authHeader,
@@ -628,7 +623,7 @@ export class NetatmoMCPServer {
     // Netatmo POST endpoints accept query parameters, not a JSON body
     const qs = this.buildQueryString(params);
     const url = `${this.baseUrl}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,

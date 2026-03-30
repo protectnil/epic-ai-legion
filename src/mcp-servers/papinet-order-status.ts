@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PapiNetOrderStatusConfig {
   /** Optional Bearer token or API key for authentication */
@@ -22,11 +23,12 @@ interface PapiNetOrderStatusConfig {
   baseUrl?: string;
 }
 
-export class PapiNetOrderStatusMCPServer {
+export class PapiNetOrderStatusMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: PapiNetOrderStatusConfig) {
+    super();
     this.apiKey = config.apiKey ?? '';
     this.baseUrl = config.baseUrl ?? 'https://papinet.papinet.io';
   }
@@ -109,13 +111,6 @@ export class PapiNetOrderStatusMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = { 'Accept': 'application/json' };
     if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
@@ -129,7 +124,7 @@ export class PapiNetOrderStatusMCPServer {
         if (v !== undefined) url.searchParams.set(k, String(v));
       }
     }
-    const response = await fetch(url.toString(), { method: 'GET', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url.toString(), { method: 'GET', headers: this.buildHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

@@ -25,17 +25,19 @@
 // Rate limits: Not publicly documented; W&B recommends limiting to ~10 req/s per key.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WandBConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class WandBMCPServer {
+export class WandBMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: WandBConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.wandb.ai';
   }
@@ -275,15 +277,8 @@ export class WandBMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async graphql(query: string, variables: Record<string, unknown>): Promise<unknown> {
-    const response = await fetch(`${this.baseUrl}/graphql`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/graphql`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify({ query, variables }),

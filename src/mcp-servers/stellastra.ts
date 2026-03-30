@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StellastraConfig {
   authEmail: string;
@@ -22,12 +23,13 @@ interface StellastraConfig {
   baseUrl?: string;
 }
 
-export class StellastraMCPServer {
+export class StellastraMCPServer extends MCPAdapterBase {
   private readonly authEmail: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: StellastraConfig) {
+    super();
     this.authEmail = config.authEmail;
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://stellastra.com/api';
@@ -93,7 +95,7 @@ export class StellastraMCPServer {
 
     const credentials = btoa(`${this.authEmail}:${this.apiKey}`);
 
-    const response = await fetch(`${this.baseUrl}/post-review`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/post-review`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,

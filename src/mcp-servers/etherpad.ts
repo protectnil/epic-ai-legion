@@ -13,6 +13,7 @@
 // Docs: https://etherpad.org/doc/v1.8.14/#index_http_api
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EtherpadConfig {
   /** API key for authentication (required) */
@@ -21,11 +22,12 @@ interface EtherpadConfig {
   baseUrl?: string;
 }
 
-export class EtherpadMCPServer {
+export class EtherpadMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: EtherpadConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'http://etherpad.local';
   }
@@ -388,20 +390,13 @@ export class EtherpadMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiCall(endpoint: string, params: Record<string, unknown>): Promise<ToolResult> {
     const qs = new URLSearchParams({ apikey: this.apiKey });
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== null) qs.set(k, String(v));
     }
     const url = `${this.baseUrl}/${endpoint}?${qs.toString()}`;
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

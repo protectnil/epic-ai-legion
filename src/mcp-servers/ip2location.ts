@@ -13,17 +13,19 @@
 // Rate limits: Keyless: 1,000 queries/day. Free plan (API key): 50,000 queries/month. Resets 00:00 UTC.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Ip2LocationConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class Ip2LocationMCPServer {
+export class Ip2LocationMCPServer extends MCPAdapterBase {
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: Ip2LocationConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.ip2location.io';
   }
@@ -115,15 +117,6 @@ export class Ip2LocationMCPServer {
     }
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────────
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async query(params: Record<string, string | undefined>): Promise<ToolResult> {
     const qs = new URLSearchParams();
     if (this.apiKey) {
@@ -140,7 +133,7 @@ export class Ip2LocationMCPServer {
     if (this.apiKey) {
       headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `IP2Location.io API error: ${response.status} ${response.statusText}` }],

@@ -16,6 +16,7 @@
 // Rate limits: No documented rate limits; determined by TeamCity server capacity
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TeamCityConfig {
   token: string;
@@ -24,13 +25,14 @@ interface TeamCityConfig {
   username?: string;
 }
 
-export class TeamCityMCPServer {
+export class TeamCityMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
   private readonly authType: string;
   private readonly username: string;
 
   constructor(config: TeamCityConfig) {
+    super();
     this.token = config.token;
     // baseUrl should include /app/rest, e.g. https://teamcity.example.com/app/rest
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -481,17 +483,10 @@ export class TeamCityMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -506,7 +501,7 @@ export class TeamCityMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -519,7 +514,7 @@ export class TeamCityMCPServer {
   }
 
   private async apiPut(path: string, body: string, contentType: string = 'text/plain'): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: { ...this.headers, 'Content-Type': contentType },
       body,
@@ -529,7 +524,6 @@ export class TeamCityMCPServer {
     }
     return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }], isError: false };
   }
-
 
   private async listProjects(args: Record<string, unknown>): Promise<ToolResult> {
     const params: Record<string, string> = {};
@@ -636,7 +630,7 @@ export class TeamCityMCPServer {
     // Strip /app/rest suffix to get the server root URL.
     const serverRoot = this.baseUrl.replace(/\/app\/rest\/?$/, '');
     const url = `${serverRoot}/downloadBuildLog.html?buildId=${encodeURIComponent(args.build_id as string)}&plain=true`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

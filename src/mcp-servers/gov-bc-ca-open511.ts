@@ -14,16 +14,18 @@
 // License: Open Government License - British Columbia
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GovBcCaOpen511Config {
   /** Optional base URL override (default: https://api.open511.gov.bc.ca) */
   baseUrl?: string;
 }
 
-export class GovBcCaOpen511MCPServer {
+export class GovBcCaOpen511MCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: GovBcCaOpen511Config = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://api.open511.gov.bc.ca';
   }
 
@@ -164,13 +166,6 @@ export class GovBcCaOpen511MCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | undefined>): string {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
@@ -182,7 +177,7 @@ export class GovBcCaOpen511MCPServer {
 
   private async doFetch(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Accept: 'application/json' } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

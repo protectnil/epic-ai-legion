@@ -16,6 +16,7 @@
 // Rate limits: Not publicly documented; 429 responses on exceeded limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SanityConfig {
   projectId: string;
@@ -25,7 +26,7 @@ interface SanityConfig {
   useCdn?: boolean;
 }
 
-export class SanityMCPServer {
+export class SanityMCPServer extends MCPAdapterBase {
   private readonly projectId: string;
   private readonly dataset: string;
   private readonly apiToken: string;
@@ -33,6 +34,7 @@ export class SanityMCPServer {
   private readonly useCdn: boolean;
 
   constructor(config: SanityConfig) {
+    super();
     this.projectId = config.projectId;
     this.dataset = config.dataset;
     this.apiToken = config.apiToken;
@@ -368,13 +370,6 @@ export class SanityMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private resolveDataset(args: Record<string, unknown>): string {
     return (args.dataset as string) || this.dataset;
   }
@@ -388,7 +383,7 @@ export class SanityMCPServer {
         params.set(`$${k}`, JSON.stringify(v));
       }
     }
-    const response = await fetch(`${this.baseUrl}/data/query/${ds}?${params.toString()}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/data/query/${ds}?${params.toString()}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -399,7 +394,7 @@ export class SanityMCPServer {
   private async getDocument(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.document_id) return { content: [{ type: 'text', text: 'document_id is required' }], isError: true };
     const ds = this.resolveDataset(args);
-    const response = await fetch(`${this.baseUrl}/data/doc/${ds}/${encodeURIComponent(args.document_id as string)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/data/doc/${ds}/${encodeURIComponent(args.document_id as string)}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -408,7 +403,7 @@ export class SanityMCPServer {
   }
 
   private async mutate(ds: string, mutations: unknown[]): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/data/mutate/${ds}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/data/mutate/${ds}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ mutations }),
@@ -457,7 +452,7 @@ export class SanityMCPServer {
   private async listDocumentTypes(args: Record<string, unknown>): Promise<ToolResult> {
     const ds = this.resolveDataset(args);
     const params = new URLSearchParams({ query: 'array::unique(*[]._type)' });
-    const response = await fetch(`${this.baseUrl}/data/query/${ds}?${params.toString()}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/data/query/${ds}?${params.toString()}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -466,7 +461,7 @@ export class SanityMCPServer {
   }
 
   private async getSchema(): Promise<ToolResult> {
-    const response = await fetch(`https://api.sanity.io/${this.apiVersion}/projects/${this.projectId}/schema`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`https://api.sanity.io/${this.apiVersion}/projects/${this.projectId}/schema`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -480,14 +475,14 @@ export class SanityMCPServer {
     const assetType = (args.asset_type as string) || 'image';
     const params = new URLSearchParams();
     if (args.filename) params.set('filename', args.filename as string);
-    const fetchRes = await fetch(args.url as string);
+    const fetchRes = await this.fetchWithRetry(args.url as string, {});
     if (!fetchRes.ok) {
       return { content: [{ type: 'text', text: `Failed to fetch asset from URL: ${fetchRes.status}` }], isError: true };
     }
     const contentType = fetchRes.headers.get('content-type') || 'application/octet-stream';
     const assetBuffer = await fetchRes.arrayBuffer();
     const uploadUrl = `${this.baseUrl}/assets/${assetType}s/${ds}${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(uploadUrl, {
+    const response = await this.fetchWithRetry(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.apiToken}`,
@@ -509,7 +504,7 @@ export class SanityMCPServer {
     const offset = (args.offset as number) || 0;
     const query = `*[_type == "${assetType}"] | order(_createdAt desc) [${offset}..${offset + limit - 1}]`;
     const params = new URLSearchParams({ query });
-    const response = await fetch(`${this.baseUrl}/data/query/${ds}?${params.toString()}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/data/query/${ds}?${params.toString()}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -524,7 +519,7 @@ export class SanityMCPServer {
   }
 
   private async listDatasets(): Promise<ToolResult> {
-    const response = await fetch(`https://api.sanity.io/${this.apiVersion}/projects/${this.projectId}/datasets`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`https://api.sanity.io/${this.apiVersion}/projects/${this.projectId}/datasets`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -533,7 +528,7 @@ export class SanityMCPServer {
   }
 
   private async getProjectInfo(): Promise<ToolResult> {
-    const response = await fetch(`https://api.sanity.io/${this.apiVersion}/projects/${this.projectId}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`https://api.sanity.io/${this.apiVersion}/projects/${this.projectId}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

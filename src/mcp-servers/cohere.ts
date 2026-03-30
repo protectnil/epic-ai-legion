@@ -22,17 +22,19 @@
 // Rate limits: Chat 500 req/min; Embed 2,000 req/min; Rerank 1,000 req/min (production keys)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CohereConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CohereMCPServer {
+export class CohereMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CohereConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.cohere.com').replace(/\/$/, '');
   }
@@ -492,14 +494,8 @@ export class CohereMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {
@@ -668,7 +664,7 @@ export class CohereMCPServer {
     if (!datasetId) {
       return { content: [{ type: 'text', text: 'dataset_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v1/datasets/${encodeURIComponent(datasetId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v1/datasets/${encodeURIComponent(datasetId)}`, {
       method: 'DELETE',
       headers: this.headers,
     });

@@ -29,17 +29,19 @@
 // Rate limits: 6,000 req/5 min per user; 50 concurrent connections per user
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Dynamics365Config {
   accessToken: string;
   organizationUrl: string;
 }
 
-export class Dynamics365MCPServer {
+export class Dynamics365MCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: Dynamics365Config) {
+    super();
     this.accessToken = config.accessToken;
     const orgUrl = config.organizationUrl.replace(/\/$/, '');
     this.baseUrl = `${orgUrl}/api/data/v9.2`;
@@ -537,15 +539,9 @@ export class Dynamics365MCPServer {
     return `${this.baseUrl}/${entitySet}?${params.toString()}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async listEntitySet(entitySet: string, args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(this.buildListUrl(entitySet, args), {
+    const response = await this.fetchWithRetry(this.buildListUrl(entitySet, args), {
       method: 'GET',
       headers: this.headers,
     });
@@ -574,7 +570,7 @@ export class Dynamics365MCPServer {
     if (args.select) params.set('$select', args.select as string);
     if (args.expand) params.set('$expand', args.expand as string);
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${encodeURIComponent(entity_set)}(${encodeURIComponent(id)})${qs}`,
       { method: 'GET', headers: this.headers },
     );
@@ -601,7 +597,7 @@ export class Dynamics365MCPServer {
     if (args.return_representation) {
       headers['Prefer'] = 'return=representation';
     }
-    const response = await fetch(`${this.baseUrl}/${encodeURIComponent(entity_set)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${encodeURIComponent(entity_set)}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
@@ -632,7 +628,7 @@ export class Dynamics365MCPServer {
     if (!entity_set || !id || !data) {
       return { content: [{ type: 'text', text: 'entity_set, id, and data are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${encodeURIComponent(entity_set)}(${encodeURIComponent(id)})`,
       { method: 'PATCH', headers: this.headers, body: JSON.stringify(data) },
     );
@@ -653,7 +649,7 @@ export class Dynamics365MCPServer {
     if (!entity_set || !id) {
       return { content: [{ type: 'text', text: 'entity_set and id are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${encodeURIComponent(entity_set)}(${encodeURIComponent(id)})`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -673,7 +669,7 @@ export class Dynamics365MCPServer {
       return { content: [{ type: 'text', text: 'entity_set and fetch_xml are required' }], isError: true };
     }
     const encoded = encodeURIComponent(fetch_xml);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/${encodeURIComponent(entity_set)}?fetchXml=${encoded}`,
       { method: 'GET', headers: this.headers },
     );

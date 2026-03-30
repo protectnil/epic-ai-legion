@@ -14,6 +14,7 @@
 // Rate limits: Government API — contact ATO for rate limit details.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AtoConfig {
   /** Bearer token or API key for ATO Business Registries API */
@@ -25,11 +26,12 @@ interface AtoConfig {
 
 const TRUNCATE = 10 * 1024;
 
-export class AtoAuMCPServer {
+export class AtoAuMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: AtoConfig) {
+    super();
     this.apiKey = config.apiKey;
     const defaultBase = config.sandbox
       ? 'https://api.sandbox.abr.ato.gov.au'
@@ -415,7 +417,7 @@ export class AtoAuMCPServer {
 
   private async _fetch(path: string, options: RequestInit = {}): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       ...options,
       headers: {
         Authorization: `Bearer ${this.apiKey}`,

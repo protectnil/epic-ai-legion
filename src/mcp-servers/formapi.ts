@@ -12,6 +12,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FormAPIConfig {
   apiTokenId: string;
@@ -19,11 +20,12 @@ interface FormAPIConfig {
   baseUrl?: string;
 }
 
-export class FormAPIMCPServer {
+export class FormAPIMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: FormAPIConfig) {
+    super();
     const encoded = Buffer.from(`${config.apiTokenId}:${config.apiTokenSecret}`).toString('base64');
     this.authHeader = `Basic ${encoded}`;
     this.baseUrl = config.baseUrl || 'https://api.docspring.com/api/v1';
@@ -454,7 +456,7 @@ export class FormAPIMCPServer {
       switch (name) {
         // ── Auth ─────────────────────────────────────────────────────────────
         case 'test_authentication': {
-          response = await fetch(`${this.baseUrl}/authentication`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/authentication`, { headers });
           break;
         }
 
@@ -463,27 +465,27 @@ export class FormAPIMCPServer {
           const params = new URLSearchParams();
           if (args.page) params.set('page', String(args.page));
           if (args.per_page) params.set('per_page', String(args.per_page));
-          response = await fetch(`${this.baseUrl}/templates?${params}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates?${params}`, { headers });
           break;
         }
 
         case 'get_template': {
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}`, { headers });
           break;
         }
 
         case 'get_template_full': {
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}?full=true`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}?full=true`, { headers });
           break;
         }
 
         case 'get_template_schema': {
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}/schema`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}/schema`, { headers });
           break;
         }
 
         case 'create_pdf_template': {
-          response = await fetch(`${this.baseUrl}/templates`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ template: { name: args.name, template_type: args.template_type ?? 'pdf' } }),
@@ -492,7 +494,7 @@ export class FormAPIMCPServer {
         }
 
         case 'create_pdf_template_from_upload': {
-          response = await fetch(`${this.baseUrl}/templates?desc=cached_upload`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates?desc=cached_upload`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ template: { name: args.name }, upload_id: args.upload_id }),
@@ -506,7 +508,7 @@ export class FormAPIMCPServer {
           if (args.description) body.description = args.description;
           if (args.expiration_interval) body.expiration_interval = args.expiration_interval;
           if (args.expire_after !== undefined) body.expire_after = args.expire_after;
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}`, {
             method: 'PUT',
             headers,
             body: JSON.stringify({ template: body }),
@@ -515,7 +517,7 @@ export class FormAPIMCPServer {
         }
 
         case 'copy_template': {
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}/copy`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}/copy`, {
             method: 'POST',
             headers,
             body: JSON.stringify({}),
@@ -524,7 +526,7 @@ export class FormAPIMCPServer {
         }
 
         case 'move_template_to_folder': {
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}/move`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}/move`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ folder_id: args.folder_id }),
@@ -533,7 +535,7 @@ export class FormAPIMCPServer {
         }
 
         case 'add_fields_to_template': {
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}/add_fields`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}/add_fields`, {
             method: 'PUT',
             headers,
             body: JSON.stringify({ fields: args.fields }),
@@ -548,7 +550,7 @@ export class FormAPIMCPServer {
           if (args.test !== undefined) submission.test = args.test;
           if (args.password) submission.password = args.password;
           if (args.expires_in !== undefined) submission.expires_in = args.expires_in;
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}/submissions`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}/submissions`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ submission }),
@@ -557,7 +559,7 @@ export class FormAPIMCPServer {
         }
 
         case 'batch_generate_pdfs': {
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}/submissions/batch`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}/submissions/batch`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ submissions: args.submissions }),
@@ -570,7 +572,7 @@ export class FormAPIMCPServer {
           const params = new URLSearchParams();
           if (args.page) params.set('page', String(args.page));
           if (args.per_page) params.set('per_page', String(args.per_page));
-          response = await fetch(`${this.baseUrl}/submissions?${params}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/submissions?${params}`, { headers });
           break;
         }
 
@@ -578,17 +580,17 @@ export class FormAPIMCPServer {
           const params = new URLSearchParams();
           if (args.page) params.set('page', String(args.page));
           if (args.per_page) params.set('per_page', String(args.per_page));
-          response = await fetch(`${this.baseUrl}/templates/${args.template_id}/submissions?${params}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/templates/${args.template_id}/submissions?${params}`, { headers });
           break;
         }
 
         case 'get_submission': {
-          response = await fetch(`${this.baseUrl}/submissions/${args.submission_id}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/submissions/${args.submission_id}`, { headers });
           break;
         }
 
         case 'expire_submission': {
-          response = await fetch(`${this.baseUrl}/submissions/${args.submission_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/submissions/${args.submission_id}`, {
             method: 'DELETE',
             headers,
           });
@@ -600,12 +602,12 @@ export class FormAPIMCPServer {
           const params = new URLSearchParams();
           if (args.page) params.set('page', String(args.page));
           if (args.per_page) params.set('per_page', String(args.per_page));
-          response = await fetch(`${this.baseUrl}/combined_submissions?${params}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/combined_submissions?${params}`, { headers });
           break;
         }
 
         case 'get_combined_submission': {
-          response = await fetch(`${this.baseUrl}/combined_submissions/${args.combined_submission_id}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/combined_submissions/${args.combined_submission_id}`, { headers });
           break;
         }
 
@@ -613,7 +615,7 @@ export class FormAPIMCPServer {
           const body: Record<string, unknown> = { submission_ids: args.submission_ids };
           if (args.expires_in !== undefined) body.expires_in = args.expires_in;
           if (args.password) body.password = args.password;
-          response = await fetch(`${this.baseUrl}/combined_submissions`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/combined_submissions`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
@@ -622,7 +624,7 @@ export class FormAPIMCPServer {
         }
 
         case 'expire_combined_submission': {
-          response = await fetch(`${this.baseUrl}/combined_submissions/${args.combined_submission_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/combined_submissions/${args.combined_submission_id}`, {
             method: 'DELETE',
             headers,
           });
@@ -631,7 +633,7 @@ export class FormAPIMCPServer {
 
         // ── Data Requests ─────────────────────────────────────────────────────
         case 'get_data_request': {
-          response = await fetch(`${this.baseUrl}/data_requests/${args.data_request_id}`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/data_requests/${args.data_request_id}`, { headers });
           break;
         }
 
@@ -640,7 +642,7 @@ export class FormAPIMCPServer {
           if (args.email) body.email = args.email;
           if (args.name) body.name = args.name;
           if (args.fields) body.fields = args.fields;
-          response = await fetch(`${this.baseUrl}/data_requests/${args.data_request_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/data_requests/${args.data_request_id}`, {
             method: 'PUT',
             headers,
             body: JSON.stringify(body),
@@ -649,7 +651,7 @@ export class FormAPIMCPServer {
         }
 
         case 'create_data_request_token': {
-          response = await fetch(`${this.baseUrl}/data_requests/${args.data_request_id}/tokens`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/data_requests/${args.data_request_id}/tokens`, {
             method: 'POST',
             headers,
             body: JSON.stringify({}),
@@ -659,12 +661,12 @@ export class FormAPIMCPServer {
 
         // ── Folders ───────────────────────────────────────────────────────────
         case 'list_folders': {
-          response = await fetch(`${this.baseUrl}/folders/`, { headers });
+          response = await this.fetchWithRetry(`${this.baseUrl}/folders/`, { headers });
           break;
         }
 
         case 'create_folder': {
-          response = await fetch(`${this.baseUrl}/folders/`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/folders/`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ folder: { name: args.name } }),
@@ -673,7 +675,7 @@ export class FormAPIMCPServer {
         }
 
         case 'rename_folder': {
-          response = await fetch(`${this.baseUrl}/folders/${args.folder_id}/rename`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/folders/${args.folder_id}/rename`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ folder: { name: args.name } }),
@@ -682,7 +684,7 @@ export class FormAPIMCPServer {
         }
 
         case 'move_folder_to_folder': {
-          response = await fetch(`${this.baseUrl}/folders/${args.folder_id}/move`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/folders/${args.folder_id}/move`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ parent_folder_id: args.parent_folder_id }),
@@ -691,7 +693,7 @@ export class FormAPIMCPServer {
         }
 
         case 'delete_folder': {
-          response = await fetch(`${this.baseUrl}/folders/${args.folder_id}`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/folders/${args.folder_id}`, {
             method: 'DELETE',
             headers,
           });
@@ -700,7 +702,7 @@ export class FormAPIMCPServer {
 
         // ── Custom Files ──────────────────────────────────────────────────────
         case 'create_custom_file_from_upload': {
-          response = await fetch(`${this.baseUrl}/custom_files`, {
+          response = await this.fetchWithRetry(`${this.baseUrl}/custom_files`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ cache_id: args.cache_id }),

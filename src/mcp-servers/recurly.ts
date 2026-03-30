@@ -16,6 +16,7 @@
 //   Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RecurlyConfig {
   apiKey: string;
@@ -23,12 +24,13 @@ interface RecurlyConfig {
   apiVersion?: string;
 }
 
-export class RecurlyMCPServer {
+export class RecurlyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly apiVersion: string;
 
   constructor(config: RecurlyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://v3.recurly.com';
     this.apiVersion = config.apiVersion || '2021-02-25';
@@ -66,12 +68,6 @@ export class RecurlyMCPServer {
       Accept: `application/vnd.recurly.${this.apiVersion}+json`,
       'Content-Type': 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -579,7 +575,7 @@ export class RecurlyMCPServer {
 
   private async listAccounts(args: Record<string, unknown>): Promise<ToolResult> {
     const qs = this.buildQuery(args, ['limit', 'cursor', 'state', 'subscriber']);
-    const response = await fetch(`${this.baseUrl}/accounts${qs ? `?${qs}` : ''}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts${qs ? `?${qs}` : ''}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list accounts (HTTP ${response.status}): ${err}` }], isError: true };
@@ -592,7 +588,7 @@ export class RecurlyMCPServer {
   private async getAccount(args: Record<string, unknown>): Promise<ToolResult> {
     const code = args.account_code as string;
     if (!code) return { content: [{ type: 'text', text: 'account_code is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/accounts/${encodeURIComponent(code)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts/${encodeURIComponent(code)}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to get account (HTTP ${response.status}): ${err}` }], isError: true };
@@ -611,7 +607,7 @@ export class RecurlyMCPServer {
     if (args.last_name) body.last_name = args.last_name;
     if (args.company) body.company = args.company;
     if (args.username) body.username = args.username;
-    const response = await fetch(`${this.baseUrl}/accounts`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -633,7 +629,7 @@ export class RecurlyMCPServer {
     if (args.first_name !== undefined) body.first_name = args.first_name;
     if (args.last_name !== undefined) body.last_name = args.last_name;
     if (args.company !== undefined) body.company = args.company;
-    const response = await fetch(`${this.baseUrl}/accounts/${encodeURIComponent(code)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts/${encodeURIComponent(code)}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -650,7 +646,7 @@ export class RecurlyMCPServer {
   private async closeAccount(args: Record<string, unknown>): Promise<ToolResult> {
     const code = args.account_code as string;
     if (!code) return { content: [{ type: 'text', text: 'account_code is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/accounts/${encodeURIComponent(code)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts/${encodeURIComponent(code)}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -665,7 +661,7 @@ export class RecurlyMCPServer {
 
   private async listSubscriptions(args: Record<string, unknown>): Promise<ToolResult> {
     const qs = this.buildQuery(args, ['limit', 'cursor', 'state']);
-    const response = await fetch(`${this.baseUrl}/subscriptions${qs ? `?${qs}` : ''}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/subscriptions${qs ? `?${qs}` : ''}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list subscriptions (HTTP ${response.status}): ${err}` }], isError: true };
@@ -678,7 +674,7 @@ export class RecurlyMCPServer {
   private async getSubscription(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.subscription_id as string;
     if (!id) return { content: [{ type: 'text', text: 'subscription_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to get subscription (HTTP ${response.status}): ${err}` }], isError: true };
@@ -692,7 +688,7 @@ export class RecurlyMCPServer {
     const code = args.account_code as string;
     if (!code) return { content: [{ type: 'text', text: 'account_code is required' }], isError: true };
     const qs = this.buildQuery(args, ['limit', 'cursor', 'state']);
-    const response = await fetch(`${this.baseUrl}/accounts/${encodeURIComponent(code)}/subscriptions${qs ? `?${qs}` : ''}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts/${encodeURIComponent(code)}/subscriptions${qs ? `?${qs}` : ''}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list account subscriptions (HTTP ${response.status}): ${err}` }], isError: true };
@@ -707,7 +703,7 @@ export class RecurlyMCPServer {
     if (!id) return { content: [{ type: 'text', text: 'subscription_id is required' }], isError: true };
     const body: Record<string, unknown> = {};
     if (args.refund) body.refund = args.refund;
-    const response = await fetch(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}/cancel`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}/cancel`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -726,7 +722,7 @@ export class RecurlyMCPServer {
     const cycles = args.remaining_pause_cycles as number;
     if (!id) return { content: [{ type: 'text', text: 'subscription_id is required' }], isError: true };
     if (!cycles) return { content: [{ type: 'text', text: 'remaining_pause_cycles is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}/pause`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}/pause`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify({ remaining_pause_cycles: cycles }),
@@ -743,7 +739,7 @@ export class RecurlyMCPServer {
   private async resumeSubscription(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.subscription_id as string;
     if (!id) return { content: [{ type: 'text', text: 'subscription_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}/resume`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/subscriptions/${encodeURIComponent(id)}/resume`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify({}),
@@ -759,7 +755,7 @@ export class RecurlyMCPServer {
 
   private async listInvoices(args: Record<string, unknown>): Promise<ToolResult> {
     const qs = this.buildQuery(args, ['limit', 'cursor', 'state', 'type']);
-    const response = await fetch(`${this.baseUrl}/invoices${qs ? `?${qs}` : ''}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/invoices${qs ? `?${qs}` : ''}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list invoices (HTTP ${response.status}): ${err}` }], isError: true };
@@ -772,7 +768,7 @@ export class RecurlyMCPServer {
   private async getInvoice(args: Record<string, unknown>): Promise<ToolResult> {
     const num = args.invoice_number as string;
     if (!num) return { content: [{ type: 'text', text: 'invoice_number is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/invoices/${encodeURIComponent(num)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/invoices/${encodeURIComponent(num)}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to get invoice (HTTP ${response.status}): ${err}` }], isError: true };
@@ -786,7 +782,7 @@ export class RecurlyMCPServer {
     const code = args.account_code as string;
     if (!code) return { content: [{ type: 'text', text: 'account_code is required' }], isError: true };
     const qs = this.buildQuery(args, ['limit', 'cursor', 'state']);
-    const response = await fetch(`${this.baseUrl}/accounts/${encodeURIComponent(code)}/invoices${qs ? `?${qs}` : ''}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts/${encodeURIComponent(code)}/invoices${qs ? `?${qs}` : ''}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list account invoices (HTTP ${response.status}): ${err}` }], isError: true };
@@ -798,7 +794,7 @@ export class RecurlyMCPServer {
 
   private async listPlans(args: Record<string, unknown>): Promise<ToolResult> {
     const qs = this.buildQuery(args, ['limit', 'cursor', 'state']);
-    const response = await fetch(`${this.baseUrl}/plans${qs ? `?${qs}` : ''}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/plans${qs ? `?${qs}` : ''}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list plans (HTTP ${response.status}): ${err}` }], isError: true };
@@ -811,7 +807,7 @@ export class RecurlyMCPServer {
   private async getPlan(args: Record<string, unknown>): Promise<ToolResult> {
     const code = args.plan_code as string;
     if (!code) return { content: [{ type: 'text', text: 'plan_code is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/plans/${encodeURIComponent(code)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/plans/${encodeURIComponent(code)}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to get plan (HTTP ${response.status}): ${err}` }], isError: true };
@@ -823,7 +819,7 @@ export class RecurlyMCPServer {
 
   private async listCoupons(args: Record<string, unknown>): Promise<ToolResult> {
     const qs = this.buildQuery(args, ['limit', 'cursor', 'state']);
-    const response = await fetch(`${this.baseUrl}/coupons${qs ? `?${qs}` : ''}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/coupons${qs ? `?${qs}` : ''}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list coupons (HTTP ${response.status}): ${err}` }], isError: true };
@@ -836,7 +832,7 @@ export class RecurlyMCPServer {
   private async getCoupon(args: Record<string, unknown>): Promise<ToolResult> {
     const code = args.coupon_code as string;
     if (!code) return { content: [{ type: 'text', text: 'coupon_code is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/coupons/${encodeURIComponent(code)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/coupons/${encodeURIComponent(code)}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to get coupon (HTTP ${response.status}): ${err}` }], isError: true };
@@ -848,7 +844,7 @@ export class RecurlyMCPServer {
 
   private async listTransactions(args: Record<string, unknown>): Promise<ToolResult> {
     const qs = this.buildQuery(args, ['limit', 'cursor', 'status', 'type']);
-    const response = await fetch(`${this.baseUrl}/transactions${qs ? `?${qs}` : ''}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/transactions${qs ? `?${qs}` : ''}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list transactions (HTTP ${response.status}): ${err}` }], isError: true };
@@ -861,7 +857,7 @@ export class RecurlyMCPServer {
   private async getTransaction(args: Record<string, unknown>): Promise<ToolResult> {
     const id = args.transaction_id as string;
     if (!id) return { content: [{ type: 'text', text: 'transaction_id is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/transactions/${encodeURIComponent(id)}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/transactions/${encodeURIComponent(id)}`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to get transaction (HTTP ${response.status}): ${err}` }], isError: true };
@@ -874,7 +870,7 @@ export class RecurlyMCPServer {
   private async listAccountBillingInfos(args: Record<string, unknown>): Promise<ToolResult> {
     const code = args.account_code as string;
     if (!code) return { content: [{ type: 'text', text: 'account_code is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/accounts/${encodeURIComponent(code)}/billing_infos`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts/${encodeURIComponent(code)}/billing_infos`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to list billing infos (HTTP ${response.status}): ${err}` }], isError: true };
@@ -887,7 +883,7 @@ export class RecurlyMCPServer {
   private async getBillingInfo(args: Record<string, unknown>): Promise<ToolResult> {
     const code = args.account_code as string;
     if (!code) return { content: [{ type: 'text', text: 'account_code is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/accounts/${encodeURIComponent(code)}/billing_info`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/accounts/${encodeURIComponent(code)}/billing_info`, { headers: this.headers });
     if (!response.ok) {
       const err = await response.text();
       return { content: [{ type: 'text', text: `Failed to get billing info (HTTP ${response.status}): ${err}` }], isError: true };

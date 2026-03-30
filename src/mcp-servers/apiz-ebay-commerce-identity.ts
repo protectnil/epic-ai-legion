@@ -20,6 +20,7 @@
 // Rate limits: Not publicly documented; standard eBay API limits apply
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EbayIdentityConfig {
   /** OAuth2 access token with one or more commerce.identity.* scopes */
@@ -28,11 +29,12 @@ interface EbayIdentityConfig {
   baseUrl?: string;
 }
 
-export class ApizEbayCommerceIdentityMCPServer {
+export class ApizEbayCommerceIdentityMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: EbayIdentityConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://apiz.ebay.com/commerce/identity/v1';
   }
@@ -88,7 +90,7 @@ export class ApizEbayCommerceIdentityMCPServer {
 
   private async getUser(): Promise<ToolResult> {
     const url = `${this.baseUrl}/user/`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: {
         'Authorization': `Bearer ${this.accessToken}`,
         'Content-Type': 'application/json',

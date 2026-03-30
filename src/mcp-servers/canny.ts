@@ -15,17 +15,19 @@
 // Rate limits: Not formally documented; the API uses POST for all reads to protect API keys in logs.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CannyConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CannyMCPServer {
+export class CannyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CannyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://canny.io/api/v1';
   }
@@ -495,14 +497,9 @@ export class CannyMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async post(path: string, params: Record<string, unknown>): Promise<ToolResult> {
     const body = JSON.stringify({ apiKey: this.apiKey, ...params });
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,

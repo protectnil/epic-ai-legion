@@ -22,6 +22,7 @@
 //   (cursor-based), not page/pageSize.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RetoolConfig {
   apiKey: string;
@@ -29,11 +30,12 @@ interface RetoolConfig {
   baseUrl?: string;
 }
 
-export class RetoolMCPServer {
+export class RetoolMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: RetoolConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.retool.com/api/v2';
   }
@@ -390,14 +392,8 @@ export class RetoolMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     if (!response.ok) {
       let detail: unknown;
       try { detail = await response.json(); } catch { detail = await response.text(); }
@@ -469,7 +465,7 @@ export class RetoolMCPServer {
     const workflowApiKey = args.workflowApiKey as string;
     if (!webhookUrl) return { content: [{ type: 'text', text: 'webhookUrl is required' }], isError: true };
     if (!workflowApiKey) return { content: [{ type: 'text', text: 'workflowApiKey is required' }], isError: true };
-    const response = await fetch(webhookUrl, {
+    const response = await this.fetchWithRetry(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

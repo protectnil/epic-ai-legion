@@ -14,6 +14,7 @@
 // Rate limits: 200 requests/hour per access token.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface YnabConfig {
   /** Personal access token from YNAB Account Settings → Developer Settings */
@@ -23,11 +24,12 @@ interface YnabConfig {
 
 const TRUNCATE = 10 * 1024;
 
-export class YouneedabudgetMCPServer {
+export class YouneedabudgetMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: YnabConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl || 'https://api.youneedabudget.com/v1').replace(/\/$/, '');
   }
@@ -414,7 +416,7 @@ export class YouneedabudgetMCPServer {
 
   private async _fetch(path: string, options: RequestInit = {}): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       ...options,
       headers: {
         Authorization: `Bearer ${this.accessToken}`,

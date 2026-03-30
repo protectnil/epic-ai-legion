@@ -19,17 +19,19 @@
 //              Batch requires pre-uploaded files via POST /v1/files — input_file_id, not a URL.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GroqConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class GroqMCPServer {
+export class GroqMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: GroqConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.groq.com/openai/v1';
   }
@@ -303,15 +305,8 @@ export class GroqMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async groqGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -324,7 +319,7 @@ export class GroqMCPServer {
   }
 
   private async groqPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -427,7 +422,7 @@ export class GroqMCPServer {
     params.set('limit', String((args.limit as number) || 20));
     if (args.after) params.set('after', args.after as string);
 
-    const response = await fetch(`${this.baseUrl}/batches?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/batches?${params.toString()}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -449,7 +444,7 @@ export class GroqMCPServer {
   private async cancelBatch(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.batch_id) return { content: [{ type: 'text', text: 'batch_id is required' }], isError: true };
 
-    const response = await fetch(`${this.baseUrl}/batches/${encodeURIComponent(args.batch_id as string)}/cancel`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/batches/${encodeURIComponent(args.batch_id as string)}/cancel`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify({}),

@@ -18,15 +18,17 @@
 // in the Czech Republic, based on mobile station presence in the O2 network.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface O2CzSociodemoConfig {
   baseUrl?: string;
 }
 
-export class O2CzSociodemoMCPServer {
+export class O2CzSociodemoMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: O2CzSociodemoConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://developer.o2.cz/sociodemo/sandbox/api';
   }
 
@@ -134,15 +136,8 @@ export class O2CzSociodemoMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });

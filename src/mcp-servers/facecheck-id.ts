@@ -16,6 +16,7 @@
 // Rate limits: Credit-based. Each search consumes credits. Check remaining_credits via get_account_info.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FaceCheckIdConfig {
   /** API token — passed as Authorization header value */
@@ -24,11 +25,12 @@ interface FaceCheckIdConfig {
   baseUrl?: string;
 }
 
-export class FaceCheckIdMCPServer {
+export class FaceCheckIdMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: FaceCheckIdConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://facecheck.id';
   }
@@ -158,15 +160,8 @@ export class FaceCheckIdMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getAccountInfo(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/info`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/info`, {
       method: 'POST',
       headers: this.authHeaders(),
     });
@@ -201,7 +196,7 @@ export class FaceCheckIdMCPServer {
       formData.append('id_search', args.id_search as string);
     }
 
-    const response = await fetch(`${this.baseUrl}/api/upload_pic`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/upload_pic`, {
       method: 'POST',
       headers: this.authHeaders(),
       body: formData,
@@ -226,7 +221,7 @@ export class FaceCheckIdMCPServer {
     if (args.status_only !== undefined) body.status_only = args.status_only as boolean;
     if (args.demo !== undefined) body.demo = args.demo as boolean;
 
-    const response = await fetch(`${this.baseUrl}/api/search`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/search`, {
       method: 'POST',
       headers: { ...this.authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -251,7 +246,7 @@ export class FaceCheckIdMCPServer {
       id_search: args.id_search as string,
       id_pic: args.id_pic as string,
     });
-    const response = await fetch(`${this.baseUrl}/api/delete_pic?${qs.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/delete_pic?${qs.toString()}`, {
       method: 'POST',
       headers: this.authHeaders(),
     });

@@ -14,17 +14,19 @@
 // Note: Converts Excel and PowerPoint documents into live dashboards and stories.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PresalyticsOoxmlConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class PresalyticsOoxmlMCPServer {
+export class PresalyticsOoxmlMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: PresalyticsOoxmlConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.presalytics.io/ooxml-automation';
   }
@@ -999,7 +1001,7 @@ export class PresalyticsOoxmlMCPServer {
 
   private async request(url: string, options: RequestInit = {}): Promise<ToolResult> {
     const mergedHeaders = { ...this.buildHeaders(), ...(options.headers as Record<string, string> | undefined) };
-    const response = await fetch(url, { ...options, headers: mergedHeaders });
+    const response = await this.fetchWithRetry(url, { ...options, headers: mergedHeaders });
 
     if (!response.ok) {
       let detail = '';

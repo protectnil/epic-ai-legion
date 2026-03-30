@@ -14,17 +14,19 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AvazaConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class AvazaMCPServer {
+export class AvazaMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: AvazaConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl || 'https://api.avaza.com').replace(/\/$/, '');
   }
@@ -927,7 +929,7 @@ export class AvazaMCPServer {
       body = JSON.stringify(args);
     }
 
-    const response = await fetch(url, { method, headers: this.buildHeaders(), body });
+    const response = await this.fetchWithRetry(url, { method, headers: this.buildHeaders(), body });
 
     if (!response.ok) {
       let detail = '';

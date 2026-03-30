@@ -16,17 +16,19 @@
 // Rate limits: Depend on plan tier; always include api_key on requests
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MarketcheckCarsConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class MarketcheckCarsMCPServer {
+export class MarketcheckCarsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MarketcheckCarsConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://marketcheck-prod.apigee.net/v2';
   }
@@ -286,7 +288,7 @@ export class MarketcheckCarsMCPServer {
       if (v !== undefined && v !== null) params.set(k, String(v));
     }
     const url = `${this.baseUrl}${path}?${params.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { Accept: 'application/json', 'User-Agent': 'EpicAI-MarketcheckCars-MCP/1.0' },
     });
 

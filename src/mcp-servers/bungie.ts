@@ -20,6 +20,7 @@
 // Rate limits: ~250 requests/10 seconds per API key. Some endpoints require elevated OAuth scopes.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BungieConfig {
   apiKey: string;
@@ -29,12 +30,13 @@ interface BungieConfig {
   baseUrl?: string;
 }
 
-export class BungieMCPServer {
+export class BungieMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly accessToken: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: BungieConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://www.bungie.net/Platform';
@@ -552,13 +554,6 @@ export class BungieMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'X-API-Key': this.apiKey,
@@ -581,7 +576,7 @@ export class BungieMCPServer {
 
   private async get(path: string, params: Record<string, string | number | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'GET', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.buildHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -592,7 +587,7 @@ export class BungieMCPServer {
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),

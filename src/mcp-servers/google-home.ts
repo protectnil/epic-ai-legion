@@ -15,6 +15,7 @@
 // Rate limits: Local device — no documented rate limits; requests go directly to the device on LAN
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleHomeConfig {
   /** Local authorization token (cast-local-authorization-token) — short-lived, ~1 day TTL */
@@ -25,11 +26,12 @@ interface GoogleHomeConfig {
   port?: number;
 }
 
-export class GoogleHomeMCPServer {
+export class GoogleHomeMCPServer extends MCPAdapterBase {
   private readonly localAuthToken: string;
   private readonly baseUrl: string;
 
   constructor(config: GoogleHomeConfig) {
+    super();
     this.localAuthToken = config.localAuthToken;
     const port = config.port ?? 8443;
     this.baseUrl = `https://${config.deviceIp}:${port}/setup`;
@@ -487,13 +489,6 @@ export class GoogleHomeMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(includeContentType = false): Record<string, string> {
     const headers: Record<string, string> = {
       'cast-local-authorization-token': this.localAuthToken,
@@ -507,7 +502,7 @@ export class GoogleHomeMCPServer {
   private async getRequest(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params);
     const url = `${this.baseUrl}${path}${qs.toString() ? '?' + qs.toString() : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: this.buildHeaders(),
     });
@@ -530,7 +525,7 @@ export class GoogleHomeMCPServer {
   }
 
   private async postRequest(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.buildHeaders(true),
       body: JSON.stringify(body),

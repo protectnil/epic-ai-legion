@@ -17,17 +17,19 @@
 // Rate limits: Not publicly documented; governed by contract tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PressAssociationConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class PressAssociationMCPServer {
+export class PressAssociationMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: PressAssociationConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://tv.api.pressassociation.io/v2';
   }
@@ -256,7 +258,7 @@ export class PressAssociationMCPServer {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

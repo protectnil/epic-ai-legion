@@ -20,6 +20,7 @@
 // Rate limits: 150 API calls/min on most plans; burst up to 300/min with credits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ChargebeeConfig {
   apiKey: string;
@@ -35,11 +36,12 @@ interface ChargebeeConfig {
   baseUrl?: string;
 }
 
-export class ChargebeeMCPServer {
+export class ChargebeeMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ChargebeeConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || `https://${config.site}.chargebee.com/api/v2`;
   }
@@ -555,17 +557,10 @@ export class ChargebeeMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async chargebeeGet(path: string, params: URLSearchParams): Promise<ToolResult> {
     const query = params.toString();
     const url = `${this.baseUrl}${path}${query ? `?${query}` : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text();
       return {
@@ -579,7 +574,7 @@ export class ChargebeeMCPServer {
   }
 
   private async chargebeePost(path: string, body: URLSearchParams): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: body.toString(),

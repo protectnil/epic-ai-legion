@@ -20,6 +20,7 @@
 // Rate limits: No documented global rate limit; Vault performance replication and HA impose node limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HashiCorpVaultConfig {
   /** Full Vault address, e.g. https://vault.example.com (no trailing slash, no /v1 suffix). */
@@ -30,12 +31,13 @@ interface HashiCorpVaultConfig {
   namespace?: string;
 }
 
-export class HashiCorpVaultMCPServer {
+export class HashiCorpVaultMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string;
   private readonly namespace?: string;
 
   constructor(config: HashiCorpVaultConfig) {
+    super();
     this.baseUrl = `${config.vaultAddr.replace(/\/$/, '')}/v1`;
     this.token = config.token;
     this.namespace = config.namespace;
@@ -416,19 +418,12 @@ export class HashiCorpVaultMCPServer {
     return h;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private cleanPath(path: string): string {
     return path.replace(/^\//, '');
   }
 
   private async vaultGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'GET',
       headers: this.buildHeaders(),
     });
@@ -441,7 +436,7 @@ export class HashiCorpVaultMCPServer {
   }
 
   private async vaultPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),
@@ -457,7 +452,7 @@ export class HashiCorpVaultMCPServer {
 
   private async vaultPatch(path: string, body: unknown): Promise<ToolResult> {
     const headers = { ...this.buildHeaders(), 'Content-Type': 'application/merge-patch+json' };
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(body),
@@ -471,7 +466,7 @@ export class HashiCorpVaultMCPServer {
   }
 
   private async vaultDelete(path: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'DELETE',
       headers: this.buildHeaders(),
       body: body ? JSON.stringify(body) : undefined,
@@ -484,7 +479,7 @@ export class HashiCorpVaultMCPServer {
   }
 
   private async vaultPut(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'PUT',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),
@@ -507,7 +502,7 @@ export class HashiCorpVaultMCPServer {
     if (args.standbyok) params.set('standbyok', 'true');
     const qs = params.toString();
     // Health endpoint returns non-200 for sealed/standby states; still parse the body
-    const response = await fetch(`${this.baseUrl}/sys/health${qs ? `?${qs}` : ''}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/sys/health${qs ? `?${qs}` : ''}`, {
       method: 'GET',
       headers: this.buildHeaders(),
     });

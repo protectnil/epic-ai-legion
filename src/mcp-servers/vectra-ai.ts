@@ -19,6 +19,7 @@
 // Rate limits: Not publicly documented; enterprise tier-based limits apply per tenant.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VectraAIConfig {
   clientId: string;
@@ -26,7 +27,7 @@ interface VectraAIConfig {
   baseUrl: string;
 }
 
-export class VectraAIMCPServer {
+export class VectraAIMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -35,6 +36,7 @@ export class VectraAIMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: VectraAIConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -449,7 +451,7 @@ export class VectraAIMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -467,17 +469,11 @@ export class VectraAIMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async apiGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/api/v3.3${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v3.3${path}${qs}`, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
@@ -489,7 +485,7 @@ export class VectraAIMCPServer {
 
   private async apiPatch(path: string, body: unknown): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}/api/v3.3${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v3.3${path}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -503,7 +499,7 @@ export class VectraAIMCPServer {
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${this.baseUrl}/api/v3.3${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/v3.3${path}`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

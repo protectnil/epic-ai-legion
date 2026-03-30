@@ -16,17 +16,19 @@
 // Rate limits: 500 requests/day, 5 requests/minute
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NytimesTimeswireConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class NytimesTimeswireMCPServer {
+export class NytimesTimeswireMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: NytimesTimeswireConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.nytimes.com/svc/news/v3';
   }
@@ -149,16 +151,9 @@ export class NytimesTimeswireMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams({ ...params, 'api-key': this.apiKey }).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {});
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],

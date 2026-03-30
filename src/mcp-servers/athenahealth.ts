@@ -22,6 +22,7 @@
 // Rate limits: Not publicly specified; governed by partner tier. Use exponential backoff on 429.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AthenaHealthConfig {
   clientId: string;
@@ -30,7 +31,7 @@ interface AthenaHealthConfig {
   environment?: 'production' | 'preview';
 }
 
-export class AthenaHealthMCPServer {
+export class AthenaHealthMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly practiceId: string;
@@ -40,6 +41,7 @@ export class AthenaHealthMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: AthenaHealthConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.practiceId = config.practiceId;
@@ -414,7 +416,7 @@ export class AthenaHealthMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -431,18 +433,11 @@ export class AthenaHealthMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
     const url = `${this.baseUrl}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -459,7 +454,7 @@ export class AthenaHealthMCPServer {
     for (const [k, v] of Object.entries(body)) {
       if (v !== undefined && v !== null) form.append(k, String(v));
     }
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -480,7 +475,7 @@ export class AthenaHealthMCPServer {
     for (const [k, v] of Object.entries(body)) {
       if (v !== undefined && v !== null) form.append(k, String(v));
     }
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,

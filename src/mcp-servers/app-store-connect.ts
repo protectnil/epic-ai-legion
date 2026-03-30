@@ -25,6 +25,7 @@
 
 import { createSign } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AppStoreConnectConfig {
   keyId: string;
@@ -33,7 +34,7 @@ interface AppStoreConnectConfig {
   baseUrl?: string;
 }
 
-export class AppStoreConnectMCPServer {
+export class AppStoreConnectMCPServer extends MCPAdapterBase {
   private readonly keyId: string;
   private readonly issuerId: string;
   private readonly privateKey: string;
@@ -42,6 +43,7 @@ export class AppStoreConnectMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: AppStoreConnectConfig) {
+    super();
     this.keyId = config.keyId;
     this.issuerId = config.issuerId;
     this.privateKey = config.privateKey;
@@ -588,16 +590,9 @@ export class AppStoreConnectMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async ascGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -609,7 +604,7 @@ export class AppStoreConnectMCPServer {
   }
 
   private async ascPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -623,7 +618,7 @@ export class AppStoreConnectMCPServer {
   }
 
   private async ascPatch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.authHeaders,
       body: JSON.stringify(body),

@@ -13,17 +13,19 @@
 // Spec: https://api.apis.guru/v2/specs/twinehealth.com/v7.78.1/openapi.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TwineHealthConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class TwineHealthMCPServer {
+export class TwineHealthMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TwineHealthConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.twinehealth.com/pub';
   }
@@ -543,7 +545,7 @@ export class TwineHealthMCPServer {
 
   private async twineRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

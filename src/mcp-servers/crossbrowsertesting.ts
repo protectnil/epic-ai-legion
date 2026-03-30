@@ -16,6 +16,7 @@
 // Rate limits: See CBT docs
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CrossBrowserTestingConfig {
   username: string;
@@ -23,12 +24,13 @@ interface CrossBrowserTestingConfig {
   baseUrl?: string;
 }
 
-export class CrossBrowserTestingMCPServer {
+export class CrossBrowserTestingMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: CrossBrowserTestingConfig) {
+    super();
     this.username = config.username;
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://crossbrowsertesting.com/api/v3';
@@ -191,12 +193,6 @@ export class CrossBrowserTestingMCPServer {
     return `Basic ${encoded}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private buildQuery(params: Record<string, unknown>): string {
     const q = new URLSearchParams();
@@ -209,7 +205,7 @@ export class CrossBrowserTestingMCPServer {
 
   private async request(path: string): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: this.authHeader,

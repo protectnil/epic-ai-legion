@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented. Contact Qualpay support for limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface QualpayConfig {
   merchantId: string;
@@ -21,12 +22,13 @@ interface QualpayConfig {
   baseUrl?: string;
 }
 
-export class QualpayMCPServer {
+export class QualpayMCPServer extends MCPAdapterBase {
   private readonly merchantId: string;
   private readonly securityKey: string;
   private readonly baseUrl: string;
 
   constructor(config: QualpayConfig) {
+    super();
     this.merchantId = config.merchantId;
     this.securityKey = config.securityKey;
     this.baseUrl = config.baseUrl ?? 'https://api-test.qualpay.com/pg';
@@ -701,20 +703,13 @@ export class QualpayMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeader(): string {
     return 'Basic ' + Buffer.from(`${this.merchantId}:${this.securityKey}`).toString('base64');
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader(),

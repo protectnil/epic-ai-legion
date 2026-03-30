@@ -20,17 +20,19 @@
 // Rate limits: Not publicly documented; Checkr applies per-account throttling
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CheckrConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class CheckrMCPServer {
+export class CheckrMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: CheckrConfig) {
+    super();
     // Checkr Basic auth: API key as username, empty password
     const credentials = Buffer.from(`${config.apiKey}:`).toString('base64');
     this.authHeader = `Basic ${credentials}`;
@@ -410,15 +412,8 @@ export class CheckrMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async checkrGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.reqHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.reqHeaders });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `Checkr API error (HTTP ${response.status}): ${response.statusText}` }],
@@ -431,7 +426,7 @@ export class CheckrMCPServer {
   }
 
   private async checkrPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.reqHeaders,
       body: JSON.stringify(body),

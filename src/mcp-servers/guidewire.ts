@@ -20,6 +20,7 @@
 //       Account API = /account/v1, Job API = /job/v1, Policy API = /policy/v1, Common API = /common/v1
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GuidewireConfig {
   clientId: string;
@@ -28,7 +29,7 @@ interface GuidewireConfig {
   tokenUrl: string;       // e.g. https://my-company.cloud.guidewire.com/oauth2/token
 }
 
-export class GuidewireMCPServer {
+export class GuidewireMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly tenantUrl: string;
@@ -37,6 +38,7 @@ export class GuidewireMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: GuidewireConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.tenantUrl = config.tenantUrl.replace(/\/$/, '');
@@ -418,7 +420,7 @@ export class GuidewireMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(this.tokenUrl, {
+    const response = await this.fetchWithRetry(this.tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -440,19 +442,12 @@ export class GuidewireMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async gwGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = new URLSearchParams(params).toString();
     const url = `${this.tenantUrl}${path}${qs ? '?' + qs : ''}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -472,7 +467,7 @@ export class GuidewireMCPServer {
   private async gwPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
 
-    const response = await fetch(`${this.tenantUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.tenantUrl}${path}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

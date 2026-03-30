@@ -16,17 +16,19 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NaviPlanCentralFactFinderConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class NaviPlanCentralFactFinderMCPServer {
+export class NaviPlanCentralFactFinderMCPServer extends MCPAdapterBase {
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: NaviPlanCentralFactFinderConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://demo.uat.naviplancentral.com/factfinder';
   }
@@ -394,7 +396,7 @@ export class NaviPlanCentralFactFinderMCPServer {
 
   private async request(path: string, method: string, body?: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: this.buildHeaders(),
       body: body !== undefined ? JSON.stringify(body) : undefined,

@@ -16,6 +16,7 @@
 // Rate limits: Consult Wealth Reader enterprise agreement.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WealthReaderConfig {
   apiKey: string;
@@ -23,11 +24,12 @@ interface WealthReaderConfig {
   baseUrl?: string;
 }
 
-export class WealthReaderMCPServer {
+export class WealthReaderMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: WealthReaderConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.wealthreader.com';
   }
@@ -149,16 +151,9 @@ export class WealthReaderMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listEntities(): Promise<ToolResult> {
     const url = `${this.baseUrl}/entities`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });
@@ -188,7 +183,7 @@ export class WealthReaderMCPServer {
     if (args.contract_code) body.set('contract_code', args.contract_code as string);
 
     const url = `${this.baseUrl}/entities`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -204,7 +199,7 @@ export class WealthReaderMCPServer {
   private async listErrorCodes(args: Record<string, unknown>): Promise<ToolResult> {
     const lang = (args.lang as string) ?? 'es';
     const url = `${this.baseUrl}/error-codes?lang=${encodeURIComponent(lang)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });

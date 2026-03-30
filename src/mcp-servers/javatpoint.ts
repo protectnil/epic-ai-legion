@@ -14,18 +14,20 @@
 // Rate limits: 600,000 messages/min per project (varies by target type)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface JavatpointFCMConfig {
   projectId: string;  // Firebase project ID
   accessToken: string; // OAuth2 Bearer token from service account
 }
 
-export class JavatpointMCPServer {
+export class JavatpointMCPServer extends MCPAdapterBase {
   private readonly projectId: string;
   private readonly accessToken: string;
   private readonly baseUrl = 'https://fcm.googleapis.com';
 
   constructor(config: JavatpointFCMConfig) {
+    super();
     this.projectId = config.projectId;
     this.accessToken = config.accessToken;
   }
@@ -136,13 +138,8 @@ export class JavatpointMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

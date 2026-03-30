@@ -42,6 +42,7 @@
 // Rate limits: Metrics API: 300 req/min per IP global limit. Control plane: not publicly documented per-key.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ConfluentConfig {
   /** Confluent Cloud API key ID — used as HTTP Basic auth username for control-plane operations. */
@@ -79,7 +80,7 @@ interface ConfluentConfig {
   schemaRegistryApiSecret?: string;
 }
 
-export class ConfluentKafkaMCPServer {
+export class ConfluentKafkaMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly apiSecret: string;
   private readonly baseUrl: string;
@@ -92,6 +93,7 @@ export class ConfluentKafkaMCPServer {
   private readonly schemaRegistryApiSecret: string | undefined;
 
   constructor(config: ConfluentConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.apiSecret = config.apiSecret;
     this.baseUrl = (config.baseUrl ?? 'https://api.confluent.cloud').replace(/\/$/, '');
@@ -574,14 +576,8 @@ export class ConfluentKafkaMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {
@@ -686,7 +682,7 @@ export class ConfluentKafkaMCPServer {
     if (!topicName) {
       return { content: [{ type: 'text', text: 'topic_name is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.kafkaRestEndpoint}/kafka/v3/clusters/${encodeURIComponent(this.kafkaClusterId!)}/topics/${encodeURIComponent(topicName)}`,
       { method: 'DELETE', headers: this.kafkaHeaders() },
     );
@@ -756,7 +752,7 @@ export class ConfluentKafkaMCPServer {
     if (!environmentId || !clusterId || !connectorName) {
       return { content: [{ type: 'text', text: 'environment_id, cluster_id, and connector_name are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/connect/v1/environments/${encodeURIComponent(environmentId)}/clusters/${encodeURIComponent(clusterId)}/connectors/${encodeURIComponent(connectorName)}/pause`,
       { method: 'PUT', headers: this.controlPlaneHeaders },
     );
@@ -774,7 +770,7 @@ export class ConfluentKafkaMCPServer {
     if (!environmentId || !clusterId || !connectorName) {
       return { content: [{ type: 'text', text: 'environment_id, cluster_id, and connector_name are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/connect/v1/environments/${encodeURIComponent(environmentId)}/clusters/${encodeURIComponent(clusterId)}/connectors/${encodeURIComponent(connectorName)}/resume`,
       { method: 'PUT', headers: this.controlPlaneHeaders },
     );
@@ -792,7 +788,7 @@ export class ConfluentKafkaMCPServer {
     if (!environmentId || !clusterId || !connectorName) {
       return { content: [{ type: 'text', text: 'environment_id, cluster_id, and connector_name are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/connect/v1/environments/${encodeURIComponent(environmentId)}/clusters/${encodeURIComponent(clusterId)}/connectors/${encodeURIComponent(connectorName)}`,
       { method: 'DELETE', headers: this.controlPlaneHeaders },
     );
@@ -880,7 +876,7 @@ export class ConfluentKafkaMCPServer {
     }
     const permanent = args.hard_delete === true;
     const url = `${this.schemaRegistryEndpoint}/subjects/${encodeURIComponent(subject)}${permanent ? '?permanent=true' : ''}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.srHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.srHeaders() });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };

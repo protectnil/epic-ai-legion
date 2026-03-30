@@ -14,6 +14,7 @@
 // Rate limits: Refer to your IDTBeyond account agreement
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface IDTBeyondConfig {
   appId: string;
@@ -21,12 +22,13 @@ interface IDTBeyondConfig {
   baseUrl?: string;
 }
 
-export class IDTBeyondMCPServer {
+export class IDTBeyondMCPServer extends MCPAdapterBase {
   private readonly appId: string;
   private readonly appKey: string;
   private readonly baseUrl: string;
 
   constructor(config: IDTBeyondConfig) {
+    super();
     this.appId   = config.appId;
     this.appKey  = config.appKey;
     this.baseUrl = config.baseUrl || 'https://api.idtbeyond.com/v1';
@@ -303,18 +305,9 @@ export class IDTBeyondMCPServer {
     }
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────────
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         'app-id':  this.appId,
         'app-key': this.appKey,
@@ -332,7 +325,7 @@ export class IDTBeyondMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'app-id':  this.appId,

@@ -24,12 +24,13 @@
 // Rate limits: Gmail 250 quota units/second per user; Sheets 300 req/min; Drive 20,000 req/100s/user
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleWorkspaceConfig {
   accessToken: string;
 }
 
-export class GoogleWorkspaceMCPServer {
+export class GoogleWorkspaceMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly driveBase = 'https://www.googleapis.com/drive/v3';
   private readonly docsBase = 'https://docs.googleapis.com/v1';
@@ -38,6 +39,7 @@ export class GoogleWorkspaceMCPServer {
   private readonly gmailBase = 'https://gmail.googleapis.com/gmail/v1';
 
   constructor(config: GoogleWorkspaceConfig) {
+    super();
     this.accessToken = config.accessToken;
   }
 
@@ -535,11 +537,6 @@ export class GoogleWorkspaceMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   // ── Drive ──────────────────────────────────────────────────────────────────
 
@@ -552,7 +549,7 @@ export class GoogleWorkspaceMCPServer {
     if (args.page_token) params.set('pageToken', args.page_token as string);
     if (args.order_by) params.set('orderBy', args.order_by as string);
 
-    const response = await fetch(`${this.driveBase}/files?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.driveBase}/files?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -567,7 +564,7 @@ export class GoogleWorkspaceMCPServer {
     params.set('fields', 'nextPageToken,files(id,name,mimeType,size,modifiedTime,webViewLink)');
     if (args.page_token) params.set('pageToken', args.page_token as string);
 
-    const response = await fetch(`${this.driveBase}/files?${params}`, { headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.driveBase}/files?${params}`, { headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -577,7 +574,7 @@ export class GoogleWorkspaceMCPServer {
 
   private async getDriveFile(args: Record<string, unknown>): Promise<ToolResult> {
     const fields = (args.fields as string) ?? 'id,name,mimeType,size,modifiedTime,webViewLink,owners,shared';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.driveBase}/files/${encodeURIComponent(args.file_id as string)}?fields=${encodeURIComponent(fields)}`,
       { headers: this.authHeaders },
     );
@@ -591,7 +588,7 @@ export class GoogleWorkspaceMCPServer {
   // ── Docs ──────────────────────────────────────────────────────────────────
 
   private async createDocument(args: Record<string, unknown>): Promise<ToolResult> {
-    const createResponse = await fetch(`${this.docsBase}/documents`, {
+    const createResponse = await this.fetchWithRetry(`${this.docsBase}/documents`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify({ title: args.title }),
@@ -602,7 +599,7 @@ export class GoogleWorkspaceMCPServer {
     const doc = await createResponse.json() as Record<string, unknown>;
 
     if (args.content && doc.documentId) {
-      const batchResponse = await fetch(`${this.docsBase}/documents/${doc.documentId}:batchUpdate`, {
+      const batchResponse = await this.fetchWithRetry(`${this.docsBase}/documents/${doc.documentId}:batchUpdate`, {
         method: 'POST',
         headers: this.authHeaders,
         body: JSON.stringify({
@@ -618,7 +615,7 @@ export class GoogleWorkspaceMCPServer {
   }
 
   private async getDocument(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.docsBase}/documents/${encodeURIComponent(args.document_id as string)}`, {
+    const response = await this.fetchWithRetry(`${this.docsBase}/documents/${encodeURIComponent(args.document_id as string)}`, {
       headers: this.authHeaders,
     });
     if (!response.ok) {
@@ -630,7 +627,7 @@ export class GoogleWorkspaceMCPServer {
 
   private async appendDocumentText(args: Record<string, unknown>): Promise<ToolResult> {
     // Get document to find the end index
-    const docResponse = await fetch(`${this.docsBase}/documents/${encodeURIComponent(args.document_id as string)}`, {
+    const docResponse = await this.fetchWithRetry(`${this.docsBase}/documents/${encodeURIComponent(args.document_id as string)}`, {
       headers: this.authHeaders,
     });
     if (!docResponse.ok) {
@@ -640,7 +637,7 @@ export class GoogleWorkspaceMCPServer {
     const content = doc.body?.content ?? [];
     const endIndex = (content[content.length - 1]?.endIndex ?? 1) - 1;
 
-    const batchResponse = await fetch(`${this.docsBase}/documents/${encodeURIComponent(args.document_id as string)}:batchUpdate`, {
+    const batchResponse = await this.fetchWithRetry(`${this.docsBase}/documents/${encodeURIComponent(args.document_id as string)}:batchUpdate`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify({
@@ -657,7 +654,7 @@ export class GoogleWorkspaceMCPServer {
   // ── Sheets ────────────────────────────────────────────────────────────────
 
   private async getSpreadsheet(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.sheetsBase}/spreadsheets/${encodeURIComponent(args.spreadsheet_id as string)}?fields=spreadsheetId,properties,sheets.properties`,
       { headers: this.authHeaders },
     );
@@ -672,7 +669,7 @@ export class GoogleWorkspaceMCPServer {
     const params = new URLSearchParams();
     params.set('majorDimension', (args.major_dimension as string) ?? 'ROWS');
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.sheetsBase}/spreadsheets/${encodeURIComponent(args.spreadsheet_id as string)}/values/${encodeURIComponent(args.range as string)}?${params}`,
       { headers: this.authHeaders },
     );
@@ -685,7 +682,7 @@ export class GoogleWorkspaceMCPServer {
 
   private async updateSpreadsheetValues(args: Record<string, unknown>): Promise<ToolResult> {
     const valueInputOption = (args.value_input_option as string) ?? 'RAW';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.sheetsBase}/spreadsheets/${encodeURIComponent(args.spreadsheet_id as string)}/values/${encodeURIComponent(args.range as string)}?valueInputOption=${valueInputOption}`,
       {
         method: 'PUT',
@@ -702,7 +699,7 @@ export class GoogleWorkspaceMCPServer {
 
   private async appendSpreadsheetValues(args: Record<string, unknown>): Promise<ToolResult> {
     const valueInputOption = (args.value_input_option as string) ?? 'RAW';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.sheetsBase}/spreadsheets/${encodeURIComponent(args.spreadsheet_id as string)}/values/${encodeURIComponent(args.range as string)}:append?valueInputOption=${valueInputOption}&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
@@ -730,7 +727,7 @@ export class GoogleWorkspaceMCPServer {
     if (args.page_token) params.set('pageToken', args.page_token as string);
     if (args.q) params.set('q', args.q as string);
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.calendarBase}/calendars/${encodeURIComponent(calendarId)}/events?${params}`,
       { headers: this.authHeaders },
     );
@@ -756,7 +753,7 @@ export class GoogleWorkspaceMCPServer {
       body.attendees = (args.attendees as string[]).map((email) => ({ email }));
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.calendarBase}/calendars/${encodeURIComponent(calendarId)}/events`,
       {
         method: 'POST',
@@ -773,7 +770,7 @@ export class GoogleWorkspaceMCPServer {
 
   private async getCalendarEvent(args: Record<string, unknown>): Promise<ToolResult> {
     const calendarId = (args.calendar_id as string) ?? 'primary';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.calendarBase}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(args.event_id as string)}`,
       { headers: this.authHeaders },
     );
@@ -786,7 +783,7 @@ export class GoogleWorkspaceMCPServer {
 
   private async deleteCalendarEvent(args: Record<string, unknown>): Promise<ToolResult> {
     const calendarId = (args.calendar_id as string) ?? 'primary';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.calendarBase}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(args.event_id as string)}`,
       { method: 'DELETE', headers: this.authHeaders },
     );
@@ -808,7 +805,7 @@ export class GoogleWorkspaceMCPServer {
       }
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.gmailBase}/users/me/messages?${params}`,
       { headers: this.authHeaders },
     );
@@ -821,7 +818,7 @@ export class GoogleWorkspaceMCPServer {
 
   private async getGmailMessage(args: Record<string, unknown>): Promise<ToolResult> {
     const format = (args.format as string) ?? 'full';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.gmailBase}/users/me/messages/${encodeURIComponent(args.message_id as string)}?format=${format}`,
       { headers: this.authHeaders },
     );
@@ -838,7 +835,7 @@ export class GoogleWorkspaceMCPServer {
     params.set('maxResults', String((args.max_results as number) ?? 20));
     if (args.page_token) params.set('pageToken', args.page_token as string);
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.gmailBase}/users/me/messages?${params}`,
       { headers: this.authHeaders },
     );
@@ -863,7 +860,7 @@ export class GoogleWorkspaceMCPServer {
     const encoded = Buffer.from(rawMessage).toString('base64')
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-    const response = await fetch(`${this.gmailBase}/users/me/drafts`, {
+    const response = await this.fetchWithRetry(`${this.gmailBase}/users/me/drafts`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify({ message: { raw: encoded } }),

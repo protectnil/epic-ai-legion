@@ -24,17 +24,19 @@
 //              One Call API 3.0 billed per call beyond 1,000/day free allowance.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenWeatherMapConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class OpenWeatherMapMCPServer {
+export class OpenWeatherMapMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: OpenWeatherMapConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.openweathermap.org';
   }
@@ -358,18 +360,11 @@ export class OpenWeatherMapMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async owmGet(path: string, params: Record<string, string>): Promise<ToolResult> {
     params.appid = this.apiKey;
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}?${qs}`;
-    const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { Accept: 'application/json' } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

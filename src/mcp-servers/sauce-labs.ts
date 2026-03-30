@@ -26,6 +26,7 @@
 // Rate limits: Per-endpoint; 429 with X-Ratelimit-Remaining, X-Ratelimit-Limit, X-Ratelimit-Reset headers
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SauceLabsConfig {
   username: string;
@@ -34,12 +35,13 @@ interface SauceLabsConfig {
   baseUrl?: string;
 }
 
-export class SauceLabsMCPServer {
+export class SauceLabsMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly accessKey: string;
   private readonly baseUrl: string;
 
   constructor(config: SauceLabsConfig) {
+    super();
     this.username = config.username;
     this.accessKey = config.accessKey;
     const region = config.region || 'us-west-1';
@@ -434,15 +436,8 @@ export class SauceLabsMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -451,7 +446,7 @@ export class SauceLabsMCPServer {
   }
 
   private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -464,7 +459,7 @@ export class SauceLabsMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -472,7 +467,7 @@ export class SauceLabsMCPServer {
   }
 
   private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),

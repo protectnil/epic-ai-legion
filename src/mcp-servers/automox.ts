@@ -24,6 +24,7 @@
 // Rate limits: 100 req/sec (authenticated), 30 req/min on device endpoints. 429 = back off 60s.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AutomoxConfig {
   apiKey: string;
@@ -31,12 +32,13 @@ interface AutomoxConfig {
   baseUrl?: string;
 }
 
-export class AutomoxMCPServer {
+export class AutomoxMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly orgId: string;
   private readonly baseUrl: string;
 
   constructor(config: AutomoxConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.orgId = String(config.orgId);
     this.baseUrl = (config.baseUrl ?? 'https://console.automox.com/api').replace(/\/$/, '');
@@ -481,18 +483,11 @@ export class AutomoxMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string, extraParams?: Record<string, string>): Promise<ToolResult> {
     const params: Record<string, string> = { o: this.orgId, ...extraParams };
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}?${qs}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Automox API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -503,7 +498,7 @@ export class AutomoxMCPServer {
   private async apiPost(path: string, body: Record<string, unknown>, queryParams?: Record<string, string>): Promise<ToolResult> {
     const params: Record<string, string> = { o: this.orgId, ...queryParams };
     const qs = new URLSearchParams(params).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -518,7 +513,7 @@ export class AutomoxMCPServer {
 
   private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const qs = new URLSearchParams({ o: this.orgId }).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -533,7 +528,7 @@ export class AutomoxMCPServer {
 
   private async apiDelete(path: string): Promise<ToolResult> {
     const qs = new URLSearchParams({ o: this.orgId }).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       method: 'DELETE',
       headers: this.headers,
     });

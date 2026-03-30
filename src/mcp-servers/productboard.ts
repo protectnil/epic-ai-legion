@@ -16,17 +16,19 @@
 // Rate limits: Not formally documented; implement backoff on 429 responses
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ProductboardConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class ProductboardMCPServer {
+export class ProductboardMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ProductboardConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = (config.baseUrl ?? 'https://api.productboard.com').replace(/\/$/, '');
   }
@@ -431,15 +433,8 @@ export class ProductboardMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doFetch(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.reqHeaders, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.reqHeaders, ...options });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       return {

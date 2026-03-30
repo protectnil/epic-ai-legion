@@ -23,6 +23,7 @@
 // Rate limits: 60 req/min (read), 30 req/min (write) per token — updated Nov 2025
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FigmaConfig {
   /** Personal Access Token or OAuth2 access token */
@@ -31,11 +32,12 @@ interface FigmaConfig {
   baseUrl?: string;
 }
 
-export class FigmaMCPServer {
+export class FigmaMCPServer extends MCPAdapterBase {
   private readonly pat: string;
   private readonly baseUrl: string;
 
   constructor(config: FigmaConfig) {
+    super();
     this.pat = config.pat;
     this.baseUrl = (config.baseUrl ?? 'https://api.figma.com/v1').replace(/\/$/, '');
   }
@@ -67,12 +69,6 @@ export class FigmaMCPServer {
       'X-Figma-Token': this.pat,
       'Content-Type': 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -450,7 +446,7 @@ export class FigmaMCPServer {
     if (args.version) params.set('version', args.version as string);
     const qs = params.toString() ? `?${params.toString()}` : '';
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}${qs}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -473,7 +469,7 @@ export class FigmaMCPServer {
     const params = new URLSearchParams({ ids });
     if (args.depth !== undefined) params.set('depth', String(args.depth));
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/nodes?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/nodes?${params.toString()}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -492,7 +488,7 @@ export class FigmaMCPServer {
       return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/teams/${encodeURIComponent(teamId)}/projects`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/teams/${encodeURIComponent(teamId)}/projects`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -515,7 +511,7 @@ export class FigmaMCPServer {
     if (args.branch_data) params.set('branch_data', 'true');
     const qs = params.toString() ? `?${params.toString()}` : '';
 
-    const response = await fetch(`${this.baseUrl}/projects/${encodeURIComponent(projectId)}/files${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/projects/${encodeURIComponent(projectId)}/files${qs}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -534,7 +530,7 @@ export class FigmaMCPServer {
       return { content: [{ type: 'text', text: 'file_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/versions`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/versions`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -559,7 +555,7 @@ export class FigmaMCPServer {
     if (args.format) params.set('format', args.format as string);
     if (args.svg_include_id) params.set('svg_include_id', 'true');
 
-    const response = await fetch(`${this.baseUrl}/images/${encodeURIComponent(fileKey)}?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/images/${encodeURIComponent(fileKey)}?${params.toString()}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -578,7 +574,7 @@ export class FigmaMCPServer {
       return { content: [{ type: 'text', text: 'file_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/images`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/images`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -601,7 +597,7 @@ export class FigmaMCPServer {
     if (args.as_md) params.set('as_md', 'true');
     const qs = params.toString() ? `?${params.toString()}` : '';
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/comments${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/comments${qs}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -625,7 +621,7 @@ export class FigmaMCPServer {
     if (args.node_id) body.node_id = args.node_id;
     if (args.client_meta) body.client_meta = args.client_meta;
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/comments`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/comments`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -646,7 +642,7 @@ export class FigmaMCPServer {
       return { content: [{ type: 'text', text: 'file_key and comment_id are required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/files/${encodeURIComponent(fileKey)}/comments/${encodeURIComponent(commentId)}`,
       { method: 'DELETE', headers: this.authHeaders },
     );
@@ -669,7 +665,7 @@ export class FigmaMCPServer {
     if (args.after !== undefined) params.set('after', String(args.after));
     const qs = params.toString() ? `?${params.toString()}` : '';
 
-    const response = await fetch(`${this.baseUrl}/teams/${encodeURIComponent(teamId)}/components${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/teams/${encodeURIComponent(teamId)}/components${qs}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -688,7 +684,7 @@ export class FigmaMCPServer {
       return { content: [{ type: 'text', text: 'file_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/components`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/components`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -712,7 +708,7 @@ export class FigmaMCPServer {
     if (args.after !== undefined) params.set('after', String(args.after));
     const qs = params.toString() ? `?${params.toString()}` : '';
 
-    const response = await fetch(`${this.baseUrl}/teams/${encodeURIComponent(teamId)}/styles${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/teams/${encodeURIComponent(teamId)}/styles${qs}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -731,7 +727,7 @@ export class FigmaMCPServer {
       return { content: [{ type: 'text', text: 'file_key is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/variables/local`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/files/${encodeURIComponent(fileKey)}/variables/local`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -750,7 +746,7 @@ export class FigmaMCPServer {
       return { content: [{ type: 'text', text: 'team_id is required' }], isError: true };
     }
 
-    const response = await fetch(`https://api.figma.com/v2/teams/${encodeURIComponent(teamId)}/webhooks`, {
+    const response = await this.fetchWithRetry(`https://api.figma.com/v2/teams/${encodeURIComponent(teamId)}/webhooks`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -782,7 +778,7 @@ export class FigmaMCPServer {
     };
     if (args.description) body.description = args.description;
 
-    const response = await fetch(`https://api.figma.com/v2/webhooks`, {
+    const response = await this.fetchWithRetry(`https://api.figma.com/v2/webhooks`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),

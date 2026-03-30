@@ -35,17 +35,19 @@
 // Rate limits: Not published per-endpoint; honor 429 responses with backoff
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DropboxBusinessConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class DropboxBusinessMCPServer {
+export class DropboxBusinessMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: DropboxBusinessConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.dropboxapi.com/2';
   }
@@ -555,15 +557,9 @@ export class DropboxBusinessMCPServer {
     return { ...this.baseHeaders, 'Dropbox-API-Select-User': memberEmail };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async rpcPost(endpoint: string, body: unknown, headers?: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
       headers: headers || this.baseHeaders,
       body: JSON.stringify(body),

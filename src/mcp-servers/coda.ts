@@ -17,17 +17,19 @@
 //              Write doc content — 5 req/10s.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CodaConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class CodaMCPServer {
+export class CodaMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CodaConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://coda.io/apis/v1';
   }
@@ -679,17 +681,10 @@ export class CodaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async codaGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const body = await response.text();
       return { content: [{ type: 'text', text: `API error ${response.status}: ${body}` }], isError: true };
@@ -699,7 +694,7 @@ export class CodaMCPServer {
   }
 
   private async codaPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -713,7 +708,7 @@ export class CodaMCPServer {
   }
 
   private async codaPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -727,7 +722,7 @@ export class CodaMCPServer {
   }
 
   private async codaDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -917,7 +912,7 @@ export class CodaMCPServer {
     try { rowIdsArr = JSON.parse(args.row_ids as string); } catch {
       return { content: [{ type: 'text', text: 'row_ids must be valid JSON array' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/docs/${encodeURIComponent(args.doc_id as string)}/tables/${encodeURIComponent(args.table_id_or_name as string)}/rows`, {
       method: 'DELETE',
       headers: this.headers,
       body: JSON.stringify({ rowIds: rowIdsArr }),

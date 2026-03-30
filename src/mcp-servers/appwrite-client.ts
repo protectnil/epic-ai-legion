@@ -16,6 +16,7 @@
 // Rate limits: See Appwrite docs — varies by endpoint and plan
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AppwriteClientConfig {
   projectId: string;
@@ -24,13 +25,14 @@ interface AppwriteClientConfig {
   baseUrl?: string;
 }
 
-export class AppwriteClientMCPServer {
+export class AppwriteClientMCPServer extends MCPAdapterBase {
   private readonly projectId: string;
   private readonly jwt: string | undefined;
   private readonly locale: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: AppwriteClientConfig) {
+    super();
     this.projectId = config.projectId;
     this.jwt = config.jwt;
     this.locale = config.locale;
@@ -920,13 +922,6 @@ export class AppwriteClientMCPServer {
     return h;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     path: string,
@@ -949,7 +944,7 @@ export class AppwriteClientMCPServer {
     }
     const init: RequestInit = { method, headers: this.headers };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

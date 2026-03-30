@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented; varies by subscription plan
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenALPRConfig {
   secretKey: string;
@@ -21,11 +22,12 @@ interface OpenALPRConfig {
   baseUrl?: string;
 }
 
-export class OpenALPRMCPServer {
+export class OpenALPRMCPServer extends MCPAdapterBase {
   private readonly secretKey: string;
   private readonly baseUrl: string;
 
   constructor(config: OpenALPRConfig) {
+    super();
     this.secretKey = config.secretKey;
     this.baseUrl = config.baseUrl ?? 'https://api.openalpr.com/v3';
   }
@@ -186,7 +188,7 @@ export class OpenALPRMCPServer {
 
   private async getConfig(): Promise<ToolResult> {
     const url = `${this.baseUrl}/config?secret_key=${encodeURIComponent(this.secretKey)}`;
-    const response = await fetch(url);
+    const response = await this.fetchWithRetry(url, {});
 
     if (!response.ok) {
       return {
@@ -223,7 +225,7 @@ export class OpenALPRMCPServer {
       topn: String(topn),
     });
 
-    const response = await fetch(`${this.baseUrl}/recognize_url?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/recognize_url?${params.toString()}`, {
       method: 'POST',
     });
 
@@ -261,7 +263,7 @@ export class OpenALPRMCPServer {
       topn: String(topn),
     });
 
-    const response = await fetch(`${this.baseUrl}/recognize_bytes?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/recognize_bytes?${params.toString()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(imageBytes),
@@ -313,7 +315,7 @@ export class OpenALPRMCPServer {
     const formData = new FormData();
     formData.append('image', new Blob([bytes]), 'image.jpg');
 
-    const response = await fetch(`${this.baseUrl}/recognize?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/recognize?${params.toString()}`, {
       method: 'POST',
       body: formData,
     });

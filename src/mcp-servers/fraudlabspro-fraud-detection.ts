@@ -10,17 +10,19 @@
 // Endpoints: Screen Order (fraud detection), Order Feedback
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FraudLabsProConfig {
   apiKey: string;
   baseUrl?: string; // default: https://api.fraudlabspro.com
 }
 
-export class FraudlabsproFraudDetectionMCPServer {
+export class FraudlabsproFraudDetectionMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: FraudLabsProConfig) {
+    super();
     this.apiKey  = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.fraudlabspro.com';
   }
@@ -225,16 +227,10 @@ export class FraudlabsproFraudDetectionMCPServer {
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async postForm(path: string, params: Record<string, string>): Promise<ToolResult> {
     const qs = new URLSearchParams({ ...params, key: this.apiKey, format: 'json' });
-    const response = await fetch(`${this.baseUrl}${path}?${qs.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs.toString()}`, {
       method: 'POST',
       headers: { Accept: 'application/json' },
     });

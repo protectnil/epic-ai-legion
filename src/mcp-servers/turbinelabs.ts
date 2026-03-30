@@ -14,17 +14,19 @@
 // Spec: https://api.apis.guru/v2/specs/turbinelabs.io/1.0/swagger.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TurbineLabsConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class TurbineLabsMCPServer {
+export class TurbineLabsMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: TurbineLabsConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.turbinelabs.io/v1.0';
   }
@@ -608,7 +610,7 @@ export class TurbineLabsMCPServer {
 
   private async tbRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { ...options, headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.buildHeaders() });
 
     if (!response.ok) {
       let detail = '';

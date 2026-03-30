@@ -53,6 +53,7 @@
 // Rate limits: Varies by endpoint; ~1000 req/min typical for most REST endpoints
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SplunkObservabilityConfig {
   /**
@@ -68,11 +69,12 @@ interface SplunkObservabilityConfig {
   realm: string;
 }
 
-export class SplunkObservabilityMCPServer {
+export class SplunkObservabilityMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SplunkObservabilityConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = `https://api.${config.realm}.signalfx.com`;
   }
@@ -462,13 +464,6 @@ export class SplunkObservabilityMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listDetectors(args: Record<string, unknown>): Promise<ToolResult> {
     const limit = (args.limit as number) ?? 50;
     const offset = (args.offset as number) ?? 0;
@@ -476,7 +471,7 @@ export class SplunkObservabilityMCPServer {
     if (args.name) url += `&name=${encodeURIComponent(args.name as string)}`;
     if (args.tags) url += `&tags=${encodeURIComponent(args.tags as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list detectors: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -489,7 +484,7 @@ export class SplunkObservabilityMCPServer {
     if (!detectorId) {
       return { content: [{ type: 'text', text: 'detector_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/detector/${encodeURIComponent(detectorId)}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/detector/${encodeURIComponent(detectorId)}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get detector: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -521,7 +516,7 @@ export class SplunkObservabilityMCPServer {
       }
     }
 
-    const response = await fetch(`${this.baseUrl}/v2/detector`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/detector`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -543,7 +538,7 @@ export class SplunkObservabilityMCPServer {
     if (args.name) body.name = args.name as string;
     if (args.description) body.description = args.description as string;
 
-    const response = await fetch(`${this.baseUrl}/v2/detector/${encodeURIComponent(detectorId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/detector/${encodeURIComponent(detectorId)}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -560,7 +555,7 @@ export class SplunkObservabilityMCPServer {
     if (!detectorId) {
       return { content: [{ type: 'text', text: 'detector_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/detector/${encodeURIComponent(detectorId)}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/detector/${encodeURIComponent(detectorId)}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to delete detector: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -573,7 +568,7 @@ export class SplunkObservabilityMCPServer {
       return { content: [{ type: 'text', text: 'detector_id is required' }], isError: true };
     }
     const limit = (args.limit as number) ?? 50;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/detector/${encodeURIComponent(detectorId)}/incidents?limit=${limit}`,
       { method: 'GET', headers: this.headers },
     );
@@ -592,7 +587,7 @@ export class SplunkObservabilityMCPServer {
     if (args.severity) url += `&severity=${encodeURIComponent(args.severity as string)}`;
     if (args.status) url += `&status=${encodeURIComponent(args.status as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list alerts: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -607,7 +602,7 @@ export class SplunkObservabilityMCPServer {
     if (args.name) url += `&name=${encodeURIComponent(args.name as string)}`;
     if (args.dashboardGroupId) url += `&dashboardGroupId=${encodeURIComponent(args.dashboardGroupId as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list dashboards: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -620,7 +615,7 @@ export class SplunkObservabilityMCPServer {
     if (!dashboardId) {
       return { content: [{ type: 'text', text: 'dashboard_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/dashboard/${encodeURIComponent(dashboardId)}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/dashboard/${encodeURIComponent(dashboardId)}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get dashboard: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -634,7 +629,7 @@ export class SplunkObservabilityMCPServer {
     let url = `${this.baseUrl}/v2/dashboardgroup?limit=${limit}&offset=${offset}`;
     if (args.name) url += `&name=${encodeURIComponent(args.name as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list dashboard groups: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -647,7 +642,7 @@ export class SplunkObservabilityMCPServer {
     if (!groupId) {
       return { content: [{ type: 'text', text: 'group_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/dashboardgroup/${encodeURIComponent(groupId)}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/dashboardgroup/${encodeURIComponent(groupId)}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get dashboard group: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -661,7 +656,7 @@ export class SplunkObservabilityMCPServer {
     let url = `${this.baseUrl}/v2/chart?limit=${limit}&offset=${offset}`;
     if (args.name) url += `&name=${encodeURIComponent(args.name as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list charts: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -674,7 +669,7 @@ export class SplunkObservabilityMCPServer {
     if (!chartId) {
       return { content: [{ type: 'text', text: 'chart_id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/v2/chart/${encodeURIComponent(chartId)}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/chart/${encodeURIComponent(chartId)}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get chart: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -691,7 +686,7 @@ export class SplunkObservabilityMCPServer {
     let url = `${this.baseUrl}/v2/metrictimeseries?metric=${encodeURIComponent(metric)}&limit=${limit}`;
     if (args.query) url += `&query=${encodeURIComponent(args.query as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to search metrics: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -710,7 +705,7 @@ export class SplunkObservabilityMCPServer {
     const resolution = (args.resolution as number) ?? 60_000;
     const maxDelay = (args.maxDelay as number) ?? 0;
 
-    const response = await fetch(`${this.baseUrl}/v2/signalflow/execute`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/signalflow/execute`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ program, start, stop, resolution, maxDelay }),

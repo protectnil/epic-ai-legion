@@ -41,17 +41,19 @@
 // Rate limits: 5,000 req/hr (authenticated); 60 req/hr (unauthenticated)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GitHubConfig {
   token: string;
   baseUrl?: string;
 }
 
-export class GitHubMCPServer {
+export class GitHubMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: GitHubConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = (config.baseUrl ?? 'https://api.github.com').replace(/\/$/, '');
   }
@@ -797,14 +799,8 @@ export class GitHubMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -823,7 +819,7 @@ export class GitHubMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -843,7 +839,7 @@ export class GitHubMCPServer {
   }
 
   private async patch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.authHeaders,
       body: JSON.stringify(body),

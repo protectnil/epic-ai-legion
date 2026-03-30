@@ -22,6 +22,7 @@
 //   a Spotify Premium account.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SpotifySonalluxConfig {
   /** Spotify OAuth 2.0 access token */
@@ -30,11 +31,12 @@ interface SpotifySonalluxConfig {
   baseUrl?: string;
 }
 
-export class SpotifySonalluxMCPServer {
+export class SpotifySonalluxMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SpotifySonalluxConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://api.spotify.com/v1').replace(/\/$/, '');
   }
@@ -1372,13 +1374,6 @@ export class SpotifySonalluxMCPServer {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private pick(args: Record<string, unknown>, keys: string[]): Record<string, string> {
     const out: Record<string, string> = {};
     for (const k of keys) {
@@ -1398,7 +1393,7 @@ export class SpotifySonalluxMCPServer {
 
   private async doGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'GET',
       headers: this.authHeaders,
     });
@@ -1416,7 +1411,7 @@ export class SpotifySonalluxMCPServer {
 
   private async doPut(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'PUT',
       headers: this.authHeaders,
     });
@@ -1433,7 +1428,7 @@ export class SpotifySonalluxMCPServer {
 
   private async doDelete(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -1445,7 +1440,7 @@ export class SpotifySonalluxMCPServer {
   }
 
   private async doDeletePath(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });
@@ -1458,7 +1453,7 @@ export class SpotifySonalluxMCPServer {
 
   private async doPost(path: string, body: unknown, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'POST',
       headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1482,7 +1477,7 @@ export class SpotifySonalluxMCPServer {
   // Player POST uses query params
   private async doPlayerPost(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'POST',
       headers: this.authHeaders,
     });
@@ -1529,7 +1524,7 @@ export class SpotifySonalluxMCPServer {
   private async followPlaylist(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, boolean> = {};
     if (args.public !== undefined) body['public'] = args.public as boolean;
-    const response = await fetch(`${this.baseUrl}/playlists/${args.playlist_id}/followers`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/playlists/${args.playlist_id}/followers`, {
       method: 'PUT',
       headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1553,7 +1548,7 @@ export class SpotifySonalluxMCPServer {
     if (args.position_ms !== undefined) body['position_ms'] = args.position_ms;
 
     const qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/me/player/play${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/me/player/play${qs}`, {
       method: 'PUT',
       headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1570,7 +1565,7 @@ export class SpotifySonalluxMCPServer {
       device_ids: [args.device_ids as string],
     };
     if (args.play !== undefined) body['play'] = args.play;
-    const response = await fetch(`${this.baseUrl}/me/player`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/me/player`, {
       method: 'PUT',
       headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1599,7 +1594,7 @@ export class SpotifySonalluxMCPServer {
     if (args.public !== undefined) body['public'] = args.public;
     if (args.collaborative !== undefined) body['collaborative'] = args.collaborative;
     if (args.description !== undefined) body['description'] = args.description;
-    const response = await fetch(`${this.baseUrl}/playlists/${args.playlist_id}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/playlists/${args.playlist_id}`, {
       method: 'PUT',
       headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1629,7 +1624,7 @@ export class SpotifySonalluxMCPServer {
     if (args.insert_before !== undefined) body['insert_before'] = args.insert_before;
     if (args.range_length !== undefined) body['range_length'] = args.range_length;
     if (args.snapshot_id) body['snapshot_id'] = args.snapshot_id;
-    const response = await fetch(`${this.baseUrl}/playlists/${args.playlist_id}/tracks`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/playlists/${args.playlist_id}/tracks`, {
       method: 'PUT',
       headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1649,7 +1644,7 @@ export class SpotifySonalluxMCPServer {
       tracks: (args.uris as string).split(',').map((u: string) => ({ uri: u.trim() })),
     };
     if (args.snapshot_id) body['snapshot_id'] = args.snapshot_id;
-    const response = await fetch(`${this.baseUrl}/playlists/${args.playlist_id}/tracks`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/playlists/${args.playlist_id}/tracks`, {
       method: 'DELETE',
       headers: { ...this.authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1665,7 +1660,7 @@ export class SpotifySonalluxMCPServer {
   private async uploadPlaylistCover(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.playlist_id) return { content: [{ type: 'text', text: 'playlist_id is required' }], isError: true };
     if (!args.image_data) return { content: [{ type: 'text', text: 'image_data is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/playlists/${args.playlist_id}/images`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/playlists/${args.playlist_id}/images`, {
       method: 'PUT',
       headers: { ...this.authHeaders, 'Content-Type': 'image/jpeg' },
       body: args.image_data as string,

@@ -38,6 +38,7 @@
 //   PATCH /v1/vendors/{vendorId}
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VantaConfig {
   clientId: string;
@@ -45,7 +46,7 @@ interface VantaConfig {
   baseUrl?: string;
 }
 
-export class VantaMCPServer {
+export class VantaMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -53,6 +54,7 @@ export class VantaMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: VantaConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://api.vanta.com';
@@ -397,7 +399,7 @@ export class VantaMCPServer {
       return this.cachedToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/oauth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -425,7 +427,7 @@ export class VantaMCPServer {
   private async request(path: string, method: string, body?: unknown): Promise<ToolResult> {
     const token = await this.getToken();
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${token}`,

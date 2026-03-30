@@ -28,6 +28,7 @@
 // Rate limits: Soft max and hard max per minute per instance (exact values not published).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ChurnZeroConfig {
   instance: string;
@@ -36,11 +37,12 @@ interface ChurnZeroConfig {
   baseUrl?: string;
 }
 
-export class ChurnZeroMCPServer {
+export class ChurnZeroMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: ChurnZeroConfig) {
+    super();
     // Basic auth: base64(email:apiKey) — confirmed via app.churnzero.net/developers
     const credentials = Buffer.from(`${config.email}:${config.apiKey}`).toString('base64');
     this.authHeader = `Basic ${credentials}`;
@@ -426,12 +428,6 @@ export class ChurnZeroMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
@@ -474,7 +470,7 @@ export class ChurnZeroMCPServer {
 
   private async listAccounts(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/Account${this.buildODataParams(args)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list accounts: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -488,7 +484,7 @@ export class ChurnZeroMCPServer {
       return { content: [{ type: 'text', text: 'account_id is required' }], isError: true };
     }
     const url = `${this.baseUrl}/Account(${encodeURIComponent(account_id)})`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get account: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -508,7 +504,7 @@ export class ChurnZeroMCPServer {
     if (args.renewal_date) payload.renewalDate = args.renewal_date;
     if (args.attributes) payload.attributes = args.attributes;
 
-    const response = await fetch(`${this.baseUrl}/Account`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Account`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -533,7 +529,7 @@ export class ChurnZeroMCPServer {
     if (args.attributes) payload.attributes = args.attributes;
 
     const url = `${this.baseUrl}/Account(${encodeURIComponent(account_id)})`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -547,7 +543,7 @@ export class ChurnZeroMCPServer {
 
   private async listContacts(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/Contact${this.buildODataParams(args)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list contacts: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -561,7 +557,7 @@ export class ChurnZeroMCPServer {
       return { content: [{ type: 'text', text: 'contact_id is required' }], isError: true };
     }
     const url = `${this.baseUrl}/Contact(${encodeURIComponent(contact_id)})`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get contact: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -586,7 +582,7 @@ export class ChurnZeroMCPServer {
     if (args.title) payload.title = args.title;
     if (args.attributes) payload.attributes = args.attributes;
 
-    const response = await fetch(`${this.baseUrl}/Contact`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Contact`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -600,7 +596,7 @@ export class ChurnZeroMCPServer {
 
   private async listEvents(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/Event${this.buildODataParams(args)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list events: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -622,7 +618,7 @@ export class ChurnZeroMCPServer {
     if (args.event_date) payload.eventDate = args.event_date;
     if (args.attributes) payload.attributes = args.attributes;
 
-    const response = await fetch(`${this.baseUrl}/Event`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Event`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -636,7 +632,7 @@ export class ChurnZeroMCPServer {
 
   private async listTasks(args: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/Task${this.buildODataParams(args)}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list tasks: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -659,7 +655,7 @@ export class ChurnZeroMCPServer {
     if (args.priority) payload.priority = args.priority;
     if (args.notes) payload.notes = args.notes;
 
-    const response = await fetch(`${this.baseUrl}/Task`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Task`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -677,7 +673,7 @@ export class ChurnZeroMCPServer {
     if (args.top) params.set('$top', String(args.top));
     if (args.skip) params.set('$skip', String(args.skip));
     const url = `${this.baseUrl}/Segment?${params.toString()}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list segments: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -695,7 +691,7 @@ export class ChurnZeroMCPServer {
     if (args.skip) params.set('$skip', String(args.skip));
     const qs = params.toString() ? `?${params.toString()}` : '';
     const url = `${this.baseUrl}/Segment(${encodeURIComponent(segment_id)})/Members${qs}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get segment members: ${response.status} ${response.statusText}` }], isError: true };
     }

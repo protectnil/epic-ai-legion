@@ -16,6 +16,7 @@
 //   get_order, get_orders_next_page, acknowledge_order, cancel_order, refund_order, ship_order.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WalmartOrderConfig {
   clientId: string;
@@ -23,7 +24,7 @@ interface WalmartOrderConfig {
   baseUrl?: string;
 }
 
-export class WalmartOrderMCPServer {
+export class WalmartOrderMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -31,6 +32,7 @@ export class WalmartOrderMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: WalmartOrderConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://marketplace.walmartapis.com';
@@ -286,7 +288,7 @@ export class WalmartOrderMCPServer {
       return this.accessToken;
     }
     const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
-    const response = await fetch(`${this.baseUrl}/v3/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v3/token`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -319,19 +321,13 @@ export class WalmartOrderMCPServer {
 
   // ---- HTTP helpers ----
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async walmartGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const hdrs = await this.headers();
     const qs = params && Object.keys(params).length > 0
       ? '?' + new URLSearchParams(params).toString()
       : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, { headers: hdrs });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, { headers: hdrs });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}${body ? ' — ' + body.slice(0, 500) : ''}` }], isError: true };
@@ -342,7 +338,7 @@ export class WalmartOrderMCPServer {
 
   private async walmartPost(path: string, body: unknown): Promise<ToolResult> {
     const hdrs = await this.headers();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: hdrs,
       body: JSON.stringify(body),

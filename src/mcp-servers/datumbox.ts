@@ -17,17 +17,19 @@
 // Rate limits: Depends on plan; free tier allows limited daily calls
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DatumboxConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class DatumboxMCPServer {
+export class DatumboxMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: DatumboxConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'http://api.datumbox.com';
   }
@@ -287,7 +289,7 @@ export class DatumboxMCPServer {
     const url = `${this.baseUrl}${path}`;
     const body = new URLSearchParams({ api_key: this.apiKey, ...params });
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),

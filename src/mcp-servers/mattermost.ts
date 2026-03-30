@@ -23,17 +23,19 @@
 // Rate limits: No documented global limit; Mattermost enforces per-server rate limiting configurable by admins (default ~10 req/s)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MattermostConfig {
   token: string;
   baseUrl: string;
 }
 
-export class MattermostMCPServer {
+export class MattermostMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: MattermostConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = config.baseUrl.replace(/\/$/, '') + '/api/v4';
   }
@@ -533,16 +535,9 @@ export class MattermostMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async mmGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -554,7 +549,7 @@ export class MattermostMCPServer {
   }
 
   private async mmPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -567,7 +562,7 @@ export class MattermostMCPServer {
   }
 
   private async mmPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -580,7 +575,7 @@ export class MattermostMCPServer {
   }
 
   private async mmDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -739,7 +734,7 @@ export class MattermostMCPServer {
     if (!args.post_id || !args.emoji_name) {
       return { content: [{ type: 'text', text: 'post_id and emoji_name are required' }], isError: true };
     }
-    const meResponse = await fetch(`${this.baseUrl}/users/me`, { headers: this.headers });
+    const meResponse = await this.fetchWithRetry(`${this.baseUrl}/users/me`, { headers: this.headers });
     if (!meResponse.ok) {
       return { content: [{ type: 'text', text: `Failed to resolve user ID: ${meResponse.status}` }], isError: true };
     }

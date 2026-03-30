@@ -12,17 +12,19 @@
 // Note: Security also supports OAuth2 (authorizationCode flow), but API key header is simpler for integrations
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Signl4Config {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class Signl4MCPServer {
+export class Signl4MCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: Signl4Config) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://connect.signl4.com/api';
   }
@@ -182,11 +184,6 @@ export class Signl4MCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -195,7 +192,7 @@ export class Signl4MCPServer {
   ): Promise<ToolResult> {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     const url = `${this.baseUrl}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: this.headers,
       body: body ? JSON.stringify(body) : undefined,

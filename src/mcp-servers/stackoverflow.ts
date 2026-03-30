@@ -20,6 +20,7 @@
 //   quota_max and quota_remaining fields
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface StackOverflowConfig {
   /** Stack Exchange API key. Register at https://stackapps.com/apps/oauth/register */
@@ -33,13 +34,14 @@ interface StackOverflowConfig {
   site?: string;
 }
 
-export class StackOverflowMCPServer {
+export class StackOverflowMCPServer extends MCPAdapterBase {
   private readonly baseUrl = 'https://api.stackexchange.com/2.3';
   private readonly apiKey: string;
   private readonly accessToken?: string;
   private readonly defaultSite: string;
 
   constructor(config: StackOverflowConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.accessToken = config.accessToken;
     this.defaultSite = config.site ?? 'stackoverflow';
@@ -481,14 +483,8 @@ export class StackOverflowMCPServer {
     params.set('site', (site as string | undefined) ?? this.defaultSite);
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: URLSearchParams): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}?${params}`, { method: 'GET' });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${params}`, { method: 'GET' });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

@@ -22,17 +22,19 @@
 // Note: $search and $filter are mutually exclusive on messages/events endpoints.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MicrosoftGraphConfig {
   accessToken: string;
   baseUrl?: string;
 }
 
-export class MicrosoftGraphMCPServer {
+export class MicrosoftGraphMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: MicrosoftGraphConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl || 'https://graph.microsoft.com/v1.0').replace(/\/$/, '');
   }
@@ -58,12 +60,6 @@ export class MicrosoftGraphMCPServer {
       description: 'Access Microsoft 365 via Graph API: read and send Outlook mail, manage calendar events, list OneDrive files, search across M365 content, query contacts and presence.',
       author: 'protectnil',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   get tools(): ToolDefinition[] {
@@ -561,7 +557,7 @@ export class MicrosoftGraphMCPServer {
   }
 
   private async graphGet(url: string, headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -570,7 +566,7 @@ export class MicrosoftGraphMCPServer {
   }
 
   private async graphPost(url: string, headers: Record<string, string>, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'POST', headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -580,7 +576,7 @@ export class MicrosoftGraphMCPServer {
   }
 
   private async graphPatch(url: string, headers: Record<string, string>, body: unknown): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(url, { method: 'PATCH', headers, body: JSON.stringify(body) });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -590,7 +586,7 @@ export class MicrosoftGraphMCPServer {
   }
 
   private async graphDelete(url: string, headers: Record<string, string>): Promise<ToolResult> {
-    const response = await fetch(url, { method: 'DELETE', headers });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Graph API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -642,7 +638,7 @@ export class MicrosoftGraphMCPServer {
     if (args.bcc_recipients) {
       message.bccRecipients = (args.bcc_recipients as string[]).map((addr) => ({ emailAddress: { address: addr } }));
     }
-    const response = await fetch(`${this.baseUrl}/me/sendMail`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/me/sendMail`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ message, saveToSentItems }),
@@ -658,7 +654,7 @@ export class MicrosoftGraphMCPServer {
     const comment = args.comment as string;
     if (!messageId || !comment) return { content: [{ type: 'text', text: 'messageId and comment are required' }], isError: true };
     const action = args.replyAll ? 'replyAll' : 'reply';
-    const response = await fetch(`${this.baseUrl}/me/messages/${encodeURIComponent(messageId)}/${action}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/me/messages/${encodeURIComponent(messageId)}/${action}`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ comment }),

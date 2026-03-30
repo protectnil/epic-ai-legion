@@ -21,6 +21,7 @@
 // Rate limits: Not publicly documented; enforced server-side. Retry on 429 with Retry-After header.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LlamaIndexConfig {
   /** LlamaIndex Cloud API key (LLAMA_CLOUD_API_KEY from the LlamaIndex Cloud dashboard). */
@@ -29,11 +30,12 @@ interface LlamaIndexConfig {
   baseUrl?: string;
 }
 
-export class LlamaIndexMCPServer {
+export class LlamaIndexMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: LlamaIndexConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.cloud.llamaindex.ai').replace(/\/$/, '');
   }
@@ -365,16 +367,10 @@ export class LlamaIndexMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params?: URLSearchParams): Promise<ToolResult> {
     const qs = params?.toString();
     const url = `${this.baseUrl}${path}${qs ? `?${qs}` : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -384,7 +380,7 @@ export class LlamaIndexMCPServer {
   }
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -398,7 +394,7 @@ export class LlamaIndexMCPServer {
   }
 
   private async put(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -412,7 +408,7 @@ export class LlamaIndexMCPServer {
   }
 
   private async del(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

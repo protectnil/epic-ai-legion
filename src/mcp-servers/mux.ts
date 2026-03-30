@@ -16,6 +16,7 @@
 // Rate limits: GET: ~5 req/sec sustained; POST: ~1 req/sec sustained; Data APIs: sustained 5 req/sec with burst capacity
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MuxConfig {
   tokenId: string;
@@ -23,12 +24,13 @@ interface MuxConfig {
   baseUrl?: string;
 }
 
-export class MuxMCPServer {
+export class MuxMCPServer extends MCPAdapterBase {
   private readonly tokenId: string;
   private readonly tokenSecret: string;
   private readonly baseUrl: string;
 
   constructor(config: MuxConfig) {
+    super();
     this.tokenId = config.tokenId;
     this.tokenSecret = config.tokenSecret;
     this.baseUrl = config.baseUrl || 'https://api.mux.com';
@@ -538,16 +540,9 @@ export class MuxMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async muxGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}/${path}${qs}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}${qs}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -557,7 +552,7 @@ export class MuxMCPServer {
   }
 
   private async muxPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -571,7 +566,7 @@ export class MuxMCPServer {
   }
 
   private async muxPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -585,7 +580,7 @@ export class MuxMCPServer {
   }
 
   private async muxDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -593,7 +588,7 @@ export class MuxMCPServer {
   }
 
   private async muxPut(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${path}`, {
       method: 'PUT',
       headers: this.headers,
     });

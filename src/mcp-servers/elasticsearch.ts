@@ -21,6 +21,7 @@
 // Rate limits: Not externally documented; governed by cluster circuit breakers and thread pool capacity
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ElasticsearchConfig {
   baseUrl: string;
@@ -29,11 +30,12 @@ interface ElasticsearchConfig {
   password?: string;
 }
 
-export class ElasticsearchMCPServer {
+export class ElasticsearchMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string | null;
 
   constructor(config: ElasticsearchConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     if (config.apiKey) {
       this.authHeader = `ApiKey ${config.apiKey}`;
@@ -532,15 +534,9 @@ export class ElasticsearchMCPServer {
     return h;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async esfetch(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.getHeaders(), ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.getHeaders(), ...init });
     if (!response.ok) {
       let errBody = '';
       try { errBody = await response.text(); } catch { /* ignore */ }

@@ -19,6 +19,7 @@
 // Rate limits: Contact BulkSMS for current quota limits. Quota info available via get_profile.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BulkSMSConfig {
   /** Base64-encoded "username:password" or "token-id:token-secret" for Basic Auth */
@@ -27,11 +28,12 @@ interface BulkSMSConfig {
   baseUrl?: string;
 }
 
-export class BulkSMSMCPServer {
+export class BulkSMSMCPServer extends MCPAdapterBase {
   private readonly credentials: string;
   private readonly baseUrl: string;
 
   constructor(config: BulkSMSConfig) {
+    super();
     this.credentials = config.credentials;
     this.baseUrl = config.baseUrl ?? 'https://api.bulksms.com/v1';
   }
@@ -424,13 +426,6 @@ export class BulkSMSMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     return {
       'Authorization': `Basic ${this.credentials}`,
@@ -445,7 +440,7 @@ export class BulkSMSMCPServer {
     }
     const query = qs.toString();
     const url = `${this.baseUrl}${path}${query ? `?${query}` : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.buildHeaders() });
     if (!response.ok) {
       let errText = `API error: ${response.status} ${response.statusText}`;
       try { const e = await response.json(); errText += ` — ${JSON.stringify(e)}`; } catch { /* ignore */ }
@@ -464,7 +459,7 @@ export class BulkSMSMCPServer {
     }
     const query = qs.toString();
     const url = `${this.baseUrl}${path}${query ? `?${query}` : ''}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),
@@ -482,7 +477,7 @@ export class BulkSMSMCPServer {
 
   private async del(path: string): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { method: 'DELETE', headers: this.buildHeaders() });
+    const response = await this.fetchWithRetry(url, { method: 'DELETE', headers: this.buildHeaders() });
     if (!response.ok) {
       let errText = `API error: ${response.status} ${response.statusText}`;
       try { const e = await response.json(); errText += ` — ${JSON.stringify(e)}`; } catch { /* ignore */ }

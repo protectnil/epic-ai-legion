@@ -16,6 +16,7 @@
 // Rate limits: Contact NPROneEnterprise@npr.org for rate limit details.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NprSponsorshipConfig {
   accessToken: string;
@@ -23,11 +24,12 @@ interface NprSponsorshipConfig {
   baseUrl?: string;
 }
 
-export class NprSponsorshipMCPServer {
+export class NprSponsorshipMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: NprSponsorshipConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'https://sponsorship.api.npr.org';
   }
@@ -113,13 +115,6 @@ export class NprSponsorshipMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeaders(advertisingId?: string): Record<string, string> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.accessToken}`,
@@ -139,7 +134,7 @@ export class NprSponsorshipMCPServer {
     const qs = params.toString();
     const url = `${this.baseUrl}/v2/ads${qs ? `?${qs}` : ''}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: this.authHeaders(args.advertising_id as string | undefined),
     });
@@ -158,7 +153,7 @@ export class NprSponsorshipMCPServer {
       return { content: [{ type: 'text', text: 'tracking_data is required' }], isError: true };
     }
 
-    const response = await fetch(`${this.baseUrl}/v2/ads`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/ads`, {
       method: 'POST',
       headers: this.authHeaders(args.advertising_id as string | undefined),
       body: JSON.stringify(args.tracking_data),

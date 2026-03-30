@@ -15,17 +15,19 @@
 // Rate limits: Not published; enforced per-device. Recommend ≤60 req/min for production.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FortinetConfig {
   baseUrl: string;   // e.g. https://192.168.1.1 or https://fortigate.corp.example.com
   apiKey: string;    // FortiOS REST API token (Administrator > REST API Admin)
 }
 
-export class FortinetMCPServer {
+export class FortinetMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
   constructor(config: FortinetConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.apiKey = config.apiKey;
   }
@@ -432,7 +434,7 @@ export class FortinetMCPServer {
   }
 
   private async fortiRequest(path: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       ...options,
       headers: this.buildHeaders(),
     });

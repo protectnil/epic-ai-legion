@@ -13,6 +13,7 @@
 // Rate limits: Not publicly specified; recommended ≤ 60 req/min
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BillingoHuConfig {
   apiKey: string;
@@ -20,11 +21,12 @@ interface BillingoHuConfig {
   baseUrl?: string;
 }
 
-export class BillingoHuMCPServer {
+export class BillingoHuMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BillingoHuConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.billingo.hu/v3';
   }
@@ -504,19 +506,13 @@ export class BillingoHuMCPServer {
     return { 'X-API-KEY': this.apiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
     const init: RequestInit = { method, headers: this.headers };
     if (body && method !== 'GET' && method !== 'DELETE') {
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (response.status === 204) {
       return { content: [{ type: 'text', text: 'Success (no content)' }], isError: false };
     }
@@ -531,7 +527,7 @@ export class BillingoHuMCPServer {
 
   private async downloadPdf(path: string): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Billingo API error ${response.status}: ${errText}` }], isError: true };

@@ -18,6 +18,7 @@
 // and the full EventSubscription management API.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenBankingUKEventNotificationsConfig {
   bearerToken: string;
@@ -25,12 +26,13 @@ interface OpenBankingUKEventNotificationsConfig {
   financialId?: string;
 }
 
-export class OpenBankingUkEventNotificationsOpenapiMCPServer {
+export class OpenBankingUkEventNotificationsOpenapiMCPServer extends MCPAdapterBase {
   private readonly bearerToken: string;
   private readonly baseUrl: string;
   private readonly financialId: string;
 
   constructor(config: OpenBankingUKEventNotificationsConfig) {
+    super();
     this.bearerToken = config.bearerToken;
     this.baseUrl = config.baseUrl || 'https://openbanking.org.uk/open-banking/v3.1';
     this.financialId = config.financialId || '';
@@ -293,13 +295,6 @@ export class OpenBankingUkEventNotificationsOpenapiMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -317,7 +312,7 @@ export class OpenBankingUkEventNotificationsOpenapiMCPServer {
       headers['Content-Type'] = contentType ?? 'application/json';
     }
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined
@@ -354,7 +349,7 @@ export class OpenBankingUkEventNotificationsOpenapiMCPServer {
     };
     if (fid) headers['x-fapi-financial-id'] = fid;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers,
       body: String(args.jwtToken),

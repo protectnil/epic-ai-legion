@@ -11,17 +11,19 @@
 // Rate limits: Varies by plan. Free tier is heavily restricted.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OwlerConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class OwlerMCPServer {
+export class OwlerMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: OwlerConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.owler.com';
   }
@@ -341,13 +343,6 @@ export class OwlerMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params: Record<string, string | string[]> = {}): Promise<ToolResult> {
     const url = new URL(`${this.baseUrl}${path}`);
     for (const [key, value] of Object.entries(params)) {
@@ -357,7 +352,7 @@ export class OwlerMCPServer {
         url.searchParams.set(key, value);
       }
     }
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       headers: { user_key: this.apiKey, Accept: 'application/json' },
     });
     if (!response.ok) {

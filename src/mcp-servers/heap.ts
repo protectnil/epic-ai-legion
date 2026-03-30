@@ -21,6 +21,7 @@
 // Rate limits: Not publicly documented; Heap recommends batching events where possible
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface HeapConfig {
   appId: string;
@@ -28,12 +29,13 @@ interface HeapConfig {
   baseUrl?: string;
 }
 
-export class HeapMCPServer {
+export class HeapMCPServer extends MCPAdapterBase {
   private readonly appId: string;
   private readonly authToken: string | null;
   private readonly baseUrl: string;
 
   constructor(config: HeapConfig) {
+    super();
     this.appId = config.appId;
     this.authToken = config.authToken ?? null;
     this.baseUrl = config.baseUrl || 'https://heapanalytics.com/api';
@@ -189,19 +191,12 @@ export class HeapMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async post(endpoint: string, body: Record<string, unknown>, bearerToken?: string): Promise<ToolResult> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (bearerToken) {
       headers['Authorization'] = `Bearer ${bearerToken}`;
     }
-    const response = await fetch(`${this.baseUrl}/${endpoint}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${endpoint}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),

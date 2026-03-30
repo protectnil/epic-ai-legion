@@ -14,6 +14,7 @@
 // OpenAPI spec: https://api.apis.guru/v2/specs/codat.io/assess/1.0/openapi.json
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CodatAssessConfig {
   /** Codat API key — will be base64-encoded into the Authorization header */
@@ -21,11 +22,12 @@ interface CodatAssessConfig {
   baseUrl?: string;
 }
 
-export class CodatAssessMCPServer {
+export class CodatAssessMCPServer extends MCPAdapterBase {
   private readonly authHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: CodatAssessConfig) {
+    super();
     this.authHeader = 'Basic ' + Buffer.from(config.apiKey).toString('base64');
     this.baseUrl = config.baseUrl || 'https://api.codat.io';
   }
@@ -940,7 +942,7 @@ export class CodatAssessMCPServer {
       init.body = JSON.stringify(body);
     }
 
-    const res = await fetch(url.toString(), init);
+    const res = await this.fetchWithRetry(url.toString(), init);
     let text = await res.text();
     const MAX = 10 * 1024;
     if (text.length > MAX) {

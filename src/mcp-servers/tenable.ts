@@ -16,6 +16,7 @@
 // Rate limits: 200 req/min for most endpoints; export/bulk endpoints have separate job quotas
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TenableConfig {
   accessKey: string;
@@ -24,11 +25,12 @@ interface TenableConfig {
   baseUrl?: string;
 }
 
-export class TenableMCPServer {
+export class TenableMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiKeys: string;
 
   constructor(config: TenableConfig) {
+    super();
     this.baseUrl = (config.baseUrl ?? 'https://cloud.tenable.com').replace(/\/$/, '');
     this.apiKeys = `accessKey=${config.accessKey};secretKey=${config.secretKey}`;
   }
@@ -350,15 +352,8 @@ export class TenableMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -368,7 +363,7 @@ export class TenableMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -382,7 +377,7 @@ export class TenableMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

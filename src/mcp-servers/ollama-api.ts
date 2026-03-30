@@ -14,15 +14,17 @@
 // Rate limits: None — local process; throughput bound by hardware
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OllamaConfig {
   baseUrl?: string;
 }
 
-export class OllamaMCPServer {
+export class OllamaMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: OllamaConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'http://localhost:11434';
   }
 
@@ -304,7 +306,7 @@ export class OllamaMCPServer {
   }
 
   private async listModels(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/tags`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/tags`, {});
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -320,7 +322,7 @@ export class OllamaMCPServer {
   }
 
   private async getRunningModels(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/ps`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/ps`, {});
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -338,7 +340,7 @@ export class OllamaMCPServer {
   private async showModel(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { name: args.name };
     if (args.verbose !== undefined) body.verbose = args.verbose;
-    const response = await fetch(`${this.baseUrl}/api/show`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/show`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -360,7 +362,7 @@ export class OllamaMCPServer {
   private async pullModel(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { name: args.name, stream: false };
     if (args.insecure !== undefined) body.insecure = args.insecure;
-    const response = await fetch(`${this.baseUrl}/api/pull`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/pull`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -382,7 +384,7 @@ export class OllamaMCPServer {
   private async pushModel(args: Record<string, unknown>): Promise<ToolResult> {
     const body: Record<string, unknown> = { name: args.name, stream: false };
     if (args.insecure !== undefined) body.insecure = args.insecure;
-    const response = await fetch(`${this.baseUrl}/api/push`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/push`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -402,7 +404,7 @@ export class OllamaMCPServer {
   }
 
   private async copyModel(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/copy`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/copy`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ source: args.source, destination: args.destination }),
@@ -426,7 +428,7 @@ export class OllamaMCPServer {
   }
 
   private async deleteModel(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/delete`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/delete`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: args.name }),
@@ -450,7 +452,7 @@ export class OllamaMCPServer {
   }
 
   private async createModel(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/create`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: args.name, modelfile: args.modelfile, stream: false }),
@@ -481,7 +483,7 @@ export class OllamaMCPServer {
     if (args.options !== undefined) body.options = args.options;
     if (args.format !== undefined) body.format = args.format;
 
-    const response = await fetch(`${this.baseUrl}/api/generate`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -509,7 +511,7 @@ export class OllamaMCPServer {
     if (args.options !== undefined) body.options = args.options;
     if (args.format !== undefined) body.format = args.format;
 
-    const response = await fetch(`${this.baseUrl}/api/chat`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -529,7 +531,7 @@ export class OllamaMCPServer {
   }
 
   private async getVersion(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/version`);
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/version`, {});
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }],
@@ -550,7 +552,7 @@ export class OllamaMCPServer {
     };
     if (args.options !== undefined) body.options = args.options;
 
-    const response = await fetch(`${this.baseUrl}/api/embed`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/embed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

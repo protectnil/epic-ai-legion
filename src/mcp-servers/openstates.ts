@@ -15,6 +15,7 @@
 //   Free tier available. Rate limits not published; be conservative with pagination.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OpenStatesConfig {
   apiKey: string;
@@ -22,11 +23,12 @@ interface OpenStatesConfig {
   baseUrl?: string;
 }
 
-export class OpenStatesMCPServer {
+export class OpenStatesMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: OpenStatesConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://v3.openstates.org';
   }
@@ -443,13 +445,6 @@ export class OpenStatesMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | undefined> = {}): string {
     const qs = new URLSearchParams({ apikey: this.apiKey });
     for (const [k, v] of Object.entries(params)) {
@@ -460,7 +455,7 @@ export class OpenStatesMCPServer {
 
   private async fetchGet(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'x-api-key': this.apiKey },
     });
@@ -501,7 +496,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -518,7 +513,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -539,7 +534,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -562,7 +557,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -583,7 +578,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -602,7 +597,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -618,7 +613,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -640,7 +635,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -656,7 +651,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -679,7 +674,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -695,7 +690,7 @@ export class OpenStatesMCPServer {
     const finalUrl = includes.length > 0
       ? url + '&' + includes.map(i => `include=${encodeURIComponent(i)}`).join('&')
       : url;
-    const response = await fetch(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
+    const response = await this.fetchWithRetry(finalUrl, { method: 'GET', headers: { 'x-api-key': this.apiKey } });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

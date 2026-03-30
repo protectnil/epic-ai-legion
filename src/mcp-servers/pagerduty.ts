@@ -29,6 +29,7 @@
 // Rate limits: 960 requests/min per API token (per PagerDuty documentation)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface PagerDutyConfig {
@@ -37,12 +38,13 @@ interface PagerDutyConfig {
   fromEmail?: string;  // Required by PagerDuty for certain write operations (From: header)
 }
 
-export class PagerDutyMCPServer {
+export class PagerDutyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly fromEmail: string;
 
   constructor(config: PagerDutyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.pagerduty.com';
     this.fromEmail = config.fromEmail || '';
@@ -584,7 +586,7 @@ export class PagerDutyMCPServer {
   }
 
   private async fetchJson(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       ...options,
       headers: { ...this.authHeaders, ...(options.headers as Record<string, string> || {}) },
     });

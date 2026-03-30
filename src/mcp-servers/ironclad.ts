@@ -30,6 +30,7 @@
 // Exports: Submit, Check Status, Download (Security & Data Pro add-on required)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface IroncladConfig {
   accessToken: string;
@@ -42,11 +43,12 @@ interface IroncladConfig {
   baseUrl?: string;
 }
 
-export class IroncladMCPServer {
+export class IroncladMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: IroncladConfig) {
+    super();
     this.accessToken = config.accessToken;
     if (config.baseUrl) {
       this.baseUrl = config.baseUrl;
@@ -352,14 +354,8 @@ export class IroncladMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers(), ...options });
     if (!response.ok) {
       return {
         content: [{ type: 'text', text: `Ironclad API error: ${response.status} ${response.statusText}` }],

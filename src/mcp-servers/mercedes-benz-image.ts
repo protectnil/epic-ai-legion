@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented; subject to developer plan tier
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MercedesBenzImageConfig {
   apiKey: string;
@@ -20,11 +21,12 @@ interface MercedesBenzImageConfig {
   baseUrl?: string;
 }
 
-export class MercedesBenzImageMCPServer {
+export class MercedesBenzImageMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: MercedesBenzImageConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.mercedes-benz.com/image_tryout/v1/vehicles';
   }
@@ -201,13 +203,6 @@ export class MercedesBenzImageMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | undefined> = {}): string {
     const qs = new URLSearchParams({ apikey: this.apiKey });
     for (const [k, v] of Object.entries(params)) {
@@ -217,7 +212,7 @@ export class MercedesBenzImageMCPServer {
   }
 
   private async fetch(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
-    const response = await fetch(this.buildUrl(path, params));
+    const response = await this.fetchWithRetry(this.buildUrl(path, params), {});
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

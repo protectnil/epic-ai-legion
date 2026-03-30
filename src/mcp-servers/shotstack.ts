@@ -16,6 +16,7 @@
 // Rate limits: Free tier limited. Production plans from $49/mo. Enterprise: contact Shotstack.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ShotstackConfig {
   /** Shotstack API key */
@@ -26,12 +27,13 @@ interface ShotstackConfig {
   baseUrl?: string;
 }
 
-export class ShotstackMCPServer {
+export class ShotstackMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly environment: string;
   private readonly baseUrl: string;
 
   constructor(config: ShotstackConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.environment = config.environment ?? 'stage';
     this.baseUrl = config.baseUrl ?? 'https://api.shotstack.io';
@@ -217,13 +219,6 @@ export class ShotstackMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private apiUrl(path: string): string {
     return `${this.baseUrl}/${this.environment}${path}`;
   }
@@ -239,7 +234,7 @@ export class ShotstackMCPServer {
     }
     const qsStr = qs.toString();
     const url = this.apiUrl(path) + (qsStr ? `?${qsStr}` : '');
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { ...this.authHeaders(), Accept: 'application/json' },
     });
@@ -253,7 +248,7 @@ export class ShotstackMCPServer {
 
   private async post(path: string, body: unknown): Promise<ToolResult> {
     const url = this.apiUrl(path);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { ...this.authHeaders(), 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body),
@@ -268,7 +263,7 @@ export class ShotstackMCPServer {
 
   private async del(path: string): Promise<ToolResult> {
     const url = this.apiUrl(path);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'DELETE',
       headers: { ...this.authHeaders(), Accept: 'application/json' },
     });

@@ -38,6 +38,7 @@
 // Rate limits: Not publicly documented; governed by instance configuration (default ~10 req/s)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LookerConfig {
   /** Looker API client ID from the Admin > API Keys panel. */
@@ -52,7 +53,7 @@ interface LookerConfig {
   baseUrl: string;
 }
 
-export class LookerMCPServer {
+export class LookerMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -60,6 +61,7 @@ export class LookerMCPServer {
   private tokenExpiresAt: number = 0;
 
   constructor(config: LookerConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -366,7 +368,7 @@ export class LookerMCPServer {
     if (this.accessToken && now < this.tokenExpiresAt - 60_000) {
       return this.accessToken;
     }
-    const response = await fetch(`${this.baseUrl}/api/4.0/login`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/4.0/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -391,16 +393,9 @@ export class LookerMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string): Promise<unknown> {
     const h = await this.headers();
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: h });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: h });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} ${response.statusText} — ${path}`);
     }
@@ -409,7 +404,7 @@ export class LookerMCPServer {
 
   private async post(path: string, body: unknown): Promise<unknown> {
     const h = await this.headers();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: h,
       body: JSON.stringify(body),
@@ -422,7 +417,7 @@ export class LookerMCPServer {
 
   private async patch(path: string, body: unknown): Promise<unknown> {
     const h = await this.headers();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: h,
       body: JSON.stringify(body),

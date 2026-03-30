@@ -18,17 +18,19 @@
 // Rate limits: Not publicly documented; Fly.io enforces per-org rate limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface FlyioConfig {
   token: string;
   baseUrl?: string;
 }
 
-export class FlyioMCPServer {
+export class FlyioMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: FlyioConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = config.baseUrl || 'https://api.machines.dev';
   }
@@ -540,7 +542,7 @@ export class FlyioMCPServer {
   }
 
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { ...options, headers: { ...this.headers(), ...(options.headers as Record<string, string> ?? {}) } });
+    const response = await this.fetchWithRetry(url, { ...options, headers: { ...this.headers(), ...(options.headers as Record<string, string> ?? {}) } });
 
     if (!response.ok) {
       let detail = '';

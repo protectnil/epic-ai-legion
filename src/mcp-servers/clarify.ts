@@ -18,6 +18,7 @@
 // Rate limits: Not publicly documented; contact support@clarify.io for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClarifyConfig {
   apiKey: string;
@@ -25,11 +26,12 @@ interface ClarifyConfig {
   baseUrl?: string;
 }
 
-export class ClarifyMCPServer {
+export class ClarifyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ClarifyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.clarify.io';
   }
@@ -582,13 +584,6 @@ export class ClarifyMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private authHeader(): string {
     return 'Basic ' + Buffer.from(`${this.apiKey}:`).toString('base64');
   }
@@ -620,7 +615,7 @@ export class ClarifyMCPServer {
       fetchBody = form.toString();
     }
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: fetchBody,

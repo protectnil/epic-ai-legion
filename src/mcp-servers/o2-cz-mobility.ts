@@ -18,15 +18,17 @@
 // residential units in the Czech Republic, based on mobile station movement in the O2 network.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface O2CzMobilityConfig {
   baseUrl?: string;
 }
 
-export class O2CzMobilityMCPServer {
+export class O2CzMobilityMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: O2CzMobilityConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://developer.o2.cz/mobility/sandbox/api';
   }
 
@@ -110,15 +112,8 @@ export class O2CzMobilityMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });

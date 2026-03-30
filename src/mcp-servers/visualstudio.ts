@@ -18,6 +18,7 @@
 // Rate limits: Standard Azure service limits apply; contact Microsoft for enterprise quotas.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VisualStudioConfig {
   accessToken: string;
@@ -31,11 +32,12 @@ function truncate(text: string): string {
     : text;
 }
 
-export class VisualStudioMCPServer {
+export class VisualStudioMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: VisualStudioConfig) {
+    super();
     this.token = config.accessToken;
     this.baseUrl = (config.baseUrl ?? 'https://online.visualstudio.com').replace(/\/$/, '');
   }
@@ -317,7 +319,7 @@ export class VisualStudioMCPServer {
     if (body !== undefined) {
       options.body = JSON.stringify(body);
     }
-    const response = await fetch(url, options);
+    const response = await this.fetchWithRetry(url, options);
     if (response.status === 204) {
       return { content: [{ type: 'text', text: 'Success (no content)' }], isError: false };
     }

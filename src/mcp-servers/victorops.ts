@@ -14,18 +14,20 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VictorOpsConfig {
   apiId: string;
   apiKey: string;
 }
 
-export class VictorOpsMCPServer {
+export class VictorOpsMCPServer extends MCPAdapterBase {
   private readonly apiId: string;
   private readonly apiKey: string;
   private readonly baseUrl = 'https://api.victorops.com';
 
   constructor(config: VictorOpsConfig) {
+    super();
     this.apiId = config.apiId;
     this.apiKey = config.apiKey;
   }
@@ -294,13 +296,9 @@ export class VictorOpsMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
 
   private async fetchJSON(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     let data: unknown;
     try { data = await response.json(); } catch { data = { status: response.status, statusText: response.statusText }; }
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: !response.ok };

@@ -38,6 +38,7 @@
 // Rate limits: 10 req/s per token (burst allowed); rate limit headers returned on each response.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ContentfulConfig {
   accessToken: string;
@@ -46,13 +47,14 @@ interface ContentfulConfig {
   baseUrl?: string;
 }
 
-export class ContentfulMCPServer {
+export class ContentfulMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly spaceId: string;
   private readonly environmentId: string;
   private readonly baseUrl: string;
 
   constructor(config: ContentfulConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.spaceId = config.spaceId ?? '';
     this.environmentId = config.environmentId ?? 'master';
@@ -602,17 +604,11 @@ export class ContentfulMCPServer {
     return (args.environment_id as string) || this.environmentId;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   private async cmaGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const body = await response.text();
       return { content: [{ type: 'text', text: `API error ${response.status}: ${body}` }], isError: true };
@@ -622,7 +618,7 @@ export class ContentfulMCPServer {
   }
 
   private async cmaPost(path: string, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { ...this.headers, ...extraHeaders },
       body: JSON.stringify(body),
@@ -636,7 +632,7 @@ export class ContentfulMCPServer {
   }
 
   private async cmaPut(path: string, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: { ...this.headers, ...extraHeaders },
       body: JSON.stringify(body),
@@ -650,7 +646,7 @@ export class ContentfulMCPServer {
   }
 
   private async cmaDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

@@ -16,17 +16,19 @@
 // Rate limits: See portfoliooptimizer.io pricing — free tier included
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PortfolioOptimizerConfig {
   apiKey?: string;
   baseUrl?: string;
 }
 
-export class PortfolioOptimizerMCPServer {
+export class PortfolioOptimizerMCPServer extends MCPAdapterBase {
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: PortfolioOptimizerConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.portfoliooptimizer.io/v1';
   }
@@ -1181,13 +1183,6 @@ export class PortfolioOptimizerMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async postJson(path: string, body: Record<string, unknown> | undefined): Promise<ToolResult> {
     if (!body || typeof body !== 'object') {
       return { content: [{ type: 'text', text: 'body object is required' }], isError: true };
@@ -1199,7 +1194,7 @@ export class PortfolioOptimizerMCPServer {
     };
     if (this.apiKey) headers['X-API-Key'] = this.apiKey;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),

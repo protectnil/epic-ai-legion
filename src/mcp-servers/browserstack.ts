@@ -28,6 +28,7 @@
 //   Automate APIs — not explicitly documented; apply same 90 req/s guidance.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BrowserStackConfig {
   username: string;
@@ -36,13 +37,14 @@ interface BrowserStackConfig {
   appAutomateBaseUrl?: string;
 }
 
-export class BrowserStackMCPServer {
+export class BrowserStackMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly accessKey: string;
   private readonly automateBaseUrl: string;
   private readonly appAutomateBaseUrl: string;
 
   constructor(config: BrowserStackConfig) {
+    super();
     this.username = config.username;
     this.accessKey = config.accessKey;
     this.automateBaseUrl = config.automateBaseUrl || 'https://api.browserstack.com';
@@ -412,15 +414,8 @@ export class BrowserStackMCPServer {
     return `Basic ${btoa(`${this.username}:${this.accessKey}`)}`;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async bsGet(url: string): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: this.authHeader,
@@ -435,7 +430,7 @@ export class BrowserStackMCPServer {
   }
 
   private async bsPut(url: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: {
         Authorization: this.authHeader,
@@ -451,7 +446,7 @@ export class BrowserStackMCPServer {
   }
 
   private async bsDelete(url: string): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'DELETE',
       headers: {
         Authorization: this.authHeader,

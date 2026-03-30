@@ -19,6 +19,7 @@
 // Rate limits: 5 req/s, 10,000 req/day; response volume 50 MB/min, 5 GB/day (Eikon/RDP tier)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RefinitivConfig {
   clientId: string;
@@ -26,7 +27,7 @@ interface RefinitivConfig {
   baseUrl?: string;
 }
 
-export class RefinitivMCPServer {
+export class RefinitivMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -34,6 +35,7 @@ export class RefinitivMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: RefinitivConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl || 'https://api.refinitiv.com';
@@ -236,7 +238,7 @@ export class RefinitivMCPServer {
     const now = Date.now();
     if (this.bearerToken && this.tokenExpiry > now) return this.bearerToken;
 
-    const response = await fetch(`${this.baseUrl}/auth/oauth2/v2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/auth/oauth2/v2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -255,17 +257,10 @@ export class RefinitivMCPServer {
     return this.bearerToken;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async get(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const token = await this.getOrRefreshToken();
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -277,7 +272,6 @@ export class RefinitivMCPServer {
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
-
 
   private async getPricingSnapshot(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.universe) return { content: [{ type: 'text', text: 'universe is required' }], isError: true };

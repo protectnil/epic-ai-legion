@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented. Contact support@netlicensing.com for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NetLicensingConfig {
   username: string;
@@ -23,12 +24,13 @@ interface NetLicensingConfig {
   baseUrl?: string;
 }
 
-export class NetlicensingMCPServer {
+export class NetlicensingMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
 
   constructor(config: NetLicensingConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl ?? 'https://go.netlicensing.io/core/v2/rest';
@@ -426,13 +428,6 @@ export class NetlicensingMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private headers(): Record<string, string> {
     const credentials = Buffer.from(`${this.username}:${this.password}`).toString('base64');
     return {
@@ -466,7 +461,7 @@ export class NetlicensingMCPServer {
       }
       init.body = form.toString();
     }
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (response.status === 204) return { content: [{ type: 'text', text: 'Success (no content)' }], isError: false };
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

@@ -15,6 +15,7 @@
 // Rate limits: None published; governed by Keycloak server resources.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface KeycloakConfig {
   /** Bearer access token with admin privileges */
@@ -27,11 +28,12 @@ interface KeycloakConfig {
   baseUrl?: string;
 }
 
-export class KeycloakMCPServer {
+export class KeycloakMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: KeycloakConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl ?? 'http://keycloak.local';
   }
@@ -521,17 +523,10 @@ export class KeycloakMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private async request(method: string, path: string, body?: unknown): Promise<ToolResult> {
     const options: RequestInit = { method, headers: this.headers };
     if (body !== undefined) options.body = JSON.stringify(body);
-    const response = await fetch(`${this.baseUrl}${path}`, options);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, options);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

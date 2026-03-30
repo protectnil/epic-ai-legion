@@ -14,6 +14,7 @@
 // Sandbox: https://sandbox-api.va.gov/services/veteran_confirmation/v0
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VAConfirmationConfig {
   apiKey: string;
@@ -21,11 +22,12 @@ interface VAConfirmationConfig {
   baseUrl?: string;
 }
 
-export class VAConfirmationMCPServer {
+export class VAConfirmationMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: VAConfirmationConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.va.gov/services/veteran_confirmation/v0';
   }
@@ -103,13 +105,6 @@ export class VAConfirmationMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async getVeteranStatus(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.ssn) return { content: [{ type: 'text', text: 'ssn is required' }], isError: true };
     if (!args.first_name) return { content: [{ type: 'text', text: 'first_name is required' }], isError: true };
@@ -126,7 +121,7 @@ export class VAConfirmationMCPServer {
     if (args.gender !== undefined) body.gender = args.gender;
 
     const url = `${this.baseUrl}/status`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         apikey: this.apiKey,

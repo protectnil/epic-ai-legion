@@ -17,6 +17,7 @@
 // Rate limits: Varies by subscription tier. Check /subscription for current limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SemantriaConfig {
   consumerKey: string;
@@ -27,13 +28,14 @@ interface SemantriaConfig {
   baseUrl?: string;
 }
 
-export class SemantriaMCPServer {
+export class SemantriaMCPServer extends MCPAdapterBase {
   private readonly consumerKey: string;
   private readonly consumerSecret: string;
   private readonly configId?: string;
   private readonly baseUrl: string;
 
   constructor(config: SemantriaConfig) {
+    super();
     this.consumerKey = config.consumerKey;
     this.consumerSecret = config.consumerSecret;
     this.configId = config.configId;
@@ -265,13 +267,6 @@ export class SemantriaMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, configId?: string): string {
     const qs = new URLSearchParams({
       consumer_key: this.consumerKey,
@@ -284,7 +279,7 @@ export class SemantriaMCPServer {
 
   private async fetchGet(path: string, configId?: string): Promise<ToolResult> {
     const url = this.buildUrl(path, configId);
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -295,7 +290,7 @@ export class SemantriaMCPServer {
 
   private async fetchPost(path: string, body: unknown, configId?: string): Promise<ToolResult> {
     const url = this.buildUrl(path, configId);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

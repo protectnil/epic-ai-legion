@@ -17,17 +17,19 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface Channel4Config {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class Channel4MCPServer {
+export class Channel4MCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: Channel4Config) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://channel4.com/pmlsd';
   }
@@ -301,7 +303,7 @@ export class Channel4MCPServer {
       Accept: 'application/atom+xml, application/xml, text/xml',
     };
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);

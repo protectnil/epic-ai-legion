@@ -10,6 +10,7 @@
 // Docs: https://dev.na.bambora.com/docs/references/payment_APIs/
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BeanstreamConfig {
   merchantId: string;
@@ -17,12 +18,13 @@ interface BeanstreamConfig {
   baseUrl?: string;
 }
 
-export class BeanstreamMCPServer {
+export class BeanstreamMCPServer extends MCPAdapterBase {
   private readonly merchantId: string;
   private readonly apiPasscode: string;
   private readonly baseUrl: string;
 
   constructor(config: BeanstreamConfig) {
+    super();
     this.merchantId = config.merchantId;
     this.apiPasscode = config.apiPasscode;
     this.baseUrl = config.baseUrl || 'https://www.beanstream.com/api/v1';
@@ -315,7 +317,7 @@ export class BeanstreamMCPServer {
     const options: RequestInit = { method, headers: this.buildHeaders() };
     if (body !== undefined) options.body = JSON.stringify(body);
 
-    const response = await fetch(url, options);
+    const response = await this.fetchWithRetry(url, options);
 
     if (!response.ok) {
       let detail = '';

@@ -13,6 +13,7 @@
 // Rate limits: Depends on plan; free tier has hourly limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BigDataCloudConfig {
   /** API key from BigDataCloud dashboard (optional for free endpoints) */
@@ -22,11 +23,12 @@ interface BigDataCloudConfig {
 
 const TRUNCATE = 10 * 1024;
 
-export class BigdatacloudMCPServer {
+export class BigdatacloudMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: BigDataCloudConfig = {}) {
+    super();
     this.apiKey = config.apiKey || '';
     this.baseUrl = (config.baseUrl || 'https://api.bigdatacloud.net').replace(/\/$/, '');
   }
@@ -96,7 +98,7 @@ export class BigdatacloudMCPServer {
 
   private async _fetch(path: string): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url);
+    const res = await this.fetchWithRetry(url, {});
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       throw new Error(`BigDataCloud API ${res.status}: ${body.slice(0, 200)}`);

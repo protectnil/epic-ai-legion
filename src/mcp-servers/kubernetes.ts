@@ -20,6 +20,7 @@
 // Rate limits: Determined by kube-apiserver configuration (default: 400 req/s burst, 400 req/s steady state)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface KubernetesConfig {
   api_server: string;
@@ -27,11 +28,12 @@ interface KubernetesConfig {
   skip_tls_verify?: boolean;
 }
 
-export class KubernetesMCPServer {
+export class KubernetesMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly token: string;
 
   constructor(config: KubernetesConfig) {
+    super();
     this.token = config.token;
     // Accept api_server with or without scheme
     this.baseUrl = config.api_server.startsWith('http')
@@ -486,14 +488,8 @@ export class KubernetesMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchResource(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
 
     let text: string;
     const contentType = response.headers.get('content-type') ?? '';
@@ -560,7 +556,7 @@ export class KubernetesMCPServer {
 
     const headers = { ...this.headers, 'Accept': 'text/plain, application/json' };
     const url = `${this.baseUrl}/api/v1/namespaces/${this.ns(args)}/pods/${encodeURIComponent(args.name as string)}/log?${params}`;
-    const response = await fetch(url, { headers });
+    const response = await this.fetchWithRetry(url, { headers });
     const text = await response.text();
     return {
       content: [{ type: 'text', text: this.truncate(text) }],
@@ -583,7 +579,7 @@ export class KubernetesMCPServer {
     const patch = { spec: { replicas: args.replicas as number } };
     const headers = { ...this.headers, 'Content-Type': 'application/merge-patch+json' };
     const url = `${this.baseUrl}/apis/apps/v1/namespaces/${this.ns(args)}/deployments/${encodeURIComponent(args.name as string)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(patch),
@@ -611,7 +607,7 @@ export class KubernetesMCPServer {
     // Request only metadata to avoid returning secret values
     params.set('fieldManager', 'epic-ai');
     const url = `${this.baseUrl}/api/v1/namespaces/${this.ns(args)}/secrets?${params}`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     let data: unknown;
     try {
       const raw = await response.json() as { items?: Array<Record<string, unknown>> };

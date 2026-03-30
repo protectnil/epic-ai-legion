@@ -17,6 +17,7 @@
 // Rate limits: Varies by API product; Checkout ~150 req/s; Management ~10 req/s per endpoint
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AdyenConfig {
   apiKey: string;
@@ -40,13 +41,14 @@ interface AdyenConfig {
   disputesUrl?: string;
 }
 
-export class AdyenMCPServer {
+export class AdyenMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly merchantAccount: string;
   private readonly baseUrl: string;
   private readonly disputesUrl: string;
 
   constructor(config: AdyenConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.merchantAccount = config.merchantAccount;
     this.baseUrl = config.baseUrl || 'https://checkout-test.adyen.com/v71';
@@ -444,15 +446,8 @@ export class AdyenMCPServer {
     return { 'X-API-Key': this.apiKey, 'Content-Type': 'application/json' };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private async postCheckout(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.checkoutHeaders,
       body: JSON.stringify(body),
@@ -467,7 +462,7 @@ export class AdyenMCPServer {
   }
 
   private async getCheckout(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.checkoutHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.checkoutHeaders });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `Adyen API error ${response.status}: ${errText}` }], isError: true };
@@ -478,7 +473,7 @@ export class AdyenMCPServer {
   }
 
   private async patchCheckout(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.checkoutHeaders,
       body: JSON.stringify(body),
@@ -619,7 +614,7 @@ export class AdyenMCPServer {
     if (args.disputeStatus) params.set('disputeStatus', args.disputeStatus as string);
     if (args.from) params.set('from', args.from as string);
     if (args.to) params.set('to', args.to as string);
-    const response = await fetch(`${this.disputesUrl}/retrieveApplicableDefenseReasons?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.disputesUrl}/retrieveApplicableDefenseReasons?${params.toString()}`, {
       method: 'GET',
       headers: { 'X-API-Key': this.apiKey, 'Content-Type': 'application/json' },
     });
@@ -639,7 +634,7 @@ export class AdyenMCPServer {
       merchantAccountCode: this.merchantAccount,
       pspReference: pspRef,
     });
-    const response = await fetch(`${this.disputesUrl}/retrieveApplicableDefenseReasons?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.disputesUrl}/retrieveApplicableDefenseReasons?${params.toString()}`, {
       method: 'GET',
       headers: { 'X-API-Key': this.apiKey, 'Content-Type': 'application/json' },
     });
@@ -663,7 +658,7 @@ export class AdyenMCPServer {
       pspReference: pspRef,
       defenseReasonCode,
     };
-    const response = await fetch(`${this.disputesUrl}/defendDispute`, {
+    const response = await this.fetchWithRetry(`${this.disputesUrl}/defendDispute`, {
       method: 'POST',
       headers: { 'X-API-Key': this.apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

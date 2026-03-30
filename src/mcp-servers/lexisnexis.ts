@@ -23,6 +23,7 @@
 //   Academic/research tiers impose additional per-institution query limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LexisNexisConfig {
   /** OAuth2 client ID — obtained from the LexisNexis Developer Portal onboarding. */
@@ -36,7 +37,7 @@ interface LexisNexisConfig {
   baseUrl: string;
 }
 
-export class LexisNexisMCPServer {
+export class LexisNexisMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -45,6 +46,7 @@ export class LexisNexisMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: LexisNexisConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -280,7 +282,7 @@ export class LexisNexisMCPServer {
     if (this.bearerToken && this.tokenExpiry > now) {
       return this.bearerToken;
     }
-    const response = await fetch(`${this.baseUrl}/oauth2/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${this.clientId}:${this.clientSecret}`)}`,
@@ -306,15 +308,9 @@ export class LexisNexisMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async postSearch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -329,7 +325,7 @@ export class LexisNexisMCPServer {
 
   private async getDoc(path: string): Promise<ToolResult> {
     const headers = await this.authHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

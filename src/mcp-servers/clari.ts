@@ -17,6 +17,7 @@
 // Rate limits (Copilot): 10 req/sec burst, 100,000 req/week quota. Platform: not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClariConfig {
   apiKey: string;
@@ -32,13 +33,14 @@ interface ClariConfig {
   copilotApiPassword?: string;
 }
 
-export class ClariMCPServer {
+export class ClariMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly copilotBaseUrl: string;
   private readonly copilotApiPassword: string;
 
   constructor(config: ClariConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.clari.com/v4';
     this.copilotBaseUrl = config.copilotBaseUrl || 'https://api.copilot.clari.com';
@@ -269,12 +271,6 @@ export class ClariMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
@@ -319,7 +315,7 @@ export class ClariMCPServer {
     if (typeof args.includeHistorical === 'boolean') body.includeHistorical = args.includeHistorical;
     if (args.exportFormat) body.exportFormat = args.exportFormat;
 
-    const response = await fetch(`${this.baseUrl}/export/forecast/${encodeURIComponent(forecastId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/export/forecast/${encodeURIComponent(forecastId)}`, {
       method: 'POST',
       headers: this.platformHeaders,
       body: JSON.stringify(body),
@@ -336,7 +332,7 @@ export class ClariMCPServer {
     if (!jobId) {
       return { content: [{ type: 'text', text: 'jobId is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/export/jobs/${encodeURIComponent(jobId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/export/jobs/${encodeURIComponent(jobId)}`, {
       headers: this.platformHeaders,
     });
     if (!response.ok) {
@@ -350,7 +346,7 @@ export class ClariMCPServer {
     const params = new URLSearchParams();
     if (args.status) params.set('status', args.status as string);
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}/export/jobs${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/export/jobs${qs}`, {
       headers: this.platformHeaders,
     });
     if (!response.ok) {
@@ -368,7 +364,7 @@ export class ClariMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
     if (args.offset) params.set('offset', String(args.offset));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.copilotBaseUrl}/v2/calls${qs}`, {
+    const response = await this.fetchWithRetry(`${this.copilotBaseUrl}/v2/calls${qs}`, {
       headers: this.copilotHeaders,
     });
     if (!response.ok) {
@@ -383,7 +379,7 @@ export class ClariMCPServer {
     if (!callId) {
       return { content: [{ type: 'text', text: 'callId is required' }], isError: true };
     }
-    const response = await fetch(`${this.copilotBaseUrl}/call-details?id=${encodeURIComponent(callId)}`, {
+    const response = await this.fetchWithRetry(`${this.copilotBaseUrl}/call-details?id=${encodeURIComponent(callId)}`, {
       headers: this.copilotHeaders,
     });
     if (!response.ok) {
@@ -402,7 +398,7 @@ export class ClariMCPServer {
     if (args.fromDate) params.set('fromDate', args.fromDate as string);
     if (args.toDate) params.set('toDate', args.toDate as string);
     if (args.limit) params.set('limit', String(args.limit));
-    const response = await fetch(`${this.copilotBaseUrl}/v2/calls/search?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.copilotBaseUrl}/v2/calls/search?${params.toString()}`, {
       headers: this.copilotHeaders,
     });
     if (!response.ok) {
@@ -418,7 +414,7 @@ export class ClariMCPServer {
     if (args.toDate) params.set('toDate', args.toDate as string);
     if (args.userId) params.set('userId', args.userId as string);
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.copilotBaseUrl}/v2/topics${qs}`, {
+    const response = await this.fetchWithRetry(`${this.copilotBaseUrl}/v2/topics${qs}`, {
       headers: this.copilotHeaders,
     });
     if (!response.ok) {
@@ -433,7 +429,7 @@ export class ClariMCPServer {
     if (!callId) {
       return { content: [{ type: 'text', text: 'callId is required' }], isError: true };
     }
-    const response = await fetch(`${this.copilotBaseUrl}/v2/calls/${encodeURIComponent(callId)}/scorecards`, {
+    const response = await this.fetchWithRetry(`${this.copilotBaseUrl}/v2/calls/${encodeURIComponent(callId)}/scorecards`, {
       headers: this.copilotHeaders,
     });
     if (!response.ok) {
@@ -456,7 +452,7 @@ export class ClariMCPServer {
     if (args.participants) body.participants = args.participants;
     if (args.crmObjectId) body.crmObjectId = args.crmObjectId;
 
-    const response = await fetch(`${this.copilotBaseUrl}/create-call`, {
+    const response = await this.fetchWithRetry(`${this.copilotBaseUrl}/create-call`, {
       method: 'POST',
       headers: this.copilotHeaders,
       body: JSON.stringify(body),

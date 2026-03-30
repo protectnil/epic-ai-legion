@@ -15,6 +15,7 @@
 // Rate limits: 600 requests/minute per token (documented in API response headers)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SalesloftConfig {
   accessToken: string;
@@ -22,11 +23,12 @@ interface SalesloftConfig {
   baseUrl?: string;
 }
 
-export class SalesloftMCPServer {
+export class SalesloftMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SalesloftConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl || 'https://api.salesloft.com').replace(/\/$/, '') + '/v2';
   }
@@ -635,14 +637,8 @@ export class SalesloftMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, init?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...init });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...init });
     if (!response.ok) {
       let detail: unknown;
       try { detail = await response.json(); } catch { detail = await response.text(); }

@@ -26,6 +26,7 @@
 // Rate limits: Varies by endpoint; generally 1,000 req/min per token on Enterprise plans
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface SentinelOneConfig {
   apiToken: string;
@@ -33,11 +34,12 @@ interface SentinelOneConfig {
   baseUrl?: string;
 }
 
-export class SentinelOneMCPServer {
+export class SentinelOneMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: SentinelOneConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || `https://${config.instance}.sentinelone.net/web/api/v2.1`;
   }
@@ -510,15 +512,8 @@ export class SentinelOneMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<unknown> {
-    const response = await fetch(url, { ...options, headers: this.headers() });
+    const response = await this.fetchWithRetry(url, { ...options, headers: this.headers() });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       throw new Error(`SentinelOne API error: ${response.status} ${response.statusText}${body ? ` — ${body.slice(0, 200)}` : ''}`);

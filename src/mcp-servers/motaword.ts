@@ -16,6 +16,7 @@
 // Rate limits: Varies by plan. Contact MotaWord for commercial rate limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MotaWordConfig {
   /** OAuth2 client ID from MotaWord developer dashboard */
@@ -31,13 +32,14 @@ interface TokenCache {
   expiresAt: number;
 }
 
-export class MotaWordMCPServer {
+export class MotaWordMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
   private tokenCache: TokenCache | null = null;
 
   constructor(config: MotaWordConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = (config.baseUrl ?? 'https://api.motaword.com').replace(/\/$/, '');
@@ -353,7 +355,7 @@ export class MotaWordMCPServer {
       return this.tokenCache.accessToken;
     }
     const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
-    const response = await fetch(`${this.baseUrl}/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/token`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${credentials}`,
@@ -371,13 +373,6 @@ export class MotaWordMCPServer {
     return data.access_token;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async request(
     method: string,
     path: string,
@@ -393,7 +388,7 @@ export class MotaWordMCPServer {
       headers['Content-Type'] = 'application/json';
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(`${this.baseUrl}${path}`, init);
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, init);
     if (response.status === 204) {
       return { content: [{ type: 'text', text: '{"success":true}' }], isError: false };
     }

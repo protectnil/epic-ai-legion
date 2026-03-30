@@ -10,6 +10,7 @@
 // Docs: https://docs.ix-api.net/
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface IXAPIConfig {
   /**
@@ -24,11 +25,12 @@ interface IXAPIConfig {
   accessToken?: string;
 }
 
-export class IXAPIMCPServer {
+export class IXAPIMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private accessToken: string;
 
   constructor(config: IXAPIConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.accessToken = config.accessToken || '';
   }
@@ -593,11 +595,6 @@ export class IXAPIMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000 ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]` : text;
-  }
-
   private buildListUrl(path: string, args: Record<string, unknown>, extraFilters: string[]): string {
     const params: string[] = [];
     if (args.id) params.push(`id=${encodeURIComponent(args.id as string)}`);
@@ -611,14 +608,14 @@ export class IXAPIMCPServer {
   }
 
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     if (response.status === 204) return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }], isError: false };
     const data = await response.json();
@@ -626,14 +623,14 @@ export class IXAPIMCPServer {
   }
 
   private async apiPatch(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'PATCH', headers: this.headers, body: JSON.stringify(body) });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'PATCH', headers: this.headers, body: JSON.stringify(body) });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     return { content: [{ type: 'text', text: JSON.stringify({ success: true }) }], isError: false };
   }
@@ -641,7 +638,7 @@ export class IXAPIMCPServer {
   private async authToken(args: Record<string, unknown>): Promise<ToolResult> {
     const { username, password } = args;
     if (!username || !password) return { content: [{ type: 'text', text: 'username and password are required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/auth/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/auth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ username, password }),

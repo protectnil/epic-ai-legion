@@ -36,17 +36,19 @@
 // Rate limits: Not officially documented; aggressive polling may trigger 429 responses.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DockerHubConfig {
   token: string;
   baseUrl?: string;
 }
 
-export class DockerHubMCPServer {
+export class DockerHubMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: DockerHubConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = config.baseUrl ?? 'https://hub.docker.com/v2';
   }
@@ -438,7 +440,7 @@ export class DockerHubMCPServer {
   }
 
   private async fetch(url: string, options?: RequestInit): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       ...options,
       headers: { ...this.headers, ...(options?.headers as Record<string, string> ?? {}) },
     });

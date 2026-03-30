@@ -21,17 +21,19 @@
 //              at 5M messages/month. Each endpoint consumes a documented message credit count.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface IEXCloudConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class IEXCloudMCPServer {
+export class IEXCloudMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: IEXCloudConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://cloud.iexapis.com/stable';
   }
@@ -460,7 +462,7 @@ export class IEXCloudMCPServer {
 
   private async iexGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {

@@ -18,16 +18,18 @@
 // Rate limits: 1,000,000 quota units/day; per-user rate limiting applies.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GoogleCalendarConfig {
   accessToken: string;
 }
 
-export class GoogleCalendarMCPServer {
+export class GoogleCalendarMCPServer extends MCPAdapterBase {
   private readonly baseUrl = 'https://www.googleapis.com/calendar/v3';
   private readonly token: string;
 
   constructor(config: GoogleCalendarConfig) {
+    super();
     this.token = config.accessToken;
   }
 
@@ -513,20 +515,13 @@ export class GoogleCalendarMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listCalendars(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     params.set('maxResults', String((args.maxResults as number) ?? 100));
     if (args.pageToken) params.set('pageToken', args.pageToken as string);
     if (args.showHidden) params.set('showHidden', 'true');
     if (args.showDeleted) params.set('showDeleted', 'true');
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/me/calendarList?${params}`,
       { headers: this.headers },
     );
@@ -542,7 +537,7 @@ export class GoogleCalendarMCPServer {
     if (!calendarId) {
       return { content: [{ type: 'text', text: 'calendarId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}`,
       { headers: this.headers },
     );
@@ -561,7 +556,7 @@ export class GoogleCalendarMCPServer {
     const body: Record<string, unknown> = { summary };
     if (args.description) body.description = args.description;
     if (args.timeZone) body.timeZone = args.timeZone;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -577,7 +572,7 @@ export class GoogleCalendarMCPServer {
     if (!calendarId) {
       return { content: [{ type: 'text', text: 'calendarId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -602,7 +597,7 @@ export class GoogleCalendarMCPServer {
     if (args.pageToken) params.set('pageToken', args.pageToken as string);
     if (args.q) params.set('q', args.q as string);
     if (args.showDeleted) params.set('showDeleted', 'true');
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/events?${params}`,
       { headers: this.headers },
     );
@@ -619,7 +614,7 @@ export class GoogleCalendarMCPServer {
     if (!eventId) {
       return { content: [{ type: 'text', text: 'eventId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
       { headers: this.headers },
     );
@@ -646,7 +641,7 @@ export class GoogleCalendarMCPServer {
     if (args.recurrence) body.recurrence = args.recurrence;
     const params = new URLSearchParams();
     params.set('sendNotifications', String(args.sendNotifications !== false));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/events?${params}`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -672,7 +667,7 @@ export class GoogleCalendarMCPServer {
     if (args.attendees !== undefined) body.attendees = (args.attendees as string[]).map(email => ({ email }));
     const params = new URLSearchParams();
     params.set('sendNotifications', String(args.sendNotifications !== false));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}?${params}`,
       { method: 'PATCH', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -691,7 +686,7 @@ export class GoogleCalendarMCPServer {
     }
     const params = new URLSearchParams();
     params.set('sendNotifications', String(args.sendNotifications !== false));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}?${params}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -709,7 +704,7 @@ export class GoogleCalendarMCPServer {
       return { content: [{ type: 'text', text: 'eventId and destinationCalendarId are required' }], isError: true };
     }
     const params = new URLSearchParams({ destination: destinationCalendarId });
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}/move?${params}`,
       { method: 'POST', headers: this.headers },
     );
@@ -730,7 +725,7 @@ export class GoogleCalendarMCPServer {
       items: (args.calendarIds as string[]).map(id => ({ id })),
     };
     if (args.timeZone) body.timeZone = args.timeZone;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/freeBusy`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -748,7 +743,7 @@ export class GoogleCalendarMCPServer {
     }
     const params = new URLSearchParams();
     if (args.pageToken) params.set('pageToken', args.pageToken as string);
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/acl${params.toString() ? '?' + params.toString() : ''}`,
       { headers: this.headers },
     );
@@ -772,7 +767,7 @@ export class GoogleCalendarMCPServer {
     };
     const params = new URLSearchParams();
     params.set('sendNotifications', String(args.sendNotifications !== false));
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/acl?${params}`,
       { method: 'POST', headers: this.headers, body: JSON.stringify(body) },
     );
@@ -789,7 +784,7 @@ export class GoogleCalendarMCPServer {
     if (!calendarId || !ruleId) {
       return { content: [{ type: 'text', text: 'calendarId and ruleId are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calendars/${encodeURIComponent(calendarId)}/acl/${encodeURIComponent(ruleId)}`,
       { method: 'DELETE', headers: this.headers },
     );
@@ -804,7 +799,7 @@ export class GoogleCalendarMCPServer {
     const url = setting
       ? `${this.baseUrl}/users/me/settings/${encodeURIComponent(setting)}`
       : `${this.baseUrl}/users/me/settings`;
-    const response = await fetch(url, { headers: this.headers });
+    const response = await this.fetchWithRetry(url, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Google Calendar API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -813,7 +808,7 @@ export class GoogleCalendarMCPServer {
   }
 
   private async getColors(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/colors`, { headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/colors`, { headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Google Calendar API error: ${response.status} ${response.statusText}` }], isError: true };
     }

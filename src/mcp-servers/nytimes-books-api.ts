@@ -16,17 +16,19 @@
 // Rate limits: 10 req/min, 4000 req/day per NYT developer plan defaults.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NYTimesBooksApiConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class NYTimesBooksApiMCPServer {
+export class NYTimesBooksApiMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: NYTimesBooksApiConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.nytimes.com/svc/books/v3').replace(/\/$/, '');
   }
@@ -266,18 +268,11 @@ export class NYTimesBooksApiMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async nytGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const allParams: Record<string, string> = { 'api-key': this.apiKey, ...params };
     const qs = new URLSearchParams(allParams).toString();
     const url = `${this.baseUrl}${path}?${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'User-Agent': 'EpicAI-NYTimesBooks-Adapter/1.0' },
     });

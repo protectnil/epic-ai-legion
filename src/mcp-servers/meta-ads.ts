@@ -17,6 +17,7 @@
 // Rate limits: Rolling 1-hour window per token; formula: calls/hr = 60 + 400 * active_ads - 0.001 * errors
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MetaAdsConfig {
   accessToken: string;
@@ -24,11 +25,12 @@ interface MetaAdsConfig {
   baseUrl?: string;
 }
 
-export class MetaAdsMCPServer {
+export class MetaAdsMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: MetaAdsConfig) {
+    super();
     this.accessToken = config.accessToken;
     const version = config.apiVersion || 'v22.0';
     this.baseUrl = config.baseUrl || `https://graph.facebook.com/${version}`;
@@ -690,17 +692,10 @@ export class MetaAdsMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async graphGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     params.access_token = this.accessToken;
     const qs = new URLSearchParams(params).toString();
-    const response = await fetch(`${this.baseUrl}${path}?${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -713,7 +708,7 @@ export class MetaAdsMCPServer {
 
   private async graphPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
     body.access_token = this.accessToken;
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -727,7 +722,7 @@ export class MetaAdsMCPServer {
 
   private async graphDelete(path: string): Promise<ToolResult> {
     const params = new URLSearchParams({ access_token: this.accessToken });
-    const response = await fetch(`${this.baseUrl}${path}?${params.toString()}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${params.toString()}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
     });

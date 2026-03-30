@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented — contact LotaData for enterprise limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface LotaDataConfig {
   apiKey: string;
@@ -21,11 +22,12 @@ interface LotaDataConfig {
   baseUrl?: string;
 }
 
-export class LotaDataMCPServer {
+export class LotaDataMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: LotaDataConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api2.lotadata.com/v2';
   }
@@ -267,13 +269,6 @@ export class LotaDataMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildUrl(path: string, params: Record<string, string | undefined>): string {
     const qs = new URLSearchParams({ api_key: this.apiKey });
     for (const [k, v] of Object.entries(params)) {
@@ -284,7 +279,7 @@ export class LotaDataMCPServer {
 
   private async fetch(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
     const url = this.buildUrl(path, params);
-    const response = await fetch(url, { method: 'GET' });
+    const response = await this.fetchWithRetry(url, { method: 'GET' });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

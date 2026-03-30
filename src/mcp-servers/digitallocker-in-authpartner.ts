@@ -19,6 +19,7 @@
 //       Requires prior registration as an authorized partner at digitallocker.gov.in.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DigiLockerAuthPartnerConfig {
   accessToken?: string;
@@ -27,13 +28,14 @@ interface DigiLockerAuthPartnerConfig {
   baseUrl?: string;
 }
 
-export class DigiLockerAuthPartnerMCPServer {
+export class DigiLockerAuthPartnerMCPServer extends MCPAdapterBase {
   private readonly accessToken: string | null;
   private readonly clientId: string | null;
   private readonly clientSecret: string | null;
   private readonly baseUrl: string;
 
   constructor(config: DigiLockerAuthPartnerConfig = {}) {
+    super();
     this.accessToken = config.accessToken ?? null;
     this.clientId = config.clientId ?? null;
     this.clientSecret = config.clientSecret ?? null;
@@ -434,13 +436,6 @@ export class DigiLockerAuthPartnerMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (this.accessToken) {
@@ -451,7 +446,7 @@ export class DigiLockerAuthPartnerMCPServer {
 
   private async get(path: string, headers?: Record<string, string>): Promise<ToolResult> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json', ...(headers ?? this.buildAuthHeaders()) },
     });
@@ -474,7 +469,7 @@ export class DigiLockerAuthPartnerMCPServer {
     if (this.accessToken && !useClientAuth) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers,
       body: formBody.toString(),

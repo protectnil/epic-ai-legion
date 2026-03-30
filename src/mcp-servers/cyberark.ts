@@ -23,6 +23,7 @@
 // Rate limits: Not officially published; governed by PVWA session concurrency limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CyberArkConfig {
   username: string;
@@ -37,7 +38,7 @@ interface CyberArkConfig {
 
 const DEFAULT_TOKEN_TTL_MS = 27_000_000;
 
-export class CyberArkMCPServer {
+export class CyberArkMCPServer extends MCPAdapterBase {
   private readonly username: string;
   private readonly password: string;
   private readonly baseUrl: string;
@@ -47,6 +48,7 @@ export class CyberArkMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: CyberArkConfig) {
+    super();
     this.username = config.username;
     this.password = config.password;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -85,7 +87,7 @@ export class CyberArkMCPServer {
     const now = Date.now();
     if (this.authToken && this.tokenExpiry > now) return this.authToken;
 
-    const response = await fetch(`${this.baseUrl}/Auth/${this.authMethod}/Logon`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/Auth/${this.authMethod}/Logon`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: this.username, password: this.password }),

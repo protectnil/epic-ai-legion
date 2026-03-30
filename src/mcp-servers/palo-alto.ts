@@ -18,6 +18,7 @@
 // Rate limits: Not publicly documented; Cortex XDR enforces per-tenant limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface PaloAltoConfig {
@@ -26,12 +27,13 @@ interface PaloAltoConfig {
   baseUrl: string;  // Required — customer FQDN; no universal default
 }
 
-export class PaloAltoMCPServer {
+export class PaloAltoMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly apiKeyId: string;
   private readonly baseUrl: string;
 
   constructor(config: PaloAltoConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.apiKeyId = config.apiKeyId;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -490,7 +492,7 @@ export class PaloAltoMCPServer {
 
   private async postJson(path: string, requestData: Record<string, unknown>): Promise<ToolResult> {
     const url = `${this.baseUrl}/public_api/v1/${path}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.reqHeaders,
       body: JSON.stringify({ request_data: requestData }),

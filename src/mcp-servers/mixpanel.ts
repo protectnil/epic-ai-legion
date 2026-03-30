@@ -30,6 +30,7 @@
 // Rate limits: Query API — 60 req/hr, max 5 concurrent. Ingestion — 2 GB/min or ~30k events/sec.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface MixpanelConfig {
   projectToken: string;
@@ -44,7 +45,7 @@ interface MixpanelConfig {
   analyticsBaseUrl?: string;
 }
 
-export class MixpanelMCPServer {
+export class MixpanelMCPServer extends MCPAdapterBase {
   private readonly projectToken: string;
   private readonly serviceAccountUsername: string;
   private readonly serviceAccountSecret: string;
@@ -53,6 +54,7 @@ export class MixpanelMCPServer {
   private readonly analyticsBaseUrl: string;
 
   constructor(config: MixpanelConfig) {
+    super();
     this.projectToken = config.projectToken;
     this.serviceAccountUsername = config.serviceAccountUsername;
     this.serviceAccountSecret = config.serviceAccountSecret;
@@ -88,15 +90,9 @@ export class MixpanelMCPServer {
     return `Basic ${encoded}`;
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async doEngagePost(record: Record<string, unknown>): Promise<ToolResult> {
     const body = `data=${encodeURIComponent(JSON.stringify(record))}`;
-    const response = await fetch(`${this.ingestionBaseUrl}/engage`, {
+    const response = await this.fetchWithRetry(`${this.ingestionBaseUrl}/engage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
       body,
@@ -115,7 +111,7 @@ export class MixpanelMCPServer {
       if (v !== undefined) qs.set(k, String(v));
     }
     const url = `${this.analyticsBaseUrl}/${path}?${qs.toString()}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { Authorization: this.basicAuthHeader, Accept: 'application/json' },
     });
@@ -523,7 +519,7 @@ export class MixpanelMCPServer {
     };
     const payload = [{ event, properties }];
     const body = `data=${encodeURIComponent(JSON.stringify(payload))}`;
-    const response = await fetch(`${this.ingestionBaseUrl}/track`, {
+    const response = await this.fetchWithRetry(`${this.ingestionBaseUrl}/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
       body,
@@ -547,7 +543,7 @@ export class MixpanelMCPServer {
       return { ...e, properties: props };
     });
     const url = `${this.ingestionBaseUrl}/import?project_id=${encodeURIComponent(this.projectId)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { Authorization: this.basicAuthHeader, 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(enriched),
@@ -664,7 +660,7 @@ export class MixpanelMCPServer {
     if (args.where !== undefined) body.where = args.where;
     if (args.session_id !== undefined) body.session_id = args.session_id;
     if (args.page !== undefined) body.page = args.page;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: { Authorization: this.basicAuthHeader, 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body),
@@ -707,7 +703,7 @@ export class MixpanelMCPServer {
     const url = `${this.analyticsBaseUrl}/jql?${qs.toString()}`;
     const body: Record<string, unknown> = { script };
     if (args.params) body.params = JSON.stringify(args.params);
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         Authorization: this.basicAuthHeader,

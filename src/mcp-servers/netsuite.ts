@@ -37,6 +37,7 @@
 
 import { createHmac } from 'node:crypto';
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NetSuiteConfig {
   accountId: string;       // e.g. "1234567" or "1234567_SB1" for sandbox
@@ -46,7 +47,7 @@ interface NetSuiteConfig {
   tokenSecret: string;
 }
 
-export class NetSuiteMCPServer {
+export class NetSuiteMCPServer extends MCPAdapterBase {
   private readonly accountId: string;
   private readonly consumerKey: string;
   private readonly consumerSecret: string;
@@ -55,6 +56,7 @@ export class NetSuiteMCPServer {
   private readonly baseUrl: string;
 
   constructor(config: NetSuiteConfig) {
+    super();
     this.accountId = config.accountId;
     this.consumerKey = config.consumerKey;
     this.consumerSecret = config.consumerSecret;
@@ -353,20 +355,13 @@ export class NetSuiteMCPServer {
     ].join(', ');
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async runSuiteql(args: Record<string, unknown>): Promise<ToolResult> {
     const query = args.query as string;
     const limit = (args.limit as number) ?? 100;
     const offset = (args.offset as number) ?? 0;
     const url = `${this.baseUrl}/services/rest/query/v1/suiteql?limit=${limit}&offset=${offset}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         Authorization: this.buildAuthHeader('POST', url),
@@ -402,7 +397,7 @@ export class NetSuiteMCPServer {
       const limit = Math.min(pageSize, remaining);
       const url = `${this.baseUrl}/services/rest/query/v1/suiteql?limit=${limit}&offset=${offset}`;
 
-      const response = await fetch(url, {
+      const response = await this.fetchWithRetry(url, {
         method: 'POST',
         headers: {
           Authorization: this.buildAuthHeader('POST', url),
@@ -438,7 +433,7 @@ export class NetSuiteMCPServer {
     const qs = params.toString();
     const url = `${this.baseUrl}/services/rest/record/v1/${recordType}/${recordId}${qs ? '?' + qs : ''}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: this.buildAuthHeader('GET', url),
@@ -466,7 +461,7 @@ export class NetSuiteMCPServer {
     const offset = (args.offset as number) ?? 0;
     const url = `${this.baseUrl}/services/rest/record/v1/${recordType}?limit=${limit}&offset=${offset}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: this.buildAuthHeader('GET', url),
@@ -492,7 +487,7 @@ export class NetSuiteMCPServer {
     const recordType = encodeURIComponent(args.record_type as string);
     const url = `${this.baseUrl}/services/rest/record/v1/${recordType}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: {
         Authorization: this.buildAuthHeader('POST', url),
@@ -522,7 +517,7 @@ export class NetSuiteMCPServer {
     const recordId = encodeURIComponent(args.record_id as string);
     const url = `${this.baseUrl}/services/rest/record/v1/${recordType}/${recordId}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PATCH',
       headers: {
         Authorization: this.buildAuthHeader('PATCH', url),
@@ -551,7 +546,7 @@ export class NetSuiteMCPServer {
     const recordId = encodeURIComponent(args.record_id as string);
     const url = `${this.baseUrl}/services/rest/record/v1/${recordType}/${recordId}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'DELETE',
       headers: {
         Authorization: this.buildAuthHeader('DELETE', url),
@@ -577,7 +572,7 @@ export class NetSuiteMCPServer {
     const externalId = encodeURIComponent(args.external_id as string);
     const url = `${this.baseUrl}/services/rest/record/v1/${recordType}/eid:${externalId}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'PUT',
       headers: {
         Authorization: this.buildAuthHeader('PUT', url),
@@ -606,7 +601,7 @@ export class NetSuiteMCPServer {
     const recordType = encodeURIComponent(args.record_type as string);
     const url = `${this.baseUrl}/services/rest/record/v1/metadata-catalog/${recordType}`;
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Authorization: this.buildAuthHeader('GET', url),

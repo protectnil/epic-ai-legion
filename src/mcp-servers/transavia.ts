@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; subject to Azure APIM subscription tier limits.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TransaviaConfig {
   apiKey: string;
@@ -22,11 +23,12 @@ interface TransaviaConfig {
   baseUrl?: string;
 }
 
-export class TransaviaMCPServer {
+export class TransaviaMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: TransaviaConfig) {
+    super();
     this.apiKey  = config.apiKey;
     this.baseUrl = config.baseUrl ?? 'https://api.transavia.com/v2/airports';
   }
@@ -198,7 +200,7 @@ export class TransaviaMCPServer {
       url.searchParams.set(k, v);
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: {
         'apikey': this.apiKey,

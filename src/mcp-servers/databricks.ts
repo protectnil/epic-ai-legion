@@ -22,6 +22,7 @@
 //   Workspace API /list 60 req/s | Permissions API GET 100 req/s. Returns HTTP 429 on excess.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface DatabricksConfig {
   /** Workspace host URL, e.g. "https://dbc-a1b2345c-d6e7.cloud.databricks.com" */
@@ -30,11 +31,12 @@ interface DatabricksConfig {
   token: string;
 }
 
-export class DatabricksMCPServer {
+export class DatabricksMCPServer extends MCPAdapterBase {
   private readonly host: string;
   private readonly token: string;
 
   constructor(config: DatabricksConfig) {
+    super();
     this.host = config.host.replace(/\/$/, '');
     this.token = config.token;
   }
@@ -459,13 +461,6 @@ export class DatabricksMCPServer {
 
   // ── Response helper ───────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): ToolResult {
-    const text = JSON.stringify(data, null, 2);
-    const truncated = text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-    return { content: [{ type: 'text', text: truncated }], isError: false };
-  }
 
   private async jsonOrError(res: Response, context: string): Promise<unknown> {
     if (!res.ok) {
@@ -481,7 +476,7 @@ export class DatabricksMCPServer {
   // ── Tool implementations ──────────────────────────────────────────────────────
 
   private async listClusters(args: Record<string, unknown>): Promise<ToolResult> {
-    const res = await fetch(`${this.host}/api/2.0/clusters/list`, { headers: this.headers });
+    const res = await this.fetchWithRetry(`${this.host}/api/2.0/clusters/list`, { headers: this.headers });
     const data = await this.jsonOrError(res, 'list_clusters');
 
     if (args.filter_by_state) {
@@ -489,42 +484,42 @@ export class DatabricksMCPServer {
       const parsed = data as { clusters?: Array<{ state?: string }> };
       if (Array.isArray(parsed.clusters)) {
         const filtered = parsed.clusters.filter((c) => c.state === state);
-        return this.truncate({ clusters: filtered });
+        return { content: [{ type: 'text', text: this.truncate({ clusters: filtered }) }], isError: false };
       }
     }
-    return this.truncate(data);
+    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
   private async getCluster(args: Record<string, unknown>): Promise<ToolResult> {
     const cluster_id = args.cluster_id as string;
     if (!cluster_id) throw new Error('cluster_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.0/clusters/get?cluster_id=${encodeURIComponent(cluster_id)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_cluster'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_cluster')) }], isError: false };
   }
 
   private async startCluster(args: Record<string, unknown>): Promise<ToolResult> {
     const cluster_id = args.cluster_id as string;
     if (!cluster_id) throw new Error('cluster_id is required');
-    const res = await fetch(`${this.host}/api/2.0/clusters/start`, {
+    const res = await this.fetchWithRetry(`${this.host}/api/2.0/clusters/start`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ cluster_id }),
     });
-    return this.truncate(await this.jsonOrError(res, 'start_cluster'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'start_cluster')) }], isError: false };
   }
 
   private async terminateCluster(args: Record<string, unknown>): Promise<ToolResult> {
     const cluster_id = args.cluster_id as string;
     if (!cluster_id) throw new Error('cluster_id is required');
-    const res = await fetch(`${this.host}/api/2.0/clusters/delete`, {
+    const res = await this.fetchWithRetry(`${this.host}/api/2.0/clusters/delete`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ cluster_id }),
     });
-    return this.truncate(await this.jsonOrError(res, 'terminate_cluster'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'terminate_cluster')) }], isError: false };
   }
 
   private async listJobs(args: Record<string, unknown>): Promise<ToolResult> {
@@ -532,18 +527,18 @@ export class DatabricksMCPServer {
     params.set('limit', String((args.limit as number) ?? 20));
     params.set('offset', String((args.offset as number) ?? 0));
     if (args.name) params.set('name', args.name as string);
-    const res = await fetch(`${this.host}/api/2.1/jobs/list?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_jobs'));
+    const res = await this.fetchWithRetry(`${this.host}/api/2.1/jobs/list?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_jobs')) }], isError: false };
   }
 
   private async getJob(args: Record<string, unknown>): Promise<ToolResult> {
     const job_id = args.job_id as number;
     if (!job_id) throw new Error('job_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.1/jobs/get?job_id=${encodeURIComponent(String(job_id))}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_job'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_job')) }], isError: false };
   }
 
   private async runJob(args: Record<string, unknown>): Promise<ToolResult> {
@@ -552,12 +547,12 @@ export class DatabricksMCPServer {
     const body: Record<string, unknown> = { job_id };
     if (args.notebook_params) body.notebook_params = args.notebook_params;
     if (args.python_params) body.python_params = args.python_params;
-    const res = await fetch(`${this.host}/api/2.1/jobs/run-now`, {
+    const res = await this.fetchWithRetry(`${this.host}/api/2.1/jobs/run-now`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
     });
-    return this.truncate(await this.jsonOrError(res, 'run_job'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'run_job')) }], isError: false };
   }
 
   private async listJobRuns(args: Record<string, unknown>): Promise<ToolResult> {
@@ -568,29 +563,29 @@ export class DatabricksMCPServer {
     params.set('limit', String((args.limit as number) ?? 20));
     if (args.offset) params.set('offset', String(args.offset as number));
     if (typeof args.completed_only === 'boolean') params.set('completed_only', String(args.completed_only));
-    const res = await fetch(`${this.host}/api/2.1/jobs/runs/list?${params}`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_job_runs'));
+    const res = await this.fetchWithRetry(`${this.host}/api/2.1/jobs/runs/list?${params}`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_job_runs')) }], isError: false };
   }
 
   private async getJobRun(args: Record<string, unknown>): Promise<ToolResult> {
     const run_id = args.run_id as number;
     if (!run_id) throw new Error('run_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.1/jobs/runs/get?run_id=${encodeURIComponent(String(run_id))}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_job_run'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_job_run')) }], isError: false };
   }
 
   private async cancelJobRun(args: Record<string, unknown>): Promise<ToolResult> {
     const run_id = args.run_id as number;
     if (!run_id) throw new Error('run_id is required');
-    const res = await fetch(`${this.host}/api/2.1/jobs/runs/cancel`, {
+    const res = await this.fetchWithRetry(`${this.host}/api/2.1/jobs/runs/cancel`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ run_id }),
     });
-    return this.truncate(await this.jsonOrError(res, 'cancel_job_run'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'cancel_job_run')) }], isError: false };
   }
 
   private async executeSql(args: Record<string, unknown>): Promise<ToolResult> {
@@ -609,95 +604,95 @@ export class DatabricksMCPServer {
     if (args.catalog) body.catalog = args.catalog;
     if (args.schema) body.schema = args.schema;
 
-    const res = await fetch(`${this.host}/api/2.0/sql/statements`, {
+    const res = await this.fetchWithRetry(`${this.host}/api/2.0/sql/statements`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
     });
-    return this.truncate(await this.jsonOrError(res, 'execute_sql'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'execute_sql')) }], isError: false };
   }
 
   private async getSqlStatementResult(args: Record<string, unknown>): Promise<ToolResult> {
     const statement_id = args.statement_id as string;
     if (!statement_id) throw new Error('statement_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.0/sql/statements/${encodeURIComponent(statement_id)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_sql_statement_result'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_sql_statement_result')) }], isError: false };
   }
 
   private async listWarehouses(): Promise<ToolResult> {
-    const res = await fetch(`${this.host}/api/2.0/sql/warehouses`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_warehouses'));
+    const res = await this.fetchWithRetry(`${this.host}/api/2.0/sql/warehouses`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_warehouses')) }], isError: false };
   }
 
   private async getWarehouse(args: Record<string, unknown>): Promise<ToolResult> {
     const warehouse_id = args.warehouse_id as string;
     if (!warehouse_id) throw new Error('warehouse_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.0/sql/warehouses/${encodeURIComponent(warehouse_id)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_warehouse'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_warehouse')) }], isError: false };
   }
 
   private async listSecretScopes(): Promise<ToolResult> {
-    const res = await fetch(`${this.host}/api/2.0/secrets/scopes/list`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_secrets_scopes'));
+    const res = await this.fetchWithRetry(`${this.host}/api/2.0/secrets/scopes/list`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_secrets_scopes')) }], isError: false };
   }
 
   private async listSecrets(args: Record<string, unknown>): Promise<ToolResult> {
     const scope = args.scope as string;
     if (!scope) throw new Error('scope is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.0/secrets/list?scope=${encodeURIComponent(scope)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'list_secrets'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_secrets')) }], isError: false };
   }
 
   private async listInstancePools(): Promise<ToolResult> {
-    const res = await fetch(`${this.host}/api/2.0/instance-pools/list`, { headers: this.headers });
-    return this.truncate(await this.jsonOrError(res, 'list_instance_pools'));
+    const res = await this.fetchWithRetry(`${this.host}/api/2.0/instance-pools/list`, { headers: this.headers });
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_instance_pools')) }], isError: false };
   }
 
   private async getInstancePool(args: Record<string, unknown>): Promise<ToolResult> {
     const instance_pool_id = args.instance_pool_id as string;
     if (!instance_pool_id) throw new Error('instance_pool_id is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.0/instance-pools/get?instance_pool_id=${encodeURIComponent(instance_pool_id)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'get_instance_pool'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'get_instance_pool')) }], isError: false };
   }
 
   private async dbfsList(args: Record<string, unknown>): Promise<ToolResult> {
     const path = args.path as string;
     if (!path) throw new Error('path is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.0/dbfs/list?path=${encodeURIComponent(path)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'dbfs_list'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'dbfs_list')) }], isError: false };
   }
 
   private async dbfsGetStatus(args: Record<string, unknown>): Promise<ToolResult> {
     const path = args.path as string;
     if (!path) throw new Error('path is required');
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.0/dbfs/get-status?path=${encodeURIComponent(path)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'dbfs_get_status'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'dbfs_get_status')) }], isError: false };
   }
 
   private async listNotebooks(args: Record<string, unknown>): Promise<ToolResult> {
     const path = (args.path as string) ?? '/';
-    const res = await fetch(
+    const res = await this.fetchWithRetry(
       `${this.host}/api/2.0/workspace/list?path=${encodeURIComponent(path)}`,
       { headers: this.headers },
     );
-    return this.truncate(await this.jsonOrError(res, 'list_notebooks'));
+    return { content: [{ type: 'text', text: this.truncate(await this.jsonOrError(res, 'list_notebooks')) }], isError: false };
   }
 }

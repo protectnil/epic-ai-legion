@@ -31,17 +31,19 @@
 // Rate limits: 5,000 req/hr for authenticated requests; 15,000 req/hr for GitHub Apps
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GitHubActionsConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-export class GitHubActionsMCPServer {
+export class GitHubActionsMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: GitHubActionsConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || 'https://api.github.com';
   }
@@ -693,17 +695,10 @@ export class GitHubActionsMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async ghGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -712,7 +707,7 @@ export class GitHubActionsMCPServer {
   }
 
   private async ghPost(path: string, body?: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
@@ -729,7 +724,7 @@ export class GitHubActionsMCPServer {
   }
 
   private async ghPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -747,7 +742,7 @@ export class GitHubActionsMCPServer {
   }
 
   private async ghDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -833,7 +828,7 @@ export class GitHubActionsMCPServer {
   private async downloadJobLogs(args: Record<string, unknown>): Promise<ToolResult> {
     if (!args.owner || !args.repo || args.job_id === undefined) return { content: [{ type: 'text', text: 'owner, repo, and job_id are required' }], isError: true };
     // This endpoint returns a 302 redirect to the log download URL — capture the Location header
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/jobs/${encodeURIComponent(args.job_id as string)}/logs`,
       { method: 'GET', headers: this.headers, redirect: 'manual' },
     );
@@ -916,7 +911,7 @@ export class GitHubActionsMCPServer {
     }
     // Try PATCH (update) first, fall back to POST (create)
     const path = `/repos/${encodeURIComponent(args.owner as string)}/${encodeURIComponent(args.repo as string)}/actions/variables/${encodeURIComponent(args.name as string)}`;
-    const patchResponse = await fetch(`${this.baseUrl}${path}`, {
+    const patchResponse = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: { ...this.headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: args.name, value: args.value }),

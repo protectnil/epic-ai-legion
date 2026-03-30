@@ -18,6 +18,7 @@
 // Rate limits: Not publicly documented; Orca Alerts API limited to 1000 alerts per query
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OrcaConfig {
   apiToken: string;
@@ -25,11 +26,12 @@ interface OrcaConfig {
   baseUrl?: string;
 }
 
-export class OrcaMCPServer {
+export class OrcaMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: OrcaConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = (config.baseUrl ?? 'https://api.orcasecurity.io').replace(/\/$/, '');
   }
@@ -408,13 +410,6 @@ export class OrcaMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private qs(params: URLSearchParams): string {
     const s = params.toString();
     return s ? '?' + s : '';
@@ -430,7 +425,7 @@ export class OrcaMCPServer {
     if (args.cloud_provider) params.set('cloud_provider', String(args.cloud_provider));
     if (args.asset_id) params.set('asset_id', String(args.asset_id));
 
-    const response = await fetch(`${this.baseUrl}/api/alerts${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/alerts${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -438,7 +433,7 @@ export class OrcaMCPServer {
   }
 
   private async getAlert(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/alerts/${encodeURIComponent(String(args.alert_id))}`,
       { headers: this.getHeaders() }
     );
@@ -452,7 +447,7 @@ export class OrcaMCPServer {
     const body: Record<string, unknown> = { reason: args.reason };
     if (args.note) body.note = args.note;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/alerts/${encodeURIComponent(String(args.alert_id))}/dismiss`,
       { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) }
     );
@@ -466,7 +461,7 @@ export class OrcaMCPServer {
     const body: Record<string, unknown> = {};
     if (args.note) body.note = args.note;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/alerts/${encodeURIComponent(String(args.alert_id))}/reopen`,
       { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) }
     );
@@ -484,7 +479,7 @@ export class OrcaMCPServer {
     if (args.cloud_provider) params.set('cloud_provider', String(args.cloud_provider));
     if (args.account_id) params.set('account_id', String(args.account_id));
 
-    const response = await fetch(`${this.baseUrl}/api/assets${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/assets${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -492,7 +487,7 @@ export class OrcaMCPServer {
   }
 
   private async getAsset(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/assets/${encodeURIComponent(String(args.asset_id))}`,
       { headers: this.getHeaders() }
     );
@@ -509,7 +504,7 @@ export class OrcaMCPServer {
     };
     if (args.filter) body.filter = args.filter;
 
-    const response = await fetch(`${this.baseUrl}/api/query/assets`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/query/assets`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
@@ -528,7 +523,7 @@ export class OrcaMCPServer {
     if (args.cve_id) params.set('cve_id', String(args.cve_id));
     if (args.asset_id) params.set('asset_id', String(args.asset_id));
 
-    const response = await fetch(`${this.baseUrl}/api/vulnerabilities${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/vulnerabilities${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -536,7 +531,7 @@ export class OrcaMCPServer {
   }
 
   private async getVulnerability(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/vulnerabilities/${encodeURIComponent(String(args.cve_id))}`,
       { headers: this.getHeaders() }
     );
@@ -547,7 +542,7 @@ export class OrcaMCPServer {
   }
 
   private async getAttackPath(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/assets/${encodeURIComponent(String(args.asset_id))}/attack-path`,
       { headers: this.getHeaders() }
     );
@@ -563,7 +558,7 @@ export class OrcaMCPServer {
     params.set('offset', String(args.offset ?? 0));
     if (args.severity) params.set('severity', String(args.severity));
 
-    const response = await fetch(`${this.baseUrl}/api/attack-paths${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/attack-paths${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -575,7 +570,7 @@ export class OrcaMCPServer {
     if (args.framework) params.set('framework', String(args.framework));
     if (args.cloud_provider) params.set('cloud_provider', String(args.cloud_provider));
 
-    const response = await fetch(`${this.baseUrl}/api/compliance${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/compliance${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -583,7 +578,7 @@ export class OrcaMCPServer {
   }
 
   private async listComplianceFrameworks(): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/api/compliance/frameworks`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/compliance/frameworks`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -596,7 +591,7 @@ export class OrcaMCPServer {
     params.set('offset', String(args.offset ?? 0));
     if (args.enabled !== undefined) params.set('enabled', String(args.enabled));
 
-    const response = await fetch(`${this.baseUrl}/api/alert-rules${this.qs(params)}`, { headers: this.getHeaders() });
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/alert-rules${this.qs(params)}`, { headers: this.getHeaders() });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -604,7 +599,7 @@ export class OrcaMCPServer {
   }
 
   private async getCloudAccount(args: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/api/cloud-accounts/${encodeURIComponent(String(args.account_id))}`,
       { headers: this.getHeaders() }
     );

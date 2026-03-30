@@ -38,6 +38,7 @@
 //   Edge Config:   v1 (list, get, list items, get item)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VercelConfig {
   accessToken: string;
@@ -45,12 +46,13 @@ interface VercelConfig {
   baseUrl?: string;
 }
 
-export class VercelMCPServer {
+export class VercelMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly teamId: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: VercelConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.teamId = config.teamId;
     this.baseUrl = config.baseUrl ?? 'https://api.vercel.com';
@@ -423,7 +425,7 @@ export class VercelMCPServer {
   }
 
   private async vercelFetch(method: string, url: string, body?: unknown): Promise<ToolResult> {
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers: this.authHeaders,
       body: body !== undefined ? JSON.stringify(body) : undefined,

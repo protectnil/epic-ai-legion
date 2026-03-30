@@ -40,6 +40,7 @@
 //   See https://developer.clickup.com/docs/rate-limits for per-plan details.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClickUpConfig {
   /**
@@ -52,11 +53,12 @@ interface ClickUpConfig {
 
 const CLICKUP_BASE_URL = 'https://api.clickup.com/api/v2';
 
-export class ClickUpMCPServer {
+export class ClickUpMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: ClickUpConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = (config.baseUrl || CLICKUP_BASE_URL).replace(/\/$/, '');
   }
@@ -87,14 +89,8 @@ export class ClickUpMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJSON(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers, ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers, ...options });
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error ${response.status}: ${errText}` }], isError: true };

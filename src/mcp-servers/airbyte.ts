@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; recommended to stay under 100 req/min per token
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AirbyteConfig {
   /**
@@ -30,11 +31,12 @@ interface AirbyteConfig {
   baseUrl?: string;
 }
 
-export class AirbyteMCPServer {
+export class AirbyteMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: AirbyteConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = config.baseUrl || 'https://api.airbyte.com/v1';
   }
@@ -326,15 +328,8 @@ export class AirbyteMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async apiGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -343,7 +338,7 @@ export class AirbyteMCPServer {
   }
 
   private async apiPost(path: string, body: unknown): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -360,7 +355,7 @@ export class AirbyteMCPServer {
   }
 
   private async apiDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -471,7 +466,7 @@ export class AirbyteMCPServer {
     if (args.schedule) body.schedule = args.schedule;
     if (args.syncCatalog) body.syncCatalog = args.syncCatalog;
     if (args.status) body.status = args.status;
-    const response = await fetch(`${this.baseUrl}/connections/${encodeURIComponent(connectionId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/connections/${encodeURIComponent(connectionId)}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -516,7 +511,7 @@ export class AirbyteMCPServer {
   private async cancelJob(args: Record<string, unknown>): Promise<ToolResult> {
     const jobId = args.jobId as string;
     if (!jobId) return { content: [{ type: 'text', text: 'jobId is required' }], isError: true };
-    const response = await fetch(`${this.baseUrl}/jobs/${encodeURIComponent(jobId)}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/jobs/${encodeURIComponent(jobId)}`, {
       method: 'DELETE',
       headers: this.headers,
     });

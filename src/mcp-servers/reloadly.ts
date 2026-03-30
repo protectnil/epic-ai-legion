@@ -17,6 +17,7 @@
 // Rate limits: Not specified.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ReloadlyConfig {
   /** Optional base URL override (default: https://polls.apiblueprint.org) */
@@ -25,11 +26,12 @@ interface ReloadlyConfig {
   apiToken?: string;
 }
 
-export class ReloadlyMCPServer {
+export class ReloadlyMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly apiToken: string | undefined;
 
   constructor(config: ReloadlyConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl ?? 'https://polls.apiblueprint.org';
     this.apiToken = config.apiToken;
   }
@@ -141,13 +143,6 @@ export class ReloadlyMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.apiToken) headers['Authorization'] = `Bearer ${this.apiToken}`;
@@ -163,7 +158,7 @@ export class ReloadlyMCPServer {
     if (body !== undefined) {
       init.body = JSON.stringify(body);
     }
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return { content: [{ type: 'text', text: `API error: ${response.status} ${errText}` }], isError: true };

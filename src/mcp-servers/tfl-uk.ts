@@ -17,6 +17,7 @@
 // Note: TfL API uses https://api.tfl.gov.uk (not api.digital.tfl.gov.uk) for most endpoints.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface TflUkConfig {
   appId?: string;
@@ -24,12 +25,13 @@ interface TflUkConfig {
   baseUrl?: string;
 }
 
-export class TflUkMCPServer {
+export class TflUkMCPServer extends MCPAdapterBase {
   private readonly appId: string | undefined;
   private readonly appKey: string | undefined;
   private readonly baseUrl: string;
 
   constructor(config: TflUkConfig = {}) {
+    super();
     this.appId   = config.appId;
     this.appKey  = config.appKey;
     this.baseUrl = (config.baseUrl ?? 'https://api.tfl.gov.uk').replace(/\/$/, '');
@@ -308,18 +310,11 @@ export class TflUkMCPServer {
     return p;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async tflGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const merged = { ...this.authParams(), ...params };
     const qs = Object.keys(merged).length > 0 ? '?' + new URLSearchParams(merged).toString() : '';
     const url = `${this.baseUrl}${path}${qs}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json', 'User-Agent': 'EpicAI-TfL-Adapter/1.0' },
     });

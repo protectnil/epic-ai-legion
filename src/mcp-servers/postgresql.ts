@@ -16,6 +16,7 @@
 // Rate limits: Determined by proxy configuration; proxy enforces timeoutMs per query
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PostgreSQLConfig {
   proxyUrl: string;
@@ -28,7 +29,7 @@ interface PostgreSQLConfig {
   ssl?: boolean;
 }
 
-export class PostgreSQLMCPServer {
+export class PostgreSQLMCPServer extends MCPAdapterBase {
   private readonly proxyUrl: string;
   private readonly apiKey: string;
   private readonly connection: {
@@ -41,6 +42,7 @@ export class PostgreSQLMCPServer {
   };
 
   constructor(config: PostgreSQLConfig) {
+    super();
     this.proxyUrl = config.proxyUrl;
     this.apiKey = config.apiKey;
     this.connection = {
@@ -307,15 +309,8 @@ export class PostgreSQLMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async runQuery(sql: string, params: unknown[] = [], timeoutMs = 30_000): Promise<ToolResult> {
-    const response = await fetch(`${this.proxyUrl}/query`, {
+    const response = await this.fetchWithRetry(`${this.proxyUrl}/query`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify({

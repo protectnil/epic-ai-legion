@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented. Ex Libris enforces per-institution limits server-side.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ExLibrisTaskListsConfig {
   apiKey: string;
@@ -20,11 +21,12 @@ interface ExLibrisTaskListsConfig {
   baseUrl?: string;
 }
 
-export class ExLibrisTaskListsMCPServer {
+export class ExLibrisTaskListsMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ExLibrisTaskListsConfig) {
+    super();
     this.apiKey = config.apiKey;
     const region = config.region ?? 'na';
     const regionMap: Record<string, string> = {
@@ -260,7 +262,7 @@ export class ExLibrisTaskListsMCPServer {
     if (body !== undefined) {
       init.body = JSON.stringify(body);
     }
-    const res = await fetch(url, init);
+    const res = await this.fetchWithRetry(url, init);
     const text = await res.text();
     const truncated = text.length > 10240 ? text.slice(0, 10240) + '\n… [truncated]' : text;
     if (!res.ok) {

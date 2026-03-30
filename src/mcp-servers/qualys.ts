@@ -19,6 +19,7 @@
 // Rate limits: Varies by subscription; Qualys recommends concurrency limits per API user
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface QualysConfig {
   /**
@@ -31,12 +32,13 @@ interface QualysConfig {
   password: string;
 }
 
-export class QualysMCPServer {
+export class QualysMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly formHeaders: Record<string, string>;
   private readonly xmlHeaders: Record<string, string>;
 
   constructor(config: QualysConfig) {
+    super();
     if (!config.baseUrl) {
       throw new Error(
         'QualysMCPServer: baseUrl is required. Qualys has multiple regional platforms; ' +
@@ -452,7 +454,7 @@ export class QualysMCPServer {
   }
 
   private async formPost(path: string, params: URLSearchParams): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.formHeaders,
       body: params.toString(),
@@ -575,7 +577,7 @@ export class QualysMCPServer {
   </preferences>${filterXml}
 </ServiceRequest>`;
 
-    const response = await fetch(`${this.baseUrl}/qps/rest/3.0/search/was/webapp`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/qps/rest/3.0/search/was/webapp`, {
       method: 'POST',
       headers: this.xmlHeaders,
       body: serviceRequest,
@@ -617,7 +619,7 @@ export class QualysMCPServer {
   </data>
 </ServiceRequest>`;
 
-    const response = await fetch(`${this.baseUrl}/qps/rest/3.0/launch/was/wasscan`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/qps/rest/3.0/launch/was/wasscan`, {
       method: 'POST',
       headers: this.xmlHeaders,
       body: serviceRequest,
@@ -654,7 +656,7 @@ export class QualysMCPServer {
   </preferences>${filterXml}
 </ServiceRequest>`;
 
-    const response = await fetch(`${this.baseUrl}/qps/rest/3.0/search/was/wasscan`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/qps/rest/3.0/search/was/wasscan`, {
       method: 'POST',
       headers: this.xmlHeaders,
       body: serviceRequest,

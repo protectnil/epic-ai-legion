@@ -22,17 +22,19 @@
 // Rate limits: 10 RPS / 100 RPH (Free), 10 RPS / 1,000 RPH (Hobby), 50 RPS / 10,000 RPH (Pro), custom (Enterprise)
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface RailwayConfig {
   token: string;
   baseUrl?: string;
 }
 
-export class RailwayMCPServer {
+export class RailwayMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: RailwayConfig) {
+    super();
     this.token = config.token;
     this.baseUrl = config.baseUrl || 'https://backboard.railway.com/graphql/v2';
   }
@@ -330,12 +332,6 @@ export class RailwayMCPServer {
       },
       body: JSON.stringify({ query, variables }),
     });
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {

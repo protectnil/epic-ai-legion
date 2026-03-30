@@ -15,6 +15,7 @@
 // Rate limits: See https://www.wowza.com/docs/wowza-streaming-cloud-rest-api-limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface WowzaConfig {
   apiKey: string;
@@ -22,12 +23,13 @@ interface WowzaConfig {
   baseUrl?: string;
 }
 
-export class WowzaMCPServer {
+export class WowzaMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly accessKey: string;
   private readonly baseUrl: string;
 
   constructor(config: WowzaConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.accessKey = config.accessKey;
     this.baseUrl = config.baseUrl || 'https://api.cloud.wowza.com/api/v1';
@@ -409,13 +411,6 @@ export class WowzaMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
@@ -425,7 +420,7 @@ export class WowzaMCPServer {
   }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.buildHeaders(),
     });
@@ -437,7 +432,7 @@ export class WowzaMCPServer {
   }
 
   private async put(path: string, body?: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.buildHeaders(),
       body: body ? JSON.stringify(body) : undefined,
@@ -450,7 +445,7 @@ export class WowzaMCPServer {
   }
 
   private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),

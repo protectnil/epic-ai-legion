@@ -29,6 +29,7 @@
 // Rate limits: Auth API: 50 req/5 min per source IP. Public APIs: 100 req/min per source IP.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ExabeamConfig {
   /** Regional base URL, e.g. https://api.us-west.exabeam.cloud */
@@ -37,7 +38,7 @@ interface ExabeamConfig {
   clientSecret: string;
 }
 
-export class ExabeamMCPServer {
+export class ExabeamMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -45,6 +46,7 @@ export class ExabeamMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: ExabeamConfig) {
+    super();
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
@@ -76,7 +78,7 @@ export class ExabeamMCPServer {
       return this.accessToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/auth/v1/token`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/auth/v1/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -96,11 +98,6 @@ export class ExabeamMCPServer {
     return this.accessToken;
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
 
   get tools(): ToolDefinition[] {
     return [
@@ -484,7 +481,7 @@ export class ExabeamMCPServer {
     if (args.limit) body.limit = args.limit;
     if (args.offset !== undefined) body.offset = args.offset;
 
-    const response = await fetch(`${this.baseUrl}/search/v2/events`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/search/v2/events`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -510,7 +507,7 @@ export class ExabeamMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
 
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/uba/api/user/${encodeURIComponent(username)}/sequences${qs}`,
       { method: 'GET', headers },
     );
@@ -529,7 +526,7 @@ export class ExabeamMCPServer {
       return { content: [{ type: 'text', text: 'username is required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/uba/api/user/${encodeURIComponent(username)}/riskScoreHistory`,
       { method: 'GET', headers },
     );
@@ -550,7 +547,7 @@ export class ExabeamMCPServer {
     if (args.offset !== undefined) params.set('offset', String(args.offset));
 
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}/uba/api/users/notable${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/uba/api/users/notable${qs}`, {
       method: 'GET',
       headers,
     });
@@ -572,7 +569,7 @@ export class ExabeamMCPServer {
     }
 
     const identifier = hostname || ipAddress;
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/uba/api/asset/${encodeURIComponent(identifier)}`,
       { method: 'GET', headers },
     );
@@ -592,7 +589,7 @@ export class ExabeamMCPServer {
     if (args.offset !== undefined) params.set('offset', String(args.offset));
 
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}/uba/api/watchlist/users${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/uba/api/watchlist/users${qs}`, {
       method: 'GET',
       headers,
     });
@@ -612,7 +609,7 @@ export class ExabeamMCPServer {
     if (args.offset !== undefined) params.set('offset', String(args.offset));
 
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}/uba/api/rules${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/uba/api/rules${qs}`, {
       method: 'GET',
       headers,
     });
@@ -633,7 +630,7 @@ export class ExabeamMCPServer {
     if (args.limit) body.limit = args.limit;
     if (args.offset !== undefined) body.offset = args.offset;
 
-    const response = await fetch(`${this.baseUrl}/threat-center/v1/search/cases`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/threat-center/v1/search/cases`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -653,7 +650,7 @@ export class ExabeamMCPServer {
       return { content: [{ type: 'text', text: 'case_id is required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/threat-center/v1/cases/${encodeURIComponent(caseId)}`,
       { method: 'GET', headers },
     );
@@ -678,7 +675,7 @@ export class ExabeamMCPServer {
     if (args.assignee) body.assignee = args.assignee;
     if (args.note) body.note = args.note;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/threat-center/v1/cases/${encodeURIComponent(caseId)}`,
       { method: 'POST', headers, body: JSON.stringify(body) },
     );
@@ -701,7 +698,7 @@ export class ExabeamMCPServer {
     if (args.limit) body.limit = args.limit;
     if (args.offset !== undefined) body.offset = args.offset;
 
-    const response = await fetch(`${this.baseUrl}/threat-center/v1/search/alerts`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/threat-center/v1/search/alerts`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -721,7 +718,7 @@ export class ExabeamMCPServer {
       return { content: [{ type: 'text', text: 'alert_id is required' }], isError: true };
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/threat-center/v1/alerts/${encodeURIComponent(alertId)}`,
       { method: 'GET', headers },
     );
@@ -740,7 +737,7 @@ export class ExabeamMCPServer {
     if (args.offset !== undefined) params.set('offset', String(args.offset));
 
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(`${this.baseUrl}/uba/api/context-tables${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/uba/api/context-tables${qs}`, {
       method: 'GET',
       headers,
     });
@@ -764,7 +761,7 @@ export class ExabeamMCPServer {
     if (args.limit) params.set('limit', String(args.limit));
 
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/uba/api/context-tables/${encodeURIComponent(tableName)}/query${qs}`,
       { method: 'GET', headers },
     );

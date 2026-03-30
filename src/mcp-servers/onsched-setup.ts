@@ -15,6 +15,7 @@
 // Rate limits: Not publicly documented; contact OnSched support for production limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface OnSchedSetupConfig {
   clientId: string;
@@ -25,7 +26,7 @@ interface OnSchedSetupConfig {
   identityUrl?: string;
 }
 
-export class OnSchedSetupMCPServer {
+export class OnSchedSetupMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
@@ -35,6 +36,7 @@ export class OnSchedSetupMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: OnSchedSetupConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.baseUrl = config.baseUrl ?? 'https://sandbox-api.onsched.com';
@@ -98,7 +100,7 @@ export class OnSchedSetupMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(`${this.identityUrl}/connect/token`, {
+    const response = await this.fetchWithRetry(`${this.identityUrl}/connect/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -132,14 +134,6 @@ export class OnSchedSetupMCPServer {
       },
     });
   }
-
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   get tools(): ToolDefinition[] {
     return [
       // ── Locations ─────────────────────────────────────────────────────────

@@ -17,6 +17,7 @@
 // Rate limits: Not publicly documented; contact Sophos support for tenant-specific limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 const SOPHOS_GLOBAL_URL = 'https://api.central.sophos.com';
 const SOPHOS_TOKEN_URL = 'https://id.sophos.com/api/oauth2/v2/token';
@@ -42,7 +43,7 @@ interface WhoamiResponse {
   };
 }
 
-export class SophosMCPServer {
+export class SophosMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly tenantId: string;
@@ -53,6 +54,7 @@ export class SophosMCPServer {
   private tokenExpiry: number = 0;
 
   constructor(config: SophosConfig) {
+    super();
     this.clientId = config.clientId;
     this.clientSecret = config.clientSecret;
     this.tenantId = config.tenantId;
@@ -329,7 +331,7 @@ export class SophosMCPServer {
       return this.bearerToken;
     }
 
-    const response = await fetch(SOPHOS_TOKEN_URL, {
+    const response = await this.fetchWithRetry(SOPHOS_TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -362,7 +364,7 @@ export class SophosMCPServer {
     }
 
     const token = await this.getOrRefreshToken();
-    const response = await fetch(`${SOPHOS_GLOBAL_URL}/whoami/v1`, {
+    const response = await this.fetchWithRetry(`${SOPHOS_GLOBAL_URL}/whoami/v1`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -393,13 +395,6 @@ export class SophosMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listAlerts(args: Record<string, unknown>): Promise<ToolResult> {
     const baseUrl = await this.getRegionalUrl();
     const headers = await this.authHeaders();
@@ -409,7 +404,7 @@ export class SophosMCPServer {
     if (args.severity) url += `&severity=${encodeURIComponent(args.severity as string)}`;
     if (args.category) url += `&category=${encodeURIComponent(args.category as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list alerts: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -424,7 +419,7 @@ export class SophosMCPServer {
     }
     const baseUrl = await this.getRegionalUrl();
     const headers = await this.authHeaders();
-    const response = await fetch(`${baseUrl}/common/v1/alerts/${encodeURIComponent(alertId)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${baseUrl}/common/v1/alerts/${encodeURIComponent(alertId)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get alert: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -442,7 +437,7 @@ export class SophosMCPServer {
     const body: Record<string, string> = { action: 'acknowledge' };
     if (args.message) body.message = args.message as string;
 
-    const response = await fetch(`${baseUrl}/common/v1/alerts/${encodeURIComponent(alertId)}/actions`, {
+    const response = await this.fetchWithRetry(`${baseUrl}/common/v1/alerts/${encodeURIComponent(alertId)}/actions`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -465,7 +460,7 @@ export class SophosMCPServer {
     if (typeof args.tamperProtectionEnabled === 'boolean') url += `&tamperProtectionEnabled=${encodeURIComponent(String(args.tamperProtectionEnabled))}`;
     if (args.lockdownStatus) url += `&lockdownStatus=${encodeURIComponent(args.lockdownStatus as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list endpoints: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -480,7 +475,7 @@ export class SophosMCPServer {
     }
     const baseUrl = await this.getRegionalUrl();
     const headers = await this.authHeaders();
-    const response = await fetch(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get endpoint: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -499,7 +494,7 @@ export class SophosMCPServer {
     const body: Record<string, unknown> = { isolationEnabled };
     if (args.comment) body.comment = args.comment as string;
 
-    const response = await fetch(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}/isolation`, {
+    const response = await this.fetchWithRetry(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}/isolation`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(body),
@@ -518,7 +513,7 @@ export class SophosMCPServer {
     }
     const baseUrl = await this.getRegionalUrl();
     const headers = await this.authHeaders();
-    const response = await fetch(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}/tamper-protection`, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}/tamper-protection`, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get tamper protection: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -537,7 +532,7 @@ export class SophosMCPServer {
     }
     const baseUrl = await this.getRegionalUrl();
     const headers = await this.authHeaders();
-    const response = await fetch(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}/tamper-protection`, {
+    const response = await this.fetchWithRetry(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}/tamper-protection`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ enabled }),
@@ -556,7 +551,7 @@ export class SophosMCPServer {
     }
     const baseUrl = await this.getRegionalUrl();
     const headers = await this.authHeaders();
-    const response = await fetch(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}/scans`, {
+    const response = await this.fetchWithRetry(`${baseUrl}/endpoint/v1/endpoints/${encodeURIComponent(endpointId)}/scans`, {
       method: 'POST',
       headers,
       body: JSON.stringify({}),
@@ -577,7 +572,7 @@ export class SophosMCPServer {
     if (args.pageToken) params.push(`pageToken=${encodeURIComponent(args.pageToken as string)}`);
     if (params.length > 0) url += '?' + params.join('&');
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list endpoint groups: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -591,7 +586,7 @@ export class SophosMCPServer {
     let url = `${baseUrl}/account-health-check/v1/health-check`;
     if (args.checks) url += `?checks=${encodeURIComponent(args.checks as string)}`;
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get account health check: ${response.status} ${response.statusText}` }], isError: true };
     }

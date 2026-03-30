@@ -21,6 +21,7 @@
 //              HTTP 429 returned on exhaustion.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BigCommerceConfig {
   apiToken: string;
@@ -28,11 +29,12 @@ interface BigCommerceConfig {
   baseUrl?: string;
 }
 
-export class BigCommerceMCPServer {
+export class BigCommerceMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: BigCommerceConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl || `https://api.bigcommerce.com/stores/${config.storeHash}`;
   }
@@ -763,18 +765,11 @@ export class BigCommerceMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async bcGet(path: string, params?: Record<string, string>): Promise<ToolResult> {
     const qs = params && Object.keys(params).length > 0
       ? '?' + new URLSearchParams(params).toString()
       : '';
-    const response = await fetch(`${this.baseUrl}${path}${qs}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}${qs}`, {
       method: 'GET',
       headers: this.headers,
     });
@@ -787,7 +782,7 @@ export class BigCommerceMCPServer {
   }
 
   private async bcPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -801,7 +796,7 @@ export class BigCommerceMCPServer {
   }
 
   private async bcPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -815,7 +810,7 @@ export class BigCommerceMCPServer {
   }
 
   private async bcDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -1003,7 +998,7 @@ export class BigCommerceMCPServer {
     if (args.phone) customer['phone'] = args.phone;
     if (args.company) customer['company'] = args.company;
     // v3 POST /customers expects a bare JSON array body, not an object wrapper
-    const response = await fetch(`${this.baseUrl}/v3/customers`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v3/customers`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify([customer]),
@@ -1025,7 +1020,7 @@ export class BigCommerceMCPServer {
     if (args.phone) customer['phone'] = args.phone;
     if (args.company) customer['company'] = args.company;
 
-    const response = await fetch(`${this.baseUrl}/v3/customers`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v3/customers`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify([customer]),

@@ -15,15 +15,17 @@
 // Rate limits: Not publicly documented
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CyCATConfig {
   baseUrl?: string;
 }
 
-export class CyCATMCPServer {
+export class CyCATMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: CyCATConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://api.cycat.org';
   }
 
@@ -265,7 +267,7 @@ export class CyCATMCPServer {
       Accept: 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

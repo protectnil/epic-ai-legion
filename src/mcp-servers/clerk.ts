@@ -23,17 +23,19 @@
 //              Organization invitations: 250/hr (single), 50/hr (bulk).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ClerkConfig {
   secretKey: string;
   baseUrl?: string;
 }
 
-export class ClerkMCPServer {
+export class ClerkMCPServer extends MCPAdapterBase {
   private readonly secretKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ClerkConfig) {
+    super();
     this.secretKey = config.secretKey;
     this.baseUrl = config.baseUrl || 'https://api.clerk.com';
   }
@@ -518,17 +520,10 @@ export class ClerkMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async clerkGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       const body = await response.text();
       return { content: [{ type: 'text', text: `API error ${response.status}: ${body}` }], isError: true };
@@ -538,7 +533,7 @@ export class ClerkMCPServer {
   }
 
   private async clerkPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -552,7 +547,7 @@ export class ClerkMCPServer {
   }
 
   private async clerkPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -566,7 +561,7 @@ export class ClerkMCPServer {
   }
 
   private async clerkDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
     });

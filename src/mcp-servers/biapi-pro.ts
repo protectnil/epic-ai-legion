@@ -14,6 +14,7 @@
 // Rate limits: Not publicly documented.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface BiapiConfig {
   /** JWT access token obtained from /auth/token or /auth/jwt */
@@ -23,11 +24,12 @@ interface BiapiConfig {
 
 const TRUNCATE = 10 * 1024;
 
-export class BiapiProMCPServer {
+export class BiapiProMCPServer extends MCPAdapterBase {
   private readonly accessToken: string;
   private readonly baseUrl: string;
 
   constructor(config: BiapiConfig) {
+    super();
     this.accessToken = config.accessToken;
     this.baseUrl = (config.baseUrl || 'https://budgea.biapi.pro/2.0').replace(/\/$/, '');
   }
@@ -281,7 +283,7 @@ export class BiapiProMCPServer {
 
   private async _fetch(path: string, options: RequestInit = {}): Promise<unknown> {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await this.fetchWithRetry(url, {
       ...options,
       headers: {
         Authorization: `Bearer ${this.accessToken}`,

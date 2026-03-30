@@ -22,17 +22,19 @@
 // Rate limits: Not publicly documented; apply exponential backoff on 429 responses
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CrowdinConfig {
   personalToken: string;
   baseUrl?: string;             // override for Crowdin Enterprise: https://{org}.api.crowdin.com/api/v2
 }
 
-export class CrowdinMCPServer {
+export class CrowdinMCPServer extends MCPAdapterBase {
   private readonly personalToken: string;
   private readonly baseUrl: string;
 
   constructor(config: CrowdinConfig) {
+    super();
     this.personalToken = config.personalToken;
     this.baseUrl = config.baseUrl || 'https://api.crowdin.com/api/v2';
   }
@@ -586,17 +588,10 @@ export class CrowdinMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async crowdinGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.authHeaders });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.authHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -605,7 +600,7 @@ export class CrowdinMCPServer {
   }
 
   private async crowdinPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.authHeaders,
       body: JSON.stringify(body),
@@ -618,7 +613,7 @@ export class CrowdinMCPServer {
   }
 
   private async crowdinPatch(path: string, ops: Array<{ op: string; path: string; value: unknown }>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.authHeaders,
       body: JSON.stringify(ops),
@@ -631,7 +626,7 @@ export class CrowdinMCPServer {
   }
 
   private async crowdinDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.authHeaders,
     });

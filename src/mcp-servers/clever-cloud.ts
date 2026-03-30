@@ -16,6 +16,7 @@
 // Rate limits: See Clever Cloud docs
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface CleverCloudConfig {
   /** OAuth1 Authorization header value, e.g. "OAuth oauth_token=...,oauth_signature=..." */
@@ -23,11 +24,12 @@ interface CleverCloudConfig {
   baseUrl?: string;
 }
 
-export class CleverCloudMCPServer {
+export class CleverCloudMCPServer extends MCPAdapterBase {
   private readonly authorizationHeader: string;
   private readonly baseUrl: string;
 
   constructor(config: CleverCloudConfig) {
+    super();
     this.authorizationHeader = config.authorizationHeader;
     this.baseUrl = config.baseUrl || 'https://api.clever-cloud.com/v2';
   }
@@ -1759,13 +1761,6 @@ export class CleverCloudMCPServer {
     return null;
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private buildQuery(params: Record<string, unknown>, allowed: string[]): string {
     const parts: string[] = [];
     for (const key of allowed) {
@@ -1791,7 +1786,7 @@ export class CleverCloudMCPServer {
       },
     };
     if (body && Object.keys(body).length > 0) init.body = JSON.stringify(body);
-    const response = await fetch(url, init);
+    const response = await this.fetchWithRetry(url, init);
     if (!response.ok) {
       const errText = await response.text().catch(() => response.statusText);
       return {

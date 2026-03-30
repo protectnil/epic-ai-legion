@@ -15,17 +15,19 @@
 // Rate limits: Subscription plan based; check remaining requests via usage-check endpoint
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface VatApiConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class VatApiMCPServer {
+export class VatApiMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: VatApiConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://vatapi.com/v1';
   }
@@ -221,7 +223,7 @@ export class VatApiMCPServer {
       Response: 'application/json',
     };
 
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

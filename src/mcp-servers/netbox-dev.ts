@@ -13,6 +13,7 @@
 // Rate limits: Not publicly documented; enforced at the instance level
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NetBoxConfig {
   /** NetBox API token */
@@ -21,11 +22,12 @@ interface NetBoxConfig {
   baseUrl?: string;
 }
 
-export class NetBoxDevMCPServer {
+export class NetBoxDevMCPServer extends MCPAdapterBase {
   private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: NetBoxConfig) {
+    super();
     this.token = config.apiToken;
     this.baseUrl = config.baseUrl ?? 'https://demo.netbox.dev/api';
   }
@@ -1064,14 +1066,8 @@ export class NetBoxDevMCPServer {
     };
   }
 
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchJson(url: string, options: RequestInit = {}): Promise<ToolResult> {
-    const response = await fetch(url, { headers: this.headers(), ...options });
+    const response = await this.fetchWithRetry(url, { headers: this.headers(), ...options });
     let data: unknown;
     try {
       data = await response.json();
@@ -1133,7 +1129,7 @@ export class NetBoxDevMCPServer {
     if (!id) {
       return { content: [{ type: 'text', text: 'id is required' }], isError: true };
     }
-    const response = await fetch(`${this.baseUrl}/${resource}/${id}/`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/${resource}/${id}/`, {
       method: 'DELETE',
       headers: this.headers(),
     });

@@ -22,6 +22,7 @@
 // Rate limits: Not publicly documented. Recommend < 60 req/min for production controllers.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface AppDynamicsConfig {
   controllerUrl: string;
@@ -30,11 +31,12 @@ interface AppDynamicsConfig {
   password: string;
 }
 
-export class AppDynamicsMCPServer {
+export class AppDynamicsMCPServer extends MCPAdapterBase {
   private readonly controllerUrl: string;
   private readonly authHeader: string;
 
   constructor(config: AppDynamicsConfig) {
+    super();
     this.controllerUrl = config.controllerUrl.replace(/\/$/, '');
     const credentials = `${config.username}@${config.accountName}:${config.password}`;
     this.authHeader = `Basic ${Buffer.from(credentials).toString('base64')}`;
@@ -46,12 +48,6 @@ export class AppDynamicsMCPServer {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     };
-  }
-
-  private truncate(text: string): string {
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
   }
 
   private buildTimeParams(args: Record<string, unknown>): string {
@@ -379,7 +375,7 @@ export class AppDynamicsMCPServer {
   }
 
   private async listApplications(): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/rest/applications?output=JSON`,
       { method: 'GET', headers: this.headers },
     );
@@ -401,7 +397,7 @@ export class AppDynamicsMCPServer {
   private async getApplication(args: Record<string, unknown>): Promise<ToolResult> {
     const applicationId = args.application_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}?output=JSON`,
       { method: 'GET', headers: this.headers },
     );
@@ -423,7 +419,7 @@ export class AppDynamicsMCPServer {
   private async listTiers(args: Record<string, unknown>): Promise<ToolResult> {
     const applicationId = args.application_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/tiers?output=JSON`,
       { method: 'GET', headers: this.headers },
     );
@@ -445,7 +441,7 @@ export class AppDynamicsMCPServer {
   private async listNodes(args: Record<string, unknown>): Promise<ToolResult> {
     const applicationId = args.application_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/nodes?output=JSON`,
       { method: 'GET', headers: this.headers },
     );
@@ -468,7 +464,7 @@ export class AppDynamicsMCPServer {
     const applicationId = args.application_id as string;
     const tierId = args.tier_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/tiers/${encodeURIComponent(tierId)}/nodes?output=JSON`,
       { method: 'GET', headers: this.headers },
     );
@@ -490,7 +486,7 @@ export class AppDynamicsMCPServer {
   private async listBusinessTransactions(args: Record<string, unknown>): Promise<ToolResult> {
     const applicationId = args.application_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/business-transactions?output=JSON`,
       { method: 'GET', headers: this.headers },
     );
@@ -512,7 +508,7 @@ export class AppDynamicsMCPServer {
   private async listBackends(args: Record<string, unknown>): Promise<ToolResult> {
     const applicationId = args.application_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/backends?output=JSON`,
       { method: 'GET', headers: this.headers },
     );
@@ -537,7 +533,7 @@ export class AppDynamicsMCPServer {
     const rollup = (args.rollup as boolean) || false;
 
     const url = `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/metric-data?metric-path=${encodeURIComponent(metricPath)}&${this.buildTimeParams(args)}&rollup=${rollup}&output=JSON`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
 
     if (!response.ok) {
       return {
@@ -558,7 +554,7 @@ export class AppDynamicsMCPServer {
     const metricPath = (args.metric_path as string) || '';
 
     const url = `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/metrics?metric-path=${encodeURIComponent(metricPath)}&output=JSON`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
 
     if (!response.ok) {
       return {
@@ -578,7 +574,7 @@ export class AppDynamicsMCPServer {
     const applicationId = args.application_id as string;
 
     const url = `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/problems/healthrule-violations?${this.buildTimeParams(args)}&output=JSON`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
 
     if (!response.ok) {
       return {
@@ -597,7 +593,7 @@ export class AppDynamicsMCPServer {
   private async listHealthRules(args: Record<string, unknown>): Promise<ToolResult> {
     const applicationId = args.application_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/alerting/rest/v1/applications/${encodeURIComponent(applicationId)}/health-rules`,
       { method: 'GET', headers: this.headers },
     );
@@ -622,7 +618,7 @@ export class AppDynamicsMCPServer {
     const severities = (args.severities as string) || 'INFO,WARN,ERROR';
 
     const url = `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/events?${this.buildTimeParams(args)}&event-types=${encodeURIComponent(eventTypes)}&severities=${encodeURIComponent(severities)}&output=JSON`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
 
     if (!response.ok) {
       return {
@@ -647,7 +643,7 @@ export class AppDynamicsMCPServer {
       url += `&business-transaction-id=${encodeURIComponent(args.business_transaction_id as string)}`;
     }
 
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
 
     if (!response.ok) {
       return {
@@ -667,7 +663,7 @@ export class AppDynamicsMCPServer {
     const applicationId = args.application_id as string;
     const tierId = args.tier_id as string;
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/rest/applications/${encodeURIComponent(applicationId)}/tiers/${encodeURIComponent(tierId)}/service-endpoints?output=JSON`,
       { method: 'GET', headers: this.headers },
     );
@@ -687,7 +683,7 @@ export class AppDynamicsMCPServer {
   }
 
   private async listMachines(): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.controllerUrl}/controller/sim/v2/user/machines`,
       { method: 'GET', headers: this.headers },
     );

@@ -22,6 +22,7 @@
 // Rate limits: ~1,000 requests/hour per token; headers returned on every response.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface GongConfig {
   accessKey: string;
@@ -33,11 +34,12 @@ interface GongConfig {
   baseUrl?: string;
 }
 
-export class GongMCPServer {
+export class GongMCPServer extends MCPAdapterBase {
   private readonly basicToken: string;
   private readonly baseUrl: string;
 
   constructor(config: GongConfig) {
+    super();
     this.basicToken = Buffer.from(`${config.accessKey}:${config.accessKeySecret}`).toString('base64');
     this.baseUrl = config.baseUrl || 'https://api.gong.io/v2';
   }
@@ -501,13 +503,6 @@ export class GongMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async listCalls(args: Record<string, unknown>): Promise<ToolResult> {
     const params = new URLSearchParams();
     if (args.fromDateTime) params.set('fromDateTime', args.fromDateTime as string);
@@ -515,7 +510,7 @@ export class GongMCPServer {
     if (args.workspaceId) params.set('workspaceId', args.workspaceId as string);
     if (args.cursor) params.set('cursor', args.cursor as string);
     const url = `${this.baseUrl}/calls${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list calls: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -528,7 +523,7 @@ export class GongMCPServer {
     if (!callId) {
       return { content: [{ type: 'text', text: 'callId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calls/${encodeURIComponent(callId)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -548,7 +543,7 @@ export class GongMCPServer {
     if (args.workspaceId) filter.workspaceId = args.workspaceId;
     let url = `${this.baseUrl}/calls/extensive`;
     if (args.cursor) url += `?cursor=${encodeURIComponent(args.cursor as string)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ filter }),
@@ -568,7 +563,7 @@ export class GongMCPServer {
     const filter: Record<string, unknown> = { callIds };
     if (args.fromDateTime) filter.fromDateTime = args.fromDateTime;
     if (args.toDateTime) filter.toDateTime = args.toDateTime;
-    const response = await fetch(`${this.baseUrl}/calls/transcript`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/calls/transcript`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ filter }),
@@ -585,7 +580,7 @@ export class GongMCPServer {
     if (!callId) {
       return { content: [{ type: 'text', text: 'callId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/calls/${encodeURIComponent(callId)}/media`,
       { method: 'GET', headers: this.headers },
     );
@@ -605,7 +600,7 @@ export class GongMCPServer {
     if (args.toDateTime) filter.toDateTime = args.toDateTime;
     let url = `${this.baseUrl}/calls/extensive`;
     if (args.cursor) url += `?cursor=${encodeURIComponent(args.cursor as string)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ filter }),
@@ -622,7 +617,7 @@ export class GongMCPServer {
     if (typeof args.includeAvatars === 'boolean') params.set('includeAvatars', String(args.includeAvatars));
     if (args.cursor) params.set('cursor', args.cursor as string);
     const url = `${this.baseUrl}/users${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list users: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -635,7 +630,7 @@ export class GongMCPServer {
     if (!userId) {
       return { content: [{ type: 'text', text: 'userId is required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/users/${encodeURIComponent(userId)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -654,7 +649,7 @@ export class GongMCPServer {
     if (args.userIds) filter.userIds = args.userIds;
     let url = `${this.baseUrl}/stats/interaction`;
     if (args.cursor) url += `?cursor=${encodeURIComponent(args.cursor as string)}`;
-    const response = await fetch(url, {
+    const response = await this.fetchWithRetry(url, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(body),
@@ -667,7 +662,7 @@ export class GongMCPServer {
   }
 
   private async listScorecards(): Promise<ToolResult> {
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/settings/scorecards`,
       { method: 'GET', headers: this.headers },
     );
@@ -688,7 +683,7 @@ export class GongMCPServer {
     const reviewedUserIds = args.reviewedUserIds as string[] | undefined;
     if (reviewedUserIds) reviewedUserIds.forEach(id => params.append('reviewedUserIds', id));
     const url = `${this.baseUrl}/stats/activity/scorecards${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get answered scorecards: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -704,7 +699,7 @@ export class GongMCPServer {
     const userIds = args.userIds as string[] | undefined;
     if (userIds) userIds.forEach(id => params.append('userIds', id));
     const url = `${this.baseUrl}/stats/activity/day-by-day${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get daily activity: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -721,7 +716,7 @@ export class GongMCPServer {
     const userIds = args.userIds as string[] | undefined;
     if (userIds) userIds.forEach(id => params.append('userIds', id));
     const url = `${this.baseUrl}/stats/activity/aggregate-by-period${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to get activity aggregate: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -738,7 +733,7 @@ export class GongMCPServer {
     if (args.fromUpdatedDate) params.set('fromUpdatedDate', args.fromUpdatedDate as string);
     if (args.cursor) params.set('cursor', args.cursor as string);
     const url = `${this.baseUrl}/crm/object/${encodeURIComponent(objType)}${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list CRM objects: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -752,7 +747,7 @@ export class GongMCPServer {
     if (!objType || !crmObjectId) {
       return { content: [{ type: 'text', text: 'objType and crmObjectId are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/crm/object/${encodeURIComponent(objType)}/${encodeURIComponent(crmObjectId)}`,
       { method: 'GET', headers: this.headers },
     );
@@ -768,7 +763,7 @@ export class GongMCPServer {
     if (args.workspaceId) params.set('workspaceId', args.workspaceId as string);
     if (args.cursor) params.set('cursor', args.cursor as string);
     const url = `${this.baseUrl}/library/folders${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list library folders: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }
@@ -786,7 +781,7 @@ export class GongMCPServer {
     const params = new URLSearchParams({ folderId });
     if (args.cursor) params.set('cursor', args.cursor as string);
     const url = `${this.baseUrl}/library/folder-content?${params.toString()}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Failed to list library calls: HTTP ${response.status} ${response.statusText}` }], isError: true };
     }

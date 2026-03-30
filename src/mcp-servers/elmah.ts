@@ -16,17 +16,19 @@
 //   deployments (version tracking), heartbeats (uptime checks), source maps (JS deobfuscation).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ElmahConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
-export class ElmahMCPServer {
+export class ElmahMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(config: ElmahConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://api.elmah.io';
   }
@@ -60,7 +62,7 @@ export class ElmahMCPServer {
     const sep = path.includes('?') ? '&' : '?';
     const url = `${this.baseUrl}${path}${sep}api_key=${encodeURIComponent(this.apiKey)}`;
     try {
-      const resp = await fetch(url, {
+      const resp = await this.fetchWithRetry(url, {
         method,
         headers: {
           'Content-Type': 'application/json',

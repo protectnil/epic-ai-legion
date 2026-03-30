@@ -13,15 +13,17 @@
 // Rate limits: Not publicly documented; standard academic API fair-use applies
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface EbiAcUkConfig {
   baseUrl?: string;
 }
 
-export class EbiAcUkMCPServer {
+export class EbiAcUkMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
 
   constructor(config: EbiAcUkConfig = {}) {
+    super();
     this.baseUrl = config.baseUrl || 'https://www.ebi.ac.uk/Tools/crossbar';
   }
 
@@ -498,13 +500,6 @@ export class EbiAcUkMCPServer {
     }
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + '\n... [truncated, ' + text.length + ' total chars]'
-      : text;
-  }
-
   private buildParams(args: Record<string, unknown>, keys: string[]): string {
     const params = new URLSearchParams();
     for (const key of keys) {
@@ -518,7 +513,7 @@ export class EbiAcUkMCPServer {
   }
 
   private async get(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });

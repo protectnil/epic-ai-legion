@@ -13,6 +13,7 @@
 //   attendance data, use the personio-de-personnel adapter (separate spec).
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface PersonioAuthConfig {
   clientId?: string;
@@ -20,12 +21,13 @@ interface PersonioAuthConfig {
   baseUrl?: string;
 }
 
-export class PersonioDeAuthenticationMCPServer {
+export class PersonioDeAuthenticationMCPServer extends MCPAdapterBase {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
 
   constructor(config: PersonioAuthConfig) {
+    super();
     this.clientId     = config.clientId     || '';
     this.clientSecret = config.clientSecret || '';
     this.baseUrl      = config.baseUrl      || 'https://api.personio.de/v1';
@@ -90,13 +92,6 @@ export class PersonioDeAuthenticationMCPServer {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   // ── Auth methods ───────────────────────────────────────────────────────────
 
   private async requestAuthToken(args: Record<string, unknown>): Promise<ToolResult> {
@@ -110,7 +105,7 @@ export class PersonioDeAuthenticationMCPServer {
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('client_secret', clientSecret);
 
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithRetry(url.toString(), {
       method: 'POST',
       headers: { Accept: 'application/json' },
     });

@@ -32,17 +32,19 @@
 // Rate limits: Not publicly documented for REST API v2; Next Gen API Data Protection has per-endpoint limits
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface NetskopeConfig {
   apiToken: string;
   baseUrl: string;  // required: https://<tenant>.goskope.com
 }
 
-export class NetskopeMCPServer {
+export class NetskopeMCPServer extends MCPAdapterBase {
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
   constructor(config: NetskopeConfig) {
+    super();
     this.apiToken = config.apiToken;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
   }
@@ -477,17 +479,10 @@ export class NetskopeMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async nsGet(path: string, params: Record<string, string> = {}): Promise<ToolResult> {
     const qs = new URLSearchParams(params).toString();
     const url = `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
-    const response = await fetch(url, { method: 'GET', headers: this.headers });
+    const response = await this.fetchWithRetry(url, { method: 'GET', headers: this.headers });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }

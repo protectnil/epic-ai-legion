@@ -21,6 +21,7 @@
 //   This adapter retains the v1 path until v2 is fully stable per vendor guidance.
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 
 interface ChecklyConfig {
   /**
@@ -37,12 +38,13 @@ interface ChecklyConfig {
   baseUrl?: string;
 }
 
-export class ChecklyMCPServer {
+export class ChecklyMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
   private readonly accountId: string;
   private readonly baseUrl: string;
 
   constructor(config: ChecklyConfig) {
+    super();
     this.apiKey = config.apiKey;
     this.accountId = config.accountId;
     this.baseUrl = config.baseUrl || 'https://api.checklyhq.com/v1';
@@ -442,15 +444,8 @@ export class ChecklyMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async checklyGet(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'GET', headers: this.reqHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'GET', headers: this.reqHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Checkly API error (HTTP ${response.status}): ${response.statusText}` }], isError: true };
     }
@@ -460,7 +455,7 @@ export class ChecklyMCPServer {
   }
 
   private async checklyPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.reqHeaders,
       body: JSON.stringify(body),
@@ -474,7 +469,7 @@ export class ChecklyMCPServer {
   }
 
   private async checklyPatch(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.reqHeaders,
       body: JSON.stringify(body),
@@ -488,7 +483,7 @@ export class ChecklyMCPServer {
   }
 
   private async checklyDelete(path: string): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.reqHeaders });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}`, { method: 'DELETE', headers: this.reqHeaders });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `Checkly API error (HTTP ${response.status}): ${response.statusText}` }], isError: true };
     }

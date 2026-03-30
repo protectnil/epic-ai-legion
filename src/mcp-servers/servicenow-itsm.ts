@@ -16,6 +16,7 @@
 // Rate limits: Default 3,000 req/10min per instance; configurable via system properties
 
 import { ToolDefinition, ToolResult } from './types.js';
+import { MCPAdapterBase } from './base.js';
 import type { AdapterCatalogEntry } from '../federation/AdapterCatalog.js';
 
 interface ServiceNowITSMConfig {
@@ -26,11 +27,12 @@ interface ServiceNowITSMConfig {
   baseUrl?: string;
 }
 
-export class ServiceNowITSMMCPServer {
+export class ServiceNowITSMMCPServer extends MCPAdapterBase {
   private readonly baseUrl: string;
   private readonly authHeader: string;
 
   constructor(config: ServiceNowITSMConfig) {
+    super();
     this.baseUrl = config.baseUrl || `https://${config.instance}.service-now.com/api/now`;
 
     if (config.bearerToken) {
@@ -541,13 +543,6 @@ export class ServiceNowITSMMCPServer {
     };
   }
 
-  private truncate(data: unknown): string {
-    const text = JSON.stringify(data, null, 2);
-    return text.length > 10_000
-      ? text.slice(0, 10_000) + `\n... [truncated, ${text.length} total chars]`
-      : text;
-  }
-
   private async fetchTable(
     table: string,
     queryParts: string[],
@@ -559,7 +554,7 @@ export class ServiceNowITSMMCPServer {
     params.set('sysparm_offset', String(offset));
     if (queryParts.length > 0) params.set('sysparm_query', queryParts.join('^'));
 
-    const response = await fetch(`${this.baseUrl}/table/${table}?${params}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/table/${table}?${params}`, {
       method: 'GET',
       headers: this.requestHeaders(),
     });
@@ -573,7 +568,7 @@ export class ServiceNowITSMMCPServer {
 
   private async fetchByIdOrQuery(table: string, sysId?: string, queryString?: string): Promise<ToolResult> {
     if (sysId) {
-      const response = await fetch(
+      const response = await this.fetchWithRetry(
         `${this.baseUrl}/table/${table}/${encodeURIComponent(sysId)}`,
         { method: 'GET', headers: this.requestHeaders() },
       );
@@ -586,7 +581,7 @@ export class ServiceNowITSMMCPServer {
     }
     if (queryString) {
       const params = new URLSearchParams({ sysparm_query: queryString, sysparm_limit: '1' });
-      const response = await fetch(
+      const response = await this.fetchWithRetry(
         `${this.baseUrl}/table/${table}?${params}`,
         { method: 'GET', headers: this.requestHeaders() },
       );
@@ -601,7 +596,7 @@ export class ServiceNowITSMMCPServer {
   }
 
   private async postTable(table: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const response = await fetch(`${this.baseUrl}/table/${table}`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/table/${table}`, {
       method: 'POST',
       headers: this.requestHeaders(),
       body: JSON.stringify(body),
@@ -654,7 +649,7 @@ export class ServiceNowITSMMCPServer {
     if (!sysId || !fields) {
       return { content: [{ type: 'text', text: 'sys_id and fields are required' }], isError: true };
     }
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/table/incident/${encodeURIComponent(sysId)}`,
       { method: 'PATCH', headers: this.requestHeaders(), body: JSON.stringify(fields) },
     );
