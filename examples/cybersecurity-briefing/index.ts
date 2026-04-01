@@ -1,22 +1,20 @@
 /**
  * Epic AI® Cybersecurity Briefing Example
- * Streams a threat briefing with Ollama orchestration and tiered autonomy.
- * Requires: ollama serve + ollama pull qwen2.5:7b
+ * Streams a threat briefing with local SLM orchestration and tiered autonomy.
+ * Requires: llama-server running on port 8080
  * Run: npx tsx index.ts
  */
 
-import { EpicAI } from '@epicai/core';
+import { EpicAI } from '@epicai/legion';
 
 async function main() {
   const agent = await EpicAI.create({
     // Local SLM orchestrator — tool schemas never leave your machine
     orchestrator: {
-      provider: 'ollama',
-      model: 'qwen2.5:7b',
-      baseUrl: 'http://localhost:11434',
+      provider: 'auto',
       maxIterations: 10,
     },
-    // Generator omitted — Ollama handles both routing and synthesis
+    // Generator omitted — local SLM handles both routing and synthesis
     federation: {
       servers: [],  // Replace with your MCP servers:
       // { name: 'splunk', transport: 'streamable-http', url: 'https://splunk.local/mcp' },

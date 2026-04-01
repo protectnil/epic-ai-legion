@@ -1,6 +1,6 @@
-# Contributing to Epic AI® IVA Core
+# Contributing to Epic AI® Legion
 
-Thank you for your interest in contributing to Epic AI® IVA Core — the Zero LLM Context MCP Orchestrator for Intelligent Virtual Assistants.
+Thank you for your interest in contributing to Epic AI® Legion — the Zero LLM Context MCP Orchestrator for Intelligent Virtual Assistants.
 
 ## Getting Started
 
@@ -64,7 +64,7 @@ Each layer has an adapter interface. Contributions of new adapters (vector store
 Use [GitHub Issues](https://github.com/protectnil/epic-ai-core/issues). Include:
 
 - Node.js version
-- `@epicai/core` version
+- `@epicai/legion` version
 - Minimal reproduction steps
 - Expected vs actual behavior
 

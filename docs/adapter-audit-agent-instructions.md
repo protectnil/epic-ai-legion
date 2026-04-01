@@ -3,7 +3,7 @@
 ## Mission
 
 You are auditing and correcting Epic AI SDK adapters in
-`/home/nilassist/projects/epic-ai-core/src/mcp-servers/`
+`./src/mcp-servers/`
 
 Each adapter connects the Epic AI orchestrator to a vendor's API.
 Your job is to verify that every adapter is CORRECT — correct
@@ -15,7 +15,7 @@ You are NOT writing adapters from scratch. You are reading existing
 code and verifying it against the vendor's actual documentation.
 
 **BEFORE YOU START:** Read the adapter development protocol at
-`/home/nilassist/projects/epic-ai-core/ADAPTER-DEVELOPMENT-PROTOCOL.md`
+`./ADAPTER-DEVELOPMENT-PROTOCOL.md`
 — every adapter must conform to it. Your audit must verify conformance.
 
 ---
@@ -39,7 +39,7 @@ may batch your Tavily calls for efficiency where possible.
 ### Step 1: Read the Adapter Code
 
 Read the full adapter file:
-`/home/nilassist/projects/epic-ai-core/src/mcp-servers/{vendor}.ts`
+`./src/mcp-servers/{vendor}.ts`
 
 Record:
 - Class name
@@ -362,7 +362,7 @@ CHANGES MADE: {yes/no + summary of edits}
    comments to things that are already correct.
 
 5. **FOLLOW THE PROTOCOL FILE.** The adapter must conform to
-   `/home/nilassist/projects/epic-ai-core/ADAPTER-DEVELOPMENT-PROTOCOL.md`
+   `./ADAPTER-DEVELOPMENT-PROTOCOL.md`
    Read it before you start.
 
 6. **TYPESCRIPT MUST COMPILE.** After all edits, the file must still

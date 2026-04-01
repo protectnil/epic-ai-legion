@@ -1,11 +1,10 @@
 # Cybersecurity Briefing
 
-Full threat briefing with Ollama orchestrator, tiered autonomy, and streaming events. Requires Ollama running locally with Mistral 7B.
+Full threat briefing with local SLM orchestrator (llama.cpp), tiered autonomy, and streaming events.
 
 ## Prerequisites
 
-- Ollama running (`ollama serve`)
-- Mistral 7B pulled (`ollama pull mistral:7b`)
+- llama.cpp running with a model loaded (`llama-server --model <path-to-gguf> --port 8080 --jinja`)
 
 ## Run
 
@@ -15,7 +14,7 @@ npx tsx index.ts
 
 ## What it does
 
-1. Creates an agent with Ollama as orchestrator (local SLM routes tools)
+1. Creates an agent with a local SLM as orchestrator (routes tools via llama.cpp on port 8080)
 2. Configures tiered autonomy — read/query is auto, contain is escalate, delete/revoke requires approval
 3. Streams the briefing in real time — plan, action, narrative, and done events
 4. Prints each stream event as it arrives

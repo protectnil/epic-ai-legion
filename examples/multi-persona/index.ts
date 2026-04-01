@@ -5,8 +5,8 @@
  * Run: npx tsx index.ts
  */
 
-import { EpicAI, PersonaManager } from '@epicai/core';
-import type { LLMResponse, LLMMessage } from '@epicai/core';
+import { EpicAI, PersonaManager } from '@epicai/legion';
+import type { LLMResponse, LLMMessage } from '@epicai/legion';
 
 // Mock LLM that adjusts tone based on the system prompt
 const mockLLM = async (params: { messages: LLMMessage[] }): Promise<LLMResponse> => {

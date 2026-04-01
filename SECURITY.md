@@ -29,11 +29,11 @@ Include:
 
 ## Scope
 
-This policy covers the `@epicai/core` npm package and its direct dependencies. It does not cover:
+This policy covers the `@epicai/legion` npm package and its direct dependencies. It does not cover:
 
 - Third-party MCP servers connected via the federation layer
 - Customer-deployed orchestrator or generator models
-- Products built on the Epic AI® IVA Core SDK (report separately to security@epic-ai.io)
+- Products built on the Epic AI® Legion SDK (report separately to security@epic-ai.io)
 
 ## Recognition
 

@@ -4,8 +4,8 @@
  * Run: npx tsx index.ts
  */
 
-import { EpicAI } from '@epicai/core';
-import type { LLMResponse } from '@epicai/core';
+import { EpicAI } from '@epicai/legion';
+import type { LLMResponse } from '@epicai/legion';
 
 // A mock LLM that returns a fixed response (no Ollama or cloud API needed)
 const mockLLM = async (): Promise<LLMResponse> => ({

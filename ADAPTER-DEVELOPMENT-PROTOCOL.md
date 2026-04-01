@@ -1,6 +1,6 @@
 # Adapter Development Protocol
 
-**Package:** `@epicai/core`
+**Package:** `@epicai/legion`
 **License:** Apache 2.0
 **Applies to:** All adapters in `src/mcp-servers/`, all contributors (protectNIL, vendor, community)
 

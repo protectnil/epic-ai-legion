@@ -1,13 +1,13 @@
-# Epic AI® IVA Core — Integration Test Protocol
+# Epic AI® Legion — Integration Test Protocol
 
-**Package:** `@epicai/core`
-**Version:** 0.4.x
+**Package:** `@epicai/legion`
+**Version:** 0.5.x
 
 ---
 
 ## Purpose
 
-This document defines the complete test protocol for validating the Epic AI® IVA Core SDK. Any developer or contributor can use it to run the full suite on their hardware.
+This document defines the complete test protocol for validating the Epic AI® Legion SDK. Any developer or contributor can use it to run the full suite on their hardware.
 
 ---
 
