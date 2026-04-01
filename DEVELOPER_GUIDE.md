@@ -1,11 +1,11 @@
-# Epic AI® IVA Core — Developer Guide
+# Epic AI® Legion — Developer Guide
 
-**SDK:** `@epicai/core`
-**Version:** 0.4.2
+**SDK:** `@epicai/legion`
+**Version:** 0.5.0
 **License:** Apache 2.0
 **Runtime:** Node.js >= 20.0.0, TypeScript 5.3+
 
-Epic AI® IVA Core is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. The SDK federates across multiple MCP servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis. 472 pre-built adapters span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. This guide covers every layer of the SDK.
+Epic AI® Legion is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. The SDK federates across multiple MCP servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis. 871 REST adapters plus 246 MCP connections (1,117 integrations, 18,679 tools) span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. This guide covers every layer of the SDK.
 
 ---
 
@@ -37,7 +37,7 @@ Epic AI® IVA Core is an Intelligent Virtual Assistant that replaces dashboards 
 ## Installation
 
 ```bash
-npm install @epicai/core
+npm install @epicai/legion
 ```
 
 Optional peer dependencies for production:
@@ -68,7 +68,7 @@ llama-server --model llama-3.1-8b-instruct.Q4_K_M.gguf --port 8080
 ## Quick Start
 
 ```typescript
-import { EpicAI } from '@epicai/core';
+import { EpicAI } from '@epicai/legion';
 
 const agent = await EpicAI.create({
   orchestrator: { provider: 'auto', model: 'llama3.1:8b' },
@@ -103,7 +103,7 @@ await agent.stop();
 
 ## Architecture
 
-Epic AI® IVA Core separates concerns into five integrated layers, plus orchestration, transport, resilience, and observability:
+Epic AI® Legion separates concerns into five integrated layers, plus orchestration, transport, resilience, and observability:
 
 ```
 User Query
@@ -170,7 +170,7 @@ All externally-sourced content passes through `sanitizeInjectedContent()` before
 
 ```typescript
 import type { PlanEvent, ActionEvent, ApprovalNeededEvent, ResultEvent,
-  NarrativeEvent, MemoryEvent, ErrorEvent, DoneEvent, StreamEvent } from '@epicai/core';
+  NarrativeEvent, MemoryEvent, ErrorEvent, DoneEvent, StreamEvent } from '@epicai/legion';
 ```
 
 Each variant is a separate interface (`PlanEvent`, `ActionEvent`, etc.) with a literal `type` discriminant, a typed `data` object, and a `timestamp: Date`. TypeScript narrows the payload automatically in `switch` statements on `event.type`.
@@ -218,7 +218,7 @@ If configuration is invalid, the agent fails fast with no partial initialization
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `provider` | `'openai' \| 'anthropic' \| 'ollama' \| 'custom'` | LLM provider |
+| `provider` | `'openai' \| 'anthropic' \| 'ollama' (deprecated) \| 'custom'` | LLM provider |
 | `model` | `string` | Model name (e.g., `'gpt-4.1'`, `'claude-opus-4-6'`) |
 | `apiKey` | `string` | Provider API key |
 | `maxTokens` | `number` | Max generation tokens |
@@ -284,7 +284,7 @@ The federation layer connects N MCP servers behind a single interface with unifi
 ### Connecting Servers
 
 ```typescript
-import { FederationManager } from '@epicai/core';
+import { FederationManager } from '@epicai/legion';
 
 const federation = new FederationManager({
   servers: [
@@ -365,7 +365,7 @@ Disable pre-filtering for small deployments (fewer than ~30 tools) where full to
 `AdaptivePool` manages per-tenant MCP server connections, scaling connection count based on observed request rate and evicting idle connections to bound memory.
 
 ```typescript
-import { AdaptivePool } from '@epicai/core';
+import { AdaptivePool } from '@epicai/legion';
 
 const pool = new AdaptivePool({
   minConnections: 1,
@@ -397,7 +397,7 @@ const federation = new FederationManager({
 Implement this to connect any custom MCP server:
 
 ```typescript
-import { FederationManager, type MCPAdapter, type Tool, type ToolResult } from '@epicai/core';
+import { FederationManager, type MCPAdapter, type Tool, type ToolResult } from '@epicai/legion';
 
 class MyCustomAdapter implements MCPAdapter {
   readonly name: string;
@@ -438,7 +438,7 @@ Every tool call passes through the TieredAutonomy engine before execution. Three
 ### Tier Evaluation
 
 ```typescript
-import { TieredAutonomy } from '@epicai/core';
+import { TieredAutonomy } from '@epicai/legion';
 
 const autonomy = new TieredAutonomy(
   {
@@ -512,7 +512,7 @@ Controls agent identity, system prompt composition, vocabulary, and output const
 ### Registering Personas
 
 ```typescript
-import { PersonaManager } from '@epicai/core';
+import { PersonaManager } from '@epicai/legion';
 
 const persona = new PersonaManager();
 
@@ -596,8 +596,8 @@ Triple-representation hybrid search with Reciprocal Rank Fusion (RRF).
 ### Setup
 
 ```typescript
-import { HybridRetriever } from '@epicai/core';
-import { QdrantAdapter } from '@epicai/core/retrieval/adapters/qdrant';
+import { HybridRetriever } from '@epicai/legion';
+import { QdrantAdapter } from '@epicai/legion/retrieval/adapters/qdrant';
 
 const retriever = new HybridRetriever({
   dense: { provider: 'qdrant', adapter: new QdrantAdapter({ host: 'localhost', port: 6333, collection: 'dense' }) },
@@ -656,7 +656,7 @@ Importance-weighted persistent memory with access-frequency auto-promotion.
 ### Storing Memories
 
 ```typescript
-import { PersistentMemory, InMemoryStore } from '@epicai/core';
+import { PersistentMemory, InMemoryStore } from '@epicai/legion';
 
 const memory = new PersistentMemory({ store: new InMemoryStore(), cacheTTLMs: 300000 });
 
@@ -721,7 +721,7 @@ SHA-256 hash-chained append-only logging. Every tool call, autonomy decision, an
 The orchestrator records actions automatically. For manual recording:
 
 ```typescript
-import { AuditTrail } from '@epicai/core';
+import { AuditTrail } from '@epicai/legion';
 
 const audit = new AuditTrail({
   store: 'append-only-log',
@@ -873,7 +873,7 @@ Response:
 {
   "status": "ok",
   "backends": [
-    { "name": "ollama", "url": "http://localhost:11434", "status": "healthy", "queueDepth": 0 },
+    { "name": "ollama", "url": "http://localhost:11434", "status": "healthy", "queueDepth": 0 },  /* legacy — Ollama is deprecated; use llama.cpp or vLLM via the gateway */
     { "name": "vllm",   "url": "http://localhost:8080",  "status": "healthy", "queueDepth": 2 }
   ]
 }
@@ -890,7 +890,7 @@ Prior to V2, the SDK included a built-in Ollama shim that translated OpenAI-form
 ### Rate Limiting
 
 ```typescript
-import { RateLimiter } from '@epicai/core';
+import { RateLimiter } from '@epicai/legion';
 
 const limiter = new RateLimiter({
   global: { requestsPerSecond: 100, burst: 200 },
@@ -904,7 +904,7 @@ const { remaining, resetsInMs } = limiter.remaining('splunk');
 ### Error Classification and Retry
 
 ```typescript
-import { ErrorClassifier } from '@epicai/core';
+import { ErrorClassifier } from '@epicai/legion';
 
 const result = await ErrorClassifier.withRetry(
   () => federation.callTool('splunk_search', { query: 'index=main' }),
@@ -921,7 +921,7 @@ Error categories:
 ### Graceful Shutdown
 
 ```typescript
-import { GracefulShutdown } from '@epicai/core';
+import { GracefulShutdown } from '@epicai/legion';
 
 const shutdown = new GracefulShutdown();
 shutdown.register({ name: 'save-audit', fn: () => audit.flush(), timeoutMs: 5000 });
@@ -933,7 +933,7 @@ const unsubscribe = shutdown.registerSignalHandlers(() => process.exit(0));
 ### Crash Recovery
 
 ```typescript
-import { FileCheckpointStore } from '@epicai/core';
+import { FileCheckpointStore } from '@epicai/legion';
 
 const checkpoint = new FileCheckpointStore('/var/lib/epic-ai/checkpoints');
 await checkpoint.save({ id: 'run-123', step: 5, context: { ... } });
@@ -945,7 +945,7 @@ const restored = await checkpoint.load('run-123');
 ### Prompt Cache
 
 ```typescript
-import { PromptCache } from '@epicai/core';
+import { PromptCache } from '@epicai/legion';
 
 const cache = new PromptCache({ maxEntries: 1000, defaultTTLMs: 300000 });
 const prompt = await cache.getOrCompute('user-123-context', async () => {
@@ -962,7 +962,7 @@ Shared in-flight promises prevent thundering herd on cache miss. LRU eviction at
 ### Event Callbacks
 
 ```typescript
-import { ObservabilityEmitter } from '@epicai/core';
+import { ObservabilityEmitter } from '@epicai/legion';
 
 const emitter = new ObservabilityEmitter();
 
@@ -1005,7 +1005,7 @@ Use `RunTelemetryCollector` for a readable per-run summary, `TokenTracker` for t
 When you need a single human-readable snapshot of one agent run, attach a `RunTelemetryCollector` to the same event/log stream:
 
 ```typescript
-import { ObservabilityEmitter, RunTelemetryCollector } from '@epicai/core';
+import { ObservabilityEmitter, RunTelemetryCollector } from '@epicai/legion';
 
 const emitter = new ObservabilityEmitter();
 const telemetry = new RunTelemetryCollector();
@@ -1023,7 +1023,7 @@ The collector keeps recent stream events and log entries, counts event types, an
 ### Token and Cost Tracking
 
 ```typescript
-import { TokenTracker } from '@epicai/core';
+import { TokenTracker } from '@epicai/legion';
 
 const tracker = new TokenTracker();
 tracker.record('openai', 'gpt-4.1', 'generator', { promptTokens: 1200, completionTokens: 340 });
@@ -1035,7 +1035,7 @@ const summary = tracker.summary();
 ### OpenTelemetry Integration
 
 ```typescript
-import { createOTelEventCallback, createOTelLogCallback } from '@epicai/core';
+import { createOTelEventCallback, createOTelLogCallback } from '@epicai/legion';
 
 emitter.onEvent(createOTelEventCallback(spanExporter, traceId));
 emitter.onLog(createOTelLogCallback(logExporter));
@@ -1045,7 +1045,7 @@ emitter.onLog(createOTelLogCallback(logExporter));
 
 ## MCP Server Adapters
 
-The SDK ships 472 pre-built adapters across security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. Each implements `MCPAdapter` and handles authentication, request formatting, and response normalization. All 472 are included under Apache 2.0.
+The SDK ships 871 REST adapters plus 246 MCP connections (1,117 integrations, 18,679 tools) across security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. Each implements `MCPAdapter` and handles authentication, request formatting, and response normalization. All REST adapters are included under Apache 2.0.
 
 ### Security Operations
 
@@ -1106,7 +1106,7 @@ Managed adapter maintenance — keeping adapters current as vendor APIs and MCP 
 ### Using an Adapter
 
 ```typescript
-import { SplunkMCPServer } from '@epicai/core/mcp-servers/splunk';
+import { SplunkMCPServer } from '@epicai/legion/mcp-servers/splunk';
 
 const splunk = new SplunkMCPServer({
   host: 'splunk.corp.example.com',
@@ -1133,7 +1133,7 @@ await federation.connect('splunk', {
 ### Custom MCP Server
 
 ```typescript
-import { type MCPAdapter, type Tool, type ToolResult } from '@epicai/core';
+import { type MCPAdapter, type Tool, type ToolResult } from '@epicai/legion';
 
 class MyCustomAdapter implements MCPAdapter {
   readonly name: string;
@@ -1156,7 +1156,7 @@ await federation.connect('my-tool', config, new MyCustomAdapter('my-tool'));
 ### Custom Vector Store
 
 ```typescript
-import type { VectorStoreAdapter, ScoredResult, IndexDocument, SearchOptions } from '@epicai/core';
+import type { VectorStoreAdapter, ScoredResult, IndexDocument, SearchOptions } from '@epicai/legion';
 
 class MyVectorStore implements VectorStoreAdapter {
   async searchDense(query: string, options: SearchOptions): Promise<ScoredResult[]> { /* semantic */ }
@@ -1169,7 +1169,7 @@ class MyVectorStore implements VectorStoreAdapter {
 ### Custom Memory Store
 
 ```typescript
-import type { MemoryStoreAdapter } from '@epicai/core';
+import type { MemoryStoreAdapter } from '@epicai/legion';
 
 class MyMemoryStore implements MemoryStoreAdapter {
   async save(userId, entry) { /* persist */ }
@@ -1182,7 +1182,7 @@ class MyMemoryStore implements MemoryStoreAdapter {
 ### Custom Audit Store
 
 ```typescript
-import type { AuditStoreAdapter } from '@epicai/core';
+import type { AuditStoreAdapter } from '@epicai/legion';
 
 class MyAuditStore implements AuditStoreAdapter {
   async append(record) { /* atomic append */ }
@@ -1208,7 +1208,7 @@ class MyAuditStore implements AuditStoreAdapter {
 ### Configuration
 
 ```typescript
-import { SandboxManager } from '@epicai/core';
+import { SandboxManager } from '@epicai/legion';
 
 const sandbox = new SandboxManager({
   mode: 'process',            // 'process' | 'worker-thread' | 'none'
@@ -1315,7 +1315,7 @@ Runs `tests/harness-check.ts` via `npx tsx` — no vitest. Spawns real MCP serve
 The SDK provides in-memory adapters for all extension points, enabling fully offline testing:
 
 ```typescript
-import { EpicAI } from '@epicai/core';
+import { EpicAI } from '@epicai/legion';
 
 const agent = await EpicAI.create({
   orchestrator: { provider: 'custom', model: 'test', llm: mockLLM },
@@ -1333,10 +1333,10 @@ const agent = await EpicAI.create({
 Interactive setup wizard for first-time configuration:
 
 ```bash
-npx epic-ai setup
-npx epic-ai setup --model llama3.1:8b
-npx epic-ai setup --skip-model
-npx epic-ai setup --force-config
+npx @epicai/legion
+npx @epicai/legion --model llama3.1:8b
+npx @epicai/legion --skip-model
+npx @epicai/legion --force-config
 ```
 
 The wizard:
@@ -1356,7 +1356,7 @@ The trust layer enforces authentication, access policy, and supply-chain integri
 `AuthMiddleware` validates inbound requests (e.g., from an HTTP wrapper around the agent) and attaches a verified identity to the request context. Unverified requests are rejected before the orchestrator loop starts.
 
 ```typescript
-import { AuthMiddleware } from '@epicai/core';
+import { AuthMiddleware } from '@epicai/legion';
 
 const auth = new AuthMiddleware({
   provider: 'jwt',                        // 'jwt' | 'api-key' | 'mtls'
@@ -1374,7 +1374,7 @@ app.use(auth.middleware());
 `AccessPolicyEngine` enforces which identities may invoke which tools. Policies are evaluated per tool call after the orchestrator selects tools but before the federation layer executes them.
 
 ```typescript
-import { AccessPolicyEngine } from '@epicai/core';
+import { AccessPolicyEngine } from '@epicai/legion';
 
 const policy = new AccessPolicyEngine();
 await policy.loadPolicyFromFile('/etc/epic-ai/access-policy.yaml');
@@ -1405,7 +1405,7 @@ const autonomy = new TieredAutonomy(rules, approvalQueueConfig, { policyEngine: 
 `ArtifactVerifier` validates adapter supply-chain integrity before loading. It checks that adapter packages match their published checksums and that signing keys are trusted — preventing a compromised registry or tampered package from executing inside the SDK.
 
 ```typescript
-import { ArtifactVerifier } from '@epicai/core';
+import { ArtifactVerifier } from '@epicai/legion';
 
 const verifier = new ArtifactVerifier({
   trustedKeys: ['/etc/epic-ai/signing-keys/protectnil.pub'],
@@ -1415,7 +1415,7 @@ const verifier = new ArtifactVerifier({
 });
 
 // Verify before connecting
-await verifier.verifyAdapter('@epicai/core/mcp-servers/splunk');
+await verifier.verifyAdapter('@epicai/legion/mcp-servers/splunk');
 ```
 
 ### createSecretsProvider
@@ -1423,7 +1423,7 @@ await verifier.verifyAdapter('@epicai/core/mcp-servers/splunk');
 `createSecretsProvider` abstracts secret retrieval so adapter credentials are never hardcoded or stored in config files. Supported backends: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, environment variables.
 
 ```typescript
-import { createSecretsProvider } from '@epicai/core';
+import { createSecretsProvider } from '@epicai/legion';
 
 const secrets = createSecretsProvider({
   backend: 'vault',
@@ -1447,4 +1447,4 @@ const federation = new FederationManager({
 
 ---
 
-*Epic AI® — Intelligent Virtual Assistant (IVA) Platform | Built by [protectNIL Inc.](https://protectnil.com) | U.S. Reg. No. 7,748,019*
+*Epic AI® Legion — Intelligent Virtual Assistant (IVA) Platform | Built by [protectNIL Inc.](https://protectnil.com) | U.S. Reg. No. 7,748,019*
