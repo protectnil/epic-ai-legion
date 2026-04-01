@@ -27421,5 +27421,149 @@
         "list_products"
       ]
     }
+  },
+  {
+    "id": "openai-codex",
+    "name": "OpenAI Codex CLI",
+    "description": "Coding agent from OpenAI — runs locally, understands codebase, executes commands",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "codex-mcp-server",
+      "command": "codex-mcp-server"
+    }
+  },
+  {
+    "id": "gemini-mcp",
+    "name": "Google Gemini",
+    "description": "Gemini MCP server — multimodal analysis, image and video generation",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "gemini-mcp",
+      "command": "gemini-mcp"
+    }
+  },
+  {
+    "id": "openai-mcp",
+    "name": "OpenAI",
+    "description": "MCP server for OpenAI API — chat completions, embeddings, image generation, assistants",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "openai-mcp-server",
+      "command": "openai-mcp-server"
+    }
+  },
+  {
+    "id": "ollama-mcp",
+    "name": "Ollama",
+    "description": "MCP server for Ollama — local model management, chat, embeddings, model pulling",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "ollama-mcp-server",
+      "command": "ollama-mcp-server"
+    }
+  },
+  {
+    "id": "groq-mcp",
+    "name": "Groq",
+    "description": "MCP server for Groq API — fast inference, code generation, chat",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "groq-code-mcp",
+      "command": "groq-code-mcp"
+    }
+  },
+  {
+    "id": "perplexity-mcp",
+    "name": "Perplexity AI",
+    "description": "Web search, reasoning, and research through Perplexity API with citations",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "@perplexity-ai/mcp-server",
+      "command": "perplexity-mcp"
+    }
+  },
+  {
+    "id": "mistral-mcp",
+    "name": "Mistral AI",
+    "description": "Mistral AI provider — chat, code generation, embeddings",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "@mistralai/mistralai",
+      "command": "mistral-mcp"
+    }
+  },
+  {
+    "id": "cohere-mcp",
+    "name": "Cohere",
+    "description": "Cohere AI — text generation, embeddings, reranking, classification",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "cohere-ai",
+      "command": "cohere-mcp"
+    }
+  },
+  {
+    "id": "codex-mcp",
+    "name": "Codex MCP",
+    "description": "MCP server wrapper for OpenAI Codex CLI with dynamic model selection",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "codex-mcp",
+      "command": "codex-mcp"
+    }
+  },
+  {
+    "id": "openai-agents",
+    "name": "OpenAI Agents SDK",
+    "description": "Multi-agent orchestration framework from OpenAI — tool use, handoffs, guardrails",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "@openai/agents",
+      "command": "openai-agents"
+    }
+  },
+  {
+    "id": "exa-mcp",
+    "name": "Exa Search",
+    "description": "AI-native search — semantic web search, content extraction, similar page discovery",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "exa-mcp-server",
+      "command": "exa-mcp-server"
+    }
+  },
+  {
+    "id": "getaimeter",
+    "name": "AI Meter",
+    "description": "Track AI coding costs across Claude, Cursor, Codex, Copilot, and Gemini",
+    "category": "ai",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "getaimeter",
+      "command": "getaimeter"
+    }
   }
 ]
