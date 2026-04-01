@@ -4,38 +4,31 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-// Official MCP: None found as of 2026-03
-// No official Trello MCP server was found on GitHub or the Atlassian developer portal.
-//
-// Base URL: https://trello.com/1
-// Auth: API Key + Token query parameters (key and token).
-//   API Key: obtained from https://trello.com/app-key
-//   Token: obtained via OAuth or manual generation at https://trello.com/app-key
+// Trello REST API — Project management boards, lists, and cards.
+// Base URL: https://api.trello.com/1
+// Auth: API key + token passed as query parameters (key=, token=)
 // Docs: https://developer.atlassian.com/cloud/trello/rest/
-// Rate limits: Approximately 100 requests per 10 seconds per token.
+// Rate limits: 300 requests per 10 seconds per token; 100 requests per 10 seconds per key
 
 import { ToolDefinition, ToolResult } from './types.js';
 import { MCPAdapterBase } from './base.js';
 
 interface TrelloConfig {
-  /** Trello API key obtained from https://trello.com/app-key */
   apiKey: string;
-  /** Trello API token obtained via OAuth or manual generation */
-  apiToken: string;
-  /** Optional base URL override (default: https://trello.com/1) */
+  token: string;
   baseUrl?: string;
 }
 
 export class TrelloMCPServer extends MCPAdapterBase {
   private readonly apiKey: string;
-  private readonly apiToken: string;
+  private readonly token: string;
   private readonly baseUrl: string;
 
   constructor(config: TrelloConfig) {
     super();
     this.apiKey = config.apiKey;
-    this.apiToken = config.apiToken;
-    this.baseUrl = config.baseUrl ?? 'https://trello.com/1';
+    this.token = config.token;
+    this.baseUrl = config.baseUrl || 'https://api.trello.com/1';
   }
 
   static catalog() {
@@ -43,558 +36,405 @@ export class TrelloMCPServer extends MCPAdapterBase {
       name: 'trello',
       displayName: 'Trello',
       version: '1.0.0',
-      category: 'productivity',
-      keywords: [
-        'trello', 'kanban', 'board', 'card', 'list', 'task', 'project management',
-        'checklist', 'member', 'label', 'organization', 'workspace',
-        'productivity', 'collaboration', 'agile', 'scrum', 'atlassian',
-      ],
+      category: 'collaboration',
+      keywords: ['trello', 'kanban', 'project management', 'boards', 'cards', 'lists', 'tasks', 'teams', 'agile', 'checklist', 'labels', 'comments'],
       toolNames: [
-        'create_board', 'get_board', 'update_board', 'get_board_lists', 'get_board_cards',
-        'create_list', 'get_list', 'update_list', 'archive_list', 'get_list_cards',
-        'create_card', 'get_card', 'update_card', 'delete_card', 'move_card',
-        'get_card_checklists', 'add_card_checklist',
-        'create_checklist', 'get_checklist', 'delete_checklist', 'add_checklist_item',
-        'get_member', 'get_member_boards', 'get_member_cards',
+        'list_boards', 'get_board',
+        'list_lists', 'create_list',
+        'list_cards', 'get_card', 'create_card', 'update_card', 'move_card',
+        'add_comment', 'list_members', 'add_label',
+        'list_checklists', 'create_checklist', 'list_actions',
       ],
-      description: 'Full Trello project management via REST API. Manage boards, lists, cards, checklists, members, and labels for Kanban-style workflows.',
+      description: 'Trello project management: manage boards, lists, cards, checklists, labels, comments, and team members.',
       author: 'protectnil',
     };
   }
 
   get tools(): ToolDefinition[] {
     return [
-      // ── Boards ──────────────────────────────────────────────────────────────
       {
-        name: 'create_board',
-        description: 'Create a new Trello board with a name, optional description, and visibility settings',
+        name: 'list_boards',
+        description: 'List all Trello boards accessible to the authenticated user, optionally filtered by organization or starred status',
         inputSchema: {
           type: 'object',
           properties: {
-            name: {
+            filter: {
               type: 'string',
-              description: 'Name of the board to create',
+              description: 'Filter boards: all, open, closed, starred, pinned, unpinned, members (default: open)',
             },
-            desc: {
+            organization_id: {
               type: 'string',
-              description: 'Description of the board',
+              description: 'Filter boards belonging to a specific Trello organization ID',
             },
-            defaultLists: {
-              type: 'boolean',
-              description: 'Whether to create default lists (To Do, Doing, Done). Default: true',
-            },
-            idOrganization: {
+            fields: {
               type: 'string',
-              description: 'ID of the organization (workspace) to add the board to',
-            },
-            prefs_permissionLevel: {
-              type: 'string',
-              description: 'Board visibility: private, org, or public (default: private)',
+              description: 'Comma-separated list of board fields to return (default: name,desc,url,prefs,closed)',
             },
           },
-          required: ['name'],
         },
       },
       {
         name: 'get_board',
-        description: 'Get details of a Trello board by ID including name, description, URL, and preferences',
+        description: 'Get detailed information about a specific Trello board including its lists, members, and settings',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            board_id: {
               type: 'string',
-              description: 'The board ID or short link',
+              description: 'Trello board ID or short link',
             },
-            fields: {
+            lists: {
               type: 'string',
-              description: 'Comma-separated list of fields to return (default: all)',
+              description: 'Include lists: none, open, closed, all (default: open)',
+            },
+            members: {
+              type: 'string',
+              description: 'Include members: none, normal, admins, owners, all (default: none)',
             },
           },
-          required: ['id'],
+          required: ['board_id'],
         },
       },
       {
-        name: 'update_board',
-        description: 'Update a Trello board name, description, closed status, or other properties',
+        name: 'list_lists',
+        description: 'List all lists on a specific Trello board, optionally filtering by open or archived status',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            board_id: {
               type: 'string',
-              description: 'The board ID to update',
-            },
-            name: {
-              type: 'string',
-              description: 'New board name',
-            },
-            desc: {
-              type: 'string',
-              description: 'New board description',
-            },
-            closed: {
-              type: 'boolean',
-              description: 'Set to true to archive the board, false to unarchive',
-            },
-            subscribed: {
-              type: 'boolean',
-              description: 'Whether the current user is subscribed to the board',
-            },
-          },
-          required: ['id'],
-        },
-      },
-      {
-        name: 'get_board_lists',
-        description: 'Get all lists on a Trello board, optionally filtering by open or closed status',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The board ID to get lists for',
+              description: 'Trello board ID',
             },
             filter: {
               type: 'string',
-              description: 'Filter lists by status: all, closed, none, open (default: open)',
+              description: 'Filter lists: all, open, closed (default: open)',
             },
           },
-          required: ['id'],
+          required: ['board_id'],
         },
       },
-      {
-        name: 'get_board_cards',
-        description: 'Get all cards on a Trello board, optionally filtering by status',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The board ID to get cards for',
-            },
-            filter: {
-              type: 'string',
-              description: 'Filter cards by status: all, closed, none, open, visible (default: visible)',
-            },
-          },
-          required: ['id'],
-        },
-      },
-      // ── Lists ────────────────────────────────────────────────────────────────
       {
         name: 'create_list',
         description: 'Create a new list on a Trello board at a specified position',
         inputSchema: {
           type: 'object',
           properties: {
-            name: {
+            board_id: {
               type: 'string',
-              description: 'Name of the list to create',
-            },
-            idBoard: {
-              type: 'string',
-              description: 'ID of the board to create the list on',
-            },
-            pos: {
-              type: 'string',
-              description: 'Position of the list: top, bottom, or a positive number (default: top)',
-            },
-          },
-          required: ['name', 'idBoard'],
-        },
-      },
-      {
-        name: 'get_list',
-        description: 'Get details of a Trello list by ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The list ID to retrieve',
-            },
-            fields: {
-              type: 'string',
-              description: 'Comma-separated list of fields to return (default: all)',
-            },
-          },
-          required: ['id'],
-        },
-      },
-      {
-        name: 'update_list',
-        description: 'Update a Trello list name, position, or subscription status',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The list ID to update',
+              description: 'Trello board ID to create the list on',
             },
             name: {
               type: 'string',
-              description: 'New list name',
+              description: 'Name of the new list',
             },
             pos: {
               type: 'string',
-              description: 'New position: top, bottom, or a positive number',
-            },
-            subscribed: {
-              type: 'boolean',
-              description: 'Whether the current user is subscribed to the list',
+              description: 'Position of the list: top, bottom, or a positive number (default: bottom)',
             },
           },
-          required: ['id'],
+          required: ['board_id', 'name'],
         },
       },
       {
-        name: 'archive_list',
-        description: 'Archive (close) all cards in a Trello list or archive the list itself',
+        name: 'list_cards',
+        description: 'List all cards on a Trello board or within a specific list, optionally filtering by status',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            board_id: {
               type: 'string',
-              description: 'The list ID to archive all cards from',
+              description: 'Trello board ID to list cards from (use this OR list_id)',
             },
-          },
-          required: ['id'],
-        },
-      },
-      {
-        name: 'get_list_cards',
-        description: 'Get all cards in a Trello list, optionally filtering by status',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
+            list_id: {
               type: 'string',
-              description: 'The list ID to get cards for',
+              description: 'Trello list ID to list cards from (use this OR board_id)',
             },
             filter: {
               type: 'string',
-              description: 'Filter cards: all, closed, none, open (default: open)',
+              description: 'Filter cards: all, open, closed, visible (default: open)',
+            },
+            fields: {
+              type: 'string',
+              description: 'Comma-separated card fields to return (default: name,desc,due,dueComplete,labels,idList,url)',
             },
           },
-          required: ['id'],
-        },
-      },
-      // ── Cards ────────────────────────────────────────────────────────────────
-      {
-        name: 'create_card',
-        description: 'Create a new card in a Trello list with optional name, description, due date, and labels',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            name: {
-              type: 'string',
-              description: 'Name of the card',
-            },
-            idList: {
-              type: 'string',
-              description: 'ID of the list to create the card in',
-            },
-            desc: {
-              type: 'string',
-              description: 'Description or detailed text for the card',
-            },
-            due: {
-              type: 'string',
-              description: 'Due date for the card in ISO 8601 format (e.g. 2026-04-01T12:00:00Z)',
-            },
-            idLabels: {
-              type: 'string',
-              description: 'Comma-separated list of label IDs to attach to the card',
-            },
-            idMembers: {
-              type: 'string',
-              description: 'Comma-separated list of member IDs to assign to the card',
-            },
-            pos: {
-              type: 'string',
-              description: 'Position in the list: top, bottom, or a positive number (default: bottom)',
-            },
-          },
-          required: ['name', 'idList'],
         },
       },
       {
         name: 'get_card',
-        description: 'Get full details of a Trello card including name, description, due date, members, and labels',
+        description: 'Get detailed information about a specific Trello card including its description, due date, labels, members, and attachments',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            card_id: {
               type: 'string',
-              description: 'The card ID or short link',
+              description: 'Trello card ID or short link',
             },
-            fields: {
+            members: {
+              type: 'boolean',
+              description: 'Include card members in response (default: false)',
+            },
+            checklists: {
               type: 'string',
-              description: 'Comma-separated list of fields to return (default: all)',
+              description: 'Include checklists: none, all (default: none)',
+            },
+            attachments: {
+              type: 'boolean',
+              description: 'Include attachments in response (default: false)',
             },
           },
-          required: ['id'],
+          required: ['card_id'],
+        },
+      },
+      {
+        name: 'create_card',
+        description: 'Create a new card on a Trello list with optional description, due date, labels, and member assignments',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            list_id: {
+              type: 'string',
+              description: 'Trello list ID to create the card in',
+            },
+            name: {
+              type: 'string',
+              description: 'Name/title of the new card',
+            },
+            desc: {
+              type: 'string',
+              description: 'Card description (supports Markdown)',
+            },
+            due: {
+              type: 'string',
+              description: 'Due date in ISO 8601 format (e.g. 2026-04-15T17:00:00.000Z)',
+            },
+            id_labels: {
+              type: 'string',
+              description: 'Comma-separated label IDs to apply to the card',
+            },
+            id_members: {
+              type: 'string',
+              description: 'Comma-separated member IDs to assign to the card',
+            },
+            pos: {
+              type: 'string',
+              description: 'Position of the card in the list: top, bottom, or a positive number (default: bottom)',
+            },
+          },
+          required: ['list_id', 'name'],
         },
       },
       {
         name: 'update_card',
-        description: 'Update a Trello card name, description, due date, position, list, labels, or members',
+        description: 'Update an existing Trello card — change name, description, due date, labels, members, or close/archive the card',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            card_id: {
               type: 'string',
-              description: 'The card ID to update',
+              description: 'Trello card ID to update',
             },
             name: {
               type: 'string',
-              description: 'New card name',
+              description: 'New name for the card',
             },
             desc: {
               type: 'string',
-              description: 'New card description',
+              description: 'New description for the card (supports Markdown)',
             },
             due: {
               type: 'string',
-              description: 'New due date in ISO 8601 format, or null to remove',
+              description: 'New due date in ISO 8601 format (pass empty string to clear)',
             },
-            idList: {
-              type: 'string',
-              description: 'ID of the list to move the card to',
-            },
-            idBoard: {
-              type: 'string',
-              description: 'ID of the board to move the card to',
-            },
-            pos: {
-              type: 'string',
-              description: 'New position: top, bottom, or a positive number',
+            due_complete: {
+              type: 'boolean',
+              description: 'Mark the due date as complete or incomplete',
             },
             closed: {
               type: 'boolean',
-              description: 'Set to true to archive the card, false to unarchive',
+              description: 'Archive (true) or unarchive (false) the card',
             },
-            subscribed: {
-              type: 'boolean',
-              description: 'Whether the current user is subscribed to the card',
-            },
-          },
-          required: ['id'],
-        },
-      },
-      {
-        name: 'delete_card',
-        description: 'Permanently delete a Trello card by ID. This action cannot be undone.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
+            id_labels: {
               type: 'string',
-              description: 'The card ID to delete',
+              description: 'Comma-separated label IDs to set on the card (replaces existing)',
+            },
+            id_members: {
+              type: 'string',
+              description: 'Comma-separated member IDs to assign (replaces existing)',
             },
           },
-          required: ['id'],
+          required: ['card_id'],
         },
       },
       {
         name: 'move_card',
-        description: 'Move a Trello card to a different list and optionally a different board',
+        description: 'Move a Trello card to a different list or board, optionally specifying position within the target list',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            card_id: {
               type: 'string',
-              description: 'The card ID to move',
+              description: 'Trello card ID to move',
             },
-            idList: {
+            list_id: {
               type: 'string',
-              description: 'ID of the destination list',
+              description: 'Target list ID to move the card to',
             },
-            idBoard: {
+            board_id: {
               type: 'string',
-              description: 'ID of the destination board (required when moving cross-board)',
+              description: 'Target board ID if moving to a different board',
             },
             pos: {
               type: 'string',
-              description: 'Position in the destination list: top, bottom, or a positive number (default: bottom)',
+              description: 'Position in the target list: top, bottom, or a positive number (default: bottom)',
             },
           },
-          required: ['id', 'idList'],
+          required: ['card_id', 'list_id'],
         },
       },
       {
-        name: 'get_card_checklists',
-        description: 'Get all checklists attached to a Trello card',
+        name: 'add_comment',
+        description: 'Add a comment to a Trello card on behalf of the authenticated user',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            card_id: {
               type: 'string',
-              description: 'The card ID to get checklists for',
+              description: 'Trello card ID to comment on',
+            },
+            text: {
+              type: 'string',
+              description: 'Comment text (supports Markdown and @mentions)',
             },
           },
-          required: ['id'],
+          required: ['card_id', 'text'],
         },
       },
       {
-        name: 'add_card_checklist',
-        description: 'Add a new checklist to a Trello card',
+        name: 'list_members',
+        description: 'List members of a Trello board or organization, including their usernames and avatars',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            board_id: {
               type: 'string',
-              description: 'The card ID to add a checklist to',
+              description: 'Trello board ID to list members from (use this OR organization_id)',
+            },
+            organization_id: {
+              type: 'string',
+              description: 'Trello organization ID to list members from (use this OR board_id)',
+            },
+            filter: {
+              type: 'string',
+              description: 'Member filter for board: all, admins, normal, owners (default: all)',
+            },
+          },
+        },
+      },
+      {
+        name: 'add_label',
+        description: 'Add an existing label to a Trello card, or create a new label on a board and apply it',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            card_id: {
+              type: 'string',
+              description: 'Trello card ID to add the label to',
+            },
+            label_id: {
+              type: 'string',
+              description: 'Existing label ID to add to the card (use this OR create a new label with name+color+board_id)',
             },
             name: {
               type: 'string',
-              description: 'Name of the new checklist (default: Checklist)',
+              description: 'Name for a new label to create (requires board_id and color)',
             },
-            idChecklistSource: {
+            color: {
               type: 'string',
-              description: 'Optional ID of an existing checklist to copy items from',
+              description: 'Color for a new label: red, orange, yellow, green, blue, purple, pink, lime, sky, black',
+            },
+            board_id: {
+              type: 'string',
+              description: 'Board ID to create the new label on (required when creating a new label)',
             },
           },
-          required: ['id'],
+          required: ['card_id'],
         },
       },
-      // ── Checklists ───────────────────────────────────────────────────────────
       {
-        name: 'create_checklist',
-        description: 'Create a checklist on a Trello card with a name and optional source checklist to copy from',
+        name: 'list_checklists',
+        description: 'List all checklists on a specific Trello card including their items and completion status',
         inputSchema: {
           type: 'object',
           properties: {
-            idCard: {
+            card_id: {
               type: 'string',
-              description: 'ID of the card to create the checklist on',
+              description: 'Trello card ID to list checklists from',
+            },
+            check_items: {
+              type: 'string',
+              description: 'Include check items: none, all (default: all)',
+            },
+          },
+          required: ['card_id'],
+        },
+      },
+      {
+        name: 'create_checklist',
+        description: 'Create a new checklist on a Trello card with optional initial items',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            card_id: {
+              type: 'string',
+              description: 'Trello card ID to add the checklist to',
             },
             name: {
               type: 'string',
               description: 'Name of the checklist',
             },
-            pos: {
-              type: 'string',
-              description: 'Position: top, bottom, or a positive number (default: bottom)',
-            },
-            idChecklistSource: {
-              type: 'string',
-              description: 'Optional ID of a checklist to copy items from',
-            },
-          },
-          required: ['idCard', 'name'],
-        },
-      },
-      {
-        name: 'get_checklist',
-        description: 'Get a Trello checklist by ID including all check items and their completion state',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The checklist ID to retrieve',
-            },
-          },
-          required: ['id'],
-        },
-      },
-      {
-        name: 'delete_checklist',
-        description: 'Delete a Trello checklist and all its items from a card',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The checklist ID to delete',
-            },
-          },
-          required: ['id'],
-        },
-      },
-      {
-        name: 'add_checklist_item',
-        description: 'Add a new check item to a Trello checklist',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The checklist ID to add an item to',
-            },
-            name: {
-              type: 'string',
-              description: 'Name/text of the check item',
-            },
-            checked: {
-              type: 'boolean',
-              description: 'Whether the item starts as checked (default: false)',
+            items: {
+              type: 'array',
+              description: 'Array of item name strings to add to the checklist',
+              items: {
+                type: 'string',
+              },
             },
             pos: {
               type: 'string',
-              description: 'Position: top, bottom, or a positive number (default: bottom)',
+              description: 'Position of the checklist on the card: top, bottom, or a positive number (default: bottom)',
             },
           },
-          required: ['id', 'name'],
-        },
-      },
-      // ── Members ──────────────────────────────────────────────────────────────
-      {
-        name: 'get_member',
-        description: 'Get a Trello member profile by ID or username including name, username, and avatar',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The member ID or username (use "me" for the authenticated user)',
-            },
-            fields: {
-              type: 'string',
-              description: 'Comma-separated list of fields to return (default: all)',
-            },
-          },
-          required: ['id'],
+          required: ['card_id', 'name'],
         },
       },
       {
-        name: 'get_member_boards',
-        description: 'Get all boards that a Trello member belongs to, optionally filtering by status',
+        name: 'list_actions',
+        description: 'List activity actions on a Trello board or card, such as card moves, comments, and member changes',
         inputSchema: {
           type: 'object',
           properties: {
-            id: {
+            board_id: {
               type: 'string',
-              description: 'The member ID or username (use "me" for the authenticated user)',
+              description: 'Trello board ID to list actions from (use this OR card_id)',
+            },
+            card_id: {
+              type: 'string',
+              description: 'Trello card ID to list actions from (use this OR board_id)',
             },
             filter: {
               type: 'string',
-              description: 'Filter boards: all, closed, members, open, organization, public, starred (default: all)',
+              description: 'Comma-separated action types to filter (e.g. commentCard,updateCard,moveCardToBoard)',
             },
-            fields: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of actions to return (default: 50, max: 1000)',
+            },
+            before: {
               type: 'string',
-              description: 'Comma-separated list of board fields to return',
+              description: 'Return actions before this action ID or date (for pagination)',
             },
           },
-          required: ['id'],
-        },
-      },
-      {
-        name: 'get_member_cards',
-        description: 'Get all cards assigned to a Trello member, optionally filtering by status',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              description: 'The member ID or username (use "me" for the authenticated user)',
-            },
-            filter: {
-              type: 'string',
-              description: 'Filter cards: all, closed, none, open, visible (default: visible)',
-            },
-          },
-          required: ['id'],
         },
       },
     ];
@@ -603,30 +443,36 @@ export class TrelloMCPServer extends MCPAdapterBase {
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (name) {
-        case 'create_board':         return this.createBoard(args);
-        case 'get_board':            return this.getBoard(args);
-        case 'update_board':         return this.updateBoard(args);
-        case 'get_board_lists':      return this.getBoardLists(args);
-        case 'get_board_cards':      return this.getBoardCards(args);
-        case 'create_list':          return this.createList(args);
-        case 'get_list':             return this.getList(args);
-        case 'update_list':          return this.updateList(args);
-        case 'archive_list':         return this.archiveList(args);
-        case 'get_list_cards':       return this.getListCards(args);
-        case 'create_card':          return this.createCard(args);
-        case 'get_card':             return this.getCard(args);
-        case 'update_card':          return this.updateCard(args);
-        case 'delete_card':          return this.deleteCard(args);
-        case 'move_card':            return this.moveCard(args);
-        case 'get_card_checklists':  return this.getCardChecklists(args);
-        case 'add_card_checklist':   return this.addCardChecklist(args);
-        case 'create_checklist':     return this.createChecklist(args);
-        case 'get_checklist':        return this.getChecklist(args);
-        case 'delete_checklist':     return this.deleteChecklist(args);
-        case 'add_checklist_item':   return this.addChecklistItem(args);
-        case 'get_member':           return this.getMember(args);
-        case 'get_member_boards':    return this.getMemberBoards(args);
-        case 'get_member_cards':     return this.getMemberCards(args);
+        case 'list_boards':
+          return this.listBoards(args);
+        case 'get_board':
+          return this.getBoard(args);
+        case 'list_lists':
+          return this.listLists(args);
+        case 'create_list':
+          return this.createList(args);
+        case 'list_cards':
+          return this.listCards(args);
+        case 'get_card':
+          return this.getCard(args);
+        case 'create_card':
+          return this.createCard(args);
+        case 'update_card':
+          return this.updateCard(args);
+        case 'move_card':
+          return this.moveCard(args);
+        case 'add_comment':
+          return this.addComment(args);
+        case 'list_members':
+          return this.listMembers(args);
+        case 'add_label':
+          return this.addLabel(args);
+        case 'list_checklists':
+          return this.listChecklists(args);
+        case 'create_checklist':
+          return this.createChecklist(args);
+        case 'list_actions':
+          return this.listActions(args);
         default:
           return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
       }
@@ -638,282 +484,270 @@ export class TrelloMCPServer extends MCPAdapterBase {
     }
   }
 
-  private get authParams(): Record<string, string> {
-    return { key: this.apiKey, token: this.apiToken };
+  private authParams(): URLSearchParams {
+    return new URLSearchParams({ key: this.apiKey, token: this.token });
   }
 
-
-  private buildQuery(params: Record<string, string | undefined>): string {
-    const qs = new URLSearchParams({ ...this.authParams });
-    for (const [k, v] of Object.entries(params)) {
-      if (v !== undefined) qs.set(k, v);
+  private async apiGet(path: string, extra?: URLSearchParams): Promise<ToolResult> {
+    const params = this.authParams();
+    if (extra) {
+      extra.forEach((v, k) => params.set(k, v));
     }
-    return `?${qs.toString()}`;
-  }
-
-  private async get(path: string, params: Record<string, string | undefined> = {}): Promise<ToolResult> {
-    const url = `${this.baseUrl}${path}${this.buildQuery(params)}`;
-    const response = await this.fetchWithRetry(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${params.toString()}`, {
+      headers: { 'Accept': 'application/json' },
+    });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Trello returned non-JSON (HTTP ${response.status})`); }
+    const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async post(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const qs = new URLSearchParams(this.authParams).toString();
-    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
+  private async apiPost(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.authParams();
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${params.toString()}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(body),
     });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Trello returned non-JSON (HTTP ${response.status})`); }
+    const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async put(path: string, body: Record<string, unknown>): Promise<ToolResult> {
-    const qs = new URLSearchParams(this.authParams).toString();
-    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
+  private async apiPut(path: string, body: Record<string, unknown>): Promise<ToolResult> {
+    const params = this.authParams();
+    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${params.toString()}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(body),
     });
     if (!response.ok) {
       return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
     }
-    let data: unknown;
-    try { data = await response.json(); } catch { throw new Error(`Trello returned non-JSON (HTTP ${response.status})`); }
+    const data = await response.json();
     return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
   }
 
-  private async del(path: string): Promise<ToolResult> {
-    const qs = new URLSearchParams(this.authParams).toString();
-    const response = await this.fetchWithRetry(`${this.baseUrl}${path}?${qs}`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
-    }
-    let data: unknown;
-    try { data = await response.json(); } catch { data = { success: true }; }
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
-  }
-
-  // ── Board implementations ────────────────────────────────────────────────────
-
-  private async createBoard(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.name) return { content: [{ type: 'text', text: 'name is required' }], isError: true };
-    const body: Record<string, unknown> = { name: args.name };
-    if (args.desc !== undefined) body.desc = args.desc;
-    if (args.defaultLists !== undefined) body.defaultLists = args.defaultLists;
-    if (args.idOrganization !== undefined) body.idOrganization = args.idOrganization;
-    if (args.prefs_permissionLevel !== undefined) body['prefs/permissionLevel'] = args.prefs_permissionLevel;
-    return this.post('/boards', body);
+  private async listBoards(args: Record<string, unknown>): Promise<ToolResult> {
+    const extra = new URLSearchParams();
+    extra.set('filter', (args.filter as string) || 'open');
+    extra.set('fields', (args.fields as string) || 'name,desc,url,prefs,closed');
+    if (args.organization_id) extra.set('idOrganization', args.organization_id as string);
+    return this.apiGet('/members/me/boards', extra);
   }
 
   private async getBoard(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/boards/${encodeURIComponent(args.id as string)}`, {
-      fields: args.fields as string | undefined,
-    });
+    if (!args.board_id) {
+      return { content: [{ type: 'text', text: 'board_id is required' }], isError: true };
+    }
+    const extra = new URLSearchParams();
+    extra.set('lists', (args.lists as string) || 'open');
+    extra.set('members', (args.members as string) || 'none');
+    return this.apiGet(`/boards/${encodeURIComponent(args.board_id as string)}`, extra);
   }
 
-  private async updateBoard(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const body: Record<string, unknown> = {};
-    if (args.name !== undefined) body.name = args.name;
-    if (args.desc !== undefined) body.desc = args.desc;
-    if (args.closed !== undefined) body.closed = args.closed;
-    if (args.subscribed !== undefined) body.subscribed = args.subscribed;
-    return this.put(`/boards/${encodeURIComponent(args.id as string)}`, body);
+  private async listLists(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.board_id) {
+      return { content: [{ type: 'text', text: 'board_id is required' }], isError: true };
+    }
+    const extra = new URLSearchParams();
+    extra.set('filter', (args.filter as string) || 'open');
+    return this.apiGet(`/boards/${encodeURIComponent(args.board_id as string)}/lists`, extra);
   }
-
-  private async getBoardLists(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const filter = args.filter as string | undefined;
-    const path = filter
-      ? `/boards/${encodeURIComponent(args.id as string)}/lists/${encodeURIComponent(filter)}`
-      : `/boards/${encodeURIComponent(args.id as string)}/lists`;
-    return this.get(path);
-  }
-
-  private async getBoardCards(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const filter = args.filter as string | undefined;
-    const path = filter
-      ? `/boards/${encodeURIComponent(args.id as string)}/cards/${encodeURIComponent(filter)}`
-      : `/boards/${encodeURIComponent(args.id as string)}/cards`;
-    return this.get(path);
-  }
-
-  // ── List implementations ─────────────────────────────────────────────────────
 
   private async createList(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.name || !args.idBoard) return { content: [{ type: 'text', text: 'name and idBoard are required' }], isError: true };
-    const body: Record<string, unknown> = { name: args.name, idBoard: args.idBoard };
-    if (args.pos !== undefined) body.pos = args.pos;
-    return this.post('/lists', body);
-  }
-
-  private async getList(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/lists/${encodeURIComponent(args.id as string)}`, {
-      fields: args.fields as string | undefined,
-    });
-  }
-
-  private async updateList(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const body: Record<string, unknown> = {};
-    if (args.name !== undefined) body.name = args.name;
-    if (args.pos !== undefined) body.pos = args.pos;
-    if (args.subscribed !== undefined) body.subscribed = args.subscribed;
-    return this.put(`/lists/${encodeURIComponent(args.id as string)}`, body);
-  }
-
-  private async archiveList(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const qs = new URLSearchParams(this.authParams).toString();
-    const response = await this.fetchWithRetry(
-      `${this.baseUrl}/lists/${encodeURIComponent(args.id as string)}/archiveAllCards?${qs}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' } }
-    );
-    if (!response.ok) {
-      return { content: [{ type: 'text', text: `API error: ${response.status} ${response.statusText}` }], isError: true };
+    if (!args.board_id || !args.name) {
+      return { content: [{ type: 'text', text: 'board_id and name are required' }], isError: true };
     }
-    let data: unknown;
-    try { data = await response.json(); } catch { data = { success: true }; }
-    return { content: [{ type: 'text', text: this.truncate(data) }], isError: false };
+    const body: Record<string, unknown> = {
+      idBoard: args.board_id,
+      name: args.name,
+      pos: (args.pos as string) || 'bottom',
+    };
+    return this.apiPost('/lists', body);
   }
 
-  private async getListCards(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const filter = args.filter as string | undefined;
-    const path = filter
-      ? `/lists/${encodeURIComponent(args.id as string)}/cards/${encodeURIComponent(filter)}`
-      : `/lists/${encodeURIComponent(args.id as string)}/cards`;
-    return this.get(path);
-  }
-
-  // ── Card implementations ─────────────────────────────────────────────────────
-
-  private async createCard(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.name || !args.idList) return { content: [{ type: 'text', text: 'name and idList are required' }], isError: true };
-    const body: Record<string, unknown> = { name: args.name, idList: args.idList };
-    if (args.desc !== undefined) body.desc = args.desc;
-    if (args.due !== undefined) body.due = args.due;
-    if (args.idLabels !== undefined) body.idLabels = args.idLabels;
-    if (args.idMembers !== undefined) body.idMembers = args.idMembers;
-    if (args.pos !== undefined) body.pos = args.pos;
-    return this.post('/cards', body);
+  private async listCards(args: Record<string, unknown>): Promise<ToolResult> {
+    const extra = new URLSearchParams();
+    extra.set('filter', (args.filter as string) || 'open');
+    extra.set('fields', (args.fields as string) || 'name,desc,due,dueComplete,labels,idList,url');
+    if (args.list_id) {
+      return this.apiGet(`/lists/${encodeURIComponent(args.list_id as string)}/cards`, extra);
+    }
+    if (args.board_id) {
+      return this.apiGet(`/boards/${encodeURIComponent(args.board_id as string)}/cards`, extra);
+    }
+    return { content: [{ type: 'text', text: 'board_id or list_id is required' }], isError: true };
   }
 
   private async getCard(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/cards/${encodeURIComponent(args.id as string)}`, {
-      fields: args.fields as string | undefined,
-    });
+    if (!args.card_id) {
+      return { content: [{ type: 'text', text: 'card_id is required' }], isError: true };
+    }
+    const extra = new URLSearchParams();
+    if (args.members) extra.set('members', 'true');
+    if (args.checklists) extra.set('checklists', args.checklists as string);
+    if (args.attachments) extra.set('attachments', 'true');
+    return this.apiGet(`/cards/${encodeURIComponent(args.card_id as string)}`, extra);
+  }
+
+  private async createCard(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.list_id || !args.name) {
+      return { content: [{ type: 'text', text: 'list_id and name are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = {
+      idList: args.list_id,
+      name: args.name,
+      pos: (args.pos as string) || 'bottom',
+    };
+    if (args.desc) body.desc = args.desc;
+    if (args.due) body.due = args.due;
+    if (args.id_labels) body.idLabels = args.id_labels;
+    if (args.id_members) body.idMembers = args.id_members;
+    return this.apiPost('/cards', body);
   }
 
   private async updateCard(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
+    if (!args.card_id) {
+      return { content: [{ type: 'text', text: 'card_id is required' }], isError: true };
+    }
     const body: Record<string, unknown> = {};
     if (args.name !== undefined) body.name = args.name;
     if (args.desc !== undefined) body.desc = args.desc;
     if (args.due !== undefined) body.due = args.due;
-    if (args.idList !== undefined) body.idList = args.idList;
-    if (args.idBoard !== undefined) body.idBoard = args.idBoard;
-    if (args.pos !== undefined) body.pos = args.pos;
+    if (args.due_complete !== undefined) body.dueComplete = args.due_complete;
     if (args.closed !== undefined) body.closed = args.closed;
-    if (args.subscribed !== undefined) body.subscribed = args.subscribed;
-    return this.put(`/cards/${encodeURIComponent(args.id as string)}`, body);
-  }
-
-  private async deleteCard(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.del(`/cards/${encodeURIComponent(args.id as string)}`);
+    if (args.id_labels !== undefined) body.idLabels = args.id_labels;
+    if (args.id_members !== undefined) body.idMembers = args.id_members;
+    return this.apiPut(`/cards/${encodeURIComponent(args.card_id as string)}`, body);
   }
 
   private async moveCard(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id || !args.idList) return { content: [{ type: 'text', text: 'id and idList are required' }], isError: true };
-    const body: Record<string, unknown> = { idList: args.idList };
-    if (args.idBoard !== undefined) body.idBoard = args.idBoard;
-    body.pos = args.pos ?? 'bottom';
-    return this.put(`/cards/${encodeURIComponent(args.id as string)}`, body);
+    if (!args.card_id || !args.list_id) {
+      return { content: [{ type: 'text', text: 'card_id and list_id are required' }], isError: true };
+    }
+    const body: Record<string, unknown> = {
+      idList: args.list_id,
+      pos: (args.pos as string) || 'bottom',
+    };
+    if (args.board_id) body.idBoard = args.board_id;
+    return this.apiPut(`/cards/${encodeURIComponent(args.card_id as string)}`, body);
   }
 
-  private async getCardChecklists(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/cards/${encodeURIComponent(args.id as string)}/checklists`);
-  }
-
-  private async addCardChecklist(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const body: Record<string, unknown> = {};
-    if (args.name !== undefined) body.name = args.name;
-    if (args.idChecklistSource !== undefined) body.idChecklistSource = args.idChecklistSource;
-    return this.post(`/cards/${encodeURIComponent(args.id as string)}/checklists`, body);
-  }
-
-  // ── Checklist implementations ────────────────────────────────────────────────
-
-  private async createChecklist(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.idCard || !args.name) return { content: [{ type: 'text', text: 'idCard and name are required' }], isError: true };
-    const body: Record<string, unknown> = { idCard: args.idCard, name: args.name };
-    if (args.pos !== undefined) body.pos = args.pos;
-    if (args.idChecklistSource !== undefined) body.idChecklistSource = args.idChecklistSource;
-    return this.post('/checklists', body);
-  }
-
-  private async getChecklist(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/checklists/${encodeURIComponent(args.id as string)}`);
-  }
-
-  private async deleteChecklist(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.del(`/checklists/${encodeURIComponent(args.id as string)}`);
-  }
-
-  private async addChecklistItem(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id || !args.name) return { content: [{ type: 'text', text: 'id and name are required' }], isError: true };
-    const body: Record<string, unknown> = { name: args.name };
-    if (args.checked !== undefined) body.checked = args.checked;
-    if (args.pos !== undefined) body.pos = args.pos;
-    return this.post(`/checklists/${encodeURIComponent(args.id as string)}/checkItems`, body);
-  }
-
-  // ── Member implementations ───────────────────────────────────────────────────
-
-  private async getMember(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    return this.get(`/members/${encodeURIComponent(args.id as string)}`, {
-      fields: args.fields as string | undefined,
+  private async addComment(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.card_id || !args.text) {
+      return { content: [{ type: 'text', text: 'card_id and text are required' }], isError: true };
+    }
+    return this.apiPost(`/cards/${encodeURIComponent(args.card_id as string)}/actions/comments`, {
+      text: args.text,
     });
   }
 
-  private async getMemberBoards(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const filter = args.filter as string | undefined;
-    const path = filter
-      ? `/members/${encodeURIComponent(args.id as string)}/boards/${encodeURIComponent(filter)}`
-      : `/members/${encodeURIComponent(args.id as string)}/boards`;
-    return this.get(path, { fields: args.fields as string | undefined });
+  private async listMembers(args: Record<string, unknown>): Promise<ToolResult> {
+    const extra = new URLSearchParams();
+    if (args.filter) extra.set('filter', args.filter as string);
+    if (args.organization_id) {
+      return this.apiGet(`/organizations/${encodeURIComponent(args.organization_id as string)}/members`, extra);
+    }
+    if (args.board_id) {
+      extra.set('filter', (args.filter as string) || 'all');
+      return this.apiGet(`/boards/${encodeURIComponent(args.board_id as string)}/members`, extra);
+    }
+    return { content: [{ type: 'text', text: 'board_id or organization_id is required' }], isError: true };
   }
 
-  private async getMemberCards(args: Record<string, unknown>): Promise<ToolResult> {
-    if (!args.id) return { content: [{ type: 'text', text: 'id is required' }], isError: true };
-    const filter = args.filter as string | undefined;
-    const path = filter
-      ? `/members/${encodeURIComponent(args.id as string)}/cards/${encodeURIComponent(filter)}`
-      : `/members/${encodeURIComponent(args.id as string)}/cards`;
-    return this.get(path);
+  private async addLabel(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.card_id) {
+      return { content: [{ type: 'text', text: 'card_id is required' }], isError: true };
+    }
+    // If an existing label_id is provided, add it directly to the card
+    if (args.label_id) {
+      return this.apiPost(`/cards/${encodeURIComponent(args.card_id as string)}/idLabels`, {
+        value: args.label_id,
+      });
+    }
+    // Otherwise create a new label on the board then add to the card
+    if (!args.board_id || !args.color) {
+      return { content: [{ type: 'text', text: 'board_id and color are required when creating a new label' }], isError: true };
+    }
+    const createResult = await this.apiPost('/labels', {
+      idBoard: args.board_id,
+      name: (args.name as string) || '',
+      color: args.color,
+    });
+    if (createResult.isError) return createResult;
+    let labelId: string;
+    try {
+      const parsed = JSON.parse(createResult.content[0].text) as { id: string };
+      labelId = parsed.id;
+    } catch {
+      return { content: [{ type: 'text', text: 'Failed to parse label creation response' }], isError: true };
+    }
+    return this.apiPost(`/cards/${encodeURIComponent(args.card_id as string)}/idLabels`, {
+      value: labelId,
+    });
+  }
+
+  private async listChecklists(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.card_id) {
+      return { content: [{ type: 'text', text: 'card_id is required' }], isError: true };
+    }
+    const extra = new URLSearchParams();
+    extra.set('checkItems', (args.check_items as string) || 'all');
+    return this.apiGet(`/cards/${encodeURIComponent(args.card_id as string)}/checklists`, extra);
+  }
+
+  private async createChecklist(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!args.card_id || !args.name) {
+      return { content: [{ type: 'text', text: 'card_id and name are required' }], isError: true };
+    }
+    const createResult = await this.apiPost('/checklists', {
+      idCard: args.card_id,
+      name: args.name,
+      pos: (args.pos as string) || 'bottom',
+    });
+    if (createResult.isError || !Array.isArray(args.items) || args.items.length === 0) {
+      return createResult;
+    }
+    // Parse the checklist ID to add items
+    let checklistId: string;
+    try {
+      const parsed = JSON.parse(createResult.content[0].text) as { id: string };
+      checklistId = parsed.id;
+    } catch {
+      return createResult; // Return the checklist without items if parsing fails
+    }
+    const itemNames = args.items as string[];
+    for (const itemName of itemNames) {
+      const itemResult = await this.apiPost(`/checklists/${encodeURIComponent(checklistId)}/checkItems`, {
+        name: itemName,
+        checked: false,
+      });
+      if (itemResult.isError) return itemResult;
+    }
+    return this.apiGet(`/checklists/${encodeURIComponent(checklistId)}`);
+  }
+
+  private async listActions(args: Record<string, unknown>): Promise<ToolResult> {
+    const extra = new URLSearchParams();
+    extra.set('limit', String(Math.min((args.limit as number) || 50, 1000)));
+    if (args.filter) extra.set('filter', args.filter as string);
+    if (args.before) extra.set('before', args.before as string);
+    if (args.card_id) {
+      return this.apiGet(`/cards/${encodeURIComponent(args.card_id as string)}/actions`, extra);
+    }
+    if (args.board_id) {
+      return this.apiGet(`/boards/${encodeURIComponent(args.board_id as string)}/actions`, extra);
+    }
+    return { content: [{ type: 'text', text: 'board_id or card_id is required' }], isError: true };
   }
 }
