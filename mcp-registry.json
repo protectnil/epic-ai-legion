@@ -27708,7 +27708,26 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "@perplexity-ai/mcp-server",
-      "command": "perplexity-mcp"
+      "command": "perplexity-mcp",
+      "toolCount": 8,
+      "toolNames": [
+        "*",
+        "~/.codeium/windsurf/mcp_config.json",
+        "~/.cursor/mcp.json",
+        "0.0.0.0",
+        "8080",
+        "claude_desktop_config.json",
+        "https://api.perplexity.ai",
+        "PERPLEXITY_API_KEY",
+        "API Key Issues",
+        "Connection Errors",
+        "EOF / Initialize Errors",
+        "Proxy Issues",
+        "Timeout Errors",
+        "Tool Not Found"
+      ],
+      "verified": "2026-04-01T23:31:05.367Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -27720,7 +27739,19 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "@mistralai/mistralai",
-      "command": "mistral-mcp"
+      "command": "mistral-mcp",
+      "toolCount": 7,
+      "toolNames": [
+        "error.data$",
+        "Headers",
+        "https://api.mistral.ai",
+        "MISTRAL_API_KEY",
+        "number",
+        "Response",
+        "string"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -27800,7 +27831,18 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "getaimeter",
-      "command": "getaimeter"
+      "command": "getaimeter",
+      "toolCount": 6,
+      "toolNames": [
+        "Crash-safe",
+        "Dashboard",
+        "Deduplication",
+        "Issues",
+        "Minimal overhead",
+        "Zero dependencies"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -27909,7 +27951,36 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@agenttrust/mcp-server"
+      "packageName": "@agenttrust/mcp-server",
+      "toolCount": 17,
+      "toolNames": [
+        "AGENTTRUST_AGENT_ID",
+        "agenttrust_allowlist",
+        "AGENTTRUST_API_KEY",
+        "agenttrust_cancel",
+        "agenttrust_comment",
+        "agenttrust_context",
+        "agenttrust_discover",
+        "AGENTTRUST_ENDPOINT",
+        "agenttrust_escalate",
+        "agenttrust_guard",
+        "agenttrust_inbox",
+        "agenttrust_issue_code",
+        "agenttrust_reply",
+        "agenttrust_send",
+        "AGENTTRUST_SLUG",
+        "agenttrust_status",
+        "agenttrust_verify_code",
+        "A2A Relay",
+        "Dashboard",
+        "Human-in-the-Loop",
+        "InjectionGuard",
+        "Issues",
+        "Trust Codes",
+        "Website"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28595,7 +28666,118 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "@i18n-agent/mcp-client",
-      "url": "https://mcp.i18nagent.ai/mcp"
+      "url": "https://mcp.i18nagent.ai/mcp",
+      "toolCount": 94,
+      "toolNames": [
+        ".csv",
+        ".json",
+        ".md",
+        ".pdf",
+        ".properties",
+        ".txt",
+        "~/.claude.json",
+        "~/.codex/mcp_settings.json",
+        "~/.config/antigravity/mcp_config.json",
+        "~/.config/Claude/",
+        "~/.cursor/mcp_settings.json",
+        "~/.vscode/mcp_settings.json",
+        "🌐 48 Languages",
+        "💰 Credit Tracking",
+        "🔧 Easy Setup",
+        "📁 File Translation",
+        "⚡ Large File Support",
+        "📊 Progress Tracking",
+        "🎯 Smart Translation",
+        "🔄 Timeout Improvements",
+        "API key security",
+        "Async Processing",
+        "Atomic Config Writes",
+        "Automatic Backups",
+        "Automatic Polling",
+        "Best Practice",
+        "bg",
+        "Bulk discounts",
+        "ca",
+        "Comprehensive Validation",
+        "Cost",
+        "cs",
+        "da",
+        "Dashboard",
+        "de",
+        "Documentation",
+        "el",
+        "Email",
+        "en",
+        "en-AU",
+        "en-CA",
+        "en-GB",
+        "en-US",
+        "Encrypted transport",
+        "es",
+        "es-MX",
+        "Estimates",
+        "et",
+        "Extended Timeouts",
+        "fi",
+        "fr",
+        "fr-CA",
+        "Free tier",
+        "GDPR compliant",
+        "GitHub",
+        "hi",
+        "hr",
+        "hu",
+        "id",
+        "Industry Context",
+        "is",
+        "Issues",
+        "it",
+        "ja",
+        "Job Tracking",
+        "ko",
+        "Large Files",
+        "lt",
+        "lv",
+        "Monitoring",
+        "ms",
+        "nl",
+        "no",
+        "No data storage",
+        "No subscriptions",
+        "Output Format",
+        "Pay-per-use",
+        "pl",
+        "Preserve Structure",
+        "Progress Monitoring",
+        "Progress Updates",
+        "pt",
+        "pt-BR",
+        "Regional Variations",
+        "ro",
+        "ru",
+        "sk",
+        "Skip Warnings",
+        "sl",
+        "Source Analysis",
+        "sr",
+        "sv",
+        "Target Audience",
+        "th",
+        "Timeout Resilience",
+        "tl",
+        "tr",
+        "Trade-off",
+        "Transport Detection",
+        "uk",
+        "vi",
+        "Website",
+        "Zero External Dependencies",
+        "zh-Hans",
+        "zh-Hant-HK",
+        "zh-Hant-TW"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28832,7 +29014,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@notionhq/notion-mcp-server"
+      "packageName": "@notionhq/notion-mcp-server",
+      "toolCount": 3,
+      "toolNames": [
+        "create-a-data-source",
+        "query-data-source",
+        "update-a-data-source"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28843,7 +29033,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@upstash/context7-mcp"
+      "packageName": "@upstash/context7-mcp",
+      "toolCount": 4,
+      "toolNames": [
+        "Global MCP Configuration",
+        "Key:",
+        "Project-level MCP Configuration",
+        "Value:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28854,7 +29053,29 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@modelcontextprotocol/server-filesystem"
+      "packageName": "@modelcontextprotocol/server-filesystem",
+      "toolCount": 15,
+      "toolNames": [
+        "false",
+        "true",
+        "create_directory",
+        "directory_tree",
+        "edit_file",
+        "get_file_info",
+        "list_allowed_directories",
+        "list_directory",
+        "list_directory_with_sizes",
+        "move_file",
+        "On initialization",
+        "On runtime updates",
+        "read_media_file",
+        "read_multiple_files",
+        "read_text_file",
+        "search_files",
+        "write_file"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28876,7 +29097,52 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "chrome-devtools-mcp"
+      "packageName": "chrome-devtools-mcp",
+      "toolCount": 41,
+      "toolNames": [
+        "`--acceptInsecureCerts`/ `--accept-insecure-certs`",
+        "`--autoConnect`/ `--auto-connect`",
+        "`--browserUrl`/ `--browser-url`, `-u`",
+        "`--categoryEmulation`/ `--category-emulation`",
+        "`--categoryNetwork`/ `--category-network`",
+        "`--categoryPerformance`/ `--category-performance`",
+        "`--channel`",
+        "`--chromeArg`/ `--chrome-arg`",
+        "`--executablePath`/ `--executable-path`, `-e`",
+        "`--experimentalScreencast`/ `--experimental-screencast`",
+        "`--headless`",
+        "`--ignoreDefaultChromeArg`/ `--ignore-default-chrome-arg`",
+        "`--isolated`",
+        "`--logFile`/ `--log-file`",
+        "`--performanceCrux`/ `--performance-crux`",
+        "`--proxyServer`/ `--proxy-server`",
+        "`--slim`",
+        "`--usageStatistics`/ `--usage-statistics`",
+        "`--userDataDir`/ `--user-data-dir`",
+        "`--viewport`",
+        "`--wsEndpoint`/ `--ws-endpoint`, `-w`",
+        "`--wsHeaders`/ `--ws-headers`",
+        "Advanced browser debugging",
+        "Automatic connection (available in Chrome 144)",
+        "Choices:",
+        "Command:",
+        "Connection URL:",
+        "Debugging",
+        "Default:",
+        "Emulation",
+        "Get performance insights",
+        "Input automation",
+        "Manual connection via remote debugging port",
+        "Navigation automation",
+        "Network",
+        "Performance",
+        "Reliable automation",
+        "Server name:",
+        "Server Type:",
+        "Transport type:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28942,7 +29208,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@heroku/mcp-server"
+      "packageName": "@heroku/mcp-server",
+      "toolCount": 1,
+      "toolNames": [
+        "Heroku CLI"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28953,7 +29225,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@railway/mcp-server"
+      "packageName": "@railway/mcp-server",
+      "toolCount": 2,
+      "toolNames": [
+        "Older CLI versions",
+        "Railway CLI v4.9.0+"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28964,7 +29243,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@fast-kit/spec-kit"
+      "packageName": "@fast-kit/spec-kit",
+      "toolCount": 3,
+      "toolNames": [
+        "json",
+        "notion",
+        "user_story"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -28975,7 +29262,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@winor30/mcp-server-datadog"
+      "packageName": "@winor30/mcp-server-datadog",
+      "toolCount": 4,
+      "toolNames": [
+        "Extensible Design",
+        "Inputs",
+        "Observability Tools",
+        "Returns"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29008,7 +29304,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-server-kubernetes"
+      "packageName": "mcp-server-kubernetes",
+      "toolCount": 9,
+      "toolNames": [
+        "All tool calls",
+        "Datadog",
+        "Execution duration",
+        "Grafana Cloud",
+        "Grafana Tempo",
+        "Jaeger",
+        "Kubernetes context",
+        "Rich metadata",
+        "Success/failure status"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29030,7 +29340,41 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@ivotoby/openapi-mcp-server"
+      "packageName": "@ivotoby/openapi-mcp-server",
+      "toolCount": 29,
+      "toolNames": [
+        "[AuthProvider Guide](./docs/auth-provider-guide.md)",
+        "[Developer Guide](./docs/developer-guide.md)",
+        "[Library Usage](#library-usage)",
+        "[User Guide](#user-guide)",
+        "API-Specific Optimizations",
+        "Array Bodies",
+        "Authentication Error Recovery",
+        "Collision Handling",
+        "Custom Authentication",
+        "Custom Error Messages",
+        "Distribution",
+        "Dynamic Headers",
+        "File loading",
+        "Inline loading",
+        "Integration",
+        "Metadata Retention",
+        "Nested Properties",
+        "Object Bodies",
+        "Parameter References",
+        "Parameters + Request Body Merging",
+        "Parsing errors",
+        "Primitive Type Bodies",
+        "Recursive References",
+        "Required Properties",
+        "Schema References",
+        "Stdin loading",
+        "Token Expiration Handling",
+        "Type Preservation",
+        "URL loading"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29074,7 +29418,54 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@gongrzhe/server-gmail-autoauth-mcp"
+      "packageName": "@gongrzhe/server-gmail-autoauth-mcp",
+      "toolCount": 23,
+      "toolNames": [
+        "\"backup@example.com\"",
+        "\"has:attachment\"",
+        "\"larger\"",
+        "\"Meeting\"",
+        "\"recipient@example.com\"",
+        "\"sender@example.com\"",
+        "\"spam\"",
+        "[\"IMPORTANT\", \"Label_Work\"]",
+        "[\"INBOX\", \"UNREAD\"]",
+        "10485760",
+        "after:2024/01/01",
+        "before:2024/02/01",
+        "from:john@example.com",
+        "has:attachment",
+        "is:unread",
+        "label:work",
+        "subject:\"meeting notes\"",
+        "to:mary@example.com",
+        "true",
+        "Attachment Detection",
+        "Attachment files are processed locally and never stored permanently by the server",
+        "Batch operations for efficiently processing multiple emails at once",
+        "Comprehensive label management with ability to create, update, delete and list labels",
+        "Create Labels",
+        "Delete Labels",
+        "Download Capability",
+        "Download email attachments",
+        "Download Failures",
+        "Enhanced attachment display",
+        "Enhanced Display",
+        "File Not Found",
+        "Find or Create",
+        "Full attachment support",
+        "Label Visibility Options",
+        "List All Labels",
+        "Multiple Formats",
+        "Permission Errors",
+        "Processes attachments information (filename, type, size, download ID)",
+        "RFC822 Compliance",
+        "Sending Attachments",
+        "Size Limits",
+        "Update Labels"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29107,7 +29498,68 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@shortcut/mcp"
+      "packageName": "@shortcut/mcp",
+      "toolCount": 56,
+      "toolNames": [
+        "custom-fields-list",
+        "documents-create",
+        "documents-get-by-id",
+        "documents-list",
+        "documents-search",
+        "documents-update",
+        "epics-create",
+        "epics-create-comment",
+        "epics-delete",
+        "epics-get-by-id",
+        "epics-search",
+        "epics-update",
+        "iterations-create",
+        "iterations-delete",
+        "iterations-get-active",
+        "iterations-get-by-id",
+        "iterations-get-stories",
+        "iterations-get-upcoming",
+        "iterations-search",
+        "iterations-update",
+        "labels-create",
+        "labels-get-stories",
+        "labels-list",
+        "objectives-get-by-id",
+        "objectives-search",
+        "projects-get-by-id",
+        "projects-get-stories",
+        "projects-list",
+        "stories-add-external-link",
+        "stories-add-relation",
+        "stories-add-subtask",
+        "stories-add-task",
+        "stories-assign-current-user",
+        "stories-create",
+        "stories-create-comment",
+        "stories-create-subtask",
+        "stories-get-branch-name",
+        "stories-get-by-external-link",
+        "stories-get-by-id",
+        "stories-get-history",
+        "stories-remove-external-link",
+        "stories-remove-subtask",
+        "stories-search",
+        "stories-set-external-links",
+        "stories-unassign-current-user",
+        "stories-update",
+        "stories-update-task",
+        "stories-upload-file",
+        "teams-get-by-id",
+        "teams-list",
+        "users-get-current",
+        "users-get-current-teams",
+        "users-list",
+        "workflows-get-by-id",
+        "workflows-get-default",
+        "workflows-list"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29140,7 +29592,40 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@currents/mcp"
+      "packageName": "@currents/mcp",
+      "toolCount": 28,
+      "toolNames": [
+        "currents-cancel-run",
+        "currents-cancel-run-github-ci",
+        "currents-create-action",
+        "currents-create-webhook",
+        "currents-delete-action",
+        "currents-delete-run",
+        "currents-delete-webhook",
+        "currents-disable-action",
+        "currents-enable-action",
+        "currents-find-run",
+        "currents-get-action",
+        "currents-get-errors-explorer",
+        "currents-get-project",
+        "currents-get-project-insights",
+        "currents-get-projects",
+        "currents-get-run-details",
+        "currents-get-runs",
+        "currents-get-spec-files-performance",
+        "currents-get-spec-instance",
+        "currents-get-test-results",
+        "currents-get-tests-performance",
+        "currents-get-tests-signatures",
+        "currents-get-webhook",
+        "currents-list-actions",
+        "currents-list-webhooks",
+        "currents-reset-run",
+        "currents-update-action",
+        "currents-update-webhook"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29162,7 +29647,40 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@tocharianou/mcp-server-kibana"
+      "packageName": "@tocharianou/mcp-server-kibana",
+      "toolCount": 15,
+      "toolNames": [
+        "1",
+        "3000",
+        "30000",
+        "default",
+        "http://localhost:5601",
+        "KIBANA_API_KEY",
+        "KIBANA_CA_CERT",
+        "KIBANA_COOKIES",
+        "kibana-api://path/{method}/{encoded_path}",
+        "kibana-api://paths",
+        "kibana-api://paths?search=<keyword>",
+        "localhost",
+        "stdio",
+        "\"import: command not found\"",
+        "Authentication failed",
+        "Dual transport modes",
+        "Dynamic API discovery",
+        "GitHub",
+        "License",
+        "MacOS",
+        "Multi-space support",
+        "Multiple authentication methods",
+        "Node.js",
+        "NPM",
+        "Session management",
+        "SSL errors",
+        "SSL/TLS support",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29184,7 +29702,23 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "slite-mcp-server"
+      "packageName": "slite-mcp-server",
+      "toolCount": 11,
+      "toolNames": [
+        "--api-key",
+        "--base-url",
+        "--help, -h",
+        "ask-slite",
+        "create-note",
+        "get-note",
+        "get-note-children",
+        "npm run build",
+        "npm run format",
+        "npm run lint",
+        "search-notes"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29195,7 +29729,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@cap-js/mcp-server"
+      "packageName": "@cap-js/mcp-server",
+      "toolCount": 3,
+      "toolNames": [
+        "@huggingface/transformers.js",
+        "@modelcontextprotocol/sdk",
+        "onnxruntime-web"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29206,7 +29748,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-hello-world"
+      "packageName": "mcp-hello-world",
+      "toolCount": 5,
+      "toolNames": [
+        "`debug`",
+        "`echo`",
+        "`greeting://{name}`",
+        "`hello://world`",
+        "`helpful-assistant`"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29228,7 +29780,36 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@circleci/mcp-server-circleci"
+      "packageName": "@circleci/mcp-server-circleci",
+      "toolCount": 24,
+      "toolNames": [
+        "Base URL:",
+        "Config file location:",
+        "Console logs:",
+        "Corporate networks:",
+        "Docker fallback:",
+        "Environment variables not loading:",
+        "File",
+        "Firewall blocking:",
+        "Git diff content",
+        "Global:",
+        "Invalid token errors:",
+        "Node.js version:",
+        "Package manager:",
+        "Permission errors:",
+        "Pipeline Rollback:",
+        "Repository rules",
+        "Syntax errors:",
+        "Test package directly:",
+        "Text (default):",
+        "Try a different IDE:",
+        "Update Node.js:",
+        "Verbose logging:",
+        "Workflow Rerun:",
+        "Workspace:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29239,7 +29820,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@upstash/mcp-server"
+      "packageName": "@upstash/mcp-server",
+      "toolCount": 2,
+      "toolNames": [
+        "API Key",
+        "Email"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29272,7 +29860,88 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "kubernetes-mcp-server"
+      "packageName": "kubernetes-mcp-server",
+      "toolCount": 64,
+      "toolNames": [
+        "--cluster-provider",
+        "--config",
+        "--config-dir",
+        "--disable-destructive",
+        "--disable-multi-cluster",
+        "--kubeconfig",
+        "--list-output",
+        "--log-level",
+        "--port",
+        "--read-only",
+        "--stateless",
+        "--toolsets",
+        "✅ Configurable",
+        "✅ Configuration",
+        "✅ Cross-Platform",
+        "📚 Documentation",
+        "✅ Events",
+        "✅ Generic Kubernetes Resources",
+        "☸️ Helm",
+        "✅ High-Performance / Low-Latency",
+        "✅ Lightweight",
+        "✅ Multi-Cluster",
+        "✅ Namespaces",
+        "🔭 Observability",
+        "✅ Pods",
+        "✅ Projects",
+        "✅ Well tested",
+        "cluster-health-check",
+        "configuration_contexts_list",
+        "configuration_view",
+        "Delete",
+        "events_list",
+        "Exec",
+        "Get",
+        "helm_install",
+        "helm_list",
+        "helm_uninstall",
+        "Install",
+        "kcp_workspace_describe",
+        "kcp_workspaces_list",
+        "kiali_get_metrics",
+        "kiali_get_resource_details",
+        "kiali_get_traces",
+        "kiali_manage_istio_config",
+        "kiali_manage_istio_config_read",
+        "kiali_mesh_graph",
+        "kiali_workload_logs",
+        "List",
+        "namespaces_list",
+        "nodes_log",
+        "nodes_stats_summary",
+        "nodes_top",
+        "pods_delete",
+        "pods_exec",
+        "pods_get",
+        "pods_list",
+        "pods_list_in_namespace",
+        "pods_log",
+        "pods_run",
+        "pods_top",
+        "projects_list",
+        "resources_create_or_update",
+        "resources_delete",
+        "resources_get",
+        "resources_list",
+        "resources_scale",
+        "Run",
+        "Show logs",
+        "targets_list",
+        "Top",
+        "Uninstall",
+        "View",
+        "vm_clone",
+        "vm_create",
+        "vm_lifecycle",
+        "vm-troubleshoot"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29283,7 +29952,20 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "next-devtools-mcp"
+      "packageName": "next-devtools-mcp",
+      "toolCount": 8,
+      "toolNames": [
+        "`enable-cache-components`",
+        "`upgrade-nextjs-16`",
+        "Automated Next.js 16 upgrades",
+        "Browser testing integration",
+        "Cache Components migration and setup",
+        "Error events",
+        "Session metadata",
+        "Tool usage"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29294,7 +29976,169 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@taazkareem/clickup-mcp-server"
+      "packageName": "@taazkareem/clickup-mcp-server",
+      "toolCount": 150,
+      "toolNames": [
+        "add_chat_reaction",
+        "add_comment_reaction",
+        "add_guest_to_folder",
+        "add_guest_to_list",
+        "add_guest_to_task",
+        "add_tag_to_task",
+        "add_task_dependency",
+        "add_task_link",
+        "add_task_to_list",
+        "add_time_entry",
+        "add_time_entry_tags",
+        "create_bulk_tasks",
+        "create_chat_channel",
+        "create_chat_dm",
+        "create_chat_message",
+        "create_chat_message_reply",
+        "create_checklist",
+        "create_checklist_item",
+        "create_comment",
+        "create_comment_reply",
+        "create_custom_field",
+        "create_document",
+        "create_document_page",
+        "create_folder",
+        "create_folder_from_template",
+        "create_goal",
+        "create_key_result",
+        "create_list",
+        "create_list_from_template",
+        "create_space",
+        "create_space_tag",
+        "create_task",
+        "create_task_from_template",
+        "create_user_group",
+        "create_view",
+        "create_webhook",
+        "delete_bulk_tasks",
+        "delete_chat_channel",
+        "delete_chat_message",
+        "delete_checklist",
+        "delete_checklist_item",
+        "delete_comment",
+        "delete_folder",
+        "delete_goal",
+        "delete_key_result",
+        "delete_list",
+        "delete_space",
+        "delete_space_tag",
+        "delete_task",
+        "delete_task_dependency",
+        "delete_task_link",
+        "delete_time_entry",
+        "delete_time_entry_tags",
+        "delete_user_group",
+        "delete_view",
+        "delete_webhook",
+        "duplicate_task",
+        "edit_checklist",
+        "edit_checklist_item",
+        "edit_guest",
+        "get_active_sprint",
+        "get_attachment",
+        "get_audit_logs",
+        "get_chat_channel",
+        "get_chat_channel_followers",
+        "get_chat_channel_members",
+        "get_chat_message_replies",
+        "get_chat_message_subtypes",
+        "get_chat_messages",
+        "get_chat_reactions",
+        "get_chat_tagged_users",
+        "get_comment_replies",
+        "get_comment_subtypes",
+        "get_comments",
+        "get_current_time_entry",
+        "get_document",
+        "get_document_page",
+        "get_document_pages",
+        "get_folder",
+        "get_goal",
+        "get_guest",
+        "get_list",
+        "get_space",
+        "get_sprint_tasks",
+        "get_task",
+        "get_task_links",
+        "get_task_templates",
+        "get_time_entries",
+        "get_time_entry_history",
+        "get_time_entry_tags",
+        "get_time_in_status",
+        "get_view",
+        "get_view_tasks",
+        "get_workspace",
+        "get_workspace_plan",
+        "get_workspace_seats",
+        "get_workspace_tasks",
+        "invite_guest",
+        "list_attachments",
+        "list_chat_channels",
+        "list_custom_fields",
+        "list_document_pages",
+        "list_documents",
+        "list_folders",
+        "list_goals",
+        "list_lists",
+        "list_space_tags",
+        "list_spaces",
+        "list_sprints",
+        "list_user_groups",
+        "list_views",
+        "list_webhooks",
+        "move_bulk_tasks",
+        "move_folder",
+        "move_list",
+        "move_task",
+        "remove_chat_reaction",
+        "remove_comment_reaction",
+        "remove_custom_field_value",
+        "remove_guest",
+        "remove_guest_from_folder",
+        "remove_guest_from_list",
+        "remove_guest_from_task",
+        "remove_tag_from_task",
+        "remove_task_from_list",
+        "set_custom_field_value",
+        "set_folder_permissions",
+        "set_list_permissions",
+        "set_space_permissions",
+        "start_time_entry",
+        "stop_time_entry",
+        "submit_feedback",
+        "update_bulk_tasks",
+        "update_chat_channel",
+        "update_chat_message",
+        "update_comment",
+        "update_document_page",
+        "update_folder",
+        "update_goal",
+        "update_key_result",
+        "update_list",
+        "update_space",
+        "update_space_tag",
+        "update_task",
+        "update_time_entry",
+        "update_time_entry_tags",
+        "update_user_group",
+        "update_view",
+        "update_webhook",
+        "upload_attachment",
+        "Authentication:",
+        "Codex CLI:",
+        "Desktop App:",
+        "Global:",
+        "Local:",
+        "Server URL:",
+        "VS Code Extension:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29305,7 +30149,18 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "polaris-mcp-server"
+      "packageName": "polaris-mcp-server",
+      "toolCount": 6,
+      "toolNames": [
+        "get_component_details",
+        "get_component_examples",
+        "polaris_component_customization",
+        "polaris_component_implementation",
+        "polaris_layout_design",
+        "search_polaris_components"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29327,7 +30182,26 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@zereight/mcp-gitlab"
+      "packageName": "@zereight/mcp-gitlab",
+      "toolCount": 8,
+      "toolNames": [
+        "GITLAB_API_URL",
+        "GITLAB_MCP_OAUTH",
+        "GITLAB_OAUTH_APP_ID",
+        "MCP_DANGEROUSLY_ALLOW_INSECURE_ISSUER_URL",
+        "MCP_SERVER_URL",
+        "STREAMABLE_HTTP",
+        "Capacity limit:",
+        "Confidential",
+        "Name",
+        "Rate limiting:",
+        "Redirect URI",
+        "Scopes",
+        "Session timeout:",
+        "SSE transport is disabled"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29338,7 +30212,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@aikidosec/mcp"
+      "packageName": "@aikidosec/mcp",
+      "toolCount": 1,
+      "toolNames": [
+        "Node.js"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29349,7 +30229,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@benborla29/mcp-server-mysql"
+      "packageName": "@benborla29/mcp-server-mysql",
+      "toolCount": 4,
+      "toolNames": [
+        "Basic connection settings",
+        "mysql_query",
+        "Table Schemas",
+        "Write operation permissions"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29393,7 +30282,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@azure/mcp"
+      "packageName": "@azure/mcp",
+      "toolCount": 2,
+      "toolNames": [
+        "~/.codeium/windsurf/mcp_config.json",
+        "~/.copilot/mcp-config.json",
+        "Azure Storage Sync"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29426,7 +30323,39 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "chrome-local-mcp"
+      "packageName": "chrome-local-mcp",
+      "toolCount": 22,
+      "toolNames": [
+        "batch",
+        "click",
+        "click_ref",
+        "close_browser",
+        "eval",
+        "get_inputs",
+        "get_links",
+        "get_text",
+        "go_back",
+        "launch",
+        "list_pages",
+        "navigate",
+        "new_tab",
+        "ocr",
+        "press_key",
+        "screenshot",
+        "scroll",
+        "select",
+        "snapshot",
+        "type",
+        "type_ref",
+        "wait_for",
+        "Batch actions",
+        "Local OCR saves tokens",
+        "Persistent browser profile",
+        "Real Chrome",
+        "Simple architecture"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29437,7 +30366,24 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "cclsp"
+      "packageName": "cclsp",
+      "toolCount": 12,
+      "toolNames": [
+        "And many more",
+        "Confirm",
+        "Find References",
+        "Go",
+        "Go to Definition",
+        "Multi-language Support",
+        "Navigation",
+        "Project Configuration",
+        "Python",
+        "Selection",
+        "TypeScript",
+        "User Configuration"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29448,7 +30394,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@cloudflare/mcp-server-cloudflare"
+      "packageName": "@cloudflare/mcp-server-cloudflare",
+      "toolCount": 1,
+      "toolNames": [
+        "Observability and Analytics"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29459,7 +30411,36 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "fdic-mcp-server"
+      "packageName": "fdic-mcp-server",
+      "toolCount": 24,
+      "toolNames": [
+        "/fdic-bank-deep-dive",
+        "fdic_analyze_bank_health",
+        "fdic_analyze_credit_concentration",
+        "fdic_analyze_funding_profile",
+        "fdic_analyze_securities_portfolio",
+        "fdic_compare_bank_snapshots",
+        "fdic_compare_peer_health",
+        "fdic_detect_risk_signals",
+        "fdic_franchise_footprint",
+        "fdic_get_institution",
+        "fdic_get_institution_failure",
+        "fdic_holding_company_profile",
+        "fdic_market_share_analysis",
+        "fdic_peer_group_analysis",
+        "fdic_regional_context",
+        "fdic_search_demographics",
+        "fdic_search_failures",
+        "fdic_search_financials",
+        "fdic_search_history",
+        "fdic_search_institutions",
+        "fdic_search_locations",
+        "fdic_search_sod",
+        "fdic_search_summary",
+        "fdic_ubpr_analysis"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29470,7 +30451,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@gleanwork/local-mcp-server"
+      "packageName": "@gleanwork/local-mcp-server",
+      "toolCount": 5,
+      "toolNames": [
+        "Chat",
+        "Company Search",
+        "MCP Compliant",
+        "People Profile Search",
+        "Read Documents"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29492,7 +30483,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "playwright-mcp-server"
+      "packageName": "playwright-mcp-server",
+      "toolCount": 5,
+      "toolNames": [
+        "Authentication Support",
+        "Code Reuse",
+        "Cursor Integration",
+        "Project Structure Analysis",
+        "Site Context Integration"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29503,7 +30504,136 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "browser-devtools-mcp"
+      "packageName": "browser-devtools-mcp",
+      "toolCount": 62,
+      "toolNames": [
+        "--browser-path <path>",
+        "--session-id <string>",
+        "./browser-devtools-mcp",
+        "[CDP connect]",
+        "[CDP discovery]",
+        "<domain> <tool>",
+        "1000",
+        "127.0.0.1",
+        "2020",
+        "30",
+        "300",
+        "3000",
+        "30000",
+        "AVAILABLE_TOOL_DOMAINS",
+        "browser",
+        "BROWSER_CDP_ENDPOINT_URL",
+        "browser_devtools_version",
+        "BROWSER_EXECUTABLE_PATH",
+        "browser-devtools-cli",
+        "cli",
+        "cli_claude",
+        "cli_codex",
+        "cli_cursor",
+        "click",
+        "client_name",
+        "config",
+        "daemon <cmd>",
+        "duration_ms",
+        "error_code",
+        "error_type",
+        "false",
+        "FIGMA_ACCESS_TOKEN",
+        "frontend",
+        "help",
+        "https://api.figma.com/v1",
+        "mcp-claude",
+        "mcp-codex",
+        "mcp-cursor",
+        "mcp-unknown",
+        "node_version",
+        "node-devtools-cli",
+        "none",
+        "os_arch",
+        "os_platform",
+        "OTEL_ASSETS_DIR",
+        "OTEL_EXPORTER_HTTP_HEADERS",
+        "OTEL_EXPORTER_HTTP_URL",
+        "OTEL_SERVICE_VERSION",
+        "session <cmd>",
+        "session_id",
+        "source",
+        "status",
+        "success",
+        "TELEMETRY_ENABLE",
+        "timestamp",
+        "timezone",
+        "tool_name",
+        "TOOL_NAME_PREFIX",
+        "tools <cmd>",
+        "transport",
+        "true",
+        "update",
+        "`browser-devtools-cli`",
+        "`node-devtools-cli`",
+        "ARIA Snapshots",
+        "AX Tree Snapshots",
+        "Browser Automation",
+        "Chromium",
+        "Clear Stubs",
+        "Click",
+        "Closed tab",
+        "Compare Page with Design",
+        "Connection",
+        "Console Messages",
+        "Design Comparison",
+        "Docker Support",
+        "DOM & Code-Level Debugging",
+        "Drag",
+        "Exceptionpoint",
+        "Execute",
+        "Execution Monitoring",
+        "Fill",
+        "Firefox:",
+        "Get Component for Element",
+        "Get Element for Component",
+        "Go Back / Go Forward",
+        "Go To",
+        "Hover",
+        "HTML/Text Extraction",
+        "HTTP Requests",
+        "Intercept HTTP Request",
+        "JavaScript Execution",
+        "List Stubs",
+        "Logpoint",
+        "Mock HTTP Response",
+        "Multiple Transport Modes",
+        "Non-Blocking Debugging",
+        "OpenTelemetry Integration",
+        "OpenTelemetry Tracing",
+        "PDF Export",
+        "Persistent Browser Context",
+        "Press Key",
+        "React DevTools Extension",
+        "Reload",
+        "Resize Viewport",
+        "Resize Window",
+        "Resolve Source Location",
+        "Screenshots",
+        "Scripting and automation",
+        "Scroll",
+        "Select",
+        "Session Management",
+        "Session-based testing",
+        "Skill-based workflows",
+        "Snapshot capture",
+        "Source Map Support",
+        "Status",
+        "Trace ID Management",
+        "Tracepoint",
+        "Visual Inspection",
+        "Wait for Network Idle",
+        "Watch Expressions",
+        "Web Vitals",
+        "WebKit:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29547,7 +30677,66 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@phantom/mcp-server"
+      "packageName": "@phantom/mcp-server",
+      "toolCount": 43,
+      "toolNames": [
+        "/callback",
+        "1",
+        "10143",
+        "11155111",
+        "137",
+        "143",
+        "42161",
+        "421614",
+        "80002",
+        "8080",
+        "8453",
+        "84532",
+        "cancel_perp_order",
+        "chainId",
+        "close_perp_position",
+        "DEBUG",
+        "deposit_to_hyperliquid",
+        "ENABLE_FILE_LOGGING",
+        "get_perp_account",
+        "get_perp_markets",
+        "get_perp_orders",
+        "get_perp_positions",
+        "get_perp_trade_history",
+        "google",
+        "http://localhost:3001",
+        "https://api.phantom.app/v1/wallets",
+        "https://arb1.arbitrum.io/rpc",
+        "https://auth.phantom.app",
+        "https://cloudflare-eth.com",
+        "https://connect.phantom.app",
+        "https://mainnet.base.org",
+        "https://polygon-rpc.com",
+        "https://sepolia.base.org",
+        "https://sepolia.drpc.org",
+        "mcp-server",
+        "open_perp_position",
+        "PHANTOM_APP_ID",
+        "PHANTOM_CLIENT_ID",
+        "PHANTOM_CLIENT_SECRET",
+        "PHANTOM_MCP_DEBUG",
+        "transfer_spot_to_perps",
+        "update_perp_leverage",
+        "withdraw_from_perps",
+        "Auto Re-authentication",
+        "Chain-Specific Tools",
+        "Confidential client",
+        "Important",
+        "Multi-Chain Support",
+        "Perpetuals Trading",
+        "Public client",
+        "Session Persistence",
+        "SSO Authentication",
+        "Step 0",
+        "Step 1+"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29558,7 +30747,35 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "zd-mcp-server"
+      "packageName": "zd-mcp-server",
+      "toolCount": 15,
+      "toolNames": [
+        "zendesk_add_private_note",
+        "zendesk_add_public_note",
+        "zendesk_create_ticket",
+        "zendesk_get_linked_incidents",
+        "zendesk_get_ticket",
+        "zendesk_get_ticket_details",
+        "zendesk_search",
+        "zendesk_update_ticket",
+        "Agent",
+        "API access",
+        "Claude Desktop",
+        "Cursor",
+        "GitHub",
+        "Issues",
+        "macOS",
+        "MCP Protocol",
+        "Model Context Protocol",
+        "npm",
+        "Terminal",
+        "Ticket access",
+        "Windows",
+        "Zendesk API",
+        "Zendesk API Docs"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29569,7 +30786,31 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "datadog-mcp-server"
+      "packageName": "datadog-mcp-server",
+      "toolCount": 19,
+      "toolNames": [
+        "aggregate-logs",
+        "API Integration",
+        "Comprehensive Error Handling",
+        "Dashboards",
+        "Events",
+        "get-dashboard",
+        "get-dashboards",
+        "get-events",
+        "get-incidents",
+        "get-metric-metadata",
+        "get-metrics",
+        "get-monitor",
+        "get-monitors",
+        "Incidents",
+        "Logs",
+        "Metrics",
+        "Monitoring",
+        "search-logs",
+        "Service-Specific Endpoints"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29613,7 +30854,84 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@contentful/mcp-server"
+      "packageName": "@contentful/mcp-server",
+      "toolCount": 67,
+      "toolNames": [
+        "api.contentful.com",
+        "CONTENTFUL_MANAGEMENT_ACCESS_TOKEN",
+        "create_ai_action",
+        "create_concept",
+        "create_concept_scheme",
+        "create_content_type",
+        "create_entry",
+        "create_environment",
+        "create_locale",
+        "create_tag",
+        "delete_ai_action",
+        "delete_asset",
+        "delete_concept",
+        "delete_concept_scheme",
+        "delete_content_type",
+        "delete_entry",
+        "delete_environment",
+        "delete_locale",
+        "export_space",
+        "get_ai_action",
+        "get_ai_action_invocation",
+        "get_asset",
+        "get_concept",
+        "get_concept_scheme",
+        "get_content_type",
+        "get_editor_interface",
+        "get_entry",
+        "get_initial_context",
+        "get_locale",
+        "get_org",
+        "get_space",
+        "import_space",
+        "invoke_ai_action",
+        "list_ai_actions",
+        "list_assets",
+        "list_concept_schemes",
+        "list_concepts",
+        "list_content_types",
+        "list_editor_interfaces",
+        "list_environments",
+        "list_locales",
+        "list_orgs",
+        "list_spaces",
+        "list_tags",
+        "master",
+        "production",
+        "publish_ai_action",
+        "publish_asset",
+        "publish_content_type",
+        "publish_entry",
+        "search_entries",
+        "SPACE_ID",
+        "space_to_space_migration_handler",
+        "space_to_space_param_collection",
+        "unpublish_ai_action",
+        "unpublish_asset",
+        "unpublish_content_type",
+        "unpublish_entry",
+        "update_ai_action",
+        "update_asset",
+        "update_concept",
+        "update_concept_scheme",
+        "update_content_type",
+        "update_editor_interface",
+        "update_entry",
+        "update_locale",
+        "upload_asset",
+        "Asset Organization",
+        "Content Creation",
+        "Content Management",
+        "Content Modeling",
+        "Workflow Automation"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29624,7 +30942,49 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "terraform-mcp-server"
+      "packageName": "terraform-mcp-server",
+      "toolCount": 37,
+      "toolNames": [
+        "analyze-workspace-runs",
+        "applyRun",
+        "cancelRun",
+        "createRun",
+        "DEFAULT_PROVIDER_NAMESPACE",
+        "explorerQuery",
+        "functionDetails",
+        "listDataSources",
+        "listOrganizations",
+        "listRuns",
+        "listWorkspaceResources",
+        "listWorkspaces",
+        "lockWorkspace",
+        "LOG_LEVEL",
+        "migrate-clouds",
+        "migrate-provider-version",
+        "moduleDetails",
+        "moduleSearch",
+        "policyDetails",
+        "policySearch",
+        "privateModuleDetails",
+        "privateModuleSearch",
+        "providerDetails",
+        "providerGuides",
+        "RATE_LIMIT_ENABLED",
+        "RATE_LIMIT_REQUESTS",
+        "RATE_LIMIT_WINDOW_MS",
+        "REQUEST_TIMEOUT_MS",
+        "resourceArgumentDetails",
+        "resourceType",
+        "resourceUsage",
+        "runDetails",
+        "TERRAFORM_REGISTRY_URL",
+        "terraformCode",
+        "TFC_TOKEN",
+        "unlockWorkspace",
+        "workspaceDetails"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29635,7 +30995,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@brave/brave-search-mcp-server"
+      "packageName": "@brave/brave-search-mcp-server",
+      "toolCount": 2,
+      "toolNames": [
+        "Free",
+        "Pro"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29712,7 +31079,20 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "todoist-mcp"
+      "packageName": "todoist-mcp",
+      "toolCount": 8,
+      "toolNames": [
+        "Batch Processing",
+        "Comments",
+        "Complete Todoist API Integration",
+        "Labels",
+        "Projects",
+        "Prompt Support",
+        "Search by name",
+        "Tasks"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29734,7 +31114,35 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@nexus2520/bitbucket-mcp-server"
+      "packageName": "@nexus2520/bitbucket-mcp-server",
+      "toolCount": 12,
+      "toolNames": [
+        "ADDED",
+        "branches",
+        "commits",
+        "CONTEXT",
+        "discovery",
+        "files",
+        "pr_comments",
+        "pr_core",
+        "pr_review",
+        "pr_tasks",
+        "REMOVED",
+        "search",
+        "Account",
+        "Active comments with nested replies",
+        "Bitbucket Cloud",
+        "Bitbucket Server",
+        "File changes",
+        "Merge commit details",
+        "Nested replies",
+        "Parent reference",
+        "Pull requests",
+        "Repositories",
+        "Required for Bitbucket Cloud"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29745,7 +31153,23 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@cariot-labs/cariot-mcp-server"
+      "packageName": "@cariot-labs/cariot-mcp-server",
+      "toolCount": 7,
+      "toolNames": [
+        "API_ACCESS_KEY",
+        "API_ACCESS_SECRET",
+        "CARIOT_LOG_LEVEL",
+        "ID_TOKEN",
+        "analyze_alcohol_checks",
+        "generate_chart_config",
+        "get_daily_report",
+        "get_daily_reports",
+        "get_drivers",
+        "get_realtime",
+        "get_vehicles"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29756,7 +31180,27 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "agentation-mcp"
+      "packageName": "agentation-mcp",
+      "toolCount": 13,
+      "toolNames": [
+        "7",
+        "agentation_acknowledge",
+        "agentation_dismiss",
+        "agentation_get_all_pending",
+        "agentation_get_pending",
+        "agentation_get_session",
+        "agentation_list_sessions",
+        "agentation_reply",
+        "agentation_resolve",
+        "agentation_watch_annotations",
+        "AGENTATION_WEBHOOK_URL",
+        "AGENTATION_WEBHOOKS",
+        "sqlite",
+        "HTTP server",
+        "MCP server"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29767,7 +31211,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@line/line-bot-mcp-server"
+      "packageName": "@line/line-bot-mcp-server",
+      "toolCount": 1,
+      "toolNames": [
+        "Inputs:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29778,7 +31228,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-searxng"
+      "packageName": "mcp-searxng",
+      "toolCount": 9,
+      "toolNames": [
+        "Intelligent Caching",
+        "Language Selection",
+        "Pagination",
+        "Safe Search",
+        "searxng_web_search",
+        "Time Filtering",
+        "URL Content Reading",
+        "Web Search",
+        "web_url_read"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29789,7 +31253,23 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "openapi-mcp-generator"
+      "packageName": "openapi-mcp-generator",
+      "toolCount": 11,
+      "toolNames": [
+        "-b",
+        "-i",
+        "-n",
+        "-o",
+        "-v",
+        "\"stdio\"",
+        "3000",
+        "API_KEY_<SCHEME_NAME>",
+        "BEARER_TOKEN_<SCHEME_NAME>",
+        "false",
+        "true"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29800,7 +31280,47 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@openbnb/mcp-server-airbnb"
+      "packageName": "@openbnb/mcp-server-airbnb",
+      "toolCount": 35,
+      "toolNames": [
+        "Claude Desktop",
+        "Community",
+        "Comprehensive listing details",
+        "Data Usage",
+        "Date filtering",
+        "Default",
+        "Dependencies",
+        "Description",
+        "Direct links",
+        "Documentation",
+        "Enhanced error handling",
+        "Format",
+        "Google Maps Place ID",
+        "Guest configuration",
+        "House rules and policies",
+        "Issues",
+        "Location information",
+        "Location-based search",
+        "Node.js",
+        "Other MCP clients",
+        "Pagination support",
+        "Platforms",
+        "Price range filtering",
+        "Property descriptions",
+        "Protocol",
+        "Rate Limiting",
+        "Rate limiting awareness",
+        "Recommendation",
+        "Request timeout management",
+        "Respect Airbnb's Terms of Service",
+        "Robots.txt compliance",
+        "Robots.txt Compliance",
+        "Runtime",
+        "Secure configuration",
+        "Type"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29833,7 +31353,63 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "airweave-mcp-search"
+      "packageName": "airweave-mcp-search",
+      "toolCount": 51,
+      "toolNames": [
+        "Advanced Search",
+        "Advanced Tests",
+        "AI Completion",
+        "API Access",
+        "API Errors",
+        "Authentication",
+        "Automatic Cleanup",
+        "Azure Container Registry",
+        "Basic Tests",
+        "Comprehensive Testing",
+        "Configuration Tool",
+        "Developer-Friendly",
+        "Development",
+        "Distributed Sessions",
+        "Docker",
+        "Documentation",
+        "Edge Tests",
+        "Endpoint",
+        "Enhanced Search Tool",
+        "Error Tests",
+        "Flexible",
+        "Fully Tested",
+        "GitHub Issues",
+        "Health",
+        "Info",
+        "Kubernetes",
+        "Missing API Key",
+        "Missing Collection",
+        "Multi-tenant",
+        "Network Issues",
+        "OAuth Validator",
+        "Pagination Control",
+        "Per-Session Isolation",
+        "Production",
+        "Production-Ready",
+        "Query Parameters",
+        "Rate Limited",
+        "Rate Limiter",
+        "Rate Limiting",
+        "Recency Bias",
+        "Redis",
+        "Scalable",
+        "Secure",
+        "Security",
+        "Security Issues",
+        "Session Management",
+        "Session Manager",
+        "Simple Architecture",
+        "Stateless Design",
+        "Transport Layer",
+        "True Multi-tenancy"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29855,7 +31431,51 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@thecorporation/mcp-server"
+      "packageName": "@thecorporation/mcp-server",
+      "toolCount": 39,
+      "toolNames": [
+        "add_agent_skill",
+        "calculate_distribution",
+        "cast_vote",
+        "classify_contractor",
+        "convene_meeting",
+        "convert_entity",
+        "CORP_API_KEY",
+        "CORP_WORKSPACE_ID",
+        "create_agent",
+        "create_invoice",
+        "dissolve_entity",
+        "file_tax_document",
+        "form_entity",
+        "generate_contract",
+        "get_billing_status",
+        "get_cap_table",
+        "get_checklist",
+        "get_document_link",
+        "get_signer_link",
+        "get_signing_link",
+        "get_workspace_status",
+        "https://api.thecorporation.ai",
+        "issue_equity",
+        "issue_safe",
+        "list_agents",
+        "list_documents",
+        "list_entities",
+        "list_obligations",
+        "list_safe_notes",
+        "open_bank_account",
+        "reconcile_ledger",
+        "run_payroll",
+        "schedule_meeting",
+        "send_agent_message",
+        "submit_payment",
+        "track_deadline",
+        "transfer_shares",
+        "update_agent",
+        "update_checklist"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29877,7 +31497,77 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@wonderwhy-er/desktop-commander"
+      "packageName": "@wonderwhy-er/desktop-commander",
+      "toolCount": 40,
+      "toolNames": [
+        "create_directory",
+        "edit_block",
+        "force_terminate",
+        "get_config",
+        "get_file_info",
+        "get_more_search_results",
+        "get_recent_tool_calls",
+        "get_usage_stats",
+        "give_feedback_to_desktop_commander",
+        "interact_with_process",
+        "kill_process",
+        "list_directory",
+        "list_processes",
+        "list_searches",
+        "list_sessions",
+        "move_file",
+        "read_file",
+        "read_multiple_files",
+        "read_process_output",
+        "set_config_value",
+        "start_process",
+        "start_search",
+        "stop_search",
+        "write_file",
+        "write_pdf",
+        "Add custom MCPs and context",
+        "AIs are wasteful with tokens",
+        "Character codes",
+        "Character differences",
+        "Claude UX message limits",
+        "Coming soon",
+        "Complete isolation",
+        "Consistent environment",
+        "DOCX support",
+        "Easy cleanup",
+        "Enhanced terminal commands with interactive process control",
+        "Execute code in memory (Python, Node.js, R) without saving files",
+        "Execution time",
+        "File metadata",
+        "File Preview UI",
+        "Found a bug?",
+        "Have a feature idea?",
+        "Instant data analysis - just ask to analyze CSV/JSON/Excel files",
+        "Interact with running processes (SSH, databases, development servers)",
+        "Linux:",
+        "macOS:",
+        "macOS/Linux",
+        "Native Excel file support",
+        "Negative offset file reading",
+        "Option 5 (local checkout):",
+        "Option A:",
+        "Option B:",
+        "PDF support",
+        "Perfect for testing",
+        "Process output pagination",
+        "Questions or discussions?",
+        "Recursive directory listing",
+        "Remote AI Control",
+        "Search and found text",
+        "See file changes live",
+        "Similarity score",
+        "Use any AI model",
+        "Want to contribute code?",
+        "Windows",
+        "Windows:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29888,7 +31578,46 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@agent-infra/mcp-server-browser"
+      "packageName": "@agent-infra/mcp-server-browser",
+      "toolCount": 29,
+      "toolNames": [
+        "browser_click",
+        "browser_close",
+        "browser_close_tab",
+        "browser_evaluate",
+        "browser_form_input_fill",
+        "browser_get_clickable_elements",
+        "browser_get_download_list",
+        "browser_get_markdown",
+        "browser_get_text",
+        "browser_go_back",
+        "browser_go_forward",
+        "browser_hover",
+        "browser_navigate",
+        "browser_new_tab",
+        "browser_press_key",
+        "browser_read_links",
+        "browser_screenshot",
+        "browser_scroll",
+        "browser_select",
+        "browser_switch_tab",
+        "browser_tab_list",
+        "browser_vision_screen_capture",
+        "browser_vision_screen_click",
+        "console://logs",
+        "download://{name}",
+        "screenshot://{name}",
+        "x-user-agent",
+        "x-viewport-size",
+        "x-vision-factors",
+        "🌐 Cross-Platform & Extensible",
+        "⚡ Fast & lightweight",
+        "🧩 Flexible Runtime Configuration",
+        "🤖 LLM-optimized",
+        "👁️ Vision Mode Support"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29899,7 +31628,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@softeria/ms-365-mcp-server"
+      "packageName": "@softeria/ms-365-mcp-server",
+      "toolCount": 9,
+      "toolNames": [
+        "100% backward compatible",
+        "Auth",
+        "CLI login",
+        "Configure the OAuth callback URI",
+        "Disables",
+        "MCP client login",
+        "Requires",
+        "Type",
+        "URL"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29910,7 +31653,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "godot-mcp-server"
+      "packageName": "godot-mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "AI has limited Godot knowledge",
+        "Local only",
+        "No undo",
+        "Single connection"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29932,7 +31684,26 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@zencoderai/slack-mcp-server"
+      "packageName": "@zencoderai/slack-mcp-server",
+      "toolCount": 14,
+      "toolNames": [
+        "Better Error Handling",
+        "Command Line Interface",
+        "Communication",
+        "Comprehensive Slack Integration",
+        "Default",
+        "Features",
+        "Modern API",
+        "Modern MCP SDK",
+        "Multiple Transport Support",
+        "Session Management",
+        "Transport Flexibility",
+        "Updated MCP SDK",
+        "Use case",
+        "Zod Validation"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29965,7 +31736,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "fmea-api-mcp-server"
+      "packageName": "fmea-api-mcp-server",
+      "toolCount": 5,
+      "toolNames": [
+        "Deprecation Warnings",
+        "Note",
+        "Resources",
+        "Smart Search",
+        "Tools"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29976,7 +31757,29 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "touchdesigner-mcp-server"
+      "packageName": "touchdesigner-mcp-server",
+      "toolCount": 15,
+      "toolNames": [
+        "Check node errors",
+        "create_td_node",
+        "delete_td_node",
+        "exec_node_method",
+        "execute_python_script",
+        "get_module_help",
+        "get_td_class_details",
+        "get_td_classes",
+        "get_td_info",
+        "get_td_node_errors",
+        "get_td_node_parameters",
+        "get_td_nodes",
+        "Node connection",
+        "Search node",
+        "update_td_node_parameters",
+        "For developers:",
+        "To resolve compatibility errors:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29987,7 +31790,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@mcp-apps/kusto-mcp-server"
+      "packageName": "@mcp-apps/kusto-mcp-server",
+      "toolCount": 5,
+      "toolNames": [
+        "Analysis Prompts",
+        "Connection to Kusto Database",
+        "Data Analysis Tools",
+        "KQL Query Tools",
+        "Schema Resources"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -29998,7 +31811,40 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@nexus2520/jira-mcp-server"
+      "packageName": "@nexus2520/jira-mcp-server",
+      "toolCount": 16,
+      "toolNames": [
+        "assign",
+        "attachmentId",
+        "comment",
+        "create",
+        "fileName",
+        "get",
+        "get_transitions",
+        "issueKey",
+        "issueType",
+        "jira_attachments",
+        "jira_comments",
+        "jira_issues",
+        "jira_search",
+        "jira_workflow",
+        "maxResults",
+        "mimeType",
+        "Attachments",
+        "Comments",
+        "Images",
+        "Issue Management",
+        "JQL Search",
+        "Metadata Discovery",
+        "Other types",
+        "Projects",
+        "Text files",
+        "Token Efficient",
+        "User Search",
+        "Workflow"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30031,7 +31877,41 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@qase/mcp-server"
+      "packageName": "@qase/mcp-server",
+      "toolCount": 30,
+      "toolNames": [
+        "API Documentation",
+        "Attachments",
+        "Authors",
+        "Configurations",
+        "Corporate environments",
+        "Custom Fields",
+        "Defects",
+        "Email",
+        "Environments",
+        "GitHub Issues",
+        "Issue Tracker",
+        "Linux",
+        "macOS",
+        "MCP Protocol",
+        "Milestones",
+        "Projects",
+        "Qase Documentation",
+        "Qase Platform",
+        "QQL Search",
+        "Shared Parameters",
+        "Shared Steps",
+        "System Fields",
+        "Test Cases",
+        "Test Plans",
+        "Test Results",
+        "Test Runs",
+        "Test Suites",
+        "Users",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30042,7 +31922,18 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-evals"
+      "packageName": "mcp-evals",
+      "toolCount": 6,
+      "toolNames": [
+        "Grafana",
+        "Jaeger UI",
+        "Prometheus",
+        "Tool Calls",
+        "Tool Errors",
+        "Tool Latency"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30053,7 +31944,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "youtube-data-mcp-server"
+      "packageName": "youtube-data-mcp-server",
+      "toolCount": 9,
+      "toolNames": [
+        "compareVideos",
+        "getChannelStatistics",
+        "getChannelTopVideos",
+        "getRelatedVideos",
+        "getTranscripts",
+        "getTrendingVideos",
+        "getVideoDetails",
+        "getVideoEngagementRatio",
+        "searchVideos"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30152,7 +32057,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@azure/mcp-win32-x64"
+      "packageName": "@azure/mcp-win32-x64",
+      "toolCount": 2,
+      "toolNames": [
+        "~/.codeium/windsurf/mcp_config.json",
+        "~/.copilot/mcp-config.json",
+        "Azure Storage Sync"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30174,7 +32087,22 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@arabold/docs-mcp-server"
+      "packageName": "@arabold/docs-mcp-server",
+      "toolCount": 10,
+      "toolNames": [
+        "[Architecture](ARCHITECTURE.md)",
+        "[Authentication](docs/infrastructure/authentication.md)",
+        "[Basic Usage](docs/guides/basic-usage.md)",
+        "[Configuration](docs/setup/configuration.md)",
+        "[Connecting Clients](docs/guides/mcp-clients.md)",
+        "[Deployment Modes](docs/infrastructure/deployment-modes.md)",
+        "[Embedding Models](docs/guides/embedding-models.md)",
+        "[Installation](docs/setup/installation.md)",
+        "[Supported Formats](docs/concepts/supported-formats.md)",
+        "[Telemetry](docs/infrastructure/telemetry.md)"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30185,7 +32113,86 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@trylighthouse/mcp-server"
+      "packageName": "@trylighthouse/mcp-server",
+      "toolCount": 74,
+      "toolNames": [
+        "LIGHTHOUSE_API_KEY",
+        "LIGHTHOUSE_API_URL",
+        "lighthouse_crm_add_to_list",
+        "lighthouse_crm_create_attribute",
+        "lighthouse_crm_create_list",
+        "lighthouse_crm_create_note",
+        "lighthouse_crm_create_option",
+        "lighthouse_crm_create_record",
+        "lighthouse_crm_create_task",
+        "lighthouse_crm_create_view",
+        "lighthouse_crm_delete_attribute",
+        "lighthouse_crm_delete_file",
+        "lighthouse_crm_delete_list",
+        "lighthouse_crm_delete_note",
+        "lighthouse_crm_delete_option",
+        "lighthouse_crm_delete_record",
+        "lighthouse_crm_delete_task",
+        "lighthouse_crm_delete_view",
+        "lighthouse_crm_download_file",
+        "lighthouse_crm_get_attribute",
+        "lighthouse_crm_get_attributes",
+        "lighthouse_crm_get_color_palette",
+        "lighthouse_crm_get_list",
+        "lighthouse_crm_get_list_records",
+        "lighthouse_crm_get_note",
+        "lighthouse_crm_get_record",
+        "lighthouse_crm_get_task",
+        "lighthouse_crm_get_view",
+        "lighthouse_crm_list_files",
+        "lighthouse_crm_list_lists",
+        "lighthouse_crm_list_notes",
+        "lighthouse_crm_list_options",
+        "lighthouse_crm_list_tasks",
+        "lighthouse_crm_list_views",
+        "lighthouse_crm_remove_from_list",
+        "lighthouse_crm_revoke_list_from_teams",
+        "lighthouse_crm_revoke_view_from_teams",
+        "lighthouse_crm_search_records",
+        "lighthouse_crm_share_list_with_teams",
+        "lighthouse_crm_share_view_with_teams",
+        "lighthouse_crm_update_attribute",
+        "lighthouse_crm_update_list",
+        "lighthouse_crm_update_list_sharing",
+        "lighthouse_crm_update_record",
+        "lighthouse_crm_update_task",
+        "lighthouse_crm_update_view",
+        "lighthouse_crm_update_view_sharing",
+        "lighthouse_discovery_get_attributes",
+        "lighthouse_discovery_get_industries",
+        "lighthouse_discovery_get_locations",
+        "lighthouse_discovery_get_saved_searches",
+        "lighthouse_discovery_get_search_results",
+        "lighthouse_discovery_get_tags",
+        "lighthouse_discovery_lookup_by_domain",
+        "lighthouse_discovery_lookup_by_linkedin",
+        "lighthouse_discovery_search_companies",
+        "lighthouse_discovery_search_people",
+        "lighthouse_reports_create_dashboard",
+        "lighthouse_reports_create_widget",
+        "lighthouse_reports_delete_dashboard",
+        "lighthouse_reports_delete_widget",
+        "lighthouse_reports_get_dashboard",
+        "lighthouse_reports_get_widget_data",
+        "lighthouse_reports_list_dashboards",
+        "lighthouse_reports_list_widgets",
+        "lighthouse_reports_revoke_dashboard_from_teams",
+        "lighthouse_reports_share_dashboard_with_teams",
+        "lighthouse_reports_update_dashboard",
+        "lighthouse_reports_update_widget",
+        "lighthouse_workspace_get_team",
+        "lighthouse_workspace_get_user",
+        "lighthouse_workspace_list_teams",
+        "lighthouse_workspace_list_users",
+        "lighthouse_workspace_me"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30196,7 +32203,40 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "langsmith-mcp-server"
+      "packageName": "langsmith-mcp-server",
+      "toolCount": 18,
+      "toolNames": [
+        "create_dataset",
+        "fetch_runs",
+        "get_billing_usage",
+        "get_prompt_by_name",
+        "get_thread_history",
+        "https://eu.api.smith.langchain.com",
+        "list_datasets",
+        "list_examples",
+        "list_experiments",
+        "list_projects",
+        "list_prompts",
+        "lsv2_pt_1234567890",
+        "push_prompt",
+        "read_dataset",
+        "read_example",
+        "run_experiment",
+        "update_examples",
+        "your_workspace_id",
+        "Billing",
+        "Conversation History",
+        "Datasets",
+        "Experiments",
+        "Parameters:",
+        "Prompt Management",
+        "Response:",
+        "Traces & Runs",
+        "Where it's used:",
+        "Why it's useful:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30207,7 +32247,101 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mr-magic-mcp-server"
+      "packageName": "mr-magic-mcp-server",
+      "toolCount": 78,
+      "toolNames": [
+        "\"true\"",
+        "0",
+        "1",
+        "10000",
+        "1500",
+        "3333",
+        "3444",
+        "3600",
+        "400",
+        "AIRTABLE_PERSONAL_ACCESS_TOKEN",
+        "build_catalog_payload",
+        "CF_ACCOUNT_ID",
+        "CF_API_TOKEN",
+        "CF_KV_NAMESPACE_ID",
+        "error",
+        "export_lyrics",
+        "exports/",
+        "find_lyrics",
+        "find_synced_lyrics",
+        "format_lyrics",
+        "GENIUS_CLIENT_ID",
+        "GENIUS_CLIENT_SECRET",
+        "GENIUS_DIRECT_TOKEN",
+        "GET",
+        "get_provider_status",
+        "info",
+        "local",
+        "mcp-server",
+        "MELON_COOKIE",
+        "missing_token",
+        "MR_MAGIC_ALLOWED_HOSTS",
+        "MR_MAGIC_DOWNLOAD_BASE_URL",
+        "MR_MAGIC_ENV_PATH",
+        "MR_MAGIC_EXPORT_BACKEND",
+        "MR_MAGIC_EXPORT_BACKEND=local",
+        "MR_MAGIC_EXPORT_DIR",
+        "MR_MAGIC_LOG_TOOL_ARGS_CHUNKS",
+        "MR_MAGIC_QUIET_STDIO",
+        "MR_MAGIC_ROOT",
+        "mrmagic-cli",
+        "mrmagic-cli find",
+        "mrmagic-cli search",
+        "mrmagic-cli search-provider",
+        "mrmagic-cli select",
+        "mrmagic-cli server",
+        "mrmagic-cli server:mcp",
+        "mrmagic-cli server:mcp:http",
+        "mrmagic-cli status",
+        "MUSIXMATCH_AUTO_FETCH",
+        "MUSIXMATCH_DIRECT_TOKEN",
+        "MUSIXMATCH_TOKEN_CACHE",
+        "MUSIXMATCH_TOKEN_KV_KEY",
+        "MUSIXMATCH_TOKEN_KV_TTL_SECONDS",
+        "node src/bin/cli.js --help",
+        "node src/bin/http-server.js",
+        "node src/bin/mcp-http-server.js",
+        "node src/bin/mcp-server.js",
+        "npm run cli",
+        "npm run server:http",
+        "npm run server:mcp",
+        "npm run server:mcp:http",
+        "npx -y --package mr-magic-mcp-server http-server",
+        "npx -y --package mr-magic-mcp-server mcp-http-server",
+        "npx -y --package mr-magic-mcp-server mcp-server",
+        "npx -y --package mr-magic-mcp-server mrmagic-cli --help",
+        "ok",
+        "PORT",
+        "POST",
+        "POST https://your-server.com/mcp",
+        "POST/GET/DELETE",
+        "push_catalog_to_airtable",
+        "RENDER_EXTERNAL_HOSTNAME",
+        "runtime_status",
+        "search_lyrics",
+        "search_provider",
+        "select_match",
+        "UPSTASH_REDIS_REST_TOKEN",
+        "UPSTASH_REDIS_REST_URL",
+        "`inline`",
+        "`local`",
+        "`redis`",
+        "`server:http`",
+        "`server:mcp:http`",
+        "Environment:",
+        "Health Check Path:",
+        "inline backend:",
+        "local backend:",
+        "redis backend:",
+        "Start Command:"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30229,7 +32363,33 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@memberjunction/ai-mcp-server"
+      "packageName": "@memberjunction/ai-mcp-server",
+      "toolCount": 16,
+      "toolNames": [
+        "-e",
+        "-f",
+        "-h",
+        "-i",
+        "-l",
+        "-v",
+        "Create_<Entity>_Record",
+        "Delete_<Entity>_Record",
+        "Get_<Entity>_Record",
+        "Get_<Entity>_Records",
+        "Get_All_Entity_Metadata",
+        "Run_<Action>_Action",
+        "Run_<Prompt>_Prompt",
+        "Run_Agent",
+        "RunView_<Entity>",
+        "Update_<Entity>_Record",
+        "PKCE",
+        "RFC 7591",
+        "RFC 8414",
+        "RFC 9728",
+        "Scope Evaluation"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30240,7 +32400,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@manfred-kunze-dev/backbone-mcp-server"
+      "packageName": "@manfred-kunze-dev/backbone-mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "3100",
+        "BACKBONE_API_KEY",
+        "https://backbone.manfred-kunze.dev/api",
+        "stdio"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30251,7 +32420,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "narrarium-mcp-server"
+      "packageName": "narrarium-mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "assets/book/cover.*",
+        "assets/chapters/001-the-arrival/paragraphs/001-at-the-gate/primary.*",
+        "assets/chapters/001-the-arrival/primary.*",
+        "assets/characters/lyra-vale/primary.*"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30262,7 +32440,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "lhwapi-mcp-server"
+      "packageName": "lhwapi-mcp-server",
+      "toolCount": 5,
+      "toolNames": [
+        "exportOpenApi",
+        "getApiDetail",
+        "listApis",
+        "listProjects",
+        "searchApis"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30273,7 +32461,35 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "tailwindcss-mcp-server"
+      "packageName": "tailwindcss-mcp-server",
+      "toolCount": 23,
+      "toolNames": [
+        "`convert_css_to_tailwind`",
+        "`generate_color_palette`",
+        "`generate_component_template`",
+        "`get_tailwind_colors`",
+        "`get_tailwind_config_guide`",
+        "`get_tailwind_utilities`",
+        "`install_tailwind`",
+        "`search_tailwind_docs`",
+        "Angular",
+        "Color Management",
+        "Error Handling",
+        "Framework Integration",
+        "Intelligent Conversion",
+        "Laravel",
+        "Performance Optimized",
+        "React",
+        "Real-time Documentation",
+        "Svelte/SvelteKit",
+        "Template Generation",
+        "Type Safety",
+        "Vanilla JavaScript/HTML",
+        "Vite",
+        "Vue"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30295,7 +32511,55 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "clawvault-mcp-server"
+      "packageName": "clawvault-mcp-server",
+      "toolCount": 39,
+      "toolNames": [
+        "buy_prediction",
+        "card_balance",
+        "card_check",
+        "card_purchase",
+        "check_limits",
+        "CLAWVAULT_API_KEY",
+        "commerce_list_orders",
+        "commerce_order",
+        "commerce_order_status",
+        "commerce_refund",
+        "commerce_search",
+        "commerce_tracking",
+        "disable_credit",
+        "enable_credit",
+        "freeze_agent",
+        "fund_payment_wallet",
+        "get_credit_history",
+        "get_credit_status",
+        "get_market",
+        "get_payment_status",
+        "get_payment_wallet_balance",
+        "get_prediction_positions",
+        "get_prediction_wallet",
+        "get_rules",
+        "get_swap_quote",
+        "get_vault",
+        "goat_execute_action",
+        "goat_get_action_rules",
+        "goat_list_actions",
+        "https://api.clawvault.cc",
+        "list_prediction_markets",
+        "list_transactions",
+        "redeem_prediction",
+        "request_credit",
+        "request_payment",
+        "sell_prediction",
+        "swap_tokens",
+        "withdraw_payment_wallet",
+        "x402_fetch",
+        "Main Vault",
+        "Outside rules",
+        "Payment Wallet",
+        "Within rules"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30317,7 +32581,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@azure/mcp-linux-x64"
+      "packageName": "@azure/mcp-linux-x64",
+      "toolCount": 2,
+      "toolNames": [
+        "~/.codeium/windsurf/mcp_config.json",
+        "~/.copilot/mcp-config.json",
+        "Azure Storage Sync"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30328,7 +32600,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@elixium.ai/mcp-server"
+      "packageName": "@elixium.ai/mcp-server",
+      "toolCount": 5,
+      "toolNames": [
+        "ELIXIUM_API_KEY",
+        "ELIXIUM_API_URL",
+        "ELIXIUM_BOARD_SLUG",
+        "ELIXIUM_LANE_STYLE",
+        "ELIXIUM_USER_EMAIL",
+        "Create Story",
+        "Iteration Context",
+        "List Stories",
+        "Update Story"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30339,7 +32625,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@smartbear/mcp"
+      "packageName": "@smartbear/mcp",
+      "toolCount": 1,
+      "toolNames": [
+        "Swagger"
+      ],
+      "verified": "2026-04-01T23:31:05.368Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30372,7 +32664,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@alchemy/mcp-server"
+      "packageName": "@alchemy/mcp-server",
+      "toolCount": 1,
+      "toolNames": [
+        "⚠️ Important"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30405,7 +32703,50 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@aborruso/ckan-mcp-server"
+      "packageName": "@aborruso/ckan-mcp-server",
+      "toolCount": 31,
+      "toolNames": [
+        "GET https://datashades.info/api/portal/historical/stats",
+        "GET https://datashades.info/api/portal/list",
+        "GET https://datashades.info/api/portal/stats",
+        "issued",
+        "metadata_created",
+        "metadata_modified",
+        "npm install -g @aborruso/ckan-mcp-server",
+        "Authentication:",
+        "ckan_analyze_datasets",
+        "ckan_catalog_stats",
+        "ckan_datastore_search",
+        "ckan_datastore_search_sql",
+        "ckan_find_portals",
+        "ckan_find_relevant_datasets",
+        "ckan_get_mqa_quality",
+        "ckan_get_mqa_quality_details",
+        "ckan_group_list",
+        "ckan_group_search",
+        "ckan_group_show",
+        "ckan_organization_list",
+        "ckan_organization_search",
+        "ckan_organization_show",
+        "ckan_package_search",
+        "ckan_package_show",
+        "ckan_status_show",
+        "ckan_tag_list",
+        "Connector Server:",
+        "Correct API patterns",
+        "Country routing",
+        "Description:",
+        "Fallback chain",
+        "Linux",
+        "macOS",
+        "MCP Server URL:",
+        "Name:",
+        "Query construction",
+        "sparql_query",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30427,7 +32768,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@abhaybabbar/retellai-mcp-server"
+      "packageName": "@abhaybabbar/retellai-mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "Agent Management",
+        "Call Management",
+        "Phone Number Management",
+        "Voice Management"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30471,7 +32821,54 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@bitwarden/mcp-server"
+      "packageName": "@bitwarden/mcp-server",
+      "toolCount": 38,
+      "toolNames": [
+        "BW_CLIENT_ID",
+        "BW_CLIENT_SECRET",
+        "BW_SESSION",
+        "https://api.bitwarden.com",
+        "https://identity.bitwarden.com",
+        "os.tmpdir() + '/bitwarden-files'",
+        "403 Forbidden",
+        "Attachments",
+        "Audit Logs",
+        "Bitwarden Send",
+        "Bulk Import",
+        "Collections",
+        "Device Approval",
+        "Events",
+        "Folder Management",
+        "Folders",
+        "Groups",
+        "Invalid client credentials",
+        "Item Operations",
+        "Items",
+        "macOS",
+        "Member Management",
+        "Members",
+        "Monitor API usage",
+        "Never commit",
+        "Organization Administration",
+        "Organization Items",
+        "Organizations",
+        "Password Tools",
+        "Policies",
+        "Retrieval",
+        "Session",
+        "Session key is invalid",
+        "Session Management",
+        "Subscriptions",
+        "Test with non-production data",
+        "Use environment variables",
+        "Utilities",
+        "Validate all inputs",
+        "Vault is locked",
+        "Vault Management and CLI tools",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30504,7 +32901,106 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@a-bonus/google-docs-mcp"
+      "packageName": "@a-bonus/google-docs-mcp",
+      "toolCount": 82,
+      "toolNames": [
+        "addComment",
+        "addConditionalFormatting",
+        "addSheet",
+        "addTab",
+        "ALLOWED_DOMAINS",
+        "appendMarkdown",
+        "appendRows",
+        "appendTableRows",
+        "appendText",
+        "applyParagraphStyle",
+        "applyTextStyle",
+        "autoResizeColumns",
+        "BASE_URL",
+        "batchWrite",
+        "clearRange",
+        "copyFile",
+        "copyFormatting",
+        "createDocument",
+        "createDocumentFromTemplate",
+        "createFolder",
+        "createSpreadsheet",
+        "createTable",
+        "deleteChart",
+        "deleteComment",
+        "deleteFile",
+        "deleteRange",
+        "deleteSheet",
+        "deleteTable",
+        "downloadFile",
+        "duplicateSheet",
+        "findAndReplace",
+        "formatCells",
+        "freezeRowsAndColumns",
+        "GCLOUD_PROJECT",
+        "getComment",
+        "getDocumentInfo",
+        "getFolderInfo",
+        "getSpreadsheetInfo",
+        "getTable",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "GOOGLE_IMPERSONATE_USER",
+        "GOOGLE_MCP_PROFILE",
+        "groupRows",
+        "insertChart",
+        "insertImage",
+        "insertPageBreak",
+        "insertTable",
+        "insertTableWithData",
+        "insertText",
+        "JWT_SIGNING_KEY",
+        "listComments",
+        "listDocuments",
+        "listDriveFiles",
+        "listFolderContents",
+        "listSpreadsheets",
+        "listTables",
+        "listTabs",
+        "MCP_TRANSPORT",
+        "modifyText",
+        "moveFile",
+        "PORT",
+        "readCellFormat",
+        "readDocument",
+        "readSpreadsheet",
+        "REFRESH_TOKEN_TTL",
+        "renameFile",
+        "renameSheet",
+        "renameTab",
+        "replaceDocumentWithMarkdown",
+        "replaceRangeWithMarkdown",
+        "replyToComment",
+        "resolveComment",
+        "searchDocuments",
+        "searchDriveFiles",
+        "SERVICE_ACCOUNT_PATH",
+        "setColumnWidths",
+        "setDropdownValidation",
+        "TOKEN_STORE",
+        "ungroupAllRows",
+        "updateTableRange",
+        "writeSpreadsheet",
+        "Authorization errors:",
+        "Breaking changes",
+        "Bug fixes and security patches",
+        "Comment anchoring:",
+        "Comment resolution:",
+        "Converted documents:",
+        "Deeply nested lists:",
+        "High CPU with multiple MCP sessions:",
+        "Markdown tables/images:",
+        "New features",
+        "Server won't start:",
+        "Tab errors:"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30515,7 +33011,22 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@drawio/mcp"
+      "packageName": "@drawio/mcp",
+      "toolCount": 7,
+      "toolNames": [
+        "content",
+        "dark",
+        "lightbox",
+        "[MCP App Server](https://github.com/jgraph/drawio-mcp/tree/main/mcp-app-server)",
+        "[Project Instructions](https://github.com/jgraph/drawio-mcp/tree/main/project-instructions)",
+        "[Skill + CLI](https://github.com/jgraph/drawio-mcp/tree/main/skill-cli)",
+        "Customizable display",
+        "Import CSV data",
+        "Open XML diagrams",
+        "Render Mermaid.js"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30526,7 +33037,30 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@masonl/strava-mcp-server"
+      "packageName": "@masonl/strava-mcp-server",
+      "toolCount": 13,
+      "toolNames": [
+        "ROUTE_EXPORT_PATH",
+        "STRAVA_ACCESS_TOKEN",
+        "STRAVA_CLIENT_ID",
+        "STRAVA_CLIENT_SECRET",
+        "STRAVA_REFRESH_TOKEN",
+        "Application Name",
+        "Authorization Callback Domain",
+        "Category",
+        "Check status",
+        "Compact format",
+        "Disconnect",
+        "Mac",
+        "Optional downsampling",
+        "Reconnect",
+        "Smart chunking",
+        "Verbose format",
+        "Website",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30537,7 +33071,40 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "arduino-mcp-server"
+      "packageName": "arduino-mcp-server",
+      "toolCount": 23,
+      "toolNames": [
+        "arduino_cli_doctor",
+        "ARDUINO_SKETCH_ROOT",
+        "arduino-cli",
+        "compile_sketch",
+        "detect_hardware",
+        "ensure_core_installed",
+        "get_board_details",
+        "install_arduino_cli",
+        "list_board_reference",
+        "list_connected_boards",
+        "list_serial_ports",
+        "list_supported_boards",
+        "read_serial_snapshot",
+        "safety_preflight",
+        "search_board_reference",
+        "serial_close_session",
+        "serial_expect",
+        "serial_list_sessions",
+        "serial_open_session",
+        "serial_read",
+        "serial_write",
+        "upload_and_wait_ready",
+        "upload_sketch",
+        "Compile and upload",
+        "Detect",
+        "Manage dependencies",
+        "Monitor serial output",
+        "Run electrical safety checks"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30559,7 +33126,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "argocd-mcp"
+      "packageName": "argocd-mcp",
+      "toolCount": 3,
+      "toolNames": [
+        "AI Assistant Ready",
+        "Complete Argo CD API Integration",
+        "Transport Protocols"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30570,7 +33145,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@roadmaphero/mcp-server"
+      "packageName": "@roadmaphero/mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "get_item_details",
+        "list_items",
+        "list_krs",
+        "list_objectives"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30581,7 +33165,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@mondaydotcomorg/monday-api-mcp"
+      "packageName": "@mondaydotcomorg/monday-api-mcp",
+      "toolCount": 3,
+      "toolNames": [
+        "api",
+        "current",
+        "false",
+        "execute_code",
+        "explore_api"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30614,7 +33208,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "hostinger-api-mcp"
+      "packageName": "hostinger-api-mcp",
+      "toolCount": 2,
+      "toolNames": [
+        "Method",
+        "Path"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30625,7 +33226,48 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@0xmonaco/mcp-server"
+      "packageName": "@0xmonaco/mcp-server",
+      "toolCount": 33,
+      "toolNames": [
+        "batch_cancel_all_orders",
+        "batch_cancel_orders",
+        "cancel_order",
+        "get_balance_by_asset",
+        "get_balances",
+        "get_candlesticks",
+        "get_market_metadata",
+        "get_movements",
+        "get_order",
+        "get_orderbook",
+        "get_orders",
+        "get_profile",
+        "get_trades",
+        "get_trading_pair_by_symbol",
+        "get_trading_pairs",
+        "http://localhost:8545",
+        "https://evm-rpc-testnet.sei-apis.com",
+        "https://evm-rpc.sei-apis.com",
+        "MONACO_CLIENT_ID",
+        "MONACO_NETWORK",
+        "MONACO_PRIVATE_KEY",
+        "MONACO_RPC_URL",
+        "place_limit_order",
+        "place_market_order",
+        "replace_order",
+        "request_faucet",
+        "search_docs",
+        "simulate_fees",
+        "vault_approve",
+        "vault_deposit",
+        "vault_get_allowance",
+        "vault_needs_approval",
+        "vault_withdraw",
+        "Claude Desktop",
+        "Cursor",
+        "Windsurf"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30636,7 +33278,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@larryhudson/linear-mcp-server"
+      "packageName": "@larryhudson/linear-mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "Linear SDK",
+        "Model Context Protocol (MCP)",
+        "Node.js",
+        "Zod"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30647,7 +33298,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@magicuidesign/mcp"
+      "packageName": "@magicuidesign/mcp",
+      "toolCount": 3,
+      "toolNames": [
+        "getRegistryItem",
+        "listRegistryItems",
+        "searchRegistryItems"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30658,7 +33317,22 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@structured-world/gitlab-mcp"
+      "packageName": "@structured-world/gitlab-mcp",
+      "toolCount": 9,
+      "toolNames": [
+        "true",
+        "44 tools",
+        "Auto-discovery",
+        "CQRS architecture",
+        "Docker support",
+        "Fine-grained control",
+        "Multi-instance support",
+        "Multiple transports",
+        "OAuth 2.1",
+        "Read-only mode"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30680,7 +33354,35 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "slack-mcp-server"
+      "packageName": "slack-mcp-server",
+      "toolCount": 16,
+      "toolNames": [
+        "127.0.0.1",
+        "13080",
+        "false",
+        "info",
+        "nil",
+        "SLACK_MCP_CHANNELS_CACHE",
+        "SLACK_MCP_USERS_CACHE",
+        "Cache support",
+        "Channel and Thread Support with `#Name` `@Lookup`",
+        "DM and Group DM support",
+        "Embedded user information",
+        "Enterprise Workspaces Support",
+        "Fields:",
+        "Format:",
+        "Parameters:",
+        "Returns:",
+        "Safe Message Posting",
+        "Search Messages",
+        "Smart History",
+        "Stdio/SSE/HTTP Transports & Proxy Support",
+        "Stealth and OAuth Modes",
+        "Unread Messages",
+        "URI:"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30713,7 +33415,30 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@leonardsellem/n8n-mcp-server"
+      "packageName": "@leonardsellem/n8n-mcp-server",
+      "toolCount": 13,
+      "toolNames": [
+        "DEBUG",
+        "http://localhost:5678/api/v1",
+        "n8n_api_...",
+        "password",
+        "username",
+        "Bug Fixing:",
+        "CI/CD:",
+        "Code Reviews:",
+        "Collaborate:",
+        "Community Support:",
+        "Discuss Priorities:",
+        "Documentation:",
+        "Feature Development:",
+        "Learn and Grow:",
+        "Make an Impact:",
+        "Open Source:",
+        "Suggest Features:",
+        "Testing:"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30724,7 +33449,64 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@genart-dev/mcp-server"
+      "packageName": "@genart-dev/mcp-server",
+      "toolCount": 52,
+      "toolNames": [
+        "add_sketch_to_workspace",
+        "apply-design-theory",
+        "arrange_sketches",
+        "auto_arrange",
+        "capture_batch",
+        "capture_screenshot",
+        "create_sketch",
+        "create_workspace",
+        "create-generative-art",
+        "createServer(state)",
+        "delete_sketch",
+        "EditorMutationEvent",
+        "EditorMutationType",
+        "EditorState",
+        "EditorStateSnapshot",
+        "explore-variations",
+        "export_sketch",
+        "fork_sketch",
+        "function sketch(ctx, state) { ... }",
+        "function sketch(p, state) { ... }",
+        "function sketch(state) { ... }",
+        "function sketch(THREE, state, container) { ... }",
+        "genart://gallery",
+        "genart://presets/canvas",
+        "genart://renderers",
+        "genart://skills",
+        "get_editor_state",
+        "get_guidelines",
+        "get_selection",
+        "glsl",
+        "group_sketches",
+        "list_sketches",
+        "list_skills",
+        "list_workspace_sketches",
+        "load_skill",
+        "LoadedSketch",
+        "merge_sketches",
+        "open_sketch",
+        "open_workspace",
+        "randomize_parameters",
+        "remove_sketch_from_workspace",
+        "save_sketch",
+        "search_sketches",
+        "select_sketch",
+        "set_canvas_size",
+        "set_colors",
+        "set_parameters",
+        "set_seed",
+        "set_working_directory",
+        "snapshot_layout",
+        "update_algorithm",
+        "update_sketch"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30735,7 +33517,25 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "localsbnb-mcp-server"
+      "packageName": "localsbnb-mcp-server",
+      "toolCount": 9,
+      "toolNames": [
+        "APP_ID",
+        "APP_SECRET",
+        "get_order_details_v2",
+        "LOG_LEVEL",
+        "query_operational_data_v2",
+        "query_room_prices",
+        "query_room_status_new",
+        "query_today_orders",
+        "query_today_room_status",
+        "云端使用",
+        "Claude Code",
+        "Claude Desktop",
+        "Cursor"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30746,7 +33546,35 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@cocal/google-calendar-mcp"
+      "packageName": "@cocal/google-calendar-mcp",
+      "toolCount": 12,
+      "toolNames": [
+        "create-event",
+        "delete-event",
+        "get-current-time",
+        "get-event",
+        "get-freebusy",
+        "list-calendars",
+        "list-colors",
+        "list-events",
+        "manage-accounts",
+        "respond-to-event",
+        "search-events",
+        "update-event",
+        "Cross-Account Conflicts",
+        "Event Management",
+        "Free/Busy Queries",
+        "Intelligent Import",
+        "Multi-Account Support",
+        "Multi-Calendar Support",
+        "Recurring Events",
+        "Reducing context usage",
+        "Security",
+        "Simplicity",
+        "Smart Scheduling"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30757,7 +33585,38 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@henkey/postgres-mcp-server"
+      "packageName": "@henkey/postgres-mcp-server",
+      "toolCount": 26,
+      "toolNames": [
+        "🔄 Consolidation",
+        "🆕 Enhancement",
+        "🔧 Specialized",
+        "[👨‍💻 Developer Reference](./docs/DEVELOPER.md)",
+        "[🛠️ Development Guide](./docs/DEVELOPMENT.md)",
+        "[📋 Documentation Index](./docs/INDEX.md)",
+        "[⚙️ Technical Details](./docs/TECHNICAL.md)",
+        "[📖 Usage Guide](./docs/USAGE.md)",
+        "Comments Management",
+        "Constraints",
+        "Copy Between Databases",
+        "Data Export/Import",
+        "Database Analysis",
+        "Debug Database",
+        "Execute Mutation",
+        "Execute Query",
+        "Execute SQL",
+        "Functions",
+        "Index Management",
+        "Query Performance",
+        "Real-time Monitoring",
+        "Row-Level Security",
+        "Schema Management",
+        "Setup Instructions",
+        "Triggers",
+        "User & Permissions"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30768,7 +33627,20 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@gleanwork/configure-mcp-server"
+      "packageName": "@gleanwork/configure-mcp-server",
+      "toolCount": 8,
+      "toolNames": [
+        "AGENTS.md",
+        "Claude Code",
+        "Claude Desktop",
+        "Cursor",
+        "Goose",
+        "Local MCP server",
+        "Remote MCP servers",
+        "Windsurf"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30779,7 +33651,20 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "scrapeless-mcp-server"
+      "packageName": "scrapeless-mcp-server",
+      "toolCount": 8,
+      "toolNames": [
+        "Apply domain or selector whitelisting",
+        "Browser automation",
+        "Google services integration",
+        "Log and monitor all outbound requests",
+        "Never pass raw scraped content directly into LLM prompts.",
+        "Prefer structured extraction over free-form text.",
+        "Sanitize and validate all extracted content.",
+        "Scrape"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30790,7 +33675,25 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "storybook-mcp-server"
+      "packageName": "storybook-mcp-server",
+      "toolCount": 8,
+      "toolNames": [
+        "disabled",
+        "label",
+        "onClick",
+        "size",
+        "variant",
+        "Axios",
+        "Linux:",
+        "macOS:",
+        "MCP SDK",
+        "Puppeteer",
+        "TypeScript",
+        "Windows:",
+        "Winston"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30801,7 +33704,44 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@kintone/mcp-server"
+      "packageName": "@kintone/mcp-server",
+      "toolCount": 30,
+      "toolNames": [
+        "HTTPS_PROXY",
+        "KINTONE_API_TOKEN",
+        "KINTONE_ATTACHMENTS_DIR",
+        "KINTONE_BASE_URL",
+        "KINTONE_BASIC_AUTH_PASSWORD",
+        "KINTONE_BASIC_AUTH_USERNAME",
+        "KINTONE_PASSWORD",
+        "KINTONE_PFX_FILE_PASSWORD",
+        "KINTONE_PFX_FILE_PATH",
+        "KINTONE_USERNAME",
+        "kintone-add-app",
+        "kintone-add-form-fields",
+        "kintone-add-records",
+        "kintone-delete-form-fields",
+        "kintone-delete-records",
+        "kintone-deploy-app",
+        "kintone-download-file",
+        "kintone-get-app",
+        "kintone-get-app-deploy-status",
+        "kintone-get-apps",
+        "kintone-get-form-fields",
+        "kintone-get-form-layout",
+        "kintone-get-general-settings",
+        "kintone-get-process-management",
+        "kintone-get-records",
+        "kintone-update-form-fields",
+        "kintone-update-form-layout",
+        "kintone-update-general-settings",
+        "kintone-update-records",
+        "kintone-update-statuses",
+        "選択フィールド",
+        "添付ファイルフィールド"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30812,7 +33752,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-echo-server"
+      "packageName": "mcp-echo-server",
+      "toolCount": 1,
+      "toolNames": [
+        "echo"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30823,7 +33769,23 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@fangjunjie/ssh-mcp-server"
+      "packageName": "@fangjunjie/ssh-mcp-server",
+      "toolCount": 11,
+      "toolNames": [
+        "🛡️ Command Security Control",
+        "🔑 Credential Isolation",
+        "📂 File Transfer",
+        "🚀 Ready to Use",
+        "🔒 Secure Connections",
+        "🔄 Standardized Interface",
+        "Command Whitelisting",
+        "Denial of Service (DoS)",
+        "Path Traversal",
+        "Private Key Security",
+        "timeout"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30834,7 +33796,24 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@delorenj/mcp-server-trello"
+      "packageName": "@delorenj/mcp-server-trello",
+      "toolCount": 12,
+      "toolNames": [
+        "💬 Comment Management",
+        "🆕 Complete Card Data Extraction",
+        "Built-in Rate Limiting",
+        "Due Date (`dueDate`)",
+        "Dynamic Board Selection",
+        "Error Handling",
+        "File Attachments",
+        "Full Trello Board Integration",
+        "Input Validation",
+        "Markdown Formatting",
+        "Start Date (`start`)",
+        "Type-Safe Implementation"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30867,7 +33846,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@antv/mcp-server-chart"
+      "packageName": "@antv/mcp-server-chart",
+      "toolCount": 6,
+      "toolNames": [
+        "generate_fishbone_diagram,generate_mind_map",
+        "https://your-server.com/api/chart",
+        "your-service-id-123",
+        "errorMessage",
+        "Method",
+        "Parameter",
+        "resultObj",
+        "Return",
+        "success"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30878,7 +33871,31 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "coda-mcp"
+      "packageName": "coda-mcp",
+      "toolCount": 19,
+      "toolNames": [
+        "`coda_append_page_content`",
+        "`coda_create_page`",
+        "`coda_delete_row`",
+        "`coda_delete_rows`",
+        "`coda_duplicate_page`",
+        "`coda_get_page_content`",
+        "`coda_get_row`",
+        "`coda_list_columns`",
+        "`coda_list_documents`",
+        "`coda_list_pages`",
+        "`coda_list_rows`",
+        "`coda_list_tables`",
+        "`coda_peek_page`",
+        "`coda_push_button`",
+        "`coda_rename_page`",
+        "`coda_replace_page_content`",
+        "`coda_resolve_link`",
+        "`coda_update_row`",
+        "`coda_upsert_rows`"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30889,7 +33906,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "moneybird-mcp-server"
+      "packageName": "moneybird-mcp-server",
+      "toolCount": 9,
+      "toolNames": [
+        "Business Operations",
+        "Contact Management",
+        "Custom Requests",
+        "Enhanced Contact Filtering",
+        "Financial Data",
+        "Improved Error Handling",
+        "Interactive Assistant",
+        "Performance Optimizations",
+        "TypeScript Integration"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30900,7 +33931,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@resourcexjs/mcp-server"
+      "packageName": "@resourcexjs/mcp-server",
+      "toolCount": 2,
+      "toolNames": [
+        "~/.resourcex",
+        "RESOURCEX_REGISTRY"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30922,7 +33960,89 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "tradingview-mcp-server"
+      "packageName": "tradingview-mcp-server",
+      "toolCount": 70,
+      "toolNames": [
+        "--columns <col>",
+        "--filters <json>",
+        "--limit <n>",
+        "--markets <market>",
+        "--preset <name>",
+        "--sort-by <field>",
+        "--sort-order <asc\\|desc>",
+        "-f, --format <fmt>",
+        "/compare-peers AAPL MSFT GOOGL",
+        "/due-diligence AAPL",
+        "/investment-thesis NVDA",
+        "/macro-dashboard",
+        "/market-regime",
+        "/portfolio-risk AAPL MSFT JPM XOM",
+        "/run-screener",
+        "/sector-rotation",
+        "/smart-screen",
+        "10",
+        "300",
+        "all_time_high not_empty",
+        "altman_z_score_ttm",
+        "breakout_scanner",
+        "close >= 10",
+        "close above_percent SMA200",
+        "close below_percent SMA200",
+        "crosses_above",
+        "crosses_below",
+        "deep_value",
+        "dividend_growth",
+        "dividend_stocks",
+        "dividend_yield_recent empty",
+        "earnings_momentum",
+        "exchange != \"OTC\"",
+        "fields [opts]",
+        "garp",
+        "graham_numbers_ttm",
+        "growth_stocks",
+        "has_none_of",
+        "in_range",
+        "indexes has \"S&P 500\"",
+        "list_fields",
+        "list_presets",
+        "lookup <symbols...>",
+        "lookup_symbols",
+        "macro_assets",
+        "market_indexes",
+        "momentum_stocks",
+        "name match \"tech\"",
+        "piotroski_f_score_ttm",
+        "preset <name>",
+        "preset_name",
+        "presets",
+        "price_earnings_ttm < 20",
+        "quality_compounder",
+        "quality_growth_screener",
+        "quality_stocks",
+        "return_on_equity > 15",
+        "RSI not_in [70, 100]",
+        "screen crypto [opts]",
+        "screen etf [opts]",
+        "screen forex [opts]",
+        "screen stocks [opts]",
+        "screen_crypto",
+        "screen_etf",
+        "screen_forex",
+        "screen_stocks",
+        "sector = \"Technology\"",
+        "SMA50 crosses SMA200",
+        "value_stocks",
+        "Volatility.M <= 3",
+        "100+ screener fields",
+        "14 pre-built strategies",
+        "18 filter operators",
+        "9 investor workflow commands",
+        "Dual mode: MCP + CLI",
+        "Multi-asset coverage",
+        "Smart caching and rate limiting"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30955,7 +34075,25 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "bitbucket-mcp-server"
+      "packageName": "bitbucket-mcp-server",
+      "toolCount": 10,
+      "toolNames": [
+        "BITBUCKET_API_TOKEN",
+        "BITBUCKET_USERNAME",
+        "BITBUCKET_WORKSPACE",
+        "Build",
+        "Coverage",
+        "Dev Mode",
+        "Issues",
+        "Pipelines",
+        "Pull Requests",
+        "Repository Management",
+        "Source Code",
+        "System & Search",
+        "Test"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30966,7 +34104,22 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "bugsnag-mcp-server"
+      "packageName": "bugsnag-mcp-server",
+      "toolCount": 10,
+      "toolNames": [
+        "Detailed Stacktrace Viewing",
+        "Error & Event Filtering",
+        "Error Details",
+        "Error Patterns",
+        "Event History",
+        "Exception Chain Visualization",
+        "Organization & Project Navigation",
+        "Project vs. Library Code Distinction",
+        "Search Capabilities",
+        "Source Code Context"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30988,7 +34141,51 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@inscada/mcp-server"
+      "packageName": "@inscada/mcp-server",
+      "toolCount": 39,
+      "toolNames": [
+        "chart_bar",
+        "chart_forecast",
+        "chart_gauge",
+        "chart_line",
+        "chart_multi",
+        "create_custom_menu",
+        "delete_custom_menu",
+        "export_excel",
+        "get_animation",
+        "get_custom_menu",
+        "get_custom_menu_by_name",
+        "get_script",
+        "inscada_api",
+        "inscada_api_endpoints",
+        "inscada_api_schema",
+        "INSCADA_API_URL",
+        "inscada_connection_status",
+        "inscada_get_fired_alarms",
+        "inscada_get_live_value",
+        "inscada_get_live_values",
+        "inscada_logged_stats",
+        "inscada_logged_values",
+        "INSCADA_PASSWORD",
+        "inscada_project_status",
+        "inscada_run_script",
+        "inscada_script_status",
+        "inscada_set_value",
+        "INSCADA_USERNAME",
+        "list_animations",
+        "list_connections",
+        "list_custom_menus",
+        "list_projects",
+        "list_scripts",
+        "list_spaces",
+        "list_variables",
+        "search_in_scripts",
+        "set_space",
+        "update_custom_menu",
+        "update_script"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -30999,7 +34196,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@microsoft/clarity-mcp-server"
+      "packageName": "@microsoft/clarity-mcp-server",
+      "toolCount": 9,
+      "toolNames": [
+        "Analytics Data Access",
+        "Documentation Integration",
+        "Flexible Data Filtering",
+        "macOS",
+        "Natural Language Querying",
+        "Real-Time Data Access",
+        "Seamless MCP Integration",
+        "Session Recording Retrieval",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31010,7 +34221,38 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "kaito-mcp-server"
+      "packageName": "kaito-mcp-server",
+      "toolCount": 26,
+      "toolNames": [
+        "analyze_token",
+        "discover_trending",
+        "kaito_advanced_search",
+        "kaito_engagement",
+        "kaito_events",
+        "kaito_get_twitter_user",
+        "kaito_kol_token_mindshare",
+        "kaito_market_smart_following",
+        "kaito_mentions",
+        "kaito_mindshare",
+        "kaito_mindshare_arena",
+        "kaito_mindshare_delta",
+        "kaito_narrative_mindshare",
+        "kaito_narratives",
+        "kaito_sentiment",
+        "kaito_smart_followers",
+        "kaito_smart_following",
+        "kaito_tokens",
+        "kaito_tweet_engagement_info",
+        "kaito_twitter_account_type",
+        "kaito_twitter_official_account",
+        "kaito://narratives",
+        "kaito://tokens",
+        "market_roundup",
+        "social_listening",
+        "watchlist_portfolio"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31032,7 +34274,26 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "search-mcp-server"
+      "packageName": "search-mcp-server",
+      "toolCount": 14,
+      "toolNames": [
+        "Arguments",
+        "Available on npm",
+        "Command",
+        "Environment variables",
+        "macOS",
+        "Name",
+        "NVM users",
+        "Option 1 (Recommended)",
+        "Option 2",
+        "Option 3",
+        "Port conflict",
+        "Transport to client",
+        "Transport to extension",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31054,7 +34315,18 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "wuying-agentbay-mcp-server"
+      "packageName": "wuying-agentbay-mcp-server",
+      "toolCount": 6,
+      "toolNames": [
+        "Communication",
+        "File System",
+        "Infrastructure",
+        "Integration Options",
+        "Service Model",
+        "Tool Integration"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31076,7 +34348,20 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@google-cloud/gcloud-mcp"
+      "packageName": "@google-cloud/gcloud-mcp",
+      "toolCount": 7,
+      "toolNames": [
+        "run_gcloud_command",
+        "Automate and simplify complex workflows.",
+        "Claude Desktop:",
+        "Cline:",
+        "Cursor:",
+        "Gemini CLI (Manual Setup):",
+        "Interact with Google Cloud using natural language.",
+        "Lower the barrier to entry for cloud management."
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31109,7 +34394,61 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@multimail/mcp-server"
+      "packageName": "@multimail/mcp-server",
+      "toolCount": 44,
+      "toolNames": [
+        "~/.claude/.mcp.json",
+        "~/.codeium/windsurf/mcp_config.json",
+        "activate_account",
+        "add_contact",
+        "apply_upgrade",
+        "cancel_message",
+        "check_inbox",
+        "check_suppression",
+        "claude_desktop_config.json",
+        "configure_mailbox",
+        "create_api_key",
+        "create_mailbox",
+        "create_webhook",
+        "decide_email",
+        "delete_account",
+        "delete_contact",
+        "delete_mailbox",
+        "delete_webhook",
+        "download_attachment",
+        "edit_scheduled_email",
+        "get_account",
+        "get_audit_log",
+        "get_thread",
+        "get_usage",
+        "list_api_keys",
+        "list_mailboxes",
+        "list_pending",
+        "list_webhooks",
+        "MULTIMAIL_API_KEY",
+        "MULTIMAIL_API_URL",
+        "MULTIMAIL_MAILBOX_ID",
+        "read_email",
+        "remove_suppression",
+        "reply_email",
+        "request_upgrade",
+        "resend_confirmation",
+        "revoke_api_key",
+        "schedule_email",
+        "search_contacts",
+        "send_email",
+        "tag_email",
+        "update_account",
+        "update_mailbox",
+        "wait_for_email",
+        "CC/BCC defaults",
+        "Display name",
+        "Oversight mode",
+        "Scheduling",
+        "Signature"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31131,7 +34470,30 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@r-huijts/strava-mcp-server"
+      "packageName": "@r-huijts/strava-mcp-server",
+      "toolCount": 13,
+      "toolNames": [
+        "ROUTE_EXPORT_PATH",
+        "STRAVA_ACCESS_TOKEN",
+        "STRAVA_CLIENT_ID",
+        "STRAVA_CLIENT_SECRET",
+        "STRAVA_REFRESH_TOKEN",
+        "Application Name",
+        "Authorization Callback Domain",
+        "Category",
+        "Check status",
+        "Compact format",
+        "Disconnect",
+        "Mac",
+        "Optional downsampling",
+        "Reconnect",
+        "Smart chunking",
+        "Verbose format",
+        "Website",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31142,7 +34504,29 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@mrsknetwork/ytmcp"
+      "packageName": "@mrsknetwork/ytmcp",
+      "toolCount": 17,
+      "toolNames": [
+        "get_channel_metadata",
+        "get_video_metadata",
+        "get_video_transcript",
+        "list_channel_activities",
+        "list_channel_members",
+        "list_channel_sections",
+        "list_comment_replies",
+        "list_membership_levels",
+        "list_playlist_items",
+        "list_playlists",
+        "list_subscriptions",
+        "list_supported_languages",
+        "list_supported_regions",
+        "list_video_captions",
+        "list_video_categories",
+        "list_video_comments",
+        "search_content"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31164,7 +34548,102 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "pulsemcp-cms-admin-mcp-server"
+      "packageName": "pulsemcp-cms-admin-mcp-server",
+      "toolCount": 88,
+      "toolNames": [
+        "add_official_mirror_to_regular_queue",
+        "approve_mirror_no_modify",
+        "approve_official_mirror_queue_item",
+        "cleanup_good_jobs",
+        "create_mcp_json",
+        "create_redirect",
+        "create_unofficial_mirror",
+        "delete_mcp_json",
+        "delete_redirect",
+        "delete_unofficial_mirror",
+        "discard_good_job",
+        "discovered_urls",
+        "discovered_urls_readonly",
+        "draft_newsletter_post",
+        "find_providers",
+        "force_trigger_good_job_cron",
+        "get_authors",
+        "get_discovered_url_stats",
+        "get_draft_mcp_implementations",
+        "get_exam_result",
+        "get_good_job",
+        "get_good_job_queue_statistics",
+        "get_mcp_json",
+        "get_mcp_jsons",
+        "get_mcp_server",
+        "get_moz_backlinks",
+        "get_moz_metrics",
+        "get_moz_stored_metrics",
+        "get_newsletter_post",
+        "get_newsletter_posts",
+        "get_official_mirror",
+        "get_official_mirror_queue_item",
+        "get_official_mirror_queue_items",
+        "get_official_mirrors",
+        "get_proctor_metadata",
+        "get_redirect",
+        "get_redirects",
+        "get_tenant",
+        "get_tenants",
+        "get_unofficial_mirror",
+        "get_unofficial_mirrors",
+        "good_jobs",
+        "good_jobs_readonly",
+        "list_discovered_urls",
+        "list_good_job_cron_schedules",
+        "list_good_job_processes",
+        "list_good_jobs",
+        "list_mcp_servers",
+        "list_proctor_runs",
+        "mark_discovered_url_processed",
+        "mcp_jsons",
+        "mcp_jsons_readonly",
+        "mcp_servers",
+        "mcp_servers_readonly",
+        "moz",
+        "moz_readonly",
+        "newsletter",
+        "newsletter_readonly",
+        "official_mirrors",
+        "official_mirrors_readonly",
+        "official_queue",
+        "official_queue_readonly",
+        "proctor",
+        "proctor_readonly",
+        "redirects",
+        "redirects_readonly",
+        "reject_official_mirror_queue_item",
+        "reschedule_good_job",
+        "retry_good_job",
+        "run_exam_for_mirror",
+        "save_mcp_implementation",
+        "save_results_for_mirror",
+        "search_mcp_implementations",
+        "send_impl_posted_notif",
+        "server_directory",
+        "server_directory_readonly",
+        "tenants",
+        "tenants_readonly",
+        "TOOL_GROUPS",
+        "unlink_official_mirror_queue_item",
+        "unofficial_mirrors",
+        "unofficial_mirrors_readonly",
+        "update_mcp_json",
+        "update_mcp_server",
+        "update_newsletter_post",
+        "update_redirect",
+        "update_unofficial_mirror",
+        "upload_image",
+        "Base group",
+        "Readonly group"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31175,7 +34654,57 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@remnux/mcp-server"
+      "packageName": "@remnux/mcp-server",
+      "toolCount": 25,
+      "toolNames": [
+        "--host",
+        "--http-token",
+        "--password",
+        "--sandbox",
+        "/home/remnux/files/output",
+        "/home/remnux/files/samples",
+        "127.0.0.1",
+        "22",
+        "300",
+        "3000",
+        "analyze_file",
+        "check_tools",
+        "download_file",
+        "download_from_url",
+        "extract_archive",
+        "extract_iocs",
+        "get_file_info",
+        "get_tool_help",
+        "list_files",
+        "local",
+        "remnux",
+        "run_tool",
+        "stdio",
+        "suggest_tools",
+        "upload_from_host",
+        "Always use a token in production.",
+        "Anti-injection patterns",
+        "Confirmation bias mitigation",
+        "Container isolation",
+        "Data locality",
+        "Default bind is `127.0.0.1`",
+        "DNS rebinding protection",
+        "Exit code semantics",
+        "Expert pipelines",
+        "Flexible",
+        "Flexible backends",
+        "For HTTPS",
+        "Generate strong tokens:",
+        "Invocation quirks",
+        "No cloud dependency",
+        "Simple deployment",
+        "Simpler maintenance",
+        "Tool discovery",
+        "Use `MCP_TOKEN` env var",
+        "Works offline"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31197,7 +34726,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "wikipedia-mcp-server"
+      "packageName": "wikipedia-mcp-server",
+      "toolCount": 1,
+      "toolNames": [
+        "Parameters:"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31208,7 +34743,42 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@yoda.digital/gitlab-mcp-server"
+      "packageName": "@yoda.digital/gitlab-mcp-server",
+      "toolCount": 30,
+      "toolNames": [
+        "[AI Tools Guide](./tools/README.md)",
+        "[Changelog](./CHANGELOG.md)",
+        "[Contributing](./CONTRIBUTING.md)",
+        "[Cursor Integration](./docs/CURSOR_INTEGRATION.md)",
+        "[Full Tool Reference](./CLAUDE.md)",
+        "[Product Vision & Roadmap](./docs/VISION.md)",
+        "Activity Tracking",
+        "AI-Assisted Development",
+        "Automated Workflows",
+        "Both Transports",
+        "Branch Management",
+        "CI/CD Orchestration",
+        "CI/CD Pipelines",
+        "Code Review",
+        "Consistent API",
+        "Documentation",
+        "Error Handling",
+        "File Operations",
+        "Group Operations",
+        "Issue Tracking",
+        "Labels & Milestones",
+        "Member Management",
+        "Merge Requests",
+        "Project Management",
+        "Protected Branches",
+        "Read-Only Mode",
+        "Releases",
+        "Repository Management",
+        "Strong Typing",
+        "Wiki Management"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31219,7 +34789,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mysql-mcp-server"
+      "packageName": "mysql-mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "Query timeout",
+        "Query validation",
+        "Read-only access",
+        "Row limit"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31230,7 +34809,35 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@stqry/mcp-server"
+      "packageName": "@stqry/mcp-server",
+      "toolCount": 18,
+      "toolNames": [
+        "codes",
+        "collection_items",
+        "collections",
+        "defaultProject",
+        "https://api-au.stqry.com",
+        "https://api-ca.stqry.com",
+        "https://api-eu.stqry.com",
+        "https://api-us.stqry.com",
+        "media_items",
+        "projects",
+        "projects.*.apiKey",
+        "projects.*.description",
+        "projects.*.region",
+        "screens",
+        "story_sections",
+        "stqry_list_projects",
+        "stqry_switch_project",
+        "uploaded_files",
+        "4 regions",
+        "66 API tools",
+        "LLM-friendly descriptions",
+        "Multi-project support",
+        "stdio transport"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31263,7 +34870,37 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@securecode/mcp-server"
+      "packageName": "@securecode/mcp-server",
+      "toolCount": 16,
+      "toolNames": [
+        "byebye",
+        "create-secret",
+        "delete-secret",
+        "export-env",
+        "get-active-rules",
+        "get-secret",
+        "get-status",
+        "help",
+        "import-env",
+        "list-secrets",
+        "onboard",
+        "renew-secret",
+        "session-status",
+        "sleep-session",
+        "update-secret",
+        "wake-session",
+        "Auto-cleanup",
+        "First session",
+        "Generic names",
+        "No TTL",
+        "Parallel sessions",
+        "Production access",
+        "Reveal mode",
+        "Stale secrets",
+        "Zero-knowledge by default"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31274,7 +34911,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@gleanwork/mcp-server"
+      "packageName": "@gleanwork/mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "Chat",
+        "Company Search",
+        "MCP Compliant",
+        "People Profile Search"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31285,7 +34931,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "targetprocess-mcp-server"
+      "packageName": "targetprocess-mcp-server",
+      "toolCount": 1,
+      "toolNames": [
+        "LLM-Friendly Tools"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31318,7 +34970,19 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@vallt/mcp-server"
+      "packageName": "@vallt/mcp-server",
+      "toolCount": 7,
+      "toolNames": [
+        "Connect integrations",
+        "Free",
+        "Health monitoring",
+        "Import existing keys",
+        "Inject env vars",
+        "Solo",
+        "Studio"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31329,7 +34993,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "linkup-mcp-server"
+      "packageName": "linkup-mcp-server",
+      "toolCount": 2,
+      "toolNames": [
+        "Deep Search",
+        "Standard Search"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31340,7 +35011,19 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "backlog-mcp-server"
+      "packageName": "backlog-mcp-server",
+      "toolCount": 7,
+      "toolNames": [
+        "document",
+        "git",
+        "issue",
+        "notifications",
+        "project",
+        "space",
+        "wiki"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31362,7 +35045,80 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-atlassian"
+      "packageName": "mcp-atlassian",
+      "toolCount": 40,
+      "toolNames": [
+        "add_confluence_comment",
+        "add_confluence_page_label",
+        "add_jira_comment",
+        "create_confluence_page",
+        "create_jira_issue",
+        "download_confluence_attachment",
+        "download_confluence_page_complete",
+        "export_confluence_page",
+        "find_confluence_users",
+        "get_confluence_current_user",
+        "get_confluence_pages_mentioning_me",
+        "get_confluence_space",
+        "get_confluence_user",
+        "get_jira_current_user",
+        "get_jira_sprint",
+        "get_jira_user",
+        "get_my_open_issues",
+        "get_my_recent_confluence_pages",
+        "get_my_tasks_in_current_sprint",
+        "get_user_jira_activity",
+        "get_user_jira_worklog",
+        "list_confluence_attachments",
+        "list_confluence_page_ancestors",
+        "list_confluence_page_children",
+        "list_confluence_page_labels",
+        "list_confluence_spaces",
+        "list_jira_boards",
+        "list_jira_projects",
+        "list_jira_sprints",
+        "list_user_confluence_attachments",
+        "list_user_confluence_pages",
+        "list_user_jira_issues",
+        "read_confluence_page",
+        "read_jira_issue",
+        "search_confluence_pages",
+        "search_confluence_pages_by_user",
+        "search_jira_issues",
+        "search_jira_issues_by_user",
+        "update_confluence_page",
+        "upload_confluence_attachment",
+        "Attachments",
+        "Boards & Sprints",
+        "Build",
+        "Checks",
+        "Comments",
+        "Content Management",
+        "Export",
+        "Features",
+        "HTML",
+        "Issue Creation",
+        "Issues",
+        "Jobs",
+        "Labels",
+        "Lint",
+        "Linux",
+        "macOS",
+        "Markdown",
+        "Page Hierarchy",
+        "Personal Dashboard",
+        "Projects",
+        "Read & Search",
+        "Scans",
+        "Test",
+        "Triggers",
+        "User Management",
+        "Users",
+        "Validate Package",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31373,7 +35129,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "outline-mcp-server"
+      "packageName": "outline-mcp-server",
+      "toolCount": 4,
+      "toolNames": [
+        "Collection Management",
+        "Comment Management",
+        "Document Management",
+        "User Management"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31395,7 +35160,13 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@eventcatalog/mcp-server"
+      "packageName": "@eventcatalog/mcp-server",
+      "toolCount": 1,
+      "toolNames": [
+        "Recommended for"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31406,7 +35177,33 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@onozaty/redmine-mcp-server"
+      "packageName": "@onozaty/redmine-mcp-server",
+      "toolCount": 21,
+      "toolNames": [
+        "`REDMINE_MCP_TOOLS_ALLOW_PATTERN`",
+        "`REDMINE_MCP_TOOLS_DENY_PATTERN`",
+        "Attachments",
+        "Custom Fields",
+        "Files",
+        "Issue Statuses",
+        "Issues",
+        "News",
+        "Projects",
+        "Queries",
+        "REDMINE_API_KEY",
+        "REDMINE_MCP_READ_ONLY",
+        "REDMINE_MCP_TOOLS_ALLOW_PATTERN",
+        "REDMINE_MCP_TOOLS_DENY_PATTERN",
+        "REDMINE_URL",
+        "Roles",
+        "Search",
+        "Time Entries",
+        "Trackers",
+        "Users",
+        "Wiki"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31417,7 +35214,20 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@bytebase/dbhub"
+      "packageName": "@bytebase/dbhub",
+      "toolCount": 8,
+      "toolNames": [
+        "[Custom Tools](https://dbhub.ai/tools/custom-tools)",
+        "[execute_sql](https://dbhub.ai/tools/execute-sql)",
+        "[search_objects](https://dbhub.ai/tools/search-objects)",
+        "Guardrails",
+        "Local Development First",
+        "Multi-Connection",
+        "Multi-Database",
+        "Secure Access"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31428,7 +35238,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@modelcontextprotocol/server-memory"
+      "packageName": "@modelcontextprotocol/server-memory",
+      "toolCount": 9,
+      "toolNames": [
+        "add_observations",
+        "create_entities",
+        "create_relations",
+        "delete_entities",
+        "delete_observations",
+        "delete_relations",
+        "open_nodes",
+        "read_graph",
+        "search_nodes"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31439,7 +35263,18 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@arizeai/phoenix-mcp"
+      "packageName": "@arizeai/phoenix-mcp",
+      "toolCount": 6,
+      "toolNames": [
+        "Datasets",
+        "Experiments",
+        "Projects Management",
+        "Prompts Management",
+        "Sessions",
+        "Traces, Spans & Annotations"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31450,7 +35285,75 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@skillsmith/mcp-server"
+      "packageName": "@skillsmith/mcp-server",
+      "toolCount": 55,
+      "toolNames": [
+        "!$env:SKILLSMITH_API_KEY='your-key-here'",
+        "!export SKILLSMITH_API_KEY='your-key-here'",
+        "!set SKILLSMITH_API_KEY=your-key-here",
+        "~/.skillsmith/skills.db",
+        "category",
+        "community",
+        "context",
+        "current_file",
+        "error_message",
+        "experimental",
+        "false",
+        "force",
+        "get_skill",
+        "hasLocalModifications",
+        "https://api.skillsmith.app/functions/v1",
+        "id",
+        "include_deps",
+        "index_local",
+        "install_skill",
+        "installed_skills",
+        "limit",
+        "min_score",
+        "newContent",
+        "newRiskScore",
+        "oldContent",
+        "oldRiskScore",
+        "path",
+        "POSTHOG_API_KEY",
+        "project_path",
+        "query",
+        "recent_commands",
+        "search",
+        "session_id",
+        "skill_audit",
+        "skill_compare",
+        "skill_diff",
+        "skill_ids",
+        "skill_outdated",
+        "skill_pack_audit",
+        "skill_publish",
+        "skill_recommend",
+        "skill_rescan",
+        "skill_suggest",
+        "skill_updates",
+        "skill_validate",
+        "skillId",
+        "skillIds",
+        "skillsDir",
+        "SKILLSMITH_API_KEY",
+        "true",
+        "trust_tier",
+        "trustTier",
+        "uninstall_skill",
+        "unknown",
+        "verified",
+        "`skill_outdated` tool",
+        "Categorized",
+        "Dependency intelligence",
+        "Encrypted skill detection",
+        "Indexed daily",
+        "Quality scored",
+        "Security screened hourly",
+        "v0.4.5 fix"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31472,7 +35375,40 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@professional-wiki/mediawiki-mcp-server"
+      "packageName": "@professional-wiki/mediawiki-mcp-server",
+      "toolCount": 28,
+      "toolNames": [
+        "3000",
+        "add-wiki",
+        "articlepath",
+        "config.json",
+        "Create, edit, and move pages",
+        "defaultWiki",
+        "Delete pages, revisions, and log entries",
+        "Edit existing pages",
+        "get-category-members",
+        "get-file",
+        "get-page",
+        "get-page-history",
+        "get-revision",
+        "password",
+        "private",
+        "remove-wiki",
+        "scriptpath",
+        "search-page",
+        "search-page-by-prefix",
+        "server",
+        "set-wiki",
+        "sitename",
+        "stdio",
+        "token",
+        "Upload new files",
+        "Upload, replace, and move files",
+        "username",
+        "wikis"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31483,7 +35419,15 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-server-mysql"
+      "packageName": "mcp-server-mysql",
+      "toolCount": 3,
+      "toolNames": [
+        "macOS/Linux",
+        "Node.js 20 or higher",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31516,7 +35460,18 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@withinfocus/statbotics-mcp-server"
+      "packageName": "@withinfocus/statbotics-mcp-server",
+      "toolCount": 6,
+      "toolNames": [
+        "Event Data",
+        "Match Analytics",
+        "No API Key Required",
+        "Team Statistics",
+        "Type Safety",
+        "Year-over-Year Data"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31527,7 +35482,46 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "agent-orchestrator-mcp-server"
+      "packageName": "agent-orchestrator-mcp-server",
+      "toolCount": 32,
+      "toolNames": [
+        "10000",
+        "action_health",
+        "action_notification",
+        "action_session",
+        "action_trigger",
+        "AGENT_ORCHESTRATOR_API_KEY",
+        "AGENT_ORCHESTRATOR_BASE_URL",
+        "agent-orchestrator://config",
+        "agent-orchestrator://configs/agent-roots",
+        "agent-orchestrator://configs/mcp-servers",
+        "agent-orchestrator://configs/stop-conditions",
+        "ALLOWED_AGENT_ROOTS",
+        "false",
+        "get_configs",
+        "get_notifications",
+        "get_session",
+        "get_system_health",
+        "get_transcript_archive",
+        "health",
+        "health_readonly",
+        "manage_enqueued_messages",
+        "notifications",
+        "notifications_readonly",
+        "quick_search_sessions",
+        "search_triggers",
+        "send_push_notification",
+        "sessions",
+        "sessions_readonly",
+        "start_session",
+        "TOOL_GROUPS",
+        "triggers",
+        "triggers_readonly",
+        "Base group",
+        "Readonly group"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31538,7 +35532,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@blackopscenter/mcp-server"
+      "packageName": "@blackopscenter/mcp-server",
+      "toolCount": 9,
+      "toolNames": [
+        "BLACKOPS_API_BASE",
+        "BLACKOPS_API_TOKEN",
+        "ENABLED_TOOLS",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "PORT",
+        "REQUEST_RETRY_COUNT",
+        "REQUEST_TIMEOUT_MS",
+        "SERVER_BEARER_TOKEN"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31549,7 +35557,20 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@nest-mcp/server"
+      "packageName": "@nest-mcp/server",
+      "toolCount": 5,
+      "toolNames": [
+        "@Completion",
+        "@Prompt",
+        "@Resource",
+        "@ResourceTemplate",
+        "@Tool",
+        "SSE",
+        "STDIO",
+        "Streamable HTTP"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31560,7 +35581,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@donotdev/mcp-server"
+      "packageName": "@donotdev/mcp-server",
+      "toolCount": 5,
+      "toolNames": [
+        "Bounded search:",
+        "Lessons capped:",
+        "Path traversal protection:",
+        "Project root discovery:",
+        "Protocol versioning:"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31571,7 +35602,39 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@hypertrack/mcp-server"
+      "packageName": "@hypertrack/mcp-server",
+      "toolCount": 27,
+      "toolNames": [
+        "CORS_ORIGIN",
+        "estimate_order",
+        "get_account_usage",
+        "get_candidate_workers",
+        "get_device",
+        "get_device_history",
+        "get_geofence",
+        "get_geotag",
+        "get_order",
+        "get_order_webhooks",
+        "get_place",
+        "get_route",
+        "get_visit",
+        "get_worker",
+        "HOST",
+        "HYPERTRACK_ACCOUNT_ID",
+        "HYPERTRACK_API_BASE_URL",
+        "HYPERTRACK_SECRET_KEY",
+        "list_devices",
+        "list_geofences",
+        "list_geotags",
+        "list_orders",
+        "list_places",
+        "list_routes",
+        "list_visits",
+        "list_workers",
+        "PORT"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31582,7 +35645,62 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "auq-mcp-server"
+      "packageName": "auq-mcp-server",
+      "toolCount": 31,
+      "toolNames": [
+        "↑↓",
+        "[/]",
+        "←→/Tab",
+        "1-9",
+        "AUQ_RENDERER",
+        "AUQ_SESSION_DIR",
+        "Ctrl+R",
+        "Ctrl+S",
+        "Ctrl+T",
+        "Enter",
+        "Esc",
+        "language",
+        "maxOptions",
+        "maxQuestions",
+        "NO_UPDATE_NOTIFIER",
+        "notifications.enabled",
+        "notifications.sound",
+        "notifyOnStale",
+        "R",
+        "recommendedOptions",
+        "recommendedQuestions",
+        "renderer",
+        "retentionPeriod",
+        "sessionTimeout",
+        "Space",
+        "staleAction",
+        "staleThreshold",
+        "theme",
+        "U",
+        "updateCheck",
+        "XDG_CONFIG_HOME",
+        "All updates",
+        "Batched Notifications",
+        "CLI notification",
+        "Configurable threshold",
+        "English",
+        "Grace period",
+        "Integration-flexible",
+        "Korean",
+        "Linux",
+        "macOS",
+        "macOS/Linux",
+        "Multi-agent friendly",
+        "Native Integration",
+        "Non-invasive",
+        "Progress Bar",
+        "Toast notifications",
+        "Update checks",
+        "Visual indicators",
+        "Windows"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31593,7 +35711,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@chakra-ui/react-mcp"
+      "packageName": "@chakra-ui/react-mcp",
+      "toolCount": 4,
+      "toolNames": [
+        "Component Library",
+        "Design Tokens",
+        "Migration Support",
+        "Premium Templates"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31604,7 +35731,26 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "agentcash"
+      "packageName": "agentcash",
+      "toolCount": 12,
+      "toolNames": [
+        "/eval full",
+        "/eval regression",
+        "check_endpoint_schema",
+        "discover_api_endpoints",
+        "fetch",
+        "fetch_with_auth",
+        "get_balance",
+        "list_accounts",
+        "redeem_invite",
+        "report_error",
+        "X402_DEBUG",
+        "X402_PRIVATE_KEY",
+        "PR Smoke Test",
+        "Release Eval"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31626,7 +35772,26 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@splicr/mcp-server"
+      "packageName": "@splicr/mcp-server",
+      "toolCount": 11,
+      "toolNames": [
+        "~/.cursor/mcp.json",
+        "~/.gemini/antigravity/mcp_config.json",
+        "get_project_context",
+        "get_recent_insights",
+        "npx @splicr/mcp-server help",
+        "npx @splicr/mcp-server login",
+        "npx @splicr/mcp-server setup",
+        "npx @splicr/mcp-server uninstall",
+        "retry_failed",
+        "save_from_agent",
+        "search_knowledge",
+        "Browser",
+        "Mobile",
+        "Telegram"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31637,7 +35802,26 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-server-filesystem"
+      "packageName": "mcp-server-filesystem",
+      "toolCount": 14,
+      "toolNames": [
+        "create_directory",
+        "Directories",
+        "edit_file",
+        "Files",
+        "get_file_info",
+        "list_allowed_directories",
+        "list_directory",
+        "load_file",
+        "load_folder",
+        "move_file",
+        "read_file",
+        "read_multiple_files",
+        "search_files",
+        "write_file"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31648,7 +35832,26 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@vybit/mcp-server"
+      "packageName": "@vybit/mcp-server",
+      "toolCount": 14,
+      "toolNames": [
+        "API Key",
+        "Browse Sounds",
+        "Discover Public Vybits",
+        "Documentation",
+        "Email",
+        "Issues",
+        "Manage Access (Peeps)",
+        "Manage Reminders",
+        "Manage Subscriptions",
+        "Manage Vybits",
+        "Monitor Usage",
+        "OAuth2 Token",
+        "Trigger Notifications",
+        "View Notification Logs"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31659,7 +35862,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@assistant-ui/mcp-docs-server"
+      "packageName": "@assistant-ui/mcp-docs-server",
+      "toolCount": 2,
+      "toolNames": [
+        "assistantUIDocs",
+        "assistantUIExamples"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31670,7 +35880,28 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@google-cloud/observability-mcp"
+      "packageName": "@google-cloud/observability-mcp",
+      "toolCount": 12,
+      "toolNames": [
+        "get_trace",
+        "list_alert_policies",
+        "list_buckets",
+        "list_group_stats",
+        "list_log_entries",
+        "list_log_names",
+        "list_log_scopes",
+        "list_metric_descriptors",
+        "list_sinks",
+        "list_time_series",
+        "list_traces",
+        "list_views",
+        "\"Are there any new stack traces in my logs in the last day?\"",
+        "\"List all traces from the past 30 minutes.\"",
+        "\"Show me all logs with a severity of ERROR.\"",
+        "\"What is the average CPU utilization for my GCE instances over the last hour?\""
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31692,7 +35923,34 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "prometheus-mcp"
+      "packageName": "prometheus-mcp",
+      "toolCount": 22,
+      "toolNames": [
+        "`prometheus_build_info`",
+        "`prometheus_label_values`",
+        "`prometheus_list_labels`",
+        "`prometheus_list_metrics`",
+        "`prometheus_list_targets`",
+        "`prometheus_metric_metadata`",
+        "`prometheus_query_range`",
+        "`prometheus_query`",
+        "`prometheus_runtime_info`",
+        "`prometheus_scrape_pool_targets`",
+        "Configurable capabilities",
+        "Description",
+        "Documentation",
+        "Dual transport support",
+        "Fast and lightweight",
+        "GitHub Issues",
+        "LLM-friendly",
+        "Network Access",
+        "Parameters",
+        "Prometheus",
+        "Read-only",
+        "Resource Usage"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31714,7 +35972,38 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "mcp-image"
+      "packageName": "mcp-image",
+      "toolCount": 14,
+      "toolNames": [
+        "aspectRatio",
+        "balanced",
+        "blendImages",
+        "fileName",
+        "imageSize",
+        "inputImagePath",
+        "maintainCharacterConsistency",
+        "prompt",
+        "purpose",
+        "quality",
+        "useGoogleSearch",
+        "useWorldKnowledge",
+        "Advanced Capabilities",
+        "Built-in Prompt Optimization",
+        "Character Consistency",
+        "Flexible Aspect Ratios",
+        "Gemini API Key",
+        "Global",
+        "High-Resolution Output",
+        "Image Editing",
+        "Image generation",
+        "Multiple Output Formats",
+        "Node.js",
+        "Project-specific",
+        "Prompt optimization",
+        "Three Quality Tiers"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
@@ -31725,7 +36014,104 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@codefuturist/email-mcp"
+      "packageName": "@codefuturist/email-mcp",
+      "toolCount": 83,
+      "toolNames": [
+        "1",
+        "10",
+        "100",
+        "465",
+        "993",
+        "add_label",
+        "add_to_calendar",
+        "alert",
+        "analyze_email_for_scheduling",
+        "apply_template",
+        "bulk_action",
+        "cancel_scheduled",
+        "check_calendar_permissions",
+        "check_health",
+        "check_notification_setup",
+        "cleanup_inbox",
+        "compose_reply",
+        "configure_alerts",
+        "create_label",
+        "create_mailbox",
+        "create_reminder",
+        "custom",
+        "debug",
+        "default",
+        "delete_email",
+        "delete_label",
+        "delete_mailbox",
+        "download_attachment",
+        "draft_from_context",
+        "email://{account}/mailboxes",
+        "email://{account}/stats",
+        "email://{account}/unread",
+        "email://accounts",
+        "email://scheduled",
+        "email://templates",
+        "extract_action_items",
+        "extract_calendar",
+        "extract_contacts",
+        "false",
+        "find_email_folder",
+        "forward_email",
+        "get_email",
+        "get_email_stats",
+        "get_email_status",
+        "get_emails",
+        "get_hooks_config",
+        "get_thread",
+        "get_watcher_status",
+        "gtd",
+        "inbox-zero",
+        "info",
+        "list_accounts",
+        "list_calendars",
+        "list_emails",
+        "list_labels",
+        "list_mailboxes",
+        "list_presets",
+        "list_scheduled",
+        "list_templates",
+        "mark_email",
+        "MCP_EMAIL_ADDRESS",
+        "MCP_EMAIL_FULL_NAME",
+        "MCP_EMAIL_IMAP_HOST",
+        "MCP_EMAIL_PASSWORD",
+        "MCP_EMAIL_SMTP_HOST",
+        "MCP_EMAIL_USERNAME",
+        "move_email",
+        "notification-only",
+        "priority-focus",
+        "remove_label",
+        "rename_mailbox",
+        "reply_email",
+        "save_draft",
+        "schedule_email",
+        "search_emails",
+        "send_draft",
+        "send_email",
+        "summarize_meetings",
+        "summarize_thread",
+        "test_notification",
+        "triage_inbox",
+        "true",
+        "warning",
+        "Auto-reconnect",
+        "Batching",
+        "Graceful degradation",
+        "Layered services",
+        "Multi-account",
+        "Provider auto-detection",
+        "Rate limiting",
+        "Resource subscriptions",
+        "XDG-compliant config"
+      ],
+      "verified": "2026-04-01T23:31:05.369Z",
+      "verifiedFrom": "readme"
     }
   },
   {
