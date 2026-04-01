@@ -11,7 +11,7 @@
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */
 
-import { readdir, writeFile } from 'node:fs/promises';
+import { readdir, writeFile, readFile } from 'node:fs/promises';
 import { join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -151,6 +151,30 @@ async function main(): Promise<void> {
 
   await writeFile(OUTPUT, JSON.stringify(catalog, null, 2), 'utf-8');
   console.log(`\nGenerated adapter-catalog.json: ${catalog.length} entries (${errors} skipped)`);
+
+  // Report MCP registry stats
+  const REGISTRY_PATH = join(__dirname, '..', 'mcp-registry.json');
+  try {
+    const registryRaw = await readFile(REGISTRY_PATH, 'utf-8');
+    const registry = JSON.parse(registryRaw) as Array<{ id: string; type?: string; mcp?: { transport?: string } }>;
+    const mcpOnly = registry.filter(e => e.type === 'mcp');
+    const both = registry.filter(e => e.type === 'both');
+    const rest = registry.filter(e => e.type === 'rest');
+    const stdioMcps = registry.filter(e => e.mcp?.transport === 'stdio');
+    const httpMcps = registry.filter(e => e.mcp?.transport === 'streamable-http' || e.mcp?.transport === 'sse');
+
+    console.log(`\nmcp-registry.json: ${registry.length} entries`);
+    console.log(`  REST-only: ${rest.length} | REST+MCP: ${both.length} | MCP-only: ${mcpOnly.length}`);
+    console.log(`  Transports: ${stdioMcps.length} stdio, ${httpMcps.length} streamable-HTTP/SSE`);
+
+    // Deduplicated total
+    const catalogIds = new Set(catalog.map(e => e.name));
+    const mcpOnlyNew = mcpOnly.filter(e => !catalogIds.has(e.id));
+    const totalIntegrations = catalog.length + mcpOnlyNew.length;
+    console.log(`\nTotal integrations: ${totalIntegrations} (${catalog.length} REST + ${mcpOnlyNew.length} MCP-only)`);
+  } catch {
+    console.log('\nmcp-registry.json: not found (MCP stats unavailable)');
+  }
 }
 
 main().catch(err => { console.error('Failed:', err); process.exit(1); });
