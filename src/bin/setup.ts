@@ -215,6 +215,53 @@ function loadCredentials(): Record<string, string> {
   return creds;
 }
 
+// ─── Category display names ─────────────────────────────────
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'ai': 'AI / ML',
+  'cloud': 'Cloud Infrastructure',
+  'collaboration': 'Collaboration',
+  'commerce': 'Commerce & eCommerce',
+  'communication': 'Communication',
+  'compliance': 'Compliance & GRC',
+  'construction': 'Construction',
+  'crm': 'CRM & Sales',
+  'customer-support': 'Customer Support',
+  'cybersecurity': 'Cybersecurity',
+  'data': 'Data & Analytics',
+  'design': 'Design & Creative',
+  'devops': 'DevOps & CI/CD',
+  'education': 'Education',
+  'energy': 'Energy',
+  'engineering': 'Engineering & Aerospace',
+  'erp': 'ERP',
+  'finance': 'Finance & Payments',
+  'government': 'Government',
+  'healthcare': 'Healthcare',
+  'hospitality': 'Hospitality & Food',
+  'hr': 'HR & People',
+  'identity': 'Identity & Access',
+  'insurance': 'Insurance',
+  'iot': 'IoT & Devices',
+  'legal': 'Legal',
+  'logistics': 'Logistics & Shipping',
+  'manufacturing': 'Manufacturing',
+  'marketing': 'Marketing',
+  'media': 'Media & Entertainment',
+  'misc': 'Other',
+  'observability': 'Observability & Monitoring',
+  'productivity': 'Productivity',
+  'real-estate': 'Real Estate & Property',
+  'science': 'Science & Research',
+  'social': 'Social Media',
+  'telecom': 'Telecom',
+  'travel': 'Travel & Transportation',
+};
+
+function formatCategory(cat: string): string {
+  return CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, ' ');
+}
+
 // ─── MCP Client Detection ───────────────────────────────────
 
 interface McpClientInfo {
@@ -1030,7 +1077,7 @@ async function runSetupWizard(): Promise<void> {
 
   // Step 3: Secrets provider
   const secretsChoice = await p.select({
-    message: 'Where are your API credentials stored?',
+    message: 'Where are your API and MCP credentials stored?',
     options: [
       { value: 'vault', label: 'HashiCorp Vault' },
       { value: 'aws-sm', label: 'AWS Secrets Manager' },
@@ -1117,7 +1164,7 @@ async function runSetupWizard(): Promise<void> {
     .sort((a, b) => b[1].length - a[1].length)
     .map(([cat, adapters]) => ({
       value: cat,
-      label: `${cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, ' ')} (${adapters.length})`,
+      label: `${formatCategory(cat)} (${adapters.length})`,
     }));
 
   const selectedCategories = await p.multiselect({

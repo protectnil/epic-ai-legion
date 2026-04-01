@@ -1576,7 +1576,7 @@
     "id": "anthropic-api",
     "name": "Anthropic Claude API",
     "description": "Interact with the Anthropic Claude API: send messages, list models, count tokens, manage message batches, and manage uploaded files.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "anthropic",
       "claude",
@@ -2141,7 +2141,7 @@
     "id": "arize-ai",
     "name": "Arize AI (Phoenix)",
     "description": "LLM observability and evaluation via Arize Phoenix: query traces and spans, manage datasets, run experiments, and version prompts.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "arize",
       "phoenix",
@@ -2872,7 +2872,7 @@
     "id": "azure-ml",
     "name": "Azure Machine Learning",
     "description": "Azure Machine Learning MLOps: training jobs, model registry, online and batch endpoints, computes, datastores, environments, and components.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "azure ml",
       "azure machine learning",
@@ -5681,7 +5681,7 @@
     "id": "cohere",
     "name": "Cohere",
     "description": "Cohere LLM inference: chat generation, text embeddings, reranking, classification, tokenization, batch embed jobs, datasets, and connectors.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "cohere",
       "command",
@@ -11116,7 +11116,7 @@
     "id": "fireworks-ai",
     "name": "Fireworks AI",
     "description": "Fireworks AI fast LLM inference: chat completions, text completions, embeddings, image generation, model listing, fine-tuning jobs, and dedicated deployment management.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "fireworks",
       "fireworks-ai",
@@ -12585,7 +12585,7 @@
     "id": "google-document-ai",
     "name": "Google Document AI",
     "description": "Google Document AI: manage processors and versions, process documents (OCR, form parsing, entity extraction), and run batch processing jobs.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "google",
       "document ai",
@@ -12723,7 +12723,7 @@
     "id": "google-translate",
     "name": "Google Cloud Translation",
     "description": "Google Cloud Translation v3: translate text, detect languages, manage glossaries, and batch-translate documents across 100+ languages.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "google",
       "translate",
@@ -12761,7 +12761,7 @@
     "id": "google-vertex-ai",
     "name": "Google Vertex AI",
     "description": "Generate content with Gemini on Vertex AI, manage model registry and endpoints, run batch predictions, and query tuning jobs.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "google",
       "vertex",
@@ -12964,7 +12964,7 @@
     "id": "groq",
     "name": "Groq",
     "description": "Groq ultra-fast LLM inference: chat completions with Llama/Mistral models, Whisper audio transcription, and async batch processing.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "groq",
       "llm",
@@ -13896,7 +13896,7 @@
     "id": "huggingface",
     "name": "Hugging Face",
     "description": "Hugging Face Hub: search and retrieve models, datasets, and spaces. Run serverless inference for text generation, classification, embeddings, and summarization.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "huggingface",
       "hf",
@@ -15459,7 +15459,7 @@
     "id": "langchain-api",
     "name": "LangSmith",
     "description": "LangSmith LLM observability: query traces/runs, manage datasets and examples, retrieve prompts, log feedback, and monitor evaluation experiments.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "langsmith",
       "langchain",
@@ -15510,7 +15510,7 @@
     "id": "langsmith",
     "name": "LangSmith",
     "description": "LangSmith LLM observability: query and create traces/runs, manage projects, submit feedback, handle datasets, examples, and prompts for LLM evaluation.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "langsmith",
       "langchain",
@@ -16014,7 +16014,7 @@
     "id": "llamaindex-api",
     "name": "LlamaIndex Cloud",
     "description": "Manage LlamaIndex Cloud pipelines, projects, documents, and parse jobs. Query and retrieve from RAG pipelines.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "llamaindex",
       "llama cloud",
@@ -17424,7 +17424,7 @@
     "id": "mistral-ai",
     "name": "Mistral AI",
     "description": "Mistral AI: chat completions, embeddings, FIM code completion, fine-tuning, batch inference, agents, OCR, audio transcription, and content moderation.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "mistral",
       "llm",
@@ -18409,7 +18409,7 @@
     "id": "ollama-api",
     "name": "Ollama",
     "description": "Local LLM inference via Ollama: manage models (pull, push, copy, delete, create), generate completions, chat, and create embeddings.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "ollama",
       "local",
@@ -18666,7 +18666,7 @@
     "id": "openai-api",
     "name": "OpenAI",
     "description": "OpenAI API: chat completions, Responses API, embeddings, image generation and editing, audio transcription and TTS, moderations, file management, and fine-tuning.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "openai",
       "gpt",
@@ -21500,7 +21500,7 @@
     "id": "replicate",
     "name": "Replicate",
     "description": "Run AI models on Replicate: create predictions, manage model versions, browse collections, and deploy custom models.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "replicate",
       "ai",
@@ -22200,7 +22200,7 @@
     "id": "scale-ai",
     "name": "Scale AI",
     "description": "Manage Scale AI data labeling tasks, batches, and projects. Create annotation tasks, track batch status, upload files, and manage projects for ML training data pipelines.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "scale",
       "scaleai",
@@ -22483,7 +22483,7 @@
     "id": "semantic-scholar",
     "name": "Semantic Scholar",
     "description": "Semantic Scholar academic graph: search 200M+ papers, retrieve citations, references, author profiles, and paper recommendations from the Allen Institute for AI.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "semantic scholar",
       "academic",
@@ -25135,7 +25135,7 @@
     "id": "together-ai",
     "name": "Together AI",
     "description": "Together AI inference platform: run chat, text, image generation, and embeddings on 200+ open-source models; manage fine-tuning jobs and training files.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "together ai",
       "llm",
@@ -26240,7 +26240,7 @@
     "id": "wandb",
     "name": "Weights & Biases",
     "description": "ML experiment tracking: list and query runs, sweeps, artifacts, projects, and metrics. Supports filtering, search, and pagination.",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "wandb",
       "weights-biases",

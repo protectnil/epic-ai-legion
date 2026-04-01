@@ -281,7 +281,7 @@
     "name": "accela",
     "displayName": "Accela",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "government",
     "keywords": [
       "accela",
       "permit",
@@ -328,7 +328,7 @@
     "name": "accuweather",
     "displayName": "AccuWeather",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "data",
     "keywords": [
       "accuweather",
       "weather",
@@ -496,7 +496,7 @@
     "name": "adobe-acrobat-api",
     "displayName": "Adobe Acrobat PDF Services",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "adobe",
       "acrobat",
@@ -602,6 +602,42 @@
       "post_set_password"
     ],
     "description": "Adobe Experience Manager (AEM): manage CMS content nodes, OSGi bundles, replication agents, packages, keystores, truststore, health checks, and configuration via the Sling/CRX HTTP API.",
+    "author": "protectnil"
+  },
+  {
+    "name": "adobe-sign",
+    "displayName": "Adobe Acrobat Sign",
+    "version": "1.0.0",
+    "category": "collaboration",
+    "keywords": [
+      "adobe",
+      "sign",
+      "acrobat",
+      "esignature",
+      "electronic signature",
+      "agreement",
+      "document",
+      "contract",
+      "pdf",
+      "digital signature"
+    ],
+    "toolNames": [
+      "create_agreement",
+      "get_agreement",
+      "list_agreements",
+      "cancel_agreement",
+      "get_signing_url",
+      "send_reminder",
+      "list_templates",
+      "get_template",
+      "create_agreement_from_template",
+      "get_audit_trail",
+      "list_widgets",
+      "get_agreement_documents",
+      "download_document",
+      "list_library_documents"
+    ],
+    "description": "Adobe Acrobat Sign eSignature platform: create and manage agreements, send documents for signature, track status, retrieve audit trails, and work with templates and library documents.",
     "author": "protectnil"
   },
   {
@@ -857,7 +893,7 @@
     "name": "alchemy",
     "displayName": "Alchemy",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "finance",
     "keywords": [
       "alchemy",
       "blockchain",
@@ -969,7 +1005,7 @@
     "name": "amadeus",
     "displayName": "Amadeus",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "amadeus",
       "travel",
@@ -1070,7 +1106,7 @@
     "name": "amazon-bedrock",
     "displayName": "Amazon Bedrock",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "amazon-bedrock",
       "amazon",
@@ -1295,7 +1331,7 @@
     "name": "anthropic-api",
     "displayName": "Anthropic Claude API",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "anthropic",
       "claude",
@@ -1553,7 +1589,7 @@
     "name": "apiz-ebay-commerce-identity",
     "displayName": "eBay Commerce Identity",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "ebay",
       "commerce",
@@ -1653,7 +1689,7 @@
     "name": "app-store-connect",
     "displayName": "App Store Connect",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "devops",
     "keywords": [
       "apple",
       "app store",
@@ -1802,7 +1838,7 @@
     "name": "appfolio",
     "displayName": "AppFolio",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "real-estate",
     "keywords": [
       "appfolio",
       "property management",
@@ -1846,7 +1882,7 @@
     "name": "apple-business-connect",
     "displayName": "Apple Business Connect",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "devops",
     "keywords": [
       "apple",
       "apple maps",
@@ -2193,7 +2229,7 @@
     "name": "arize-ai",
     "displayName": "Arize AI (Phoenix)",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "arize",
       "phoenix",
@@ -2335,7 +2371,7 @@
     "name": "associated-press",
     "displayName": "Associated Press",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "media",
     "keywords": [
       "associated press",
       "ap",
@@ -2374,7 +2410,7 @@
     "name": "athenahealth",
     "displayName": "Athenahealth",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "healthcare",
     "keywords": [
       "athenahealth",
       "ehr",
@@ -2689,6 +2725,43 @@
     "author": "protectnil"
   },
   {
+    "name": "autodesk-construction",
+    "displayName": "Autodesk Construction Cloud",
+    "version": "1.0.0",
+    "category": "construction",
+    "keywords": [
+      "autodesk",
+      "acc",
+      "bim360",
+      "construction",
+      "issues",
+      "rfi",
+      "submittals",
+      "cost",
+      "documents",
+      "sheets",
+      "project management"
+    ],
+    "toolNames": [
+      "list_projects",
+      "get_project",
+      "list_issues",
+      "create_issue",
+      "update_issue",
+      "list_rfis",
+      "create_rfi",
+      "list_submittals",
+      "get_submittal",
+      "list_cost_items",
+      "get_cost_summary",
+      "list_documents",
+      "upload_document",
+      "list_sheets"
+    ],
+    "description": "Autodesk Construction Cloud (ACC): manage construction projects, issues, RFIs, submittals, cost items, documents, and sheets.",
+    "author": "protectnil"
+  },
+  {
     "name": "automox",
     "displayName": "Automox",
     "version": "1.0.0",
@@ -2872,6 +2945,276 @@
     "author": "protectnil"
   },
   {
+    "name": "aws-cloudtrail",
+    "displayName": "AWS CloudTrail",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "cloudtrail",
+      "amazon",
+      "audit",
+      "compliance",
+      "logging",
+      "events",
+      "trails",
+      "governance",
+      "security"
+    ],
+    "toolNames": [
+      "lookup_events",
+      "describe_trails",
+      "get_trail_status",
+      "create_trail",
+      "start_logging",
+      "stop_logging"
+    ],
+    "description": "AWS CloudTrail audit logging: look up API events, manage trails, and control logging for compliance and security auditing.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-cloudwatch",
+    "displayName": "AWS CloudWatch",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "cloudwatch",
+      "amazon",
+      "monitoring",
+      "metrics",
+      "alarms",
+      "dashboards",
+      "observability",
+      "logs",
+      "alerting"
+    ],
+    "toolNames": [
+      "list_metrics",
+      "get_metric_data",
+      "get_metric_statistics",
+      "describe_alarms",
+      "put_metric_alarm",
+      "delete_alarms",
+      "list_dashboards",
+      "get_dashboard"
+    ],
+    "description": "AWS CloudWatch monitoring: list metrics, get metric data and statistics, manage alarms and dashboards.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-cost-explorer",
+    "displayName": "AWS Cost Explorer",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "cost",
+      "billing",
+      "amazon",
+      "spending",
+      "forecast",
+      "budget",
+      "cost-explorer",
+      "anomaly",
+      "savings"
+    ],
+    "toolNames": [
+      "get_cost_and_usage",
+      "get_cost_forecast",
+      "get_dimension_values",
+      "get_tags",
+      "get_anomalies"
+    ],
+    "description": "AWS Cost Explorer billing and cost analysis: query cost and usage, forecast spending, explore dimensions and tags, and detect anomalies.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-dynamodb",
+    "displayName": "AWS DynamoDB",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "dynamodb",
+      "amazon",
+      "nosql",
+      "database",
+      "table",
+      "item",
+      "query",
+      "scan",
+      "key-value",
+      "document",
+      "serverless"
+    ],
+    "toolNames": [
+      "list_tables",
+      "describe_table",
+      "get_item",
+      "put_item",
+      "delete_item",
+      "query",
+      "scan",
+      "create_table",
+      "delete_table",
+      "update_item",
+      "batch_get_items",
+      "batch_write_items"
+    ],
+    "description": "AWS DynamoDB NoSQL database: manage tables and items, query and scan data, batch operations, and table lifecycle management.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-ecs",
+    "displayName": "AWS ECS",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "ecs",
+      "amazon",
+      "containers",
+      "docker",
+      "fargate",
+      "clusters",
+      "services",
+      "tasks",
+      "container orchestration"
+    ],
+    "toolNames": [
+      "list_clusters",
+      "describe_clusters",
+      "list_services",
+      "describe_services",
+      "list_tasks",
+      "describe_tasks",
+      "run_task",
+      "stop_task",
+      "update_service"
+    ],
+    "description": "AWS ECS container orchestration: manage clusters, services, and tasks with Fargate or EC2 launch types.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-iam",
+    "displayName": "AWS IAM",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "iam",
+      "amazon",
+      "identity",
+      "access",
+      "users",
+      "roles",
+      "policies",
+      "permissions",
+      "security",
+      "credentials"
+    ],
+    "toolNames": [
+      "list_users",
+      "get_user",
+      "create_user",
+      "delete_user",
+      "list_roles",
+      "list_policies",
+      "list_access_keys",
+      "create_access_key",
+      "get_account_summary"
+    ],
+    "description": "AWS IAM identity and access management: manage users, roles, policies, and access keys.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-lambda",
+    "displayName": "AWS Lambda",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "lambda",
+      "amazon",
+      "serverless",
+      "function",
+      "faas",
+      "invoke",
+      "deploy",
+      "event-driven",
+      "compute"
+    ],
+    "toolNames": [
+      "list_functions",
+      "get_function",
+      "invoke_function",
+      "create_function",
+      "update_function_code",
+      "delete_function",
+      "list_layers",
+      "list_aliases"
+    ],
+    "description": "AWS Lambda serverless functions: list, invoke, create, update, and delete functions, manage layers and aliases.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-redshift",
+    "displayName": "AWS Redshift",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "redshift",
+      "amazon",
+      "data warehouse",
+      "analytics",
+      "sql",
+      "clusters",
+      "snapshots",
+      "columnar",
+      "petabyte"
+    ],
+    "toolNames": [
+      "describe_clusters",
+      "create_cluster",
+      "delete_cluster",
+      "modify_cluster",
+      "describe_cluster_snapshots",
+      "pause_cluster",
+      "resume_cluster"
+    ],
+    "description": "AWS Redshift data warehouse: manage clusters and snapshots, pause and resume clusters, and configure data warehouse settings.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-route53",
+    "displayName": "AWS Route 53",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "route53",
+      "amazon",
+      "dns",
+      "domain",
+      "hosted zone",
+      "record sets",
+      "health checks",
+      "routing"
+    ],
+    "toolNames": [
+      "list_hosted_zones",
+      "get_hosted_zone",
+      "create_hosted_zone",
+      "list_resource_record_sets",
+      "change_resource_record_sets",
+      "list_health_checks"
+    ],
+    "description": "AWS Route 53 DNS management: manage hosted zones, DNS record sets, and health checks.",
+    "author": "protectnil"
+  },
+  {
     "name": "aws-s3",
     "displayName": "AWS S3",
     "version": "1.0.0",
@@ -2912,6 +3255,65 @@
       "get_bucket_lifecycle"
     ],
     "description": "AWS S3 object storage: manage buckets and objects, upload/download files, copy objects, configure versioning, and generate presigned URLs.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-sns",
+    "displayName": "AWS SNS",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "sns",
+      "amazon",
+      "notifications",
+      "pub-sub",
+      "messaging",
+      "topics",
+      "subscriptions",
+      "push",
+      "fanout"
+    ],
+    "toolNames": [
+      "list_topics",
+      "create_topic",
+      "delete_topic",
+      "publish",
+      "subscribe",
+      "unsubscribe",
+      "list_subscriptions"
+    ],
+    "description": "AWS SNS pub/sub messaging: create topics, publish messages, manage subscriptions, and send push notifications.",
+    "author": "protectnil"
+  },
+  {
+    "name": "aws-sqs",
+    "displayName": "AWS SQS",
+    "version": "1.0.0",
+    "category": "cloud",
+    "keywords": [
+      "aws",
+      "sqs",
+      "amazon",
+      "queue",
+      "messaging",
+      "fifo",
+      "message queue",
+      "async",
+      "decoupling",
+      "worker"
+    ],
+    "toolNames": [
+      "list_queues",
+      "create_queue",
+      "delete_queue",
+      "send_message",
+      "receive_message",
+      "delete_message",
+      "get_queue_url",
+      "purge_queue"
+    ],
+    "description": "AWS SQS message queuing: create queues, send and receive messages, delete messages, and manage queue lifecycle.",
     "author": "protectnil"
   },
   {
@@ -3103,7 +3505,7 @@
     "name": "azure-ml",
     "displayName": "Azure Machine Learning",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "azure ml",
       "azure machine learning",
@@ -3228,7 +3630,7 @@
     "name": "bamboohr",
     "displayName": "BambooHR",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "bamboohr",
       "hris",
@@ -3277,7 +3679,7 @@
     "name": "bandsintown",
     "displayName": "Bandsintown",
     "version": "1.0.0",
-    "category": "music",
+    "category": "media",
     "keywords": [
       "bandsintown",
       "music",
@@ -3302,6 +3704,43 @@
       "get_artist_events"
     ],
     "description": "Bandsintown API: look up artist profiles and discover upcoming, past, or date-ranged concert events.",
+    "author": "protectnil"
+  },
+  {
+    "name": "bandwidth",
+    "displayName": "Bandwidth",
+    "version": "1.0.0",
+    "category": "communication",
+    "keywords": [
+      "bandwidth",
+      "sms",
+      "mms",
+      "voice",
+      "phone",
+      "messaging",
+      "communications",
+      "telephony",
+      "call",
+      "text",
+      "did",
+      "pstn"
+    ],
+    "toolNames": [
+      "send_message",
+      "list_messages",
+      "get_message",
+      "create_call",
+      "get_call",
+      "list_calls",
+      "update_call",
+      "get_call_recording",
+      "list_available_numbers",
+      "order_phone_number",
+      "list_phone_numbers",
+      "create_messaging_application",
+      "send_group_message"
+    ],
+    "description": "Bandwidth voice and messaging platform: send SMS/MMS, manage voice calls and recordings, order and manage phone numbers, and create messaging applications.",
     "author": "protectnil"
   },
   {
@@ -3518,7 +3957,7 @@
     "name": "beezup",
     "displayName": "BeeZUP",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "beezup",
       "ecommerce",
@@ -3559,7 +3998,7 @@
     "name": "betfair",
     "displayName": "Betfair",
     "version": "1.0.0",
-    "category": "gaming",
+    "category": "media",
     "keywords": [
       "betfair",
       "betting",
@@ -3933,7 +4372,7 @@
     "name": "billbee",
     "displayName": "Billbee",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "billbee",
       "ecommerce",
@@ -4130,7 +4569,7 @@
     "name": "bizzabo",
     "displayName": "Bizzabo",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "productivity",
     "keywords": [
       "bizzabo",
       "event",
@@ -4221,6 +4660,43 @@
       "get_constituent_giving_summary"
     ],
     "description": "Blackbaud SKY API for Raiser's Edge NXT: manage constituents (donors), gifts, funds, campaigns, and appeals in nonprofit CRM and fundraising operations.",
+    "author": "protectnil"
+  },
+  {
+    "name": "blackboard",
+    "displayName": "Blackboard Learn",
+    "version": "1.0.0",
+    "category": "education",
+    "keywords": [
+      "blackboard",
+      "learn",
+      "lms",
+      "education",
+      "courses",
+      "grades",
+      "assignments",
+      "elearning",
+      "canvas",
+      "university",
+      "classroom"
+    ],
+    "toolNames": [
+      "list_courses",
+      "get_course",
+      "list_course_users",
+      "get_user",
+      "list_assignments",
+      "get_assignment",
+      "list_grades",
+      "update_grade",
+      "list_announcements",
+      "create_announcement",
+      "list_content",
+      "get_content_item",
+      "list_calendar_items",
+      "get_course_membership"
+    ],
+    "description": "Blackboard Learn LMS: manage courses, users, assignments, grades, announcements, content, and calendar items across your institution.",
     "author": "protectnil"
   },
   {
@@ -4365,7 +4841,7 @@
     "name": "box",
     "displayName": "Box",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "collaboration",
     "keywords": [
       "box",
       "enterprise content",
@@ -4420,7 +4896,7 @@
     "name": "brainbi",
     "displayName": "BrainBI",
     "version": "1.0.0",
-    "category": "analytics",
+    "category": "data",
     "keywords": [
       "brainbi",
       "analytics",
@@ -4762,7 +5238,7 @@
     "name": "brightcove",
     "displayName": "Brightcove",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "brightcove",
       "video",
@@ -4960,6 +5436,43 @@
     "author": "protectnil"
   },
   {
+    "name": "buildertrend",
+    "displayName": "Buildertrend",
+    "version": "1.0.0",
+    "category": "construction",
+    "keywords": [
+      "buildertrend",
+      "residential",
+      "construction",
+      "homebuilder",
+      "jobs",
+      "schedule",
+      "change orders",
+      "daily logs",
+      "to-dos",
+      "selections",
+      "warranties",
+      "budget"
+    ],
+    "toolNames": [
+      "list_jobs",
+      "get_job",
+      "list_schedules",
+      "get_schedule_item",
+      "list_change_orders",
+      "create_change_order",
+      "list_daily_logs",
+      "create_daily_log",
+      "list_to_dos",
+      "create_to_do",
+      "list_selections",
+      "list_warranties",
+      "get_budget_summary"
+    ],
+    "description": "Buildertrend residential construction management: manage jobs, schedules, change orders, daily logs, to-dos, selections, warranties, and budgets.",
+    "author": "protectnil"
+  },
+  {
     "name": "buildkite",
     "displayName": "Buildkite",
     "version": "1.0.0",
@@ -5011,7 +5524,7 @@
     "name": "builtwith",
     "displayName": "BuiltWith",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "devops",
     "keywords": [
       "builtwith",
       "technology",
@@ -5098,7 +5611,7 @@
     "name": "bungie",
     "displayName": "Bungie.Net",
     "version": "1.0.0",
-    "category": "gaming",
+    "category": "media",
     "keywords": [
       "bungie",
       "destiny",
@@ -5214,7 +5727,7 @@
     "name": "calendly",
     "displayName": "Calendly",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "productivity",
     "keywords": [
       "calendly",
       "scheduling",
@@ -5296,7 +5809,7 @@
     "name": "canada-post",
     "displayName": "Canada Post",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "canada post",
       "postes canada",
@@ -5336,7 +5849,7 @@
     "name": "canny",
     "displayName": "Canny",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "marketing",
     "keywords": [
       "canny",
       "feedback",
@@ -5391,7 +5904,7 @@
     "name": "canva",
     "displayName": "Canva",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "canva",
       "design",
@@ -5437,7 +5950,7 @@
     "name": "canvas-lms",
     "displayName": "Canvas LMS",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "education",
     "keywords": [
       "canvas",
       "instructure",
@@ -5898,7 +6411,7 @@
     "name": "checkr",
     "displayName": "Checkr",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "checkr"
     ],
@@ -6275,7 +6788,7 @@
     "name": "cision",
     "displayName": "Cision",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "marketing",
     "keywords": [
       "cision",
       "pr",
@@ -6304,7 +6817,7 @@
     "name": "citrixonline-gotomeeting",
     "displayName": "Citrixonline Gotomeeting",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "productivity",
     "keywords": [
       "citrixonline-gotomeeting",
       "create",
@@ -6470,7 +6983,7 @@
     "name": "civicplus",
     "displayName": "CivicPlus",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "government",
     "keywords": [
       "civicplus",
       "seeclickfix",
@@ -6602,7 +7115,7 @@
     "name": "classy",
     "displayName": "Classy / GoFundMe Pro",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "marketing",
     "keywords": [
       "classy",
       "gofundme",
@@ -7337,7 +7850,7 @@
     "name": "climate",
     "displayName": "Climate.com FieldView",
     "version": "1.0.0",
-    "category": "agriculture",
+    "category": "science",
     "keywords": [
       "climate",
       "fieldview",
@@ -7392,7 +7905,7 @@
     "name": "clio",
     "displayName": "Clio",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "legal",
     "keywords": [
       "clio",
       "legal",
@@ -7477,6 +7990,41 @@
       "update_task"
     ],
     "description": "Manage Close CRM leads, contacts, opportunities, activities, and tasks. Full CRUD operations via the REST API.",
+    "author": "protectnil"
+  },
+  {
+    "name": "cloudbeds",
+    "displayName": "Cloudbeds",
+    "version": "1.0.0",
+    "category": "hospitality",
+    "keywords": [
+      "cloudbeds",
+      "pms",
+      "hotel",
+      "property management",
+      "reservation",
+      "hospitality",
+      "housekeeping",
+      "front desk",
+      "booking",
+      "rooms"
+    ],
+    "toolNames": [
+      "get_reservations",
+      "get_reservation",
+      "create_reservation",
+      "get_guests",
+      "get_guest",
+      "get_rooms",
+      "get_room_types",
+      "get_availability",
+      "get_rates",
+      "post_payment",
+      "get_housekeeping",
+      "get_transactions",
+      "get_dashboard_stats"
+    ],
+    "description": "Cloudbeds PMS: manage hotel reservations, guests, rooms, availability, rates, payments, housekeeping, and transactions.",
     "author": "protectnil"
   },
   {
@@ -7657,7 +8205,7 @@
     "name": "coda",
     "displayName": "Coda",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "productivity",
     "keywords": [
       "coda",
       "doc",
@@ -8011,7 +8559,7 @@
     "name": "cohere",
     "displayName": "Cohere",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "cohere",
       "command",
@@ -8380,7 +8928,7 @@
     "name": "contentful",
     "displayName": "Contentful",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "contentful",
       "cms",
@@ -8635,7 +9183,7 @@
     "name": "cornerstone",
     "displayName": "Cornerstone OnDemand",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "cornerstone",
       "csod",
@@ -8789,7 +9337,7 @@
     "name": "costar",
     "displayName": "CoStar",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "real-estate",
     "keywords": [
       "costar",
       "commercial real estate",
@@ -9056,7 +9604,7 @@
     "name": "crowdin",
     "displayName": "Crowdin",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "devops",
     "keywords": [
       "crowdin",
       "localization",
@@ -9243,7 +9791,7 @@
     "name": "culture-amp",
     "displayName": "Culture Amp",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "culture amp",
       "employee engagement",
@@ -9287,7 +9835,7 @@
     "name": "cvent",
     "displayName": "Cvent",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "productivity",
     "keywords": [
       "cvent",
       "event management",
@@ -9931,7 +10479,7 @@
     "name": "deepl",
     "displayName": "DeepL",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "devops",
     "keywords": [
       "deepl",
       "translation",
@@ -10045,7 +10593,7 @@
     "name": "dhl",
     "displayName": "DHL",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "dhl",
       "shipping",
@@ -10381,7 +10929,7 @@
     "name": "docebo",
     "displayName": "Docebo",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "education",
     "keywords": [
       "docebo",
       "lms",
@@ -10600,7 +11148,7 @@
     "name": "docusign",
     "displayName": "DocuSign",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "legal",
     "keywords": [
       "docusign",
       "esignature",
@@ -11005,7 +11553,7 @@
     "name": "dropx",
     "displayName": "DropX",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "dropx",
       "ecommerce",
@@ -11040,7 +11588,7 @@
     "name": "duck-creek",
     "displayName": "Duck Creek Technologies",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "insurance",
     "keywords": [
       "duck creek",
       "insurance",
@@ -11279,7 +11827,7 @@
     "name": "ebi-ac-uk",
     "displayName": "EBI CROssBAR",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "iot",
     "keywords": [
       "ebi",
       "crossbar",
@@ -11320,7 +11868,7 @@
     "name": "egnyte",
     "displayName": "Egnyte",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "collaboration",
     "keywords": [
       "egnyte",
       "content governance",
@@ -11505,7 +12053,7 @@
     "name": "elevenlabs",
     "displayName": "ElevenLabs",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "elevenlabs",
       "text-to-speech",
@@ -11653,7 +12201,7 @@
     "name": "envoy",
     "displayName": "Envoy",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "productivity",
     "keywords": [
       "envoy",
       "visitor management",
@@ -12003,7 +12551,7 @@
     "name": "epic-fhir",
     "displayName": "Epic Systems EHR (FHIR R4)",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "healthcare",
     "keywords": [
       "epic",
       "ehr",
@@ -12051,6 +12599,48 @@
       "get_capability_statement"
     ],
     "description": "Epic EHR via FHIR R4: read patient demographics, observations, conditions, medications, allergies, appointments, encounters, procedures, diagnostics, and immunizations.",
+    "author": "protectnil"
+  },
+  {
+    "name": "epicor",
+    "displayName": "Epicor Kinetic ERP",
+    "version": "1.0.0",
+    "category": "manufacturing",
+    "keywords": [
+      "epicor",
+      "kinetic",
+      "erp",
+      "manufacturing",
+      "parts",
+      "bom",
+      "bill of materials",
+      "orders",
+      "jobs",
+      "customers",
+      "invoices",
+      "purchase orders",
+      "inventory",
+      "production",
+      "shop floor"
+    ],
+    "toolNames": [
+      "list_parts",
+      "get_part",
+      "list_orders",
+      "get_order",
+      "create_order",
+      "list_jobs",
+      "get_job",
+      "list_customers",
+      "get_customer",
+      "list_invoices",
+      "get_invoice",
+      "list_purchase_orders",
+      "create_purchase_order",
+      "get_inventory",
+      "list_bom"
+    ],
+    "description": "Epicor Kinetic ERP: manage parts, sales orders, manufacturing jobs, customers, invoices, purchase orders, inventory, and bill of materials.",
     "author": "protectnil"
   },
   {
@@ -12214,7 +12804,7 @@
     "name": "eventbrite",
     "displayName": "Eventbrite",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "productivity",
     "keywords": [
       "eventbrite",
       "event",
@@ -12784,7 +13374,7 @@
     "name": "fedex",
     "displayName": "FedEx",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "fedex",
       "shipping",
@@ -12824,10 +13414,59 @@
     "author": "protectnil"
   },
   {
+    "name": "fhir",
+    "displayName": "HL7 FHIR R4",
+    "version": "1.0.0",
+    "category": "healthcare",
+    "keywords": [
+      "fhir",
+      "hl7",
+      "healthcare",
+      "ehr",
+      "epic",
+      "cerner",
+      "allscripts",
+      "meditech",
+      "patient",
+      "clinical",
+      "medical records",
+      "encounter",
+      "condition",
+      "observation",
+      "medication",
+      "allergy",
+      "appointment",
+      "immunization",
+      "care plan",
+      "diagnostic",
+      "smart on fhir",
+      "interoperability"
+    ],
+    "toolNames": [
+      "search_patients",
+      "get_patient",
+      "search_encounters",
+      "get_encounter",
+      "search_conditions",
+      "search_observations",
+      "get_observation",
+      "search_medications",
+      "search_allergies",
+      "get_practitioner",
+      "search_appointments",
+      "create_appointment",
+      "search_diagnostic_reports",
+      "get_care_plan",
+      "search_immunizations"
+    ],
+    "description": "HL7 FHIR R4 healthcare API: search patients, retrieve clinical data (encounters, conditions, observations, medications, allergies, immunizations), manage appointments, and access care plans across any FHIR-compliant EHR.",
+    "author": "protectnil"
+  },
+  {
     "name": "figma",
     "displayName": "Figma",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "figma",
       "design",
@@ -13059,7 +13698,7 @@
     "name": "fireworks-ai",
     "displayName": "Fireworks AI",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "fireworks",
       "fireworks-ai",
@@ -13138,7 +13777,7 @@
     "name": "five9",
     "displayName": "Five9",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "communication",
     "keywords": [
       "five9",
       "contact center",
@@ -13228,7 +13867,7 @@
     "name": "flat",
     "displayName": "Flat",
     "version": "1.0.0",
-    "category": "music",
+    "category": "media",
     "keywords": [
       "flat",
       "flat.io",
@@ -13273,7 +13912,7 @@
     "name": "flexport",
     "displayName": "Flexport",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "flexport",
       "freight",
@@ -13685,7 +14324,7 @@
     "name": "freshdesk",
     "displayName": "Freshdesk",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "customer-support",
     "keywords": [
       "freshdesk",
       "freshworks",
@@ -13735,7 +14374,7 @@
     "name": "freshservice",
     "displayName": "Freshservice",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "customer-support",
     "keywords": [
       "freshservice",
       "freshworks",
@@ -13968,7 +14607,7 @@
     "name": "gamesparks-game-details",
     "displayName": "GameSparks Game Details",
     "version": "1.0.0",
-    "category": "gaming",
+    "category": "media",
     "keywords": [
       "gamesparks",
       "gaming",
@@ -14278,7 +14917,7 @@
     "name": "ghost",
     "displayName": "Ghost",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "ghost",
       "cms",
@@ -14988,7 +15627,7 @@
     "name": "google-document-ai",
     "displayName": "Google Document AI",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "google",
       "document ai",
@@ -15165,7 +15804,7 @@
     "name": "google-translate",
     "displayName": "Google Cloud Translation",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "google",
       "translate",
@@ -15198,7 +15837,7 @@
     "name": "google-vertex-ai",
     "displayName": "Google Vertex AI",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "google",
       "vertex",
@@ -15611,7 +16250,7 @@
     "name": "greenhouse",
     "displayName": "Greenhouse ATS",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "greenhouse",
       "ats",
@@ -15654,7 +16293,7 @@
     "name": "groq",
     "displayName": "Groq",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "groq",
       "llm",
@@ -15766,7 +16405,7 @@
     "name": "guidewire",
     "displayName": "Guidewire PolicyCenter",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "insurance",
     "keywords": [
       "guidewire",
       "policycenter",
@@ -16275,7 +16914,7 @@
     "name": "hibob",
     "displayName": "HiBob",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "hibob",
       "bob",
@@ -16614,7 +17253,7 @@
     "name": "huggingface",
     "displayName": "Hugging Face",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "huggingface",
       "hf",
@@ -17224,6 +17863,88 @@
       "get_contact"
     ],
     "description": "Infobip omnichannel CPaaS: send SMS, WhatsApp, email, and voice messages; run 2FA/OTP flows; query delivery reports and account data.",
+    "author": "protectnil"
+  },
+  {
+    "name": "infogenesis",
+    "displayName": "Agilysys InfoGenesis POS",
+    "version": "1.0.0",
+    "category": "hospitality",
+    "keywords": [
+      "infogenesis",
+      "agilysys",
+      "pos",
+      "point of sale",
+      "casino",
+      "resort",
+      "stadium",
+      "hospitality",
+      "food and beverage",
+      "f&b",
+      "revenue center",
+      "check",
+      "tender",
+      "discount",
+      "void",
+      "labor",
+      "sales",
+      "menu",
+      "employee"
+    ],
+    "toolNames": [
+      "get_checks",
+      "get_check_detail",
+      "get_menu_items",
+      "get_revenue_centers",
+      "get_employees",
+      "get_tenders",
+      "get_discounts",
+      "get_voids",
+      "get_daily_sales_summary",
+      "get_labor_report"
+    ],
+    "description": "Agilysys InfoGenesis POS: retrieve check data, menu items, revenue centers, employee records, tenders, discounts, voids, and sales/labor reports for casino, resort, and stadium food-and-beverage operations.",
+    "author": "protectnil"
+  },
+  {
+    "name": "infor",
+    "displayName": "Infor CloudSuite",
+    "version": "1.0.0",
+    "category": "manufacturing",
+    "keywords": [
+      "infor",
+      "cloudsuite",
+      "ion",
+      "erp",
+      "manufacturing",
+      "distribution",
+      "items",
+      "sales orders",
+      "purchase orders",
+      "work orders",
+      "customers",
+      "suppliers",
+      "inventory",
+      "invoices",
+      "general ledger"
+    ],
+    "toolNames": [
+      "list_items",
+      "get_item",
+      "list_sales_orders",
+      "get_sales_order",
+      "create_sales_order",
+      "list_purchase_orders",
+      "get_purchase_order",
+      "list_work_orders",
+      "get_work_order",
+      "list_customers",
+      "list_suppliers",
+      "get_inventory_balance",
+      "list_invoices",
+      "get_gl_accounts"
+    ],
+    "description": "Infor CloudSuite ERP via ION API: manage items, sales and purchase orders, work orders, customers, suppliers, inventory balances, invoices, and GL accounts.",
     "author": "protectnil"
   },
   {
@@ -18520,7 +19241,7 @@
     "name": "just-eat-uk",
     "displayName": "Just Eat UK",
     "version": "1.0.0",
-    "category": "food",
+    "category": "hospitality",
     "keywords": [
       "just-eat",
       "food",
@@ -18936,7 +19657,7 @@
     "name": "langchain-api",
     "displayName": "LangSmith",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "langsmith",
       "langchain",
@@ -18975,7 +19696,7 @@
     "name": "langsmith",
     "displayName": "LangSmith",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "langsmith",
       "langchain",
@@ -19092,7 +19813,7 @@
     "name": "lattice",
     "displayName": "Lattice",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "lattice",
       "performance management",
@@ -19172,7 +19893,7 @@
     "name": "lever",
     "displayName": "Lever",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "lever",
       "ats",
@@ -19515,7 +20236,7 @@
     "name": "ljaero-dflight-v-1-0-0",
     "displayName": "LJAero DFlight",
     "version": "1.0.0",
-    "category": "aerospace",
+    "category": "engineering",
     "keywords": [
       "drone",
       "uav",
@@ -19578,7 +20299,7 @@
     "name": "llamaindex-api",
     "displayName": "LlamaIndex Cloud",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "llamaindex",
       "llama cloud",
@@ -19834,7 +20555,7 @@
     "name": "lotadata",
     "displayName": "LotaData",
     "version": "1.0.0",
-    "category": "analytics",
+    "category": "data",
     "keywords": [
       "lotadata",
       "events",
@@ -20191,6 +20912,47 @@
       "create_route"
     ],
     "description": "Mailgun email delivery: send transactional emails, manage sending domains, query delivery events, handle bounces and unsubscribes, and configure routing rules.",
+    "author": "protectnil"
+  },
+  {
+    "name": "majesco",
+    "displayName": "Majesco Insurance Platform",
+    "version": "1.0.0",
+    "category": "insurance",
+    "keywords": [
+      "majesco",
+      "insurance",
+      "policy",
+      "claims",
+      "premium",
+      "endorsement",
+      "agents",
+      "billing",
+      "policy administration",
+      "p&c",
+      "life",
+      "annuity",
+      "underwriting",
+      "quote",
+      "coverage"
+    ],
+    "toolNames": [
+      "search_policies",
+      "get_policy",
+      "create_policy",
+      "update_policy",
+      "search_claims",
+      "get_claim",
+      "create_claim",
+      "update_claim_status",
+      "get_premium_quote",
+      "list_agents",
+      "get_agent",
+      "list_products",
+      "get_billing_account",
+      "create_endorsement"
+    ],
+    "description": "Majesco insurance platform: manage policies, claims, premium quotes, agents, billing accounts, and endorsements for P&C and life insurance lines.",
     "author": "protectnil"
   },
   {
@@ -21054,6 +21816,50 @@
     "author": "protectnil"
   },
   {
+    "name": "mews",
+    "displayName": "Mews PMS",
+    "version": "1.0.0",
+    "category": "hospitality",
+    "keywords": [
+      "mews",
+      "pms",
+      "hotel",
+      "property management",
+      "hospitality",
+      "reservation",
+      "guest",
+      "room",
+      "space",
+      "availability",
+      "rate",
+      "accounting",
+      "bill",
+      "service",
+      "outlet",
+      "connector api",
+      "accor",
+      "generator"
+    ],
+    "toolNames": [
+      "search_reservations",
+      "get_reservation",
+      "get_customers",
+      "get_customer",
+      "get_spaces",
+      "get_availability",
+      "get_rates",
+      "add_reservation",
+      "update_reservation",
+      "get_accounting_items",
+      "get_bills",
+      "close_bill",
+      "get_services",
+      "get_outlets"
+    ],
+    "description": "Mews PMS via Connector API: manage hotel reservations, guest profiles, room availability, rates, accounting items, bills, and services for any Mews-powered property.",
+    "author": "protectnil"
+  },
+  {
     "name": "microcks",
     "displayName": "Microcks",
     "version": "1.0.0",
@@ -21453,7 +22259,7 @@
     "name": "mistral-ai",
     "displayName": "Mistral AI",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "mistral",
       "llm",
@@ -21818,7 +22624,7 @@
     "name": "musixmatch",
     "displayName": "Musixmatch",
     "version": "1.0.0",
-    "category": "music",
+    "category": "media",
     "keywords": [
       "musixmatch",
       "music",
@@ -22764,7 +23570,7 @@
     "name": "newsapi",
     "displayName": "NewsAPI",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "media",
     "keywords": [
       "newsapi",
       "news",
@@ -23463,7 +24269,7 @@
     "name": "o2-cz-mobility",
     "displayName": "O2 CZ Mobility API",
     "version": "1.0.0",
-    "category": "analytics",
+    "category": "data",
     "keywords": [
       "o2",
       "o2-cz",
@@ -23498,7 +24304,7 @@
     "name": "o2-cz-sociodemo",
     "displayName": "O2 CZ Socio-demo API",
     "version": "1.0.0",
-    "category": "analytics",
+    "category": "data",
     "keywords": [
       "o2",
       "o2-cz",
@@ -23576,6 +24382,47 @@
     "author": "protectnil"
   },
   {
+    "name": "odoo",
+    "displayName": "Odoo ERP",
+    "version": "1.0.0",
+    "category": "erp",
+    "keywords": [
+      "odoo",
+      "erp",
+      "open source",
+      "crm",
+      "partners",
+      "customers",
+      "products",
+      "sale orders",
+      "invoices",
+      "stock",
+      "inventory",
+      "employees",
+      "projects",
+      "tasks",
+      "accounting"
+    ],
+    "toolNames": [
+      "search_read_partners",
+      "create_partner",
+      "search_read_products",
+      "create_product",
+      "search_read_sale_orders",
+      "create_sale_order",
+      "confirm_sale_order",
+      "search_read_invoices",
+      "create_invoice",
+      "search_read_stock_moves",
+      "list_employees",
+      "search_read_projects",
+      "create_task",
+      "get_account_balance"
+    ],
+    "description": "Odoo ERP via JSON-RPC: manage partners, products, sale orders, invoices, stock moves, employees, projects, tasks, and accounting balances.",
+    "author": "protectnil"
+  },
+  {
     "name": "okta",
     "displayName": "Okta",
     "version": "1.0.0",
@@ -23624,7 +24471,7 @@
     "name": "ollama-api",
     "displayName": "Ollama",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "ollama",
       "local",
@@ -24008,7 +24855,7 @@
     "name": "openai-api",
     "displayName": "OpenAI",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "openai",
       "gpt",
@@ -24823,7 +25670,7 @@
     "name": "opentable",
     "displayName": "OpenTable",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hospitality",
     "keywords": [
       "opentable",
       "restaurant",
@@ -24945,6 +25792,51 @@
       "get_weather_map_tile_url"
     ],
     "description": "OpenWeatherMap: current conditions, hourly/daily forecasts, historical data, air quality, UV index, geocoding, and weather alerts by coordinates or city name.",
+    "author": "protectnil"
+  },
+  {
+    "name": "opera-pms",
+    "displayName": "Oracle Opera PMS (OHIP)",
+    "version": "1.0.0",
+    "category": "hospitality",
+    "keywords": [
+      "opera",
+      "oracle",
+      "ohip",
+      "pms",
+      "property management",
+      "hotel",
+      "hospitality",
+      "reservation",
+      "guest",
+      "check-in",
+      "check-out",
+      "folio",
+      "housekeeping",
+      "room",
+      "rate plan",
+      "profile",
+      "marriott",
+      "hilton",
+      "ihg"
+    ],
+    "toolNames": [
+      "search_reservations",
+      "get_reservation",
+      "create_reservation",
+      "update_reservation",
+      "check_in",
+      "check_out",
+      "get_guest_profile",
+      "search_guests",
+      "get_room_availability",
+      "get_rate_plans",
+      "post_charge",
+      "get_folio",
+      "get_housekeeping_status",
+      "update_room_status"
+    ],
+    "description": "Oracle Opera PMS via OHIP: manage hotel reservations, guest profiles, room availability, rate plans, folios, charges, and housekeeping status for any Opera-powered property.",
     "author": "protectnil"
   },
   {
@@ -25282,7 +26174,7 @@
     "name": "orbit-love",
     "displayName": "Orbit Love",
     "version": "1.0.0",
-    "category": "sales",
+    "category": "crm",
     "keywords": [
       "orbit",
       "community",
@@ -25707,7 +26599,7 @@
     "name": "pandadoc",
     "displayName": "PandaDoc",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "legal",
     "keywords": [
       "pandadoc",
       "document",
@@ -25758,7 +26650,7 @@
     "name": "pandascore",
     "displayName": "PandaScore",
     "version": "2.23.1",
-    "category": "sports",
+    "category": "media",
     "keywords": [
       "pandascore",
       "esports",
@@ -25893,7 +26785,7 @@
     "name": "particle",
     "displayName": "Particle IoT",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "iot",
     "keywords": [
       "particle",
       "iot",
@@ -26613,6 +27505,43 @@
     "author": "protectnil"
   },
   {
+    "name": "plangrid",
+    "displayName": "PlanGrid",
+    "version": "1.0.0",
+    "category": "construction",
+    "keywords": [
+      "plangrid",
+      "autodesk",
+      "construction",
+      "field management",
+      "sheets",
+      "drawings",
+      "rfi",
+      "submittals",
+      "tasks",
+      "photos",
+      "annotations"
+    ],
+    "toolNames": [
+      "list_projects",
+      "get_project",
+      "list_sheets",
+      "upload_sheet",
+      "list_annotations",
+      "create_annotation",
+      "list_tasks",
+      "create_task",
+      "update_task",
+      "list_photos",
+      "upload_photo",
+      "list_rfis",
+      "create_rfi",
+      "list_submittals"
+    ],
+    "description": "PlanGrid construction field management: manage projects, sheets, annotations, tasks, photos, RFIs, and submittals.",
+    "author": "protectnil"
+  },
+  {
     "name": "plivo",
     "displayName": "Plivo",
     "version": "1.0.0",
@@ -27095,6 +28024,42 @@
     "author": "protectnil"
   },
   {
+    "name": "powerschool",
+    "displayName": "PowerSchool",
+    "version": "1.0.0",
+    "category": "education",
+    "keywords": [
+      "powerschool",
+      "sis",
+      "student information system",
+      "education",
+      "k12",
+      "grades",
+      "attendance",
+      "enrollment",
+      "schools",
+      "district"
+    ],
+    "toolNames": [
+      "list_students",
+      "get_student",
+      "list_schools",
+      "get_school",
+      "list_sections",
+      "get_section",
+      "list_staff",
+      "get_staff",
+      "get_attendance",
+      "update_attendance",
+      "list_assignments",
+      "get_grades",
+      "get_gpa",
+      "list_terms"
+    ],
+    "description": "PowerSchool SIS: access students, schools, sections, staff, attendance records, grades, GPA, and academic terms across your district.",
+    "author": "protectnil"
+  },
+  {
     "name": "presalytics-ooxml",
     "displayName": "Presalytics OOXML Automation",
     "version": "1.0.0",
@@ -27368,7 +28333,7 @@
     "name": "procore",
     "displayName": "Procore",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "construction",
     "keywords": [
       "procore",
       "construction",
@@ -28282,7 +29247,7 @@
     "name": "redeal-analytics",
     "displayName": "Redeal Analytics",
     "version": "1.0.0",
-    "category": "analytics",
+    "category": "data",
     "keywords": [
       "redeal",
       "analytics",
@@ -28648,7 +29613,7 @@
     "name": "replicate",
     "displayName": "Replicate",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "replicate",
       "ai",
@@ -28799,7 +29764,7 @@
     "name": "rippling",
     "displayName": "Rippling",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "rippling",
       "hr",
@@ -29139,7 +30104,7 @@
     "name": "sabre",
     "displayName": "Sabre",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "sabre",
       "gds",
@@ -29304,7 +30269,7 @@
     "name": "samsara",
     "displayName": "Samsara",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "samsara",
       "fleet",
@@ -29352,7 +30317,7 @@
     "name": "sanity",
     "displayName": "Sanity",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "sanity",
       "cms",
@@ -29469,7 +30434,7 @@
     "name": "scale-ai",
     "displayName": "Scale AI",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "scale",
       "scaleai",
@@ -29542,7 +30507,7 @@
     "name": "schoology",
     "displayName": "Schoology",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "education",
     "keywords": [
       "schoology",
       "lms",
@@ -29801,7 +30766,7 @@
     "name": "semantic-scholar",
     "displayName": "Semantic Scholar",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "semantic scholar",
       "academic",
@@ -30320,7 +31285,7 @@
     "name": "shop-pro-jp",
     "displayName": "ColorMe Shop (shop-pro.jp)",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "colorme",
       "shop-pro",
@@ -30630,7 +31595,7 @@
     "name": "simplyrets",
     "displayName": "SimplyRETS",
     "version": "1.0.0",
-    "category": "realestate",
+    "category": "real-estate",
     "keywords": [
       "simplyrets",
       "mls",
@@ -31284,7 +32249,7 @@
     "name": "spoonacular",
     "displayName": "Spoonacular",
     "version": "1.0.0",
-    "category": "food",
+    "category": "hospitality",
     "keywords": [
       "spoonacular",
       "food",
@@ -31338,7 +32303,7 @@
     "name": "spotify-sonallux",
     "displayName": "Spotify Web API (sonallux)",
     "version": "2023.2.27",
-    "category": "music",
+    "category": "media",
     "keywords": [
       "spotify",
       "music",
@@ -31477,7 +32442,7 @@
     "name": "spotify",
     "displayName": "Spotify",
     "version": "1.0.0",
-    "category": "music",
+    "category": "media",
     "keywords": [
       "spotify",
       "music",
@@ -31807,7 +32772,7 @@
     "name": "statsocial",
     "displayName": "StatSocial",
     "version": "1.0.0",
-    "category": "analytics",
+    "category": "data",
     "keywords": [
       "statsocial",
       "analytics",
@@ -31927,7 +32892,7 @@
     "name": "strapi",
     "displayName": "Strapi",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "strapi",
       "cms",
@@ -32973,7 +33938,7 @@
     "name": "the-trade-desk",
     "displayName": "The Trade Desk",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "media",
     "keywords": [
       "trade desk",
       "ttd",
@@ -33178,7 +34143,7 @@
     "name": "ticketmaster-commerce",
     "displayName": "Ticketmaster Commerce",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "ticketmaster",
       "commerce",
@@ -33445,7 +34410,7 @@
     "name": "together-ai",
     "displayName": "Together AI",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "together ai",
       "llm",
@@ -33719,6 +34684,43 @@
     "author": "protectnil"
   },
   {
+    "name": "travelport",
+    "displayName": "Travelport",
+    "version": "1.0.0",
+    "category": "travel",
+    "keywords": [
+      "travelport",
+      "gds",
+      "travel",
+      "flight",
+      "hotel",
+      "airline",
+      "booking",
+      "uapi",
+      "car rental",
+      "airport",
+      "seat map",
+      "offer",
+      "itinerary"
+    ],
+    "toolNames": [
+      "search_flights",
+      "get_flight_details",
+      "price_offer",
+      "create_booking",
+      "get_booking",
+      "cancel_booking",
+      "search_hotels",
+      "get_hotel_details",
+      "search_cars",
+      "get_car_details",
+      "list_airports",
+      "get_seat_map"
+    ],
+    "description": "Travelport UAPI GDS: search and book flights, hotels, and rental cars; manage bookings; retrieve seat maps and airport data.",
+    "author": "protectnil"
+  },
+  {
     "name": "trellix-edr",
     "displayName": "Trellix EDR",
     "version": "2.0.0",
@@ -33764,53 +34766,39 @@
     "name": "trello",
     "displayName": "Trello",
     "version": "1.0.0",
-    "category": "productivity",
+    "category": "collaboration",
     "keywords": [
       "trello",
       "kanban",
-      "board",
-      "card",
-      "list",
-      "task",
       "project management",
-      "checklist",
-      "member",
-      "label",
-      "organization",
-      "workspace",
-      "productivity",
-      "collaboration",
+      "boards",
+      "cards",
+      "lists",
+      "tasks",
+      "teams",
       "agile",
-      "scrum",
-      "atlassian"
+      "checklist",
+      "labels",
+      "comments"
     ],
     "toolNames": [
-      "create_board",
+      "list_boards",
       "get_board",
-      "update_board",
-      "get_board_lists",
-      "get_board_cards",
+      "list_lists",
       "create_list",
-      "get_list",
-      "update_list",
-      "archive_list",
-      "get_list_cards",
-      "create_card",
+      "list_cards",
       "get_card",
+      "create_card",
       "update_card",
-      "delete_card",
       "move_card",
-      "get_card_checklists",
-      "add_card_checklist",
+      "add_comment",
+      "list_members",
+      "add_label",
+      "list_checklists",
       "create_checklist",
-      "get_checklist",
-      "delete_checklist",
-      "add_checklist_item",
-      "get_member",
-      "get_member_boards",
-      "get_member_cards"
+      "list_actions"
     ],
-    "description": "Full Trello project management via REST API. Manage boards, lists, cards, checklists, members, and labels for Kanban-style workflows.",
+    "description": "Trello project management: manage boards, lists, cards, checklists, labels, comments, and team members.",
     "author": "protectnil"
   },
   {
@@ -34388,7 +35376,7 @@
     "name": "ups",
     "displayName": "UPS",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "ups",
       "shipping",
@@ -34459,7 +35447,7 @@
     "name": "usps",
     "displayName": "USPS",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "travel",
     "keywords": [
       "usps",
       "postal",
@@ -34820,7 +35808,7 @@
     "name": "veeva",
     "displayName": "Veeva Vault",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "healthcare",
     "keywords": [
       "veeva",
       "vault",
@@ -35096,7 +36084,7 @@
     "name": "vimeo",
     "displayName": "Vimeo",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "design",
     "keywords": [
       "vimeo",
       "video",
@@ -35532,7 +36520,7 @@
     "name": "walmart-inventory",
     "displayName": "Walmart Inventory",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "walmart",
       "inventory",
@@ -35563,7 +36551,7 @@
     "name": "walmart-item",
     "displayName": "Walmart Marketplace Items",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "walmart",
       "walmart marketplace",
@@ -35594,7 +36582,7 @@
     "name": "walmart-order",
     "displayName": "Walmart Marketplace Orders",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "walmart",
       "walmart marketplace",
@@ -35629,7 +36617,7 @@
     "name": "walmart-price",
     "displayName": "Walmart Price Management",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "walmart",
       "price",
@@ -35654,7 +36642,7 @@
     "name": "wandb",
     "displayName": "Weights & Biases",
     "version": "1.0.0",
-    "category": "ai-ml",
+    "category": "ai",
     "keywords": [
       "wandb",
       "weights-biases",
@@ -36404,7 +37392,7 @@
     "name": "workday",
     "displayName": "Workday",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "hr",
     "keywords": [
       "workday",
       "hcm",
@@ -36723,7 +37711,7 @@
     "name": "yardi",
     "displayName": "Yardi",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "real-estate",
     "keywords": [
       "yardi",
       "property-management",
@@ -36920,7 +37908,7 @@
     "name": "zalando",
     "displayName": "Zalando",
     "version": "1.0.0",
-    "category": "ecommerce",
+    "category": "commerce",
     "keywords": [
       "zalando",
       "fashion",
@@ -36990,7 +37978,7 @@
     "name": "zendesk",
     "displayName": "Zendesk",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "customer-support",
     "keywords": [
       "zendesk",
       "ticket",
@@ -37072,7 +38060,7 @@
     "name": "zillow",
     "displayName": "Zillow",
     "version": "1.0.0",
-    "category": "misc",
+    "category": "real-estate",
     "keywords": [
       "zillow",
       "real-estate",

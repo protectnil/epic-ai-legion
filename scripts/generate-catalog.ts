@@ -149,6 +149,58 @@ async function main(): Promise<void> {
     }
   }
 
+  // Post-process: reclassify misc entries and merge duplicate categories
+  const RECLASSIFY: Record<string, string[]> = {
+    'healthcare': ['athenahealth','epic-fhir','fhir','veeva','drchrono','infermedica','lumminary','orthanc-server','patientview','slicebox','twinehealth','healthgorilla','kareo','practice-fusion','allscripts','cdcgov-prime-data-hub','cowin-cin-cowincert'],
+    'hr': ['bamboohr','culture-amp','cornerstone','gusto','hibob','lattice','namely','paychex','paycom','paylocity','personio','rippling','workday','adp','deel','remote-com','checkr','greenhouse','lever','recruitee','breezy-hr','jobvite'],
+    'legal': ['clio','docusign','ironclad','relativity','pandadoc','hellosign'],
+    'real-estate': ['appfolio','costar','zillow','yardi','realogy','mls','buildium','rentec-direct'],
+    'travel': ['amadeus','sabre','travelport','navan','canada-post','dhl','easypost','fedex','flexport','shippo','shipstation','ups','usps','lyft','samsara','transavia','viator'],
+    'design': ['canva','figma','adobe-acrobat-api','adobe-aem','brightcove','contentful','sanity','strapi','ghost','wordpress','loom','vimeo'],
+    'productivity': ['calendly','bizzabo','cvent','eventbrite','citrixonline-gotomeeting','envoy','hopin','coda','miro'],
+    'devops': ['app-store-connect','apple-business-connect','builtwith','crowdin','deepl','postman','swagger','vercel','netlify','render','railway'],
+    'hospitality': ['toast','opentable','infogenesis','opera-pms','mews','cloudbeds','olo','grubhub'],
+    'construction': ['procore','autodesk-construction','plangrid','buildertrend'],
+    'manufacturing': ['epicor','infor','sap','netsuite'],
+    'erp': ['odoo'],
+    'insurance': ['duck-creek','guidewire','majesco'],
+    'government': ['accela','civicplus'],
+    'education': ['canvas-lms','blackboard','powerschool','docebo','schoology','clever'],
+    'collaboration': ['box','egnyte','notion','confluence','dropbox-business','airtable','asana','monday','trello','clickup','basecamp','linear','front'],
+    'marketing': ['cision','classy','canny','activecampaign','mailchimp','hubspot-marketing','marketo','brevo','klaviyo','sendgrid','mailgun','postmark','buffer','hootsuite'],
+    'customer-support': ['freshdesk','freshservice','zendesk','intercom','helpscout','servicenow'],
+    'crm': ['close-crm','apollo','clearbit','outreach','salesloft','pipedrive','hubspot','salesforce','dynamics-365','gainsight','blackbaud','bloomerang'],
+    'communication': ['five9','bandwidth','twilio','vonage','ringcentral','dialpad','aircall','plivo','telnyx'],
+    'finance': ['alchemy','alpha-vantage','polygon-io','coingecko'],
+    'media': ['associated-press','spotify','youtube','twitch','substack','devto','reddit','tiktok-ads','instagram-graph','meta-ads','meta-graph-api','linkedin','linkedin-ads','the-trade-desk','brandwatch','nytimes-archive','nytimes-article-search','nytimes-books-api','nytimes-geo-api','nytimes-most-popular-api','nytimes-movie-reviews','nytimes-semantic-api','nytimes-times-tags','nytimes-timeswire','nytimes-top-stories','newsapi','wikimedia'],
+    'data': ['accuweather','census','census-gov','data-gov','crunchbase','dbt-cloud','fivetran','hightouch','bigquery','elasticsearch','fauna','cockroachdb','clickhouse','confluent-kafka','databricks','mongodb','snowflake'],
+    'commerce': ['shopify','square','bigcommerce','magento','lightspeed','squarespace','woocommerce','amazon-ads','toast'],
+    'observability': ['appdynamics','coralogix','cribl','datadog-observability','datadog-rum','dynatrace','elastic-apm','firehydrant','fullstory','grafana-api','honeycomb','incident-io','instana','logrocket','new-relic','pagerduty','splunk','statuspage','opsgenie'],
+    'iot': ['ebi-ac-uk','google-home','netatmo','smart-me','enode','opto22-pac','opto22-groov','particle','clearblade','samsara'],
+    'ai': ['anthropic-api','arize-ai','azure-ml','cohere','fireworks-ai','google-document-ai','google-translate','google-vertex-ai','groq','huggingface','langchain-api','langsmith','llamaindex-api','mistral-ai','ollama-api','openai','replicate','wandb'],
+  };
+  const MERGE_CATS: Record<string, string> = {
+    'ai-ml': 'ai', 'ecommerce': 'commerce', 'sales': 'crm', 'realestate': 'real-estate',
+    'sports': 'media', 'food': 'hospitality', 'aerospace': 'engineering', 'music': 'media',
+    'gaming': 'media', 'analytics': 'data', 'agriculture': 'science',
+  };
+
+  for (const entry of catalog) {
+    // Merge duplicate categories first
+    if (entry.category && MERGE_CATS[entry.category]) {
+      entry.category = MERGE_CATS[entry.category];
+    }
+    // Reclassify misc
+    if (!entry.category || entry.category === 'misc') {
+      for (const [newCat, ids] of Object.entries(RECLASSIFY)) {
+        if (ids.includes(entry.name)) {
+          entry.category = newCat;
+          break;
+        }
+      }
+    }
+  }
+
   await writeFile(OUTPUT, JSON.stringify(catalog, null, 2), 'utf-8');
   console.log(`\nGenerated adapter-catalog.json: ${catalog.length} entries (${errors} skipped)`);
 
