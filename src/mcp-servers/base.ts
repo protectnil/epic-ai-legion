@@ -100,7 +100,14 @@ export class MCPAdapterBase {
 
     // All retries exhausted
     if (lastResponse) return lastResponse;
-    throw lastError || new Error('fetchWithRetry: all retries exhausted');
+    // Return a synthetic Response instead of throwing — callers expect a Response, not an exception.
+    // This ensures callTool try/catch handles network failures gracefully.
+    const errMsg = lastError?.message || 'fetchWithRetry: all retries exhausted';
+    return new Response(JSON.stringify({ error: errMsg }), {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   /**

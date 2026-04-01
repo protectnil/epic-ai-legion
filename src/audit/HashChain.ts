@@ -35,8 +35,11 @@ export class HashChain {
    * produce deterministic hashes regardless of key insertion order.
    */
   static computeHash(record: Omit<ActionRecord, 'hash'>): string {
+    // Exclude mutable fields that may be updated after initial hashing
+    // (status, output, durationMs are set by updateStatus on pending records)
+    const { status: _s, output: _o, durationMs: _d, ...immutableFields } = record as Record<string, unknown>;
     const serializable = {
-      ...record,
+      ...immutableFields,
       hash: '',
       timestamp: record.timestamp instanceof Date ? record.timestamp.toISOString() : record.timestamp,
     };

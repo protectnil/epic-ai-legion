@@ -166,6 +166,7 @@ const mockConfig: Record<string, unknown> = {
   domain: 'test',
   organizationUrl: 'https://mock.crm.dynamics.com',
   endpoint: 'https://mock.example.com',
+  api_server: 'https://mock.example.com',
 };
 
 interface AdapterEntry {
