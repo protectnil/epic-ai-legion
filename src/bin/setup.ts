@@ -215,6 +215,175 @@ function loadCredentials(): Record<string, string> {
   return creds;
 }
 
+// ─── MCP Client Detection ───────────────────────────────────
+
+interface McpClientInfo {
+  id: string;
+  name: string;
+  detected: boolean;
+  configPath: string;   // absolute path
+  configKey: string;    // "mcpServers" or "servers"
+  hint?: string;
+}
+
+function expandHome(p: string): string {
+  return p.startsWith('~') ? join(homedir(), p.slice(1)) : p;
+}
+
+function commandExists(cmd: string): boolean {
+  try {
+    execSync(`which ${cmd}`, { stdio: 'pipe', timeout: 3000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function detectMcpClients(): McpClientInfo[] {
+  const isMac = process.platform === 'darwin';
+  const clients: McpClientInfo[] = [
+    {
+      id: 'claude-code',
+      name: 'Claude Code CLI',
+      detected: existsSync(expandHome('~/.claude')) || commandExists('claude'),
+      configPath: expandHome('~/.claude/claude_desktop_config.json'),
+      configKey: 'mcpServers',
+    },
+    {
+      id: 'claude-desktop',
+      name: 'Claude Desktop',
+      detected: isMac
+        ? existsSync(expandHome('~/Library/Application Support/Claude'))
+        : existsSync(expandHome('~/.config/Claude')),
+      configPath: isMac
+        ? expandHome('~/Library/Application Support/Claude/claude_desktop_config.json')
+        : expandHome('~/.config/Claude/claude_desktop_config.json'),
+      configKey: 'mcpServers',
+    },
+    {
+      id: 'cursor',
+      name: 'Cursor',
+      detected: existsSync(expandHome('~/.cursor')) || (isMac && existsSync('/Applications/Cursor.app')),
+      configPath: expandHome('~/.cursor/mcp.json'),
+      configKey: 'mcpServers',
+    },
+    {
+      id: 'windsurf',
+      name: 'Windsurf',
+      detected: existsSync(expandHome('~/.codeium/windsurf')),
+      configPath: expandHome('~/.codeium/windsurf/mcp_config.json'),
+      configKey: 'mcpServers',
+    },
+    {
+      id: 'vscode',
+      name: 'VS Code (Copilot)',
+      detected: commandExists('code') || (isMac && existsSync('/Applications/Visual Studio Code.app')),
+      configPath: expandHome('~/.vscode/mcp.json'),
+      configKey: 'servers',
+      hint: 'Per-project: .vscode/mcp.json',
+    },
+    {
+      id: 'codex',
+      name: 'Codex CLI',
+      detected: existsSync(expandHome('~/.codex')) || commandExists('codex'),
+      configPath: expandHome('~/.codex/config.json'),
+      configKey: 'mcpServers',
+    },
+    {
+      id: 'gemini',
+      name: 'Gemini CLI',
+      detected: existsSync(expandHome('~/.gemini')) || commandExists('gemini'),
+      configPath: expandHome('~/.gemini/settings.json'),
+      configKey: 'mcpServers',
+    },
+    {
+      id: 'cline',
+      name: 'Cline',
+      detected: isMac
+        ? existsSync(expandHome('~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev'))
+        : existsSync(expandHome('~/.config/Code/User/globalStorage/saoudrizwan.claude-dev')),
+      configPath: isMac
+        ? expandHome('~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json')
+        : expandHome('~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json'),
+      configKey: 'mcpServers',
+    },
+    {
+      id: 'continue',
+      name: 'Continue',
+      detected: existsSync(expandHome('~/.continue')),
+      configPath: expandHome('~/.continue/config.json'),
+      configKey: 'mcpServers',
+    },
+    {
+      id: 'goose',
+      name: 'Goose',
+      detected: commandExists('goose'),
+      configPath: expandHome('~/.config/goose/config.yaml'),
+      configKey: 'mcpServers',
+      hint: 'YAML config — manual setup recommended',
+    },
+    {
+      id: 'roo-code',
+      name: 'Roo Code',
+      detected: isMac
+        ? existsSync(expandHome('~/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline'))
+        : false,
+      configPath: isMac
+        ? expandHome('~/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/mcp_settings.json')
+        : '',
+      configKey: 'mcpServers',
+    },
+  ];
+
+  return clients;
+}
+
+/** Read existing config, merge Legion server entry, write back */
+function writeMcpConfig(client: McpClientInfo): { success: boolean; error?: string } {
+  const legionEntry = { command: 'npx', args: ['@epicai/legion', '--serve'] };
+
+  // YAML configs — don't auto-write
+  if (client.configPath.endsWith('.yaml') || client.configPath.endsWith('.yml')) {
+    return { success: false, error: 'YAML config — add manually' };
+  }
+
+  try {
+    // Ensure parent directory exists
+    const dir = join(client.configPath, '..');
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+
+    // Read existing config or start fresh
+    let config: Record<string, unknown> = {};
+    if (existsSync(client.configPath)) {
+      const raw = readFileSync(client.configPath, 'utf-8').trim();
+      if (raw) {
+        config = JSON.parse(raw);
+      }
+    }
+
+    // Get or create the servers object
+    const key = client.configKey;
+    if (!config[key] || typeof config[key] !== 'object') {
+      config[key] = {};
+    }
+    const servers = config[key] as Record<string, unknown>;
+
+    // Add Legion (don't overwrite if already present)
+    if (servers['legion']) {
+      return { success: true, error: 'already configured' };
+    }
+
+    servers['legion'] = legionEntry;
+    writeFileSync(client.configPath, JSON.stringify(config, null, 2) + '\n');
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
+}
+
 // ─── System detection ───────────────────────────────────────
 
 interface SystemInfo {
@@ -226,6 +395,7 @@ interface SystemInfo {
   hasVllm: boolean;
   localPort: number | null;
   localBackend: string | null;
+  mcpClients: McpClientInfo[];
 }
 
 async function detectSystem(): Promise<SystemInfo> {
@@ -238,6 +408,7 @@ async function detectSystem(): Promise<SystemInfo> {
     hasVllm: false,
     localPort: null,
     localBackend: null,
+    mcpClients: detectMcpClients(),
   };
 
   for (const [port, name] of [[8080, 'llama.cpp'], [11434, 'Ollama'], [8000, 'vLLM']] as const) {
@@ -723,71 +894,122 @@ async function runSetupWizard(): Promise<void> {
   const allAdapters = await loadAllAdapters();
   s.stop('System detected');
 
+  const detectedClients = system.mcpClients.filter(c => c.detected);
+  const hasLocalLLM = system.localBackend !== null;
+
   p.note(
     [
       `${pc.green('✓')} Node.js ${system.nodeVersion}`,
       `${pc.green('✓')} ${system.platform} / ${system.arch}`,
-      system.localBackend ? `${pc.green('✓')} ${system.localBackend} running on port ${system.localPort}` : `${pc.dim('○')} No local LLM detected`,
+      hasLocalLLM ? `${pc.green('✓')} ${system.localBackend} running on port ${system.localPort}` : `${pc.dim('○')} No local LLM detected`,
       `${pc.green('✓')} ${allAdapters.length} adapters available`,
+      `${pc.green('✓')} ${detectedClients.length} AI client${detectedClients.length !== 1 ? 's' : ''} detected`,
     ].join('\n'),
     'System'
   );
 
-  // Step 2: AI backend
-  const aiChoice = await p.select({
-    message: 'How are you using AI today?',
-    options: [
-      { value: 'claude-code', label: 'Claude Code', hint: 'Terminal AI agent' },
-      { value: 'claude-desktop', label: 'Claude Desktop', hint: 'Desktop app' },
-      { value: 'cursor', label: 'Cursor', hint: 'AI code editor' },
-      { value: 'copilot', label: 'GitHub Copilot / VS Code', hint: 'MCP extension' },
-      { value: 'other-mcp', label: 'Other MCP-compatible client' },
-      { value: 'local', label: 'I want to run a local model', hint: 'advanced — requires SLM download' },
-    ],
-  });
-  if (p.isCancel(aiChoice)) { p.cancel('Setup cancelled.'); process.exit(0); }
+  // Step 2: AI client detection + config
+  let configuredClients: string[] = [];
 
-  // Cloud LLM — show MCP config
-  if (aiChoice !== 'local') {
-    const serverEntry = { legion: { command: 'npx', args: ['@epicai/legion', '--serve'] } };
-    let configStr: string;
-    let filePath: string;
-
-    switch (aiChoice) {
-      case 'claude-code':
-        configStr = JSON.stringify({ mcpServers: serverEntry }, null, 2);
-        filePath = '~/.claude/claude_desktop_config.json';
-        break;
-      case 'claude-desktop':
-        configStr = JSON.stringify({ mcpServers: serverEntry }, null, 2);
-        filePath = '~/Library/Application Support/Claude/claude_desktop_config.json';
-        break;
-      case 'cursor':
-        configStr = JSON.stringify({ mcpServers: serverEntry }, null, 2);
-        filePath = '.cursor/mcp.json';
-        break;
-      case 'copilot':
-        configStr = JSON.stringify({ servers: serverEntry }, null, 2);
-        filePath = '.vscode/mcp.json';
-        break;
-      default:
-        configStr = JSON.stringify({ mcpServers: serverEntry }, null, 2);
-        filePath = 'your MCP client config';
-    }
-
+  if (detectedClients.length === 0 && !hasLocalLLM) {
+    p.log.warning('No AI clients or local LLMs detected.');
     p.note(
       [
-        `Add this to ${pc.cyan(filePath)}:`,
+        'Install an MCP-compatible AI client:',
         '',
-        pc.dim('─'.repeat(42)),
-        configStr,
-        pc.dim('─'.repeat(42)),
+        `  ${pc.cyan('Claude Code')}   — npm install -g @anthropic-ai/claude-code`,
+        `  ${pc.cyan('Cursor')}        — cursor.com`,
+        `  ${pc.cyan('VS Code')}       — code.visualstudio.com + Copilot`,
+        `  ${pc.cyan('Windsurf')}      — windsurf.com`,
+        '',
+        'Or install a local LLM:',
+        '',
+        `  ${pc.cyan('llama.cpp')}     — brew install llama.cpp`,
+        `  ${pc.cyan('Ollama')}        — brew install ollama`,
       ].join('\n'),
-      'MCP Configuration'
+      'Getting started'
     );
+    const cont = await p.confirm({ message: 'Continue anyway? (you can configure clients later)', initialValue: false });
+    if (p.isCancel(cont) || !cont) { p.cancel('Install an AI client and re-run.'); process.exit(0); }
+  } else if (detectedClients.length > 0) {
+    // Build options — detected clients pre-checked, plus local LLM option
+    const clientOptions = detectedClients.map(c => ({
+      value: c.id,
+      label: c.name,
+      hint: c.hint || c.configPath.replace(homedir(), '~'),
+    }));
 
-    const connectNow = await p.confirm({ message: 'Want to connect adapters now?', initialValue: true });
-    if (p.isCancel(connectNow) || !connectNow) {
+    if (hasLocalLLM) {
+      clientOptions.push({
+        value: 'local',
+        label: `Local SLM (${system.localBackend} on port ${system.localPort})`,
+        hint: 'No cloud LLM needed',
+      });
+    }
+
+    const selectedClients = await p.multiselect({
+      message: `Configure Legion for these AI clients? (Space to toggle, Enter to confirm)`,
+      options: clientOptions,
+      initialValues: detectedClients.map(c => c.id), // all detected pre-selected
+      required: false,
+    });
+    if (p.isCancel(selectedClients)) { p.cancel('Setup cancelled.'); process.exit(0); }
+
+    // Write configs for selected clients
+    const writeResults: string[] = [];
+    for (const clientId of selectedClients) {
+      if (clientId === 'local') continue; // handled separately
+      const client = system.mcpClients.find(c => c.id === clientId);
+      if (!client) continue;
+
+      const autoWrite = await p.confirm({
+        message: `Write Legion to ${client.name} config? (${client.configPath.replace(homedir(), '~')})`,
+        initialValue: true,
+      });
+
+      if (p.isCancel(autoWrite)) continue;
+
+      if (autoWrite) {
+        const result = writeMcpConfig(client);
+        if (result.success) {
+          if (result.error === 'already configured') {
+            writeResults.push(`${pc.green('✓')} ${client.name} — already configured`);
+          } else {
+            writeResults.push(`${pc.green('✓')} ${client.name} — configured`);
+          }
+          configuredClients.push(clientId);
+        } else {
+          writeResults.push(`${pc.yellow('!')} ${client.name} — ${result.error}`);
+        }
+      } else {
+        // Show the JSON for manual copy
+        const serverEntry = { legion: { command: 'npx', args: ['@epicai/legion', '--serve'] } };
+        const configStr = JSON.stringify({ [client.configKey]: serverEntry }, null, 2);
+        p.note(
+          [
+            `Add this to ${pc.cyan(client.configPath.replace(homedir(), '~'))}:`,
+            '',
+            pc.dim('─'.repeat(42)),
+            configStr,
+            pc.dim('─'.repeat(42)),
+          ].join('\n'),
+          `${client.name} — manual config`
+        );
+        configuredClients.push(clientId);
+      }
+    }
+
+    if (writeResults.length > 0) {
+      p.note(writeResults.join('\n'), 'MCP Clients Configured');
+    }
+
+    // Handle local SLM if selected
+    if (selectedClients.includes('local')) {
+      p.log.success(`Using ${system.localBackend} on port ${system.localPort}`);
+      configuredClients.push('local');
+    }
+
+    if (configuredClients.length === 0) {
       p.note(
         [
           `Add adapters later:  ${pc.cyan('npx @epicai/legion add <name>')}`,
@@ -796,32 +1018,14 @@ async function runSetupWizard(): Promise<void> {
         ].join('\n'),
         'Quick reference'
       );
-      saveConfig({ selectedAdapters: [], secretsProvider: 'manual', aiClient: aiChoice as string });
-      p.outro(`${pc.green('Done.')} Restart your AI client and ask it anything.\n  Your credentials never leave this machine.`);
+      saveConfig({ selectedAdapters: [], secretsProvider: 'manual', aiClient: 'none' });
+      p.outro(`${pc.green('Done.')} Configure your AI clients and run this wizard again.\n  Your credentials never leave this machine.`);
       return;
     }
-  }
-
-  // Local model path
-  if (aiChoice === 'local') {
-    if (system.localBackend) {
-      p.log.success(`Using ${system.localBackend} on port ${system.localPort}`);
-    } else {
-      p.note(
-        [
-          'No local LLM detected. Install one:',
-          '',
-          `  ${pc.cyan('llama.cpp')}  — brew install llama.cpp`,
-          `  ${pc.cyan('Ollama')}     — brew install ollama`,
-          `  ${pc.cyan('vLLM')}       — pip install vllm`,
-          '',
-          'Start it, then re-run this wizard.',
-        ].join('\n'),
-        'Local AI Setup'
-      );
-      const cont = await p.confirm({ message: 'Continue without a local model?', initialValue: false });
-      if (p.isCancel(cont) || !cont) { p.cancel('Install a local LLM and re-run.'); process.exit(0); }
-    }
+  } else if (hasLocalLLM) {
+    // Only local LLM detected, no MCP clients
+    p.log.success(`Using ${system.localBackend} on port ${system.localPort}`);
+    configuredClients.push('local');
   }
 
   // Step 3: Secrets provider
@@ -1072,7 +1276,7 @@ async function runSetupWizard(): Promise<void> {
   saveConfig({
     selectedAdapters: selectedAdapterIds,
     secretsProvider: secretsChoice as string,
-    aiClient: aiChoice as string,
+    aiClient: configuredClients.join(','),
     localBackend: system.localBackend || undefined,
   });
 
