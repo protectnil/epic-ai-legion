@@ -27565,5 +27565,601 @@
       "packageName": "getaimeter",
       "command": "getaimeter"
     }
+  },
+  {
+    "id": "agency-lona-trading",
+    "name": "agency.lona/trading",
+    "description": "AI-powered trading strategy development: backtesting, market data, and portfolio analysis",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.lona.agency/mcp"
+    }
+  },
+  {
+    "id": "ai-aarna-atars-mcp",
+    "name": "aTars MCP",
+    "description": "Crypto market signals, technical indicators, and sentiment analysis for AI agents.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.aarna.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-adadvisor-mcp-server",
+    "name": "AdAdvisor MCP Server",
+    "description": "Query Meta Ads performance data — accounts, campaigns, ad sets, ads, metrics & settings.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.adadvisor.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-adramp-google-ads",
+    "name": "ai.adramp/google-ads",
+    "description": "Google Ads MCP server — manage campaigns, keywords, and metrics.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.adramp.ai/sse"
+    }
+  },
+  {
+    "id": "ai-agentdm-agentdm",
+    "name": "AgentDM",
+    "description": "Agent-to-agent messaging platform using MCP for cross-model communication.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.agentdm.ai/api/v1/grid"
+    }
+  },
+  {
+    "id": "ai-agentrapay-agentra",
+    "name": "ai.agentrapay/agentra",
+    "description": "Identity oracle and trust layer for autonomous AI agents. Bidirectional KYA and trust scoring.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.agentrapay.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-agenttrust-mcp-server",
+    "name": "AgentTrust — Identity & Trust for A2A Agents",
+    "description": "Identity, trust, and A2A orchestration for autonomous AI agents. Official A2A partner.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "@agenttrust/mcp-server"
+    }
+  },
+  {
+    "id": "ai-alpic-mcp-alpic-mcp",
+    "name": "Alpic",
+    "description": "Manage your projects, debug deployment, and check analytics for any MCP server you host with Alpic",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.alpic.ai"
+    }
+  },
+  {
+    "id": "ai-alpic-test-test-mcp-server",
+    "name": "ai.alpic.test/test-mcp-server",
+    "description": "Alpic Test MCP Server - great server!",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://test.alpic.ai/"
+    }
+  },
+  {
+    "id": "ai-anzenna-anzenna",
+    "name": "ai.anzenna/anzenna",
+    "description": "MCP server for Anzenna",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.anzenna.ai/sse"
+    }
+  },
+  {
+    "id": "ai-appdeploy-deploy-app",
+    "name": "AppDeploy",
+    "description": "AppDeploy turns app ideas described in AI chat into live full-stack web applications",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api-v2.appdeploy.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-auteng-docs",
+    "name": "AutEng MCP - Markdown Publishing & Document Share Links",
+    "description": "Publish markdown documents as public share links with mermaid diagram support. Built by AutEng.ai",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://auteng.ai/mcp/docs"
+    }
+  },
+  {
+    "id": "ai-auteng-mcp",
+    "name": "AutEng Document Publisher",
+    "description": "Publish markdown as a publicly shareable AutEng document",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://auteng.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-autoblocks-contextlayer-mcp",
+    "name": "ai.autoblocks/contextlayer-mcp",
+    "description": "Personal context management for AI assistants",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "@contextlayer/mcp"
+    }
+  },
+  {
+    "id": "ai-autoblocks-ctxl",
+    "name": "ai.autoblocks/ctxl",
+    "description": "Personal context management for AI assistants",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "ctxl"
+    }
+  },
+  {
+    "id": "ai-autoblocks-ctxl-mcp",
+    "name": "ai.autoblocks/ctxl-mcp",
+    "description": "Personal context management for AI assistants",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "ctxl-mcp"
+    }
+  },
+  {
+    "id": "ai-bezal-local-commerce",
+    "name": "Bezal — Local Business Intelligence for AI Agents",
+    "description": "Search 7,000+ local service businesses across America by category, location, or keyword.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://app.bezal.ai/api/mcp"
+    }
+  },
+  {
+    "id": "ai-cirra-salesforce-mcp",
+    "name": "Cirra AI Salesforce Admin MCP Server",
+    "description": "Comprehensive Salesforce administration and data management capabilities",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.cirra.ai/sfdc/mcp"
+    }
+  },
+  {
+    "id": "ai-clarid-compliance",
+    "name": "Clarid Compliance",
+    "description": "Check bank marketing for FDIC, NCUA, TILA, Reg DD, Reg Z, UDAAP, and Equal Housing compliance.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.clarid.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-clarid-hmda",
+    "name": "Clarid HMDA Validator",
+    "description": "Validate HMDA LAR files against CFPB edit checks for community banks and credit unions.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.clarid.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-contabo",
+    "name": "Contabo (VPS) MCP Server",
+    "description": "Contabo API (v1.0.0) as MCP tools for cloud provisioning, and management. Powered by HAPI MCP server",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://contabo.run.mcp.com.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-hapi-mcp",
+    "name": "HAPI MCP Server",
+    "description": "HAPI MCP server: Dynamically exposes OpenAPI REST APIs as MCP tools for AI assistants",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://{HAPI_FQDN}:{HAPI_PORT}/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-lenny-rachitsky-podcast",
+    "name": "Lenny Rachitsky Podcast Transcripts MCP Server",
+    "description": "MCP server for structured access to Lenny Rachitsky podcast transcripts. For content creators.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://lenny-rachitsky.run.mcp.com.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-linkedin",
+    "name": "LinkedIn MCP Server",
+    "description": "LinkedIn API as MCP tools to retrieve profile data and publish content. Powered by HAPI MCP.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://linkedin.run.mcp.com.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-openai-tools",
+    "name": "OpenAI Tools MCP Server",
+    "description": "Focused MCP server for OpenAI image/audio generation (v2.0.0). Wraps endpoints via HAPI CLI.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://openai-tools.run.mcp.com.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-petstore",
+    "name": "Petstore MCP Server",
+    "description": "Swagger Petstore API (v1.0.27) as MCP for testing and prototyping powered by the HAPI MCP server",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://petstore.run.mcp.com.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-registry",
+    "name": "MCP Registry Server",
+    "description": "Publish and discover MCP servers via the official MCP Registry. Powered by HAPI MCP server.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://registry.run.mcp.com.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-skills-search",
+    "name": "Agent Skills Search Server",
+    "description": "Search and discover Agent Skills from the skills.sh registry. Powered by HAPI MCP server.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://skills-sh.run.mcp.com.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-com-mcp-strava",
+    "name": "HAPI Strava MCP Server",
+    "description": "Strava MCP tools for AI: athletes, activities, segments, clubs, routes. Powered by HAPI MCP server.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://strava.run.mcp.com.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-cookiy-cookiy",
+    "name": "Cookiy",
+    "description": "AI user research via studies, interviews, recruitment, reports, and quantitative surveys.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://s-api.cookiy.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-datamerge-mcp",
+    "name": "DataMerge MCP",
+    "description": "B2B data enrichment for 375M+ companies: legal entities, corporate hierarchies, and contacts.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.datamerge.ai"
+    }
+  },
+  {
+    "id": "ai-deepledger-mcp",
+    "name": "DeepLedger — AI Bookkeeper for QuickBooks",
+    "description": "AI bookkeeping for QuickBooks Online — 28 tools for transactions, reports, and bank feeds",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.deepledger.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-exa-exa",
+    "name": "ai.exa/exa",
+    "description": "Fast, intelligent web search and web crawling.\n\nNew mcp tool: Exa-code is a context tool for coding ",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.exa.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-explorium-mcp-explorium",
+    "name": "ai.explorium/mcp-explorium",
+    "description": "Access live company and contact data from Explorium's AgentSource B2B platform.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp-github-registry.explorium.ai/sse"
+    }
+  },
+  {
+    "id": "ai-fiber-mcp",
+    "name": "Fiber AI",
+    "description": "Search companies, enrich contacts, and reveal emails and phones from your AI agent.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.fiber.ai/mcp/v2/"
+    }
+  },
+  {
+    "id": "ai-filegraph-document-processing",
+    "name": "ai.filegraph/document-processing",
+    "description": "Extract text from documents, manipulate PDFs, and perform OCR via FileGraph API.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.filegraph.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-filtrix-mcp-filtrix-ai",
+    "name": "Filtrix AI MCP",
+    "description": "Filtrix MCP for image/video generation. Portal: https://agent.filtrix.ai/",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.filtrix.ai/"
+    }
+  },
+  {
+    "id": "ai-fodda-mcp-server",
+    "name": "Fodda Knowledge Graphs",
+    "description": "Expert-curated knowledge graphs for AI agents — PSFK Retail, Beauty, Sports and more.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "fodda-mcp",
+      "url": "https://mcp.fodda.ai/sse"
+    }
+  },
+  {
+    "id": "ai-gavelin-mcp",
+    "name": "Gavelin",
+    "description": "Search bills and speaker-attributed hearing transcripts across all 50 US state legislatures.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.gavelin.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-gomarble-mcp-api",
+    "name": "ai.gomarble/mcp-api",
+    "description": "GoMarble MCP API Server",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://apps.gomarble.ai/mcp-api/sse"
+    }
+  },
+  {
+    "id": "ai-gossiper-shopify-admin-mcp",
+    "name": "Gossiper Shopify Admin MCP Server",
+    "description": "Control Shopify Admin tasks with agents or via prompt. Ultra slim integration, fast and secure.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.gossiper.io/mcp"
+    }
+  },
+  {
+    "id": "ai-i18nagent-i18n-agent",
+    "name": "i18n-agent",
+    "description": "AI-powered translation for 48 languages with context-aware quality",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "@i18n-agent/mcp-client",
+      "url": "https://mcp.i18nagent.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-imboard-dossier",
+    "name": "ai.imboard/dossier",
+    "description": "MCP server for dossier automation standard - enables LLMs to discover, verify, and execute dossiers",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "@ai-dossier/mcp-server"
+    }
+  },
+  {
+    "id": "ai-inflowpay-app-inflow",
+    "name": "ai.inflowpay.app/inflow",
+    "description": "Inflow MCP Server",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://app.inflowpay.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-kawacode-mcp",
+    "name": "Kawa Code MCP",
+    "description": "Intent tracking, decision recording, and team coordination for AI coding assistants",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "stdio",
+      "packageName": "@kawacode/mcp"
+    }
+  },
+  {
+    "id": "ai-klavis-strata",
+    "name": "ai.klavis/strata",
+    "description": "MCP server for progressive tool usage at any scale (see https://klavis.ai)",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://strata.klavis.ai/mcp/"
+    }
+  },
+  {
+    "id": "ai-kubit-mcp-server",
+    "name": "Kubit",
+    "description": "Bring Kubit into your AI workflow — query your warehouse with natural language",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.kubit.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-lattiq-x402-trading-signals",
+    "name": "Lattiq x402 Trading Signals",
+    "description": "Regime-aware ES1/NQ futures trading signals. HMM + 15 quant strategies. x402 USDC micropayments.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.lattiq.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-limitguard-api-trust-intelligence",
+    "name": "LimitGuard Trust Intelligence",
+    "description": "Entity verification, sanctions screening, and trust scoring for AI agents.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.limitguard.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-llmse-mcp",
+    "name": "ai.llmse/mcp",
+    "description": "Public MCP server for the LLM Search Engine",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://llmse.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-ludo-game-assets",
+    "name": "Ludo AI Game Assets",
+    "description": "Generate game assets with AI: sprites, 3D models, animations, sound effects, music, and voices.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.ludo.ai/mcp"
+    }
+  },
+  {
+    "id": "ai-mailjunky-mcp",
+    "name": "MailJunky",
+    "description": "Send emails, track events, and manage contacts with MailJunky.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.mailjunky.ai/sse"
+    }
+  },
+  {
+    "id": "ai-marketcore-mcp",
+    "name": "MarketCore MCP Server",
+    "description": "Create on-brand marketing deliverables and GTM docs with AI-powered blueprints and brand guidelines.",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://mcp.marketcore.ai/"
+    }
+  },
+  {
+    "id": "ai-mcpanalytics-analytics",
+    "name": "ai.mcpanalytics/analytics",
+    "description": "ML statistical analysis platform for data teams",
+    "category": "misc",
+    "type": "mcp",
+    "mcp": {
+      "transport": "streamable-http",
+      "url": "https://api.mcpanalytics.ai/auth0"
+    }
   }
 ]
