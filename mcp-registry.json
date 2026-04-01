@@ -486,7 +486,21 @@
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.columntax.com/page/aiwyn-tax-mcp-server",
-      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
+      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only).",
+      "toolCount": 10,
+      "toolNames": [
+        "check_tax",
+        "calculate_tax",
+        "tax_years",
+        "tax_jurisdictions",
+        "tax_namespace_schema",
+        "tax_namespaces",
+        "tax_simple_return",
+        "generate_tax_pdf_tool",
+        "get_tax_pdf_tool",
+        "generate_uuid_v5"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -538,7 +552,17 @@
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://clarity-sfdr20-mcp.pro.clarity.ai/",
-      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
+      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only).",
+      "toolCount": 6,
+      "toolNames": [
+        "search_securities",
+        "sfdr20_assess_fund_name",
+        "sfdr20_check_by_isin",
+        "sfdr20_check_by_query",
+        "sfdr20_check",
+        "interpret_sfdr20_result"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -793,7 +817,24 @@
       "url": "https://lunarcrush.ai/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://lunarcrush.com/developers/api/ai"
+      "repoUrl": "https://lunarcrush.com/developers/api/ai",
+      "toolCount": 13,
+      "toolNames": [
+        "List",
+        "Cryptocurrencies",
+        "Stocks",
+        "Topic",
+        "Topic_Time_Series",
+        "Topic_Posts",
+        "Creator",
+        "Creator_Posts",
+        "Creator_Time_Series",
+        "Post",
+        "Search",
+        "Fetch",
+        "Authentication"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -2595,7 +2636,17 @@
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.aws.amazon.com/marketplace/latest/APIReference/marketplace-mcp-server.html",
-      "notes": "URL and transport are correct. AWS docs confirm HTTP+SSE transport. Server requires Accept: application/json, text/event-stream and Mcp-Session-Id header (returns 406 with Accept: application/json only)."
+      "notes": "URL and transport are correct. AWS docs confirm HTTP+SSE transport. Server requires Accept: application/json, text/event-stream and Mcp-Session-Id header (returns 406 with Accept: application/json only).",
+      "toolCount": 6,
+      "toolNames": [
+        "get_aws_marketplace_related_solutions",
+        "get_aws_marketplace_report_guidelines",
+        "get_aws_marketplace_solution",
+        "research_aws_marketplace_solution",
+        "search_aws_marketplace_solutions",
+        "submit_aws_marketplace_feedback"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6031,7 +6082,27 @@
       "url": "https://mcp.blockscout.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://github.com/blockscout/mcp-server"
+      "repoUrl": "https://github.com/blockscout/mcp-server",
+      "toolCount": 16,
+      "toolNames": [
+        "__unlock_blockchain_analysis__",
+        "get_block_info",
+        "get_block_number",
+        "get_address_by_ens_name",
+        "get_transactions_by_address",
+        "get_token_transfers_by_address",
+        "lookup_token_by_symbol",
+        "get_contract_abi",
+        "inspect_contract_code",
+        "read_contract",
+        "get_address_info",
+        "get_tokens_by_address",
+        "nft_tokens_by_address",
+        "get_transaction_info",
+        "get_chains_list",
+        "direct_api_call"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6133,7 +6204,18 @@
       "url": "https://pubmed.mcp.claude.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://support.claude.com/en/"
+      "repoUrl": "https://support.claude.com/en/",
+      "toolCount": 7,
+      "toolNames": [
+        "search_articles",
+        "get_article_metadata",
+        "find_related_articles",
+        "lookup_article_by_citation",
+        "convert_article_ids",
+        "get_full_text_article",
+        "get_copyright_status"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6167,7 +6249,13 @@
       "url": "https://mcp.clerk.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://clerk.com/docs/guides/ai/mcp/clerk-mcp-server"
+      "repoUrl": "https://clerk.com/docs/guides/ai/mcp/clerk-mcp-server",
+      "toolCount": 2,
+      "toolNames": [
+        "clerk_sdk_snippet",
+        "list_clerk_sdk_snippets"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6253,7 +6341,13 @@
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://context7.com/docs/overview",
-      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
+      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only).",
+      "toolCount": 2,
+      "toolNames": [
+        "resolve-library-id",
+        "query-docs"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6287,7 +6381,20 @@
       "url": "https://mcp.crypto.com/market-data/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://mcp.crypto.com/docs"
+      "repoUrl": "https://mcp.crypto.com/docs",
+      "toolCount": 9,
+      "toolNames": [
+        "get_index_price",
+        "get_ticker",
+        "get_instrument",
+        "get_instruments",
+        "get_trades",
+        "get_book",
+        "get_mark_price",
+        "get_tickers",
+        "get_candlestick"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6509,7 +6616,13 @@
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developer.godaddy.com/mcp",
-      "notes": "URL and transport are correct (confirmed via GoDaddy developer docs). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
+      "notes": "URL and transport are correct (confirmed via GoDaddy developer docs). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only).",
+      "toolCount": 2,
+      "toolNames": [
+        "domains_suggest",
+        "domains_check_availability"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6526,7 +6639,17 @@
       "url": "https://bigquery.googleapis.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://cloud.google.com/bigquery/docs/use-bigquery-mcp"
+      "repoUrl": "https://cloud.google.com/bigquery/docs/use-bigquery-mcp",
+      "toolCount": 6,
+      "toolNames": [
+        "list_dataset_ids",
+        "get_dataset_info",
+        "list_table_ids",
+        "get_table_info",
+        "execute_sql_readonly",
+        "execute_sql"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6543,7 +6666,40 @@
       "url": "https://compute.googleapis.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://cloud.google.com/docs"
+      "repoUrl": "https://cloud.google.com/docs",
+      "toolCount": 29,
+      "toolNames": [
+        "create_instance",
+        "delete_instance",
+        "start_instance",
+        "stop_instance",
+        "reset_instance",
+        "get_instance_basic_info",
+        "set_instance_machine_type",
+        "list_instance_attached_disks",
+        "list_instances",
+        "get_instance_group_manager_basic_info",
+        "list_instance_group_managers",
+        "list_managed_instances",
+        "list_instance_templates",
+        "get_instance_template_basic_info",
+        "get_instance_template_properties",
+        "get_disk_basic_info",
+        "get_disk_performance_config",
+        "list_disks",
+        "list_accelerator_types",
+        "list_machine_types",
+        "list_images",
+        "get_zone_operation",
+        "get_reservation_basic_info",
+        "get_reservation_details",
+        "list_reservations",
+        "list_commitments",
+        "get_commitment_basic_info",
+        "list_commitment_reservations",
+        "list_snapshots"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6561,7 +6717,16 @@
       "requiresOAuth": false,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://grantedai.com/mcp",
-      "notes": "URL and transport are correct. No authentication required (free service). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
+      "notes": "URL and transport are correct. No authentication required (free service). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only).",
+      "toolCount": 5,
+      "toolNames": [
+        "search_grants",
+        "get_grant",
+        "search_funders",
+        "get_funder",
+        "get_past_winners"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6919,7 +7084,17 @@
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://mermaid.ai/docs/ai/mcp-server",
-      "notes": "URL moved from chatgpt.mermaid.ai/anthropic/mcp. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
+      "notes": "URL moved from chatgpt.mermaid.ai/anthropic/mcp. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only).",
+      "toolCount": 6,
+      "toolNames": [
+        "validate_and_render_mermaid_diagram",
+        "get_diagram_title",
+        "get_diagram_summary",
+        "search_mermaid_icons",
+        "get_mermaid_syntax_document",
+        "list_tools"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -6937,7 +7112,14 @@
       "requiresOAuth": false,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://learn.microsoft.com/en-us/training/support/mcp",
-      "notes": "URL and transport are correct (confirmed via Microsoft Learn docs). No authentication required (publicly available, no charge). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
+      "notes": "URL and transport are correct (confirmed via Microsoft Learn docs). No authentication required (publicly available, no charge). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only).",
+      "toolCount": 3,
+      "toolNames": [
+        "microsoft_docs_search",
+        "microsoft_code_sample_search",
+        "microsoft_docs_fetch"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -14537,7 +14719,14 @@
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://www.apollographql.com/docs/graphos/platform/graphos-mcp-tools",
-      "notes": "URL and transport are correct (Apollo docs confirm streamable-http, base URL with no /mcp suffix). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
+      "notes": "URL and transport are correct (Apollo docs confirm streamable-http, base URL with no /mcp suffix). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only).",
+      "toolCount": 3,
+      "toolNames": [
+        "ApolloConnectorsSpec",
+        "ApolloDocsRead",
+        "ApolloDocsSearch"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -27431,7 +27620,17 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "codex-mcp-server",
-      "command": "codex-mcp-server"
+      "command": "codex-mcp-server",
+      "toolCount": 6,
+      "toolNames": [
+        "codex",
+        "review",
+        "ping",
+        "help",
+        "listSessions",
+        "websearch"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27467,7 +27666,20 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "ollama-mcp-server",
-      "command": "ollama-mcp-server"
+      "command": "ollama-mcp-server",
+      "toolCount": 9,
+      "toolNames": [
+        "list",
+        "show",
+        "create",
+        "pull",
+        "push",
+        "cp",
+        "rm",
+        "run",
+        "chat_completion"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27479,7 +27691,12 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "groq-code-mcp",
-      "command": "groq-code-mcp"
+      "command": "groq-code-mcp",
+      "toolCount": 1,
+      "toolNames": [
+        "write"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27527,7 +27744,20 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "codex-mcp",
-      "command": "codex-mcp"
+      "command": "codex-mcp",
+      "toolCount": 9,
+      "toolNames": [
+        "ask-codex",
+        "batch-codex",
+        "ping",
+        "Help",
+        "version",
+        "brainstorm",
+        "fetch-chunk",
+        "timeout-test",
+        "list-models"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27551,7 +27781,14 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "exa-mcp-server",
-      "command": "exa-mcp-server"
+      "command": "exa-mcp-server",
+      "toolCount": 3,
+      "toolNames": [
+        "web_search_exa",
+        "crawling_exa",
+        "get_code_context_exa"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27585,7 +27822,29 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://mcp.aarna.ai/mcp"
+      "url": "https://mcp.aarna.ai/mcp",
+      "toolCount": 18,
+      "toolNames": [
+        "get_available_symbols",
+        "get_latest_features",
+        "get_features_range",
+        "get_indicator",
+        "get_signal_summary",
+        "get_category_features",
+        "get_category_summary",
+        "get_data_info",
+        "get_features_export",
+        "get_feature_stats",
+        "get_signal_history",
+        "get_multi_indicator",
+        "export_data",
+        "get_sentiment_symbols",
+        "get_latest_sentiment",
+        "get_sentiment_history",
+        "get_sentiment_trend",
+        "get_sentiment_signal"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -27629,7 +27888,17 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://api.agentrapay.ai/mcp"
+      "url": "https://api.agentrapay.ai/mcp",
+      "toolCount": 6,
+      "toolNames": [
+        "agentra_create_wallet",
+        "agentra_verify_identity",
+        "agentra_check_reputation",
+        "agentra_authorize_payment",
+        "agentra_set_mandate",
+        "agentra_get_wallet"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -27695,7 +27964,18 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://auteng.ai/mcp/docs"
+      "url": "https://auteng.ai/mcp/docs",
+      "toolCount": 7,
+      "toolNames": [
+        "auteng_publish_markdown",
+        "auteng_docs_create",
+        "auteng_docs_update",
+        "auteng_docs_list",
+        "auteng_docs_delete",
+        "auteng_docs_share",
+        "auteng_docs_recent"
+      ],
+      "verified": "2026-04-01T23:04:35.698Z"
     }
   },
   {
@@ -27706,7 +27986,18 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://auteng.ai/mcp"
+      "url": "https://auteng.ai/mcp",
+      "toolCount": 7,
+      "toolNames": [
+        "auteng_publish_markdown",
+        "auteng_docs_create",
+        "auteng_docs_update",
+        "auteng_docs_list",
+        "auteng_docs_delete",
+        "auteng_docs_share",
+        "auteng_docs_recent"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27794,7 +28085,135 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://contabo.run.mcp.com.ai/mcp"
+      "url": "https://contabo.run.mcp.com.ai/mcp",
+      "toolCount": 124,
+      "toolNames": [
+        "tool_search",
+        "retrieveTagList",
+        "createTag",
+        "retrieveTag",
+        "updateTag",
+        "deleteTag",
+        "retrieveAssignmentList",
+        "retrieveAssignment",
+        "createAssignment",
+        "deleteAssignment",
+        "retrieveTagAuditsList",
+        "retrieveAssignmentsAuditsList",
+        "retrievePtrRecord",
+        "updatePtrRecord",
+        "deletePtrRecord",
+        "createPtrRecord",
+        "retrievePtrRecordsList",
+        "retrieveDnsZonesList",
+        "createDnsZone",
+        "retrieveDnsZone",
+        "deleteDnsZone",
+        "retrieveDnsZoneRecordsList",
+        "createDnsZoneRecord",
+        "updateDnsZoneRecord",
+        "deleteDnsZoneRecord",
+        "bulkDeleteDnsZoneRecords",
+        "retrieveImageAuditsList",
+        "retrieveRecordAuditsList",
+        "retrieveVipList",
+        "retrieveVip",
+        "assignIp",
+        "unassignIp",
+        "retrieveVipAuditsList",
+        "retrieveSecretList",
+        "createSecret",
+        "retrieveSecret",
+        "updateSecret",
+        "deleteSecret",
+        "retrieveSecretAuditsList",
+        "retrievePrivateNetworkList",
+        "createPrivateNetwork",
+        "patchPrivateNetwork",
+        "retrievePrivateNetwork",
+        "deletePrivateNetwork",
+        "assignInstancePrivateNetwork",
+        "unassignInstancePrivateNetwork",
+        "retrievePrivateNetworkAuditsList",
+        "retrieveUserList",
+        "createUser",
+        "retrieveUser",
+        "updateUser",
+        "deleteUser",
+        "resetPassword",
+        "resendEmailVerification",
+        "retrieveUserClient",
+        "generateClientSecret",
+        "retrieveUserIsPasswordSet",
+        "retrieveRoleList",
+        "createRole",
+        "retrieveRole",
+        "updateRole",
+        "deleteRole",
+        "retrieveApiPermissionsList",
+        "listObjectStorageCredentials",
+        "getObjectStorageCredentials",
+        "regenerateObjectStorageCredentials",
+        "retrieveUserAuditsList",
+        "retrieveRoleAuditsList",
+        "start",
+        "restart",
+        "stop",
+        "shutdown",
+        "rescue",
+        "resetPasswordAction",
+        "retrieveInstancesList",
+        "createInstance",
+        "retrieveInstance",
+        "patchInstance",
+        "reinstallInstance",
+        "cancelInstance",
+        "upgradeInstance",
+        "retrieveInstancesActionsAuditsList",
+        "retrieveInstancesAuditsList",
+        "retrieveImageList",
+        "createCustomImage",
+        "retrieveImage",
+        "updateImage",
+        "deleteImage",
+        "retrieveCustomImagesStats",
+        "retrieveSnapshotList",
+        "createSnapshot",
+        "retrieveSnapshot",
+        "updateSnapshot",
+        "deleteSnapshot",
+        "rollbackSnapshot",
+        "retrieveImageAuditsList1",
+        "retrieveSnapshotsAuditsList",
+        "listHandles",
+        "createHandle",
+        "retrieveHandle",
+        "removeHandle",
+        "updateHandle",
+        "setDefaultHandle",
+        "validateDomainAvailability",
+        "listDomains",
+        "orderDomain",
+        "retrieveDomain",
+        "updateDomain",
+        "cancelDomain",
+        "getAuthCode",
+        "revokeCancelDomain",
+        "confirmDomainTransferOut",
+        "revokeDomainTransferOut",
+        "retrieveHandlesAuditsList",
+        "retrieveDomainsAuditsList",
+        "retrieveObjectStorageList",
+        "createObjectStorage",
+        "retrieveDataCenterList",
+        "retrieveObjectStorage",
+        "updateObjectStorage",
+        "upgradeObjectStorage",
+        "retrieveObjectStoragesStats",
+        "CancelObjectStorage",
+        "retrieveObjectStorageAuditsList"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27816,7 +28235,19 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://lenny-rachitsky.run.mcp.com.ai/mcp"
+      "url": "https://lenny-rachitsky.run.mcp.com.ai/mcp",
+      "toolCount": 8,
+      "toolNames": [
+        "getEpisodes",
+        "getEpisodesGuest",
+        "getEpisodesGuestMetadatajson",
+        "getEpisodesGuestTranscriptformat",
+        "getEpisodesGuestChunks",
+        "getEpisodesGuestChunksChunkIdtxt",
+        "getSearch",
+        "postSearch"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27827,7 +28258,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://linkedin.run.mcp.com.ai/mcp"
+      "url": "https://linkedin.run.mcp.com.ai/mcp",
+      "toolCount": 3,
+      "toolNames": [
+        "createSharePost",
+        "getSharePosts",
+        "getPersonProfile"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27838,7 +28276,20 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://openai-tools.run.mcp.com.ai/mcp"
+      "url": "https://openai-tools.run.mcp.com.ai/mcp",
+      "toolCount": 9,
+      "toolNames": [
+        "createImage",
+        "createImageEdit",
+        "createImageVariation",
+        "createTranscription",
+        "createTranslation",
+        "listModels",
+        "retrieveModel",
+        "deleteModel",
+        "createModeration"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27849,7 +28300,30 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://petstore.run.mcp.com.ai/mcp"
+      "url": "https://petstore.run.mcp.com.ai/mcp",
+      "toolCount": 19,
+      "toolNames": [
+        "updatePet",
+        "addPet",
+        "findPetsByStatus",
+        "findPetsByTags",
+        "getPetById",
+        "updatePetWithForm",
+        "deletePet",
+        "uploadFile",
+        "getInventory",
+        "placeOrder",
+        "getOrderById",
+        "deleteOrder",
+        "createUser",
+        "createUsersWithListInput",
+        "loginUser",
+        "logoutUser",
+        "getUserByName",
+        "updateUser",
+        "deleteUser"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27860,7 +28334,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://registry.run.mcp.com.ai/mcp"
+      "url": "https://registry.run.mcp.com.ai/mcp",
+      "toolCount": 3,
+      "toolNames": [
+        "getV01Servers",
+        "getV01ServersServerNameVersions",
+        "getV01ServersServerNameVersionsVersion"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27882,7 +28363,24 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://strava.run.mcp.com.ai/mcp"
+      "url": "https://strava.run.mcp.com.ai/mcp",
+      "toolCount": 13,
+      "toolNames": [
+        "getStats",
+        "getLoggedInAthlete",
+        "getLoggedInAthleteStarredSegments",
+        "getEffortsBySegmentId",
+        "exploreSegments",
+        "getSegmentEffortById",
+        "getClubById",
+        "getClubMembersById",
+        "getClubAdminsById",
+        "getClubActivitiesById",
+        "getLoggedInAthleteClubs",
+        "getGearById",
+        "getRoutesByAthleteId"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27904,7 +28402,31 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://mcp.datamerge.ai"
+      "url": "https://mcp.datamerge.ai",
+      "toolCount": 20,
+      "toolNames": [
+        "configure_datamerge",
+        "start_company_enrichment",
+        "get_company_enrichment_result",
+        "start_company_enrichment_and_wait",
+        "get_company",
+        "get_company_hierarchy",
+        "start_lookalike",
+        "get_lookalike_status",
+        "contact_search",
+        "get_contact_search_status",
+        "contact_enrich",
+        "get_contact_enrich_status",
+        "get_contact",
+        "list_lists",
+        "create_list",
+        "get_list_items",
+        "remove_list_item",
+        "delete_list",
+        "get_credits_balance",
+        "health_check"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27926,7 +28448,14 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://mcp.exa.ai/mcp"
+      "url": "https://mcp.exa.ai/mcp",
+      "toolCount": 3,
+      "toolNames": [
+        "web_search_exa",
+        "crawling_exa",
+        "get_code_context_exa"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27948,7 +28477,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://mcp.fiber.ai/mcp/v2/"
+      "url": "https://mcp.fiber.ai/mcp/v2/",
+      "toolCount": 10,
+      "toolNames": [
+        "companySearch_tool",
+        "peopleSearch_tool",
+        "profileLiveEnrich_tool",
+        "companyLiveEnrich_tool",
+        "getOrgCredits_tool",
+        "getAutoTopupSettings_tool",
+        "updateAutoTopupSettings_tool",
+        "buyCredits_tool",
+        "pollExhaustiveContactEnrichmentResult_tool",
+        "pollBatchContactEnrichment_tool"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27959,7 +28502,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://api.filegraph.ai/mcp"
+      "url": "https://api.filegraph.ai/mcp",
+      "toolCount": 10,
+      "toolNames": [
+        "filegraph_api_overview",
+        "filegraph_text_extraction_docs",
+        "filegraph_pdf_text_conversion_docs",
+        "filegraph_pdf_manipulation_docs",
+        "filegraph_pdf_security_docs",
+        "filegraph_image_processing_docs",
+        "filegraph_audio_transcription_docs",
+        "filegraph_office_documents_docs",
+        "filegraph_html_processing_docs",
+        "filegraph_security_docs"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -27982,7 +28539,18 @@
     "mcp": {
       "transport": "stdio",
       "packageName": "fodda-mcp",
-      "url": "https://mcp.fodda.ai/sse"
+      "url": "https://mcp.fodda.ai/sse",
+      "toolCount": 7,
+      "toolNames": [
+        "list_graphs",
+        "search_graph",
+        "get_neighbors",
+        "get_evidence",
+        "get_node",
+        "get_label_values",
+        "discover_adjacent_trends"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -28038,7 +28606,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@ai-dossier/mcp-server"
+      "packageName": "@ai-dossier/mcp-server",
+      "toolCount": 10,
+      "toolNames": [
+        "verify_dossier",
+        "read_dossier",
+        "list_dossiers",
+        "search_dossiers",
+        "resolve_graph",
+        "verify_graph",
+        "start_journey",
+        "step_complete",
+        "get_journey_status",
+        "cancel_journey"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -28060,7 +28642,28 @@
     "type": "mcp",
     "mcp": {
       "transport": "stdio",
-      "packageName": "@kawacode/mcp"
+      "packageName": "@kawacode/mcp",
+      "toolCount": 17,
+      "toolNames": [
+        "get_relevant_context",
+        "check_active_intent",
+        "create_and_activate_intent",
+        "get_intents_for_file",
+        "get_intents_for_lines",
+        "assign_blocks_to_intent",
+        "list_team_intents",
+        "get_intent_changes",
+        "complete_intent",
+        "log_work",
+        "record_decision",
+        "get_session_decisions",
+        "get_project_decisions",
+        "edit_session_decision",
+        "detect_intent_conflicts",
+        "infer_history",
+        "evolve_decisions"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -28104,7 +28707,16 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://api.limitguard.ai/mcp"
+      "url": "https://api.limitguard.ai/mcp",
+      "toolCount": 5,
+      "toolNames": [
+        "check_entity",
+        "check_agent",
+        "get_trust_score",
+        "verify_wallet",
+        "get_risk_score"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -28115,7 +28727,21 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://llmse.ai/mcp"
+      "url": "https://llmse.ai/mcp",
+      "toolCount": 10,
+      "toolNames": [
+        "classify_url",
+        "select_advertiser",
+        "analyze_seo",
+        "analyze_eeat",
+        "analyze_aeo",
+        "analyze_wcag",
+        "analyze_garm",
+        "analyze_readability",
+        "audit",
+        "find_similar_sites"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
@@ -28126,7 +28752,32 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://mcp.ludo.ai/mcp"
+      "url": "https://mcp.ludo.ai/mcp",
+      "toolCount": 21,
+      "toolNames": [
+        "validateApiKeyEndpoint",
+        "createImage",
+        "generateWithStyle",
+        "editImage",
+        "animateSprite",
+        "generatePose",
+        "transferMotion",
+        "listAnimationPresets",
+        "createVideo",
+        "removeBackground",
+        "create3DModel",
+        "createSoundEffect",
+        "createMusic",
+        "createVoice",
+        "createSpeech",
+        "createSpeechPreset",
+        "getImageResults",
+        "getSpriteResults",
+        "getVideoResults",
+        "getAudioResults",
+        "get3DModelResults"
+      ],
+      "verified": "2026-04-01T23:04:35.699Z"
     }
   },
   {
