@@ -1,5 +1,5 @@
 /**
- * @epicai/core/harness — Test Harness Public Entrypoint
+ * @epicai/legion/harness — Test Harness Public Entrypoint
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

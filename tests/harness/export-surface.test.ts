@@ -1,6 +1,6 @@
 /**
- * @epicai/core — Harness Public Export Surface Test
- * Verifies that the @epicai/core/harness subpath export resolves correctly
+ * @epicai/legion — Harness Public Export Surface Test
+ * Verifies that the @epicai/legion/harness subpath export resolves correctly
  * and exposes the documented API surface.
  */
 import { describe, it, expect } from 'vitest';
@@ -8,10 +8,10 @@ import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 
 describe('Harness public export surface', () => {
-  it('@epicai/core/harness subpath resolves and exports documented API', async () => {
+  it('@epicai/legion/harness subpath resolves and exports documented API', async () => {
     // Use Node's actual package resolution by importing the subpath.
     // This exercises the exports map in package.json, not a filesystem path.
-    const mod = await import('@epicai/core/harness');
+    const mod = await import('@epicai/legion/harness');
 
     expect(typeof mod.createHarnessRunner).toBe('function');
     expect(mod.HarnessProfile).toBeDefined();
@@ -28,7 +28,7 @@ describe('Harness public export surface', () => {
     expect(mod.DEFAULT_TIMEOUTS).toBeDefined();
   });
 
-  it('@epicai/core/harness exports type declarations', () => {
+  it('@epicai/legion/harness exports type declarations', () => {
     const dts = resolve(__dirname, '..', '..', 'dist', 'harness', 'index.d.ts');
     expect(existsSync(dts)).toBe(true);
   });
@@ -41,7 +41,7 @@ describe('Harness public export surface', () => {
   });
 
   it('createHarnessRunner from subpath returns functional runner', async () => {
-    const { createHarnessRunner } = await import('@epicai/core/harness');
+    const { createHarnessRunner } = await import('@epicai/legion/harness');
     const runner = createHarnessRunner({ profiles: [] });
     expect(typeof runner.runAll).toBe('function');
     expect(typeof runner.runProfile).toBe('function');

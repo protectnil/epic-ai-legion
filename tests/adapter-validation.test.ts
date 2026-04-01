@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Adapter Structure Validation
+ * @epicai/legion — Adapter Structure Validation
  * Imports all 113 adapters, instantiates with mock config,
  * verifies: tools getter returns ToolDefinition[], callTool exists,
  * every tool has name + description + inputSchema.

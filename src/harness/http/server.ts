@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness HTTP Backend
+ * @epicai/legion — Test Harness HTTP Backend
  * Spawns a real child process MCP server over streamable-http.
  * Connects via StreamableHTTPClientTransport for real MCP HTTP framing.
  * Built on the Epic AI® Intelligence Platform

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Gateway Router
+ * @epicai/legion — Gateway Router
  * Selects the best backend for each inference request.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

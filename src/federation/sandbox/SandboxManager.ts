@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Sandbox Manager
+ * @epicai/legion — Sandbox Manager
  * Creates and manages sandboxed adapter instances.
  * protectnil → worker-thread, vendor/community → process.
  * Built on the Epic AI Intelligence Platform

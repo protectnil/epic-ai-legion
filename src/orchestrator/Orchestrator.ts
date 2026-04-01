@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Orchestrator
+ * @epicai/legion — Orchestrator
  * Plan-act-observe loop integrating all five layers.
  * Orchestrator (local SLM) handles routing. Generator (cloud LLM) handles synthesis.
  * Built on the Epic AI Intelligence Platform

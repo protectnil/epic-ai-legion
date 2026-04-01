@@ -1,5 +1,5 @@
 /**
- * @epicai/core — In-Memory Audit Store Adapter
+ * @epicai/legion — In-Memory Audit Store Adapter
  * For development and testing. Not for production use.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

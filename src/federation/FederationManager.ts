@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Federation Manager
+ * @epicai/legion — Federation Manager
  * Manages connections to multiple MCP servers, provides unified tool discovery,
  * invocation, and cross-source correlation.
  * Built on the Epic AI Intelligence Platform

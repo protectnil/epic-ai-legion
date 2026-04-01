@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * @epicai/core — Test Harness HTTP Server Process
+ * @epicai/legion — Test Harness HTTP Server Process
  * Standalone MCP server over streamable-http for the HTTP harness profile.
  * Spawned as a child process by HttpHarnessBackend.
  * Built on the Epic AI® Intelligence Platform

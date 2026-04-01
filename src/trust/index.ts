@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Trust Layer Barrel Export
+ * @epicai/legion — Trust Layer Barrel Export
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

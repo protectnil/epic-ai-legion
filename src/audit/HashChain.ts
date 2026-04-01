@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Hash Chain
+ * @epicai/legion — Hash Chain
  * SHA-256 chain integrity for tamper-evident audit logging.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

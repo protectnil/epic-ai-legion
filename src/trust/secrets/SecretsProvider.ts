@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Secrets Provider Interface
+ * @epicai/legion — Secrets Provider Interface
  * Adapter credentials are resolved at connection time, never stored in config.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

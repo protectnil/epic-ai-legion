@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Inference Integration Test
+ * @epicai/legion — Inference Integration Test
  * Tests the orchestrator provider against a local model via the
  * Inference Gateway (llama.cpp / mlx-lm / vLLM) or Ollama fallback.
  *

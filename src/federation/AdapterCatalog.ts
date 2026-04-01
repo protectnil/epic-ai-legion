@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Adapter Catalog
+ * @epicai/legion — Adapter Catalog
  * Static registry of all known adapters. Loaded from npm bundle
  * or signed registry. Powers Tier 1 domain classification.
  * Built on the Epic AI Intelligence Platform

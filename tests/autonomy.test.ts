@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Autonomy Layer Tests
+ * @epicai/legion — Autonomy Layer Tests
  * Tests TieredAutonomy, PolicyEngine, ApprovalQueue without external deps.
  */
 

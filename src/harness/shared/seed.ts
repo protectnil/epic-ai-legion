@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness Seed
+ * @epicai/legion — Test Harness Seed
  * Deterministic PRNG for reproducible test data.
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Logger
+ * @epicai/legion — Logger
  * Thin wrapper over globalThis.console, following the Anthropic/OpenAI SDK pattern.
  * Zero dependencies. Controllable via EPICAI_LOG env var or constructor logLevel.
  *

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Stream Manager
+ * @epicai/legion — Stream Manager
  * Manages SSE and JSON transport for orchestrator output.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

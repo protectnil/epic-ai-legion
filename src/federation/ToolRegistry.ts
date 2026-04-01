@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Tool Registry
+ * @epicai/legion — Tool Registry
  * Unified tool catalog across all connected MCP servers.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

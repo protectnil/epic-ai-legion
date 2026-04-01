@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness Runner
+ * @epicai/legion — Test Harness Runner
  * Runs the shared assertion suite against any configured backend.
  * Enforces per-scenario timeout via AbortController.
  * Built on the Epic AI® Intelligence Platform

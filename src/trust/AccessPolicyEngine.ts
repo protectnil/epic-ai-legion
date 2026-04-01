@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Access Policy Engine
+ * @epicai/legion — Access Policy Engine
  * RBAC/ABAC evaluation. Default-deny. Called before every tool dispatch.
  * Named AccessPolicyEngine to avoid collision with src/autonomy/PolicyEngine.ts.
  * Built on the Epic AI Intelligence Platform

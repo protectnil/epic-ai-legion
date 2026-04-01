@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Gateway Types
+ * @epicai/legion — Gateway Types
  * Type definitions for the Inference Gateway.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Hybrid Integration Tests (Ollama Orchestrator + Cloud Generator)
+ * @epicai/legion — Hybrid Integration Tests (Ollama Orchestrator + Cloud Generator)
  * Tests the full orchestrator→generator handoff: local SLM selects tools,
  * cloud LLM synthesizes the response from curated tool results.
  *

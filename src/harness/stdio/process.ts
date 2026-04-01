@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * @epicai/core — Test Harness STDIO Server Process
+ * @epicai/legion — Test Harness STDIO Server Process
  * Standalone MCP server for the STDIO harness profile.
  * Spawned as a child process by StdioHarnessBackend.
  * Built on the Epic AI® Intelligence Platform

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Sanitization & Logger Tests
+ * @epicai/legion — Sanitization & Logger Tests
  * Covers the raw planner-message boundary and consoleLogger behavior.
  */
 

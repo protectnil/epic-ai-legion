@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * @epicai/core — Test Harness CLI
+ * @epicai/legion — Test Harness CLI
  * `npx epicai-harness --profile stdio|http|api`
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

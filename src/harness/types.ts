@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness Types
+ * @epicai/legion — Test Harness Types
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

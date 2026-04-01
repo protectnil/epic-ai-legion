@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness Fixtures
+ * @epicai/legion — Test Harness Fixtures
  * Deterministic test data factories, seeded with 1337.
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

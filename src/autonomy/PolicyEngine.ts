@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Policy Engine
+ * @epicai/legion — Policy Engine
  * Evaluates dynamic policies against action context with priority ordering.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

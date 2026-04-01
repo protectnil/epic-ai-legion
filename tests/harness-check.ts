@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 /**
- * @epicai/core — Standalone Harness Check
+ * @epicai/legion — Standalone Harness Check
  * Proves all three transport profiles work without vitest.
  * Run: npx tsx tests/harness-check.ts
  */

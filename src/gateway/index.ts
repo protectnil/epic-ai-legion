@@ -1,5 +1,5 @@
 /**
- * @epicai/core/gateway — Barrel Export
+ * @epicai/legion/gateway — Barrel Export
  * Subpath export for the Inference Gateway.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

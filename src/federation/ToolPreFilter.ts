@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Tool Pre-Filter
+ * @epicai/legion — Tool Pre-Filter
  * Narrows N registered tools to a ranked shortlist before the orchestrator LLM sees them.
  * Uses BM25 scoring over tool names and descriptions — zero dependencies, sub-millisecond.
  *

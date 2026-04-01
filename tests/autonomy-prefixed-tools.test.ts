@@ -1,5 +1,5 @@
 /**
- * @epicai/core — TieredAutonomy Prefixed Tool Name Tests
+ * @epicai/legion — TieredAutonomy Prefixed Tool Name Tests
  * Verifies that server-prefixed tool names (e.g. "vault:read") correctly
  * match against unprefixed rule entries (e.g. "read").
  */

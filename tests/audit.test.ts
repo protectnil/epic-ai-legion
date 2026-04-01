@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Audit Layer Tests
+ * @epicai/legion — Audit Layer Tests
  * Tests AuditTrail hash chain integrity, recording, querying, and export.
  */
 

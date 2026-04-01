@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Harness Orchestrator Integration Tests
+ * @epicai/legion — Harness Orchestrator Integration Tests
  * Exercises EpicAI.create/start/run/stream against the harness STDIO backend.
  * Validates planner behavior, approval gating, stream ordering, sanitization,
  * and audit recording — the things the backend-only tests cannot catch.

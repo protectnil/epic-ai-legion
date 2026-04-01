@@ -25,7 +25,7 @@ The intended public-facing entrypoint is an importable helper surface, with opti
 
 Recommended shape:
 
-- `@epicai/core/harness`
+- `@epicai/legion/harness`
 - `createHarnessRunner({ profile })`
 - `HarnessProfile.Stdio`
 - `HarnessProfile.Http`

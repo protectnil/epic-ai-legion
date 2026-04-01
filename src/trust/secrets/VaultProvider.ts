@@ -1,5 +1,5 @@
 /**
- * @epicai/core — HashiCorp Vault Secrets Provider
+ * @epicai/legion — HashiCorp Vault Secrets Provider
  * KV v2 integration with lease management. Zero npm dependencies
  * beyond node:https.
  * Built on the Epic AI Intelligence Platform

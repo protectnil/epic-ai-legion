@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness API Backend
+ * @epicai/legion — Test Harness API Backend
  * Fake vendor API server (Qualys-like shape). NOT MCP.
  * Tests auth, rate limiting, malformed responses, pagination.
  * Built on the Epic AI® Intelligence Platform

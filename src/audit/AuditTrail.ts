@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Audit Trail
+ * @epicai/legion — Audit Trail
  * Hash-chained append-only action logging with integrity verification.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

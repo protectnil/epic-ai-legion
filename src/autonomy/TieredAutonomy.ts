@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Tiered Autonomy
+ * @epicai/legion — Tiered Autonomy
  * Governance layer: evaluate actions against tiers and policies,
  * manage approval workflows.
  * Built on the Epic AI Intelligence Platform

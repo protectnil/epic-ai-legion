@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Artifact Verifier
+ * @epicai/legion — Artifact Verifier
  * Verifies adapter package integrity via SHA-256 digest and
  * Sigstore/Cosign signature. Checks SLSA provenance attestations.
  * Built on the Epic AI Intelligence Platform

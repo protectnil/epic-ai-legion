@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Ollama API Shim
+ * @epicai/legion — Ollama API Shim
  * Backward compatibility layer translating Ollama API format
  * to/from OpenAI-compatible /v1/chat/completions.
  * DEPRECATED: Will be removed 2027-06-01.

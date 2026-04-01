@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Orchestrator Telemetry Tests
+ * @epicai/legion — Orchestrator Telemetry Tests
  * Tests the 'done' StreamEvent payload semantics and generator fallback.
  * Validates EXACT values, not just shape.
  */

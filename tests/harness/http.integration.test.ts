@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Harness HTTP Integration Tests
+ * @epicai/legion — Harness HTTP Integration Tests
  */
 import { describe, it, expect } from 'vitest';
 import { createHarnessRunner, HarnessProfile } from '../../src/harness/index.js';

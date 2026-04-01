@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Adaptive Connection Pool
+ * @epicai/legion — Adaptive Connection Pool
  * Per-tenant, burst-aware connection pool for lazy adapter connections.
  * Replaces flat maxConnections with tenant-scoped, load-adaptive limits.
  * Built on the Epic AI Intelligence Platform

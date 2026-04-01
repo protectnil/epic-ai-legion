@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Prometheus Metrics Exporter
+ * @epicai/legion — Prometheus Metrics Exporter
  * Exposes gateway and federation metrics in Prometheus format.
  * Metrics are served at /metrics by the gateway.
  * Built on the Epic AI Intelligence Platform

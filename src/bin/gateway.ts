@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * @epicai/core — Gateway CLI
+ * @epicai/legion — Gateway CLI
  * `npx epic-ai-gateway` — starts the Inference Gateway.
  * This is the ONLY file that calls http.createServer / https.createServer.
  * Built on the Epic AI Intelligence Platform

@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 /**
- * @epicai/core — Adapter Catalog Generator
+ * @epicai/legion — Adapter Catalog Generator
  * Reads compiled adapters from dist/mcp-servers/, instantiates each,
  * reads the tools getter, and generates adapter-catalog.json.
  *

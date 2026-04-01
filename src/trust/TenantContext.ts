@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Tenant Context
+ * @epicai/legion — Tenant Context
  * Request-scoped tenant/principal/role propagation.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

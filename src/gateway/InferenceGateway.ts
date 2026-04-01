@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Inference Gateway
+ * @epicai/legion — Inference Gateway
  * Framework-agnostic HTTP request handler for routing inference
  * requests to the best available backend (llama.cpp, mlx-lm, vLLM).
  * Does NOT import Express or any framework. Uses node:http types only.

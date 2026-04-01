@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Persona Layer Tests
+ * @epicai/legion — Persona Layer Tests
  */
 
 import { describe, it, expect } from 'vitest';

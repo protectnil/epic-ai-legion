@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Generator Provider
+ * @epicai/legion — Generator Provider
  * Abstraction for cloud model providers (OpenAI, Anthropic, custom).
  * Called only for final synthesis — not for tool routing.
  * Built on the Epic AI Intelligence Platform

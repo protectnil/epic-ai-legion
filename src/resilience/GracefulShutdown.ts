@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Graceful Shutdown
+ * @epicai/legion — Graceful Shutdown
  * Ensures in-flight operations complete, pending approvals persist,
  * and audit trail flushes before the agent stops.
  * Built on the Epic AI Intelligence Platform

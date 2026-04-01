@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Pre-Filter Scale Integration Test
+ * @epicai/legion — Pre-Filter Scale Integration Test
  * Proves that ToolPreFilter enables correct tool calling when the full catalog
  * exceeds what a 7B model can handle.
  *

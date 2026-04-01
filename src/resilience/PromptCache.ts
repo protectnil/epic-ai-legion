@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Prompt Cache
+ * @epicai/legion — Prompt Cache
  * Caches system prompts and tool definitions to avoid recomputing on every call.
  * Supports semantic similarity matching for repeated queries.
  * Built on the Epic AI Intelligence Platform

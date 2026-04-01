@@ -1,6 +1,6 @@
 # Epic AI Harness
 
-This directory defines the test harness specification for `@epicai/core`.
+This directory defines the test harness specification for `@epicai/legion`.
 
 The harness is split into three backend profiles and one shared runner:
 

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — JSON Response
+ * @epicai/legion — JSON Response
  * Collect all stream events and return a complete RunResult.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

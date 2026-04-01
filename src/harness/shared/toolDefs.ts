@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness Canonical Tool Definitions
+ * @epicai/legion — Test Harness Canonical Tool Definitions
  * 8 tools shared across all three harness backends.
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

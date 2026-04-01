@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Auth Middleware
+ * @epicai/legion — Auth Middleware
  * Framework-agnostic identity handler. Extracts and verifies identity
  * from a Node.js IncomingMessage. NOT Express middleware.
  * Built on the Epic AI Intelligence Platform

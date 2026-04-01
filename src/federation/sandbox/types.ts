@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Adapter Sandbox Types
+ * @epicai/legion — Adapter Sandbox Types
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

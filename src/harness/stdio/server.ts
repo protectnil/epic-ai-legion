@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness STDIO Backend
+ * @epicai/legion — Test Harness STDIO Backend
  * Spawns a real child process MCP server over stdio.
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

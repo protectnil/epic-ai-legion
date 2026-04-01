@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Env Secrets Provider
+ * @epicai/legion — Env Secrets Provider
  * Development fallback: reads from process.env.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

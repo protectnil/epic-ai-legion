@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Run Telemetry Tests
+ * @epicai/legion — Run Telemetry Tests
  * Verifies the human-readable summary emitted from agent lifecycle events.
  */
 

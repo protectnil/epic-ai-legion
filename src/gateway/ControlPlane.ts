@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Gateway Control Plane
+ * @epicai/legion — Gateway Control Plane
  * Redis-backed shared state for multi-replica coherence.
  * Falls back to in-process Map when Redis is unavailable.
  * Built on the Epic AI Intelligence Platform

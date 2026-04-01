@@ -1,5 +1,5 @@
 /**
- * @epicai/core — AWS Secrets Manager Provider
+ * @epicai/legion — AWS Secrets Manager Provider
  * Optional peer dependency: @aws-sdk/client-secrets-manager
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

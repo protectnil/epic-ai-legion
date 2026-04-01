@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Backend Registry
+ * @epicai/legion — Backend Registry
  * Discovers, probes, and health-checks inference backends.
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

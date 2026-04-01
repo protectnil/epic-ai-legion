@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Worker Thread Sandbox
+ * @epicai/legion — Worker Thread Sandbox
  * Runs protectnil-tier adapters in a worker_threads isolate.
  * Credentials injected once via workerData. No shared memory.
  * Built on the Epic AI Intelligence Platform

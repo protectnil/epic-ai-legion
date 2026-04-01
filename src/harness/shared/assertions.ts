@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness Assertion Suite
+ * @epicai/legion — Test Harness Assertion Suite
  * Shared assertions that run against any HarnessBackend.
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

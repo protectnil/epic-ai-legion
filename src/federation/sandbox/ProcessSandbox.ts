@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Process Sandbox
+ * @epicai/legion — Process Sandbox
  * Runs vendor/community adapters in a child process with OS-level isolation.
  * No inherited env vars beyond allowlist. No inherited file descriptors.
  * Credentials injected once via startup IPC message.

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — MCP Server Endpoint Validation
+ * @epicai/legion — MCP Server Endpoint Validation
  * Pings every vendor's API base URL to verify:
  * - DNS resolves (hostname is correct)
  * - HTTPS connects (port is correct)

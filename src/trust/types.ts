@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Trust Layer Types
+ * @epicai/legion — Trust Layer Types
  * Type definitions for enterprise authentication, authorization,
  * tenant context, and policy evaluation.
  * Built on the Epic AI Intelligence Platform

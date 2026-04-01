@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Air-Gapped Integration Tests
+ * @epicai/legion — Air-Gapped Integration Tests
  * Exercises the full orchestrator→generator loop with Ollama on both sides.
  * Zero external API calls. All inference stays on the local GPU/CPU.
  *

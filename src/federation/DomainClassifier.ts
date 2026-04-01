@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Domain Classifier
+ * @epicai/legion — Domain Classifier
  * Tier 1 of three-tier tool resolution. Narrows adapters to
  * the ~5-20 most relevant before BM25 scoring.
  * Pass 1: keyword match (zero-cost).

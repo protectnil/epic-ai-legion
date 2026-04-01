@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Type Definitions
+ * @epicai/legion — Type Definitions
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
  */

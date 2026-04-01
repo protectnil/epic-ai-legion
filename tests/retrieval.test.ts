@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Retrieval + Memory Tests
+ * @epicai/legion — Retrieval + Memory Tests
  * Tests RankFusion, HybridRetriever, PersistentMemory with in-memory adapters.
  */
 

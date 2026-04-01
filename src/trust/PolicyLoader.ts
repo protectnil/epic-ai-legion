@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Policy Loader
+ * @epicai/legion — Policy Loader
  * Loads RBAC/ABAC policy rules from a JSON file and validates
  * them against the PolicyRule schema using Zod.
  * Built on the Epic AI Intelligence Platform

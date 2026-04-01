@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Registry Loader
+ * @epicai/legion — Registry Loader
  * Loads mcp-registry.json and builds ServerConnection[] for the FederationManager.
  * Resolves credentials from environment variables or a SecretsProvider.
  * Built on the Epic AI Intelligence Platform

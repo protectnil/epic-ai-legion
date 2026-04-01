@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Azure Key Vault Secrets Provider
+ * @epicai/legion — Azure Key Vault Secrets Provider
  * Optional peer dependencies: @azure/keyvault-secrets, @azure/identity
  * Built on the Epic AI Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0

@@ -1,5 +1,5 @@
 /**
- * @epicai/core — Test Harness Tool Handlers
+ * @epicai/legion — Test Harness Tool Handlers
  * Shared logic for all 8 canonical tools. Each backend delegates to these.
  * Built on the Epic AI® Intelligence Platform
  * Copyright 2026 protectNIL Inc. Apache-2.0
