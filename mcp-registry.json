@@ -228,12 +228,7 @@
       "mid-market",
       "cloud erp"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/CDataSoftware/acumatica"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/acumatica.js",
       "className": "AcumaticaMCPServer",
@@ -490,7 +485,8 @@
       "url": "https://mcp.columnapi.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://docs.columntax.com/page/aiwyn-tax-mcp-server"
+      "repoUrl": "https://docs.columntax.com/page/aiwyn-tax-mcp-server",
+      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -541,7 +537,8 @@
       "url": "https://clarity-sfdr20-mcp.pro.clarity.ai/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://clarity-sfdr20-mcp.pro.clarity.ai/"
+      "repoUrl": "https://clarity-sfdr20-mcp.pro.clarity.ai/",
+      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -2158,12 +2155,7 @@
       "prompts",
       "ai monitoring"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/Arize"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/arize-ai.js",
       "className": "ArizeAiMCPServer",
@@ -2443,12 +2435,7 @@
       "security",
       "IT management"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/AutomoxCommunity/automox"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/automox.js",
       "className": "AutomoxMCPServer",
@@ -2561,12 +2548,7 @@
       "cloud",
       "infrastructure"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/awslabs/mcp"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/aws.js",
       "className": "AwsMCPServer",
@@ -2612,7 +2594,8 @@
       "url": "https://marketplace-mcp.us-east-1.api.aws/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://docs.aws.amazon.com/marketplace/latest/APIReference/marketplace-mcp-server.html"
+      "repoUrl": "https://docs.aws.amazon.com/marketplace/latest/APIReference/marketplace-mcp-server.html",
+      "notes": "URL and transport are correct. AWS docs confirm HTTP+SSE transport. Server requires Accept: application/json, text/event-stream and Mcp-Session-Id header (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -4940,12 +4923,7 @@
       "ms",
       "mr"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/CiscoDevNet/meraki"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/cisco-meraki.js",
       "className": "CiscoMerakiMCPServer",
@@ -5318,12 +5296,7 @@
       "columnar",
       "time-series"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/ClickHouse/mcp"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/clickhouse.js",
       "className": "ClickhouseMCPServer",
@@ -5817,7 +5790,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://mcp.activecampaign.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://developers.activecampaign.com/page/mcp"
@@ -5919,7 +5892,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://mcp.amplitude.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://amplitude.com/docs/analytics/amplitude-mcp"
@@ -6004,7 +5977,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{tenant}.mcp.benchling.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.benchling.com/hc/en-us/articles/40342713479437-Benchling-MCP"
@@ -6279,7 +6252,8 @@
       "url": "https://mcp.context7.com/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://context7.com/docs/overview"
+      "repoUrl": "https://context7.com/docs/overview",
+      "notes": "URL and transport are correct. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -6344,7 +6318,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{workspace-hostname}/api/2.0/mcp/functions/{catalog}/{schema}",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.databricks.com/aws/en/generative-ai/mcp/connect-external-services"
@@ -6361,7 +6335,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{subdomain}.datagrail.io/api/v2/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.datagrail.io/docs/vera/vera-mcp/introduction-and-use"
@@ -6412,7 +6386,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://mcp.dremio.cloud/mcp/{project_id}",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.dremio.com/cloud/sonar/mcp-server/"
@@ -6514,7 +6488,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{instance-name}-be.glean.com/mcp/{server-name}",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.glean.com/administration/platform/mcp/about"
@@ -6534,7 +6508,8 @@
       "url": "https://api.godaddy.com/v1/domains/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://developer.godaddy.com/mcp"
+      "repoUrl": "https://developer.godaddy.com/mcp",
+      "notes": "URL and transport are correct (confirmed via GoDaddy developer docs). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -6583,9 +6558,10 @@
     "mcp": {
       "transport": "streamable-http",
       "url": "https://grantedai.com/api/mcp/mcp",
-      "requiresOAuth": true,
+      "requiresOAuth": false,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://grantedai.com/mcp"
+      "repoUrl": "https://grantedai.com/mcp",
+      "notes": "URL and transport are correct. No authentication required (free service). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -6939,10 +6915,11 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "https://chatgpt.mermaid.ai/anthropic/mcp",
+      "url": "https://mcp.mermaid.ai/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://docs.mermaidchart.com/ai/mcp-server"
+      "repoUrl": "https://mermaid.ai/docs/ai/mcp-server",
+      "notes": "URL moved from chatgpt.mermaid.ai/anthropic/mcp. Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -6957,9 +6934,10 @@
     "mcp": {
       "transport": "streamable-http",
       "url": "https://learn.microsoft.com/api/mcp",
-      "requiresOAuth": true,
+      "requiresOAuth": false,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://learn.microsoft.com/en-us/training/support/mcp"
+      "repoUrl": "https://learn.microsoft.com/en-us/training/support/mcp",
+      "notes": "URL and transport are correct (confirmed via Microsoft Learn docs). No authentication required (publicly available, no charge). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -7075,7 +7053,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{accountid}.suitetalk.api.netsuite.com/services/mcp/v1/suiteapp/com.netsuite.mcpstandardtools",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/article_7200233106.html"
@@ -7347,7 +7325,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://mcp.smartsheet.com",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://help.smartsheet.com/articles/2483663-use-smartsheet-connector-claude"
@@ -7364,7 +7342,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{account}.snowflakecomputing.com/api/v2/databases/{database}/schemas/{schema}/mcp-servers/{name}",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-mcp"
@@ -7525,7 +7503,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{vanity_name}.app.visier.com/visier-query-mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.visier.com/developer/agents/mcp/mcp-server.htm"
@@ -7593,7 +7571,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{id}.apim.mcp.workato.com/{collection-path}",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.workato.com/en/mcp.html"
@@ -8364,12 +8342,7 @@
       "alert",
       "siem"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/CrowdStrike/falcon"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/crowdstrike.js",
       "className": "CrowdstrikeMCPServer",
@@ -8426,12 +8399,7 @@
       "user risk",
       "identity security"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/CrowdStrike/falcon"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/crowdstrike-identity.js",
       "className": "CrowdstrikeIdentityMCPServer",
@@ -9840,12 +9808,7 @@
       "sync",
       "enterprise file sync"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/dropbox/mcp"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/dropbox-business.js",
       "className": "DropboxBusinessMCPServer",
@@ -10180,12 +10143,7 @@
       "user management",
       "group"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/egnyte/egnyte"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/egnyte.js",
       "className": "EgnyteMCPServer",
@@ -10839,12 +10797,7 @@
       "web application firewall",
       "application security"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/czirakim/F5.MCP.server"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/f5-bigip.js",
       "className": "F5BigipMCPServer",
@@ -10905,12 +10858,7 @@
       "stats",
       "analytics"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/fastly/mcp"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/fastly.js",
       "className": "FastlyMCPServer",
@@ -12106,12 +12054,7 @@
       "test",
       "automation"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/github/github"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/github-actions.js",
       "className": "GithubActionsMCPServer",
@@ -12282,12 +12225,7 @@
       "attachment",
       "workspace"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/googleworkspace/cli"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/gmail.js",
       "className": "GmailMCPServer",
@@ -12498,12 +12436,7 @@
       "reminder",
       "recurrence"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/googleworkspace/cli"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/google-calendar.js",
       "className": "GoogleCalendarMCPServer",
@@ -14140,12 +14073,7 @@
       "workflow",
       "status-page"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/incident"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/incident-io.js",
       "className": "IncidentIoMCPServer",
@@ -14608,7 +14536,8 @@
       "url": "https://mcp.apollographql.com",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
-      "repoUrl": "https://www.apollographql.com/docs/graphos/platform/graphos-mcp-tools"
+      "repoUrl": "https://www.apollographql.com/docs/graphos/platform/graphos-mcp-tools",
+      "notes": "URL and transport are correct (Apollo docs confirm streamable-http, base URL with no /mcp suffix). Server requires Accept: application/json, text/event-stream (returns 406 with Accept: application/json only)."
     }
   },
   {
@@ -14656,7 +14585,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://mcp.customer.io/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.customer.io/ai/mcp-server/"
@@ -14724,7 +14653,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{your-n8n-instance}/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.n8n.io/advanced-ai/accessing-n8n-mcp-server/"
@@ -14758,7 +14687,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://app.pendo.io/mcp/v0/shttp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://support.pendo.io/hc/en-us/articles/41102236924955"
@@ -14775,7 +14704,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://mcp.port.io/v1",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.port.io/ai-interfaces/port-mcp-server/overview-and-installation"
@@ -14809,7 +14738,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://{account-name}.mcp.galaxy.starburst.io",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://docs.starburst.io/starburst-galaxy/ai-workflows/mcp-server.html"
@@ -18446,12 +18375,7 @@
       "provisioning",
       "deprovisioning"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/okta/okta"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/okta.js",
       "className": "OktaMCPServer",
@@ -19065,12 +18989,7 @@
       "alarm",
       "metric"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/oracle/mcp"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/oracle-cloud.js",
       "className": "OracleCloudMCPServer",
@@ -19809,12 +19728,7 @@
       "session",
       "authentication"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/pingidentity/pingone"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/ping-identity.js",
       "className": "PingIdentityMCPServer",
@@ -20160,12 +20074,7 @@
       "quotes",
       "trades"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/polygon"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/polygon-io.js",
       "className": "PolygonIoMCPServer",
@@ -22259,12 +22168,7 @@
       "test job",
       "build"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/saucelabs/sauce"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/sauce-labs.js",
       "className": "SauceLabsMCPServer",
@@ -22450,12 +22354,7 @@
       "test",
       "framework"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/secureframe/secureframe"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/secureframe.js",
       "className": "SecureframeMCPServer",
@@ -23601,12 +23500,7 @@
       "hotspot",
       "sast"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/SonarSource/sonarqube"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/sonarqube.js",
       "className": "SonarqubeMCPServer",
@@ -23893,12 +23787,7 @@
       "reporting",
       "scheduling"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/jmeserve/sprout"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/sprout-social.js",
       "className": "SproutSocialMCPServer",
@@ -24658,7 +24547,7 @@
     "type": "mcp",
     "mcp": {
       "transport": "streamable-http",
-      "url": "{url}",
+      "url": "https://app.hex.tech/mcp",
       "requiresOAuth": true,
       "recommendation": "use-vendor-mcp",
       "repoUrl": "https://learn.hex.tech/docs/administration/mcp-server"
@@ -26127,12 +26016,7 @@
       "policy",
       "mitigation"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/dipsylala/veracode"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/veracode.js",
       "className": "VeracodeMCPServer",
@@ -26370,12 +26254,7 @@
       "metrics",
       "ml"
     ],
-    "type": "both",
-    "mcp": {
-      "transport": "stdio",
-      "recommendation": "not-evaluated",
-      "repoUrl": "https://github.com/wandb/wandb"
-    },
+    "type": "rest",
     "rest": {
       "module": "./dist/mcp-servers/wandb.js",
       "className": "WandbMCPServer",
