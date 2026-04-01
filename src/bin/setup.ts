@@ -1152,7 +1152,9 @@ async function runSetupWizard(): Promise<void> {
     }
   }
 
-  // Step 4: Adapter selection
+  // Step 4: Adapter selection — tree structure (group → category → adapters)
+
+  // Build category map
   const categories = new Map<string, AdapterEntry[]>();
   for (const adapter of allAdapters) {
     const cat = adapter.category || 'other';
@@ -1160,39 +1162,112 @@ async function runSetupWizard(): Promise<void> {
     categories.get(cat)!.push(adapter);
   }
 
-  const categoryOptions = Array.from(categories.entries())
-    .sort((a, b) => b[1].length - a[1].length)
-    .map(([cat, adapters]) => ({
-      value: cat,
-      label: `${formatCategory(cat)} (${adapters.length})`,
+  // Top-level groups that map to subcategories
+  const GROUPS: Record<string, { label: string; cats: string[] }> = {
+    'security': {
+      label: 'Security & Identity',
+      cats: ['cybersecurity', 'identity', 'compliance'],
+    },
+    'devops': {
+      label: 'DevOps & Infrastructure',
+      cats: ['devops', 'cloud', 'observability', 'engineering'],
+    },
+    'business': {
+      label: 'Business & Finance',
+      cats: ['finance', 'crm', 'commerce', 'marketing', 'customer-support', 'hr', 'productivity', 'erp'],
+    },
+    'comms': {
+      label: 'Communication & Collaboration',
+      cats: ['communication', 'collaboration'],
+    },
+    'data-ai': {
+      label: 'Data & AI',
+      cats: ['data', 'ai', 'science'],
+    },
+    'industry': {
+      label: 'Industry',
+      cats: ['healthcare', 'hospitality', 'construction', 'manufacturing', 'real-estate', 'travel', 'education', 'insurance', 'legal', 'energy', 'automotive', 'telecom', 'logistics', 'government', 'iot'],
+    },
+    'media': {
+      label: 'Media & Social',
+      cats: ['media', 'social', 'design'],
+    },
+    'other': {
+      label: 'Other',
+      cats: ['misc', 'other'],
+    },
+  };
+
+  // Count adapters per group
+  function countGroup(cats: string[]): number {
+    let total = 0;
+    for (const cat of cats) total += (categories.get(cat) || []).length;
+    return total;
+  }
+
+  // Collect any categories not in a group
+  const allGroupedCats = new Set(Object.values(GROUPS).flatMap(g => g.cats));
+  const ungrouped = Array.from(categories.keys()).filter(c => !allGroupedCats.has(c));
+  if (ungrouped.length > 0) {
+    GROUPS['other'].cats.push(...ungrouped);
+  }
+
+  const groupOptions = Object.entries(GROUPS)
+    .filter(([_, g]) => countGroup(g.cats) > 0)
+    .map(([key, g]) => ({
+      value: key,
+      label: `${g.label} (${countGroup(g.cats)})`,
     }));
 
-  const selectedCategories = await p.multiselect({
-    message: 'Which categories do you need? (Space to select, Enter to confirm)',
-    options: categoryOptions,
+  const selectedGroups = await p.multiselect({
+    message: 'What do you work with? (Space to select, Enter to confirm)',
+    options: groupOptions,
     required: false,
   });
-  if (p.isCancel(selectedCategories)) { p.cancel('Setup cancelled.'); process.exit(0); }
+  if (p.isCancel(selectedGroups)) { p.cancel('Setup cancelled.'); process.exit(0); }
 
   const selectedAdapterIds: string[] = [];
 
-  if (selectedCategories.length > 0) {
-    const available: { value: string; label: string; hint?: string }[] = [];
-    for (const cat of selectedCategories) {
-      for (const a of categories.get(cat) || []) {
-        available.push({ value: a.id, label: a.name || a.id, hint: a.description?.slice(0, 60) });
+  for (const groupKey of selectedGroups) {
+    const group = GROUPS[groupKey];
+    if (!group) continue;
+
+    // Show subcategories within this group
+    const subCatOptions = group.cats
+      .filter(cat => (categories.get(cat) || []).length > 0)
+      .map(cat => ({
+        value: cat,
+        label: `${formatCategory(cat)} (${(categories.get(cat) || []).length})`,
+      }));
+
+    if (subCatOptions.length === 0) continue;
+
+    const selectedSubCats = await p.multiselect({
+      message: `${group.label} — select categories (Space to select, Enter to confirm)`,
+      options: subCatOptions,
+      required: false,
+    });
+    if (p.isCancel(selectedSubCats)) continue;
+
+    if (selectedSubCats.length > 0) {
+      // Show adapters from selected subcategories
+      const available: { value: string; label: string; hint?: string }[] = [];
+      for (const cat of selectedSubCats) {
+        for (const a of categories.get(cat) || []) {
+          available.push({ value: a.id, label: a.name || a.id, hint: a.description?.slice(0, 60) });
+        }
       }
-    }
 
-    if (available.length > 0) {
-      const selected = await p.multiselect({
-        message: `Select adapters (${available.length} available)`,
-        options: available.slice(0, 50),
-        required: false,
-      });
+      if (available.length > 0) {
+        const selected = await p.multiselect({
+          message: `Select adapters (${available.length} available)`,
+          options: available.slice(0, 50),
+          required: false,
+        });
 
-      if (!p.isCancel(selected)) {
-        selectedAdapterIds.push(...selected);
+        if (!p.isCancel(selected)) {
+          selectedAdapterIds.push(...selected);
+        }
       }
     }
   }
