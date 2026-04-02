@@ -11,3 +11,4 @@ coverage/
 *.tgz
 *.ttf
 social-card.html
+*.py
