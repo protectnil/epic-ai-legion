@@ -130,6 +130,7 @@
     "test:compliance": "npx tsx adapter-test-harness/run.ts --all",
     "test:compliance:validate": "npx tsx adapter-test-harness/run.ts --validate --report",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "eval": "node dist/eval/routing-eval.js"
   }
 }
