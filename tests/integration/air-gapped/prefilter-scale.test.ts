@@ -89,7 +89,7 @@ describe('Pre-Filter Scale Test', () => {
     const filter = new ToolPreFilter();
     filter.index(FULL_CATALOG);
 
-    const selected = filter.select('Show me recent threat detections from EDR', { maxTools: 8, maxPerServer: 3 });
+    const selected = await filter.select('Show me recent threat detections from EDR', { maxTools: 8, maxPerServer: 3 });
     console.log(`Pre-filter: ${FULL_CATALOG.length} → ${selected.length} tools`);
     console.log('Selected:', selected.map(t => t.name));
 
@@ -116,7 +116,7 @@ describe('Pre-Filter Scale Test', () => {
     // Pre-filter
     const filter = new ToolPreFilter();
     filter.index(FULL_CATALOG);
-    const selected = filter.select('What are the latest threat detections?', { maxTools: 8, maxPerServer: 3 });
+    const selected = await filter.select('What are the latest threat detections?', { maxTools: 8, maxPerServer: 3 });
     console.log(`Pre-filter: ${FULL_CATALOG.length} → ${selected.length} tools for threat query`);
 
     const toolDefs: LLMToolDefinition[] = selected.map(t => ({
@@ -158,7 +158,7 @@ describe('Pre-Filter Scale Test', () => {
 
     const filter = new ToolPreFilter();
     filter.index(FULL_CATALOG);
-    const selected = filter.select('Search the logs for the compromised host and create a Jira ticket', { maxTools: 8, maxPerServer: 3 });
+    const selected = await filter.select('Search the logs for the compromised host and create a Jira ticket', { maxTools: 8, maxPerServer: 3 });
     console.log(`Pre-filter: ${FULL_CATALOG.length} → ${selected.length} tools for cross-domain query`);
     console.log('Selected:', selected.map(t => t.name));
 

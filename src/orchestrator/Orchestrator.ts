@@ -178,7 +178,7 @@ export class Orchestrator {
       ? this.deps.federation.listOrchestratedTools()
       : this.deps.federation.listTools();
     this.preFilter.index(orchestratedTools);
-    let tools = this.preFilter.select(query, this.deps.preFilter);
+    let tools = await this.preFilter.select(query, this.deps.preFilter);
     let toolDefs: LLMToolDefinition[] = tools.map(t => ({
       name: t.name,
       description: t.description,
@@ -219,7 +219,7 @@ export class Orchestrator {
             maxTools: (this.deps.preFilter?.maxTools ?? 8) * 2,
             maxPerServer: (this.deps.preFilter?.maxPerServer ?? 3) * 2,
           };
-          tools = this.preFilter.select(query, expandedOptions);
+          tools = await this.preFilter.select(query, expandedOptions);
           toolDefs = tools.map(t => ({
             name: t.name,
             description: t.description,

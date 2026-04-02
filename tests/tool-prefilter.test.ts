@@ -46,50 +46,50 @@ describe('ToolPreFilter', () => {
     filter.index(CATALOG);
   });
 
-  it('indexes all tools', () => {
+  it('indexes all tools', async () => {
     expect(filter.size).toBe(20);
   });
 
-  it('returns all tools when catalog fits within maxTools', () => {
+  it('returns all tools when catalog fits within maxTools', async () => {
     const small = new ToolPreFilter();
     small.index(CATALOG.slice(0, 5));
-    const result = small.select('anything', { maxTools: 8 });
+    const result = await small.select('anything', { maxTools: 8 });
     expect(result).toHaveLength(5);
   });
 
-  it('selects threat/detection tools for a threat query', () => {
-    const result = filter.select('Show me recent threat detections', { maxTools: 5 });
+  it('selects threat/detection tools for a threat query', async () => {
+    const result = await filter.select('Show me recent threat detections', { maxTools: 5 });
     const names = result.map(t => t.name);
     expect(names).toContain('crowdstrike:list_detections');
     expect(result.length).toBeLessThanOrEqual(5);
   });
 
-  it('selects vault tools for a secrets query', () => {
-    const result = filter.select('Read the database password from vault', { maxTools: 5 });
+  it('selects vault tools for a secrets query', async () => {
+    const result = await filter.select('Read the database password from vault', { maxTools: 5 });
     const names = result.map(t => t.name);
     expect(names).toContain('vault:read_secret');
   });
 
-  it('selects Splunk tools for a log search query', () => {
-    const result = filter.select('Search the logs for failed SSH logins', { maxTools: 5 });
+  it('selects Splunk tools for a log search query', async () => {
+    const result = await filter.select('Search the logs for failed SSH logins', { maxTools: 5 });
     const names = result.map(t => t.name);
     expect(names).toContain('splunk:search');
   });
 
-  it('selects GitHub tools for a code query', () => {
-    const result = filter.select('Find the code that handles authentication', { maxTools: 5 });
+  it('selects GitHub tools for a code query', async () => {
+    const result = await filter.select('Find the code that handles authentication', { maxTools: 5 });
     const names = result.map(t => t.name);
     expect(names).toContain('github:search_code');
   });
 
-  it('selects incident tools for an incident query', () => {
-    const result = filter.select('List active security incidents', { maxTools: 5 });
+  it('selects incident tools for an incident query', async () => {
+    const result = await filter.select('List active security incidents', { maxTools: 5 });
     const names = result.map(t => t.name);
     expect(names).toContain('sentinel:list_incidents');
   });
 
-  it('enforces server diversity with maxPerServer', () => {
-    const result = filter.select('List all detections and hosts and quarantine everything', {
+  it('enforces server diversity with maxPerServer', async () => {
+    const result = await filter.select('List all detections and hosts and quarantine everything', {
       maxTools: 8,
       maxPerServer: 2,
     });
@@ -102,39 +102,39 @@ describe('ToolPreFilter', () => {
     }
   });
 
-  it('handles empty query gracefully', () => {
-    const result = filter.select('', { maxTools: 5 });
+  it('handles empty query gracefully', async () => {
+    const result = await filter.select('', { maxTools: 5 });
     expect(result.length).toBeLessThanOrEqual(5);
   });
 
-  it('handles query with only stopwords', () => {
-    const result = filter.select('the and or is are', { maxTools: 5 });
+  it('handles query with only stopwords', async () => {
+    const result = await filter.select('the and or is are', { maxTools: 5 });
     expect(result.length).toBeLessThanOrEqual(5);
   });
 
-  it('handles empty catalog', () => {
+  it('handles empty catalog', async () => {
     const empty = new ToolPreFilter();
     empty.index([]);
-    const result = empty.select('anything');
+    const result = await empty.select('anything');
     expect(result).toHaveLength(0);
   });
 
-  it('re-indexing replaces old catalog', () => {
+  it('re-indexing replaces old catalog', async () => {
     const newCatalog = [makeTool('new:tool', 'A completely new tool', 'new-server')];
     filter.index(newCatalog);
     expect(filter.size).toBe(1);
-    const result = filter.select('new tool');
+    const result = await filter.select('new tool');
     expect(result[0].name).toBe('new:tool');
   });
 
-  it('cross-domain query surfaces tools from multiple servers', () => {
-    const result = filter.select('Search for threats in logs and quarantine the host', { maxTools: 8 });
+  it('cross-domain query surfaces tools from multiple servers', async () => {
+    const result = await filter.select('Search for threats in logs and quarantine the host', { maxTools: 8 });
     const servers = new Set(result.map(t => t.server));
     // Should have tools from at least 2 different servers
     expect(servers.size).toBeGreaterThanOrEqual(2);
   });
 
-  it('scores tool with matching parameter names higher', () => {
+  it('scores tool with matching parameter names higher', async () => {
     const toolsWithParams: Tool[] = [
       {
         name: 'generic:action',
@@ -151,7 +151,7 @@ describe('ToolPreFilter', () => {
     ];
     const f = new ToolPreFilter();
     f.index(toolsWithParams);
-    const result = f.select('check hostname severity', { maxTools: 2 });
+    const result = await f.select('check hostname severity', { maxTools: 2 });
     expect(result[0].name).toBe('generic:action');
   });
 });
