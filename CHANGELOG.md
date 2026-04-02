@@ -14,15 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI commands renamed: `epic-ai` → `legion`, `epic-ai-gateway` → `legion-gateway`
 
 ### Added
-- **29 new REST adapters** — 11 AWS services (DynamoDB, Lambda, IAM, CloudWatch, ECS, SNS, SQS, CloudTrail, Cost Explorer, Route 53, Redshift) + 18 industry verticals (FHIR, Opera PMS, Mews, Cloudbeds, InfoGenesis, Autodesk Construction, PlanGrid, Buildertrend, Epicor, Infor, Odoo, Majesco, Blackboard, PowerSchool, Bandwidth, Adobe Sign, Travelport, Trello). 871 REST adapters on disk.
+- **29 new REST adapters** — 11 AWS services (DynamoDB, Lambda, IAM, CloudWatch, ECS, SNS, SQS, CloudTrail, Cost Explorer, Route 53, Redshift) + 18 industry verticals (FHIR, Opera PMS, Mews, Cloudbeds, InfoGenesis, Autodesk Construction, PlanGrid, Buildertrend, Epicor, Infor, Odoo, Majesco, Blackboard, PowerSchool, Bandwidth, Adobe Sign, Travelport, Trello). 870 REST adapters on disk.
 - **Setup wizard** — interactive CLI with Clack prompts. Auto-detects 11 MCP clients (Claude Code, Cursor, Windsurf, VS Code, Codex, Gemini, Cline, Continue, Goose, Roo Code, Claude Desktop). Writes MCP config with permission. Secrets provider integration (Vault, AWS SM, Azure KV, 1Password, Doppler).
-- **MCP server mode** (`--serve`) — exposes `legion_query`, `legion_call`, `legion_list` tools. BM25 routing to 18,679 tools across 1,117 integrations.
+- **MCP server mode** (`--serve`) — exposes `legion_query`, `legion_call`, `legion_list` tools. Hybrid routing (BM25 + miniCOIL + dense) to 42,946 tools across 3,887 integrations.
 - **Subcommands** — `add`, `remove`, `health`, `list` with fuzzy matching
 - **Elastic License 2.0** for adapters and registry (LICENSE-ADAPTERS)
 - MCP registry cleaned to Node-only (Python/Go/Rust/Java entries archived)
 
 ### Changed
-- Default adapter count: 871 REST + 246 MCP = 1,117 integrations, 18,679 tools
+- Default adapter count: 870 REST + 3,017 MCP = 3,887 integrations, 42,946 tools
 
 ---
 

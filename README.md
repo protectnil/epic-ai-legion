@@ -1,14 +1,14 @@
 # Epic AI® Legion
 
-*18,679 tools. One self-hosted MCP server. Your context window only loads what the query needs.*
+*42,946 tools. One self-hosted MCP server. Your context window only loads what the query needs.*
 
-Legion is the integration layer for AI agents. 18,679 tools across Salesforce, GitHub, AWS, Zillow, Epic FHIR, Spotify, Stripe, CrowdStrike, and 1,108 more — either REST APIs, stdio MCPs, or streamable-HTTP MCPs (`npx @epicai/legion list --count`). All three transports, one unified interface. A three-tier routing engine narrows the full catalog to the handful of tools each query actually needs. Keyword matching and BM25 scoring do the heavy lifting at zero inference cost; the SLM only sees a compact shortlist. One install, one config, and your agent reaches every tool without drowning in schemas. Credentials stay on your machine. The routing stays on your machine. No tool executes a write operation without your explicit approval unless you configure it otherwise. You add your API or MCP keys and it works.
-
-Legion is an Intelligent Virtual Assistant (IVA) — the AI classifies intent, selects adapters, calls them, and synthesizes a response through your local SLM or cloud LLM.
+Credentials stay on your machine. The routing stays on your machine. No tool executes a write operation without your explicit approval — read operations run automatically, write operations require confirmation, and you control the boundary per adapter and per operation type. Every action — approved, rejected, or automated — is logged with a timestamp, identity, and SHA-256 hash chain for tamper-evident audit. Legion is an Intelligent Virtual Assistant (IVA) that classifies intent, selects adapters, calls them, and synthesizes a response. Tool schemas and routing decisions never leave your machine — only the final query reaches your LLM, local or cloud. 42,946 tools across Salesforce, GitHub, AWS, Zillow, Epic FHIR, Spotify, Stripe, CrowdStrike, and 3,879 more — either REST APIs, stdio MCPs, or streamable-HTTP MCPs (`npx @epicai/legion list --count`). All three transports, one unified interface. A three-tier routing engine — keyword matching, hybrid retrieval (BM25 + miniCOIL [COntextualized Inverted List] sparse + dense semantic), then model-assisted classification — narrows the full catalog to the handful of tools each query actually needs. The first two tiers run at zero inference cost; the model only sees a compact shortlist. One install, one config, and your agent reaches every tool. The default shortlist is 8 tools per query — configurable. You add your API or MCP keys and it works.
 
 ```bash
 npx @epicai/legion
 ```
+
+Cloud LLM users: no GPU required — your AI client handles classification. Local SLM users: see [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for hardware specs by model size.
 
 [![npm version](https://img.shields.io/npm/v/@epicai/legion.svg?style=flat)](https://www.npmjs.com/package/@epicai/legion)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
@@ -35,7 +35,7 @@ Developer's machine
 │       ▼                                      │
 │  Legion MCP Server (npx @epicai/legion --serve)
 │       │                                      │
-│       ├── REST Adapters (871 .ts files)      │
+│       ├── REST Adapters (870 .ts files)      │
 │       ├── Stdio MCPs (111 npm packages)      │
 │       └── HTTP MCPs (135 remote endpoints)   │
 │                                              │
@@ -57,7 +57,7 @@ Developer's machine
 │       │                                      │
 │  Legion Orchestrator                         │
 │       │                                      │
-│       ├── REST Adapters (871)                │
+│       ├── REST Adapters (870)                │
 │       ├── Stdio MCPs (111)                   │
 │       └── HTTP MCPs (135)                    │
 │                                              │
@@ -95,13 +95,13 @@ Three-tier tool resolution prevents context window bloat:
 | 2 | ToolPreFilter | BM25 scoring across live connected tools, top 8 | Zero inference |
 | 3 | Orchestrator | SLM selects from the shortlist and makes tool calls | One local inference call |
 
-The full adapter catalog (18,679 tools) never reaches the LLM. Only the shortlisted 8 tools do.
+The full adapter catalog (42,946 tools) never reaches the LLM. Only the shortlisted 8 tools do.
 
 ---
 
 ## Adapters
 
-871 REST adapters + 246 MCP connections = 1,117 integrations exposing 18,679 tools.
+870 REST adapters + 3,017 MCP connections = 3,887 integrations exposing 42,946 tools.
 
 | Category | Examples |
 |----------|---------|
@@ -138,7 +138,7 @@ Every tool call goes through a three-tier governance layer:
 | `escalate` | Executes, flags for review | Write, update, modify |
 | `approve` | Blocks until human approves | Delete, revoke, terminate |
 
-Unclassified actions default to `approve`. No tool writes to your systems without your explicit permission unless you configure it otherwise.
+Unclassified actions default to `approve`. No tool writes to your systems without your explicit approval.
 
 ---
 
@@ -228,4 +228,4 @@ All other trademarks, service marks, and product names referenced in this docume
 
 ---
 
-*Epic AI® — Intelligent Virtual Assistant (IVA) Platform | 18,679 Tools | Built by [protectNIL Inc.](https://protectnil.com)*
+*Epic AI® — Intelligent Virtual Assistant (IVA) Platform | 42,946 Tools | Built by [protectNIL Inc.](https://protectnil.com)*

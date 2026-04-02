@@ -5,7 +5,7 @@
 **License:** Apache 2.0
 **Runtime:** Node.js >= 20.0.0, TypeScript 5.3+
 
-Epic AI® Legion is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. The SDK federates across multiple MCP servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis. 871 REST adapters plus 246 MCP connections (1,117 integrations, 18,679 tools) span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. This guide covers every layer of the SDK.
+Epic AI® Legion is an Intelligent Virtual Assistant that replaces dashboards and manual analysis — turning your enterprise systems into real-time actions and escalations. The SDK federates across multiple MCP servers, with a local small language model (SLM) handling all tool selection, routing, and governance. Tool schemas, server topology, and intermediate results stay off the cloud LLM entirely. The cloud LLM receives only curated context for response synthesis. 870 REST adapters plus 3,017 MCP connections (3,887 integrations, 42,946 tools) span security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. This guide covers every layer of the SDK.
 
 ---
 
@@ -1045,7 +1045,7 @@ emitter.onLog(createOTelLogCallback(logExporter));
 
 ## MCP Server Adapters
 
-The SDK ships 871 REST adapters plus 246 MCP connections (1,117 integrations, 18,679 tools) across security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. Each implements `MCPAdapter` and handles authentication, request formatting, and response normalization. All REST adapters are included under Apache 2.0.
+The SDK ships 870 REST adapters plus 3,017 MCP connections (3,887 integrations, 42,946 tools) across security, DevOps, cloud infrastructure, observability, productivity, AI/ML, and business operations. Each implements `MCPAdapter` and handles authentication, request formatting, and response normalization. All REST adapters are included under Apache 2.0.
 
 ### Security Operations
 
