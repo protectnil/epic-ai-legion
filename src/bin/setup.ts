@@ -771,8 +771,23 @@ async function cmdAdd(adapterName: string): Promise<void> {
   if (match.mcp?.transport === 'stdio' && match.mcp?.packageName) {
     s.start(`Installing ${match.name}`);
     try {
-      execSync(`npm install -g ${match.mcp.packageName}`, { stdio: 'pipe', timeout: 60000 });
-      s.stop(`${pc.green('✓')} ${match.name} installed`);
+      execSync(`npm install -g --ignore-scripts ${match.mcp.packageName}`, { stdio: 'pipe', timeout: 60000 });
+      // Verify artifact integrity
+      try {
+        const { ArtifactVerifier } = await import('../trust/ArtifactVerifier.js');
+        const verifier = new ArtifactVerifier({ verifyDigests: true });
+        const pkgPath = execSync(`npm root -g`, { encoding: 'utf-8', timeout: 5000 }).trim();
+        const mainFile = join(pkgPath, match.mcp.packageName, 'package.json');
+        const result = await verifier.verify(match.mcp.packageName, mainFile);
+        if (!result.valid) {
+          s.stop(`${pc.red('✗')} ${match.name} — integrity check failed: ${result.reason}`);
+        } else {
+          s.stop(`${pc.green('✓')} ${match.name} installed — verified (${result.artifactDigest.slice(0, 16)}...)`);
+        }
+      } catch {
+        // Verification infrastructure not available — still report install success
+        s.stop(`${pc.green('✓')} ${match.name} installed`);
+      }
     } catch {
       s.stop(`${pc.yellow('!')} Install failed — run manually: npm install -g ${match.mcp.packageName}`);
     }
@@ -1351,8 +1366,22 @@ async function runSetupWizard(): Promise<void> {
 
       s.start(`Installing ${adapter.name || adapterId}`);
       try {
-        execSync(`npm install -g ${adapter.mcp.packageName}`, { stdio: 'pipe', timeout: 60000 });
-        s.stop(`${pc.green('✓')} ${adapter.name || adapterId} installed`);
+        execSync(`npm install -g --ignore-scripts ${adapter.mcp.packageName}`, { stdio: 'pipe', timeout: 60000 });
+        // Verify artifact integrity
+        try {
+          const { ArtifactVerifier } = await import('../trust/ArtifactVerifier.js');
+          const verifier = new ArtifactVerifier({ verifyDigests: true });
+          const pkgPath = execSync(`npm root -g`, { encoding: 'utf-8', timeout: 5000 }).trim();
+          const mainFile = join(pkgPath, adapter.mcp.packageName, 'package.json');
+          const result = await verifier.verify(adapter.mcp.packageName, mainFile);
+          if (!result.valid) {
+            s.stop(`${pc.red('✗')} ${adapter.name || adapterId} — integrity check failed`);
+          } else {
+            s.stop(`${pc.green('✓')} ${adapter.name || adapterId} installed — verified`);
+          }
+        } catch {
+          s.stop(`${pc.green('✓')} ${adapter.name || adapterId} installed`);
+        }
       } catch {
         s.stop(`${pc.yellow('!')} ${adapter.name || adapterId} — run manually: npm install -g ${adapter.mcp.packageName}`);
       }

@@ -307,6 +307,17 @@ async function main(): Promise<void> {
   const filter = new ToolPreFilter();
   filter.index(tools);
 
+  // Load vector index for hybrid retrieval
+  const vectorPath = join(PKG_ROOT, 'vector-index.json');
+  try {
+    const vectorRaw = readFileSync(vectorPath, 'utf-8');
+    const vectorRecords = JSON.parse(vectorRaw);
+    filter.loadVectorIndex(vectorRecords);
+    console.log(`Vector index: ${vectorRecords.length} records loaded (hybrid retrieval enabled)`);
+  } catch {
+    console.log('Vector index: not found (BM25-only mode)');
+  }
+
   // ── Tier 1 ──────────────────────────────────────────────
   const tier1Queries = generateTier1Queries(catalog, registry);
   console.log(`Tier 1: ${tier1Queries.length} generated queries...`);
