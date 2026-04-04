@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 /**
  * Epic AI® Legion — CLI Entry Point
- * `npx @epicai/legion` — setup wizard
- * `npx @epicai/legion --serve` — MCP server mode
- * `npx @epicai/legion add <name>` — add adapter
- * `npx @epicai/legion remove <name>` — remove adapter
- * `npx @epicai/legion health` — check adapter health
- * `npx @epicai/legion list` — list all adapters
+ * `legion` / `npx @epicai/legion`   — setup wizard
+ * `legion serve` / `--serve`        — MCP server mode
+ * `legion add <name>`               — add adapter and enter credentials
+ * `legion remove <name>`            — remove an adapter
+ * `legion health`                   — check adapter status
+ * `legion list`                     — show Curated + Custom adapters
+ * `legion search [term]`            — search all available adapters
+ * `legion configure`                — connect credentials and wire adapters
+ * `legion help`                     — show all commands
  *
  * Legion is an Intelligent Virtual Assistant (IVA) — the AI classifies intent,
  * selects adapters, calls them, and synthesizes a response through your local
@@ -82,70 +85,16 @@ function getPackageRoot(): string {
   return join(thisFile, '..', '..', '..');
 }
 
-// ─── Catalog loading ────────────────────────────────────────
+// ─── Catalog loading (single source: adapter-catalog.json from MongoDB) ─────
 
-async function loadCatalog(): Promise<AdapterEntry[]> {
+async function loadAllAdapters(): Promise<AdapterEntry[]> {
   try {
     const catalogPath = join(getPackageRoot(), 'adapter-catalog.json');
     const raw = await readFile(catalogPath, 'utf-8');
-    const entries = JSON.parse(raw) as Array<{
-      name: string;
-      displayName?: string;
-      category?: string;
-      description?: string;
-      toolNames?: string[];
-      keywords?: string[];
-    }>;
-    // Normalize catalog format to AdapterEntry
-    return entries.map(e => ({
-      id: e.name,
-      name: e.displayName || e.name,
-      description: e.description,
-      category: e.category,
-      type: 'rest' as const,
-      rest: {
-        toolCount: e.toolNames?.length || 0,
-        toolNames: e.toolNames,
-        envKey: `${e.name.toUpperCase().replace(/-/g, '_')}_API_KEY`,
-      },
-    }));
-  } catch {
-    return [];
-  }
-}
-
-async function loadRegistry(): Promise<AdapterEntry[]> {
-  try {
-    const registryPath = join(getPackageRoot(), 'mcp-registry.json');
-    const raw = await readFile(registryPath, 'utf-8');
     return JSON.parse(raw) as AdapterEntry[];
   } catch {
     return [];
   }
-}
-
-/** Merge catalog + registry, deduplicate by ID (registry wins for MCP info) */
-async function loadAllAdapters(): Promise<AdapterEntry[]> {
-  const catalog = await loadCatalog();
-  const registry = await loadRegistry();
-  const byId = new Map<string, AdapterEntry>();
-
-  // Catalog first
-  for (const a of catalog) byId.set(a.id, a);
-
-  // Registry merges on top — adds MCP info to existing entries, adds new MCP-only entries
-  for (const r of registry) {
-    const existing = byId.get(r.id);
-    if (existing) {
-      // Merge MCP info into catalog entry
-      if (r.mcp) existing.mcp = r.mcp;
-      if (r.type === 'both' || r.type === 'mcp') existing.type = existing.rest ? 'both' : 'mcp';
-    } else {
-      byId.set(r.id, r);
-    }
-  }
-
-  return Array.from(byId.values());
 }
 
 // ─── State management ───────────────────────────────────────
@@ -213,53 +162,6 @@ function loadCredentials(): Record<string, string> {
     }
   }
   return creds;
-}
-
-// ─── Category display names ─────────────────────────────────
-
-const CATEGORY_LABELS: Record<string, string> = {
-  'ai': 'AI / ML',
-  'cloud': 'Cloud Infrastructure',
-  'collaboration': 'Collaboration',
-  'commerce': 'Commerce & eCommerce',
-  'communication': 'Communication',
-  'compliance': 'Compliance & GRC',
-  'construction': 'Construction',
-  'crm': 'CRM & Sales',
-  'customer-support': 'Customer Support',
-  'cybersecurity': 'Cybersecurity',
-  'data': 'Data & Analytics',
-  'design': 'Design & Creative',
-  'devops': 'DevOps & CI/CD',
-  'education': 'Education',
-  'energy': 'Energy',
-  'engineering': 'Engineering & Aerospace',
-  'erp': 'ERP',
-  'finance': 'Finance & Payments',
-  'government': 'Government',
-  'healthcare': 'Healthcare',
-  'hospitality': 'Hospitality & Food',
-  'hr': 'HR & People',
-  'identity': 'Identity & Access',
-  'insurance': 'Insurance',
-  'iot': 'IoT & Devices',
-  'legal': 'Legal',
-  'logistics': 'Logistics & Shipping',
-  'manufacturing': 'Manufacturing',
-  'marketing': 'Marketing',
-  'media': 'Media & Entertainment',
-  'misc': 'Other',
-  'observability': 'Observability & Monitoring',
-  'productivity': 'Productivity',
-  'real-estate': 'Real Estate & Property',
-  'science': 'Science & Research',
-  'social': 'Social Media',
-  'telecom': 'Telecom',
-  'travel': 'Travel & Transportation',
-};
-
-function formatCategory(cat: string): string {
-  return CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, ' ');
 }
 
 // ─── MCP Client Detection ───────────────────────────────────
@@ -487,7 +389,7 @@ async function startMcpServer(): Promise<void> {
   const { z } = await import('zod');
 
   const allAdapters = await loadAllAdapters();
-  const config = loadConfig();
+  void loadConfig(); // used in subcommands
   const state = loadState();
 
   const server = new McpServer({
@@ -495,68 +397,170 @@ async function startMcpServer(): Promise<void> {
     version: '1.0.0',
   });
 
+  // Build the real routing engine — same ToolPreFilter used in the eval
+  const { ToolPreFilter } = await import('../federation/ToolPreFilter.js');
+
+  // Determine which adapters the user has configured (credentials or explicit selection)
+  const creds = loadCredentials();
+  const config = loadConfig();
+  const configuredAdapterIds = new Set<string>();
+  for (const adapter of allAdapters) {
+    const hasCredential = adapter.rest?.envKey ? !!creds[adapter.rest.envKey] : false;
+    const hasMcpKeys = adapter.mcp?.envKeys?.some(k => !!creds[k]) ?? false;
+    const isSelected = config?.selectedAdapters?.includes(adapter.id) ?? false;
+    const isInState = !!state.adapters[adapter.id];
+    if (hasCredential || hasMcpKeys || isSelected || isInState) {
+      configuredAdapterIds.add(adapter.id);
+    }
+  }
+
+  // Helper: build Tool[] for the pre-filter from a set of adapters
+  function buildToolsForFilter(adapters: AdapterEntry[]) {
+    const tools: Array<{ name: string; description: string; parameters: Record<string, unknown>; server: string; tier: 'orchestrated' | 'direct' }> = [];
+    for (const adapter of adapters) {
+      const toolNames = adapter.rest?.toolNames || (adapter.mcp as Record<string, unknown>)?.toolNames as string[] | undefined || [];
+      for (const toolName of toolNames) {
+        tools.push({
+          name: `${adapter.id}:${toolName}`,
+          description: `${adapter.name} — ${toolName.replace(/_/g, ' ')}`,
+          parameters: { type: 'object', properties: {} },
+          server: adapter.id,
+          tier: 'orchestrated',
+        });
+      }
+      if (toolNames.length === 0) {
+        tools.push({
+          name: `${adapter.id}:default`,
+          description: `${adapter.name} — ${adapter.description || adapter.id}`,
+          parameters: { type: 'object', properties: {} },
+          server: adapter.id,
+          tier: 'orchestrated',
+        });
+      }
+    }
+    return tools;
+  }
+
+  // Two indexes: configured adapters (default search) and full catalog (discover mode)
+  const configuredAdapters = allAdapters.filter(a => configuredAdapterIds.has(a.id));
+  const toolPreFilter = new ToolPreFilter();
+  const fullCatalogFilter = new ToolPreFilter();
+
+  toolPreFilter.index(buildToolsForFilter(configuredAdapters));
+  fullCatalogFilter.index(buildToolsForFilter(allAdapters));
+
+  // Load vector index if available
+  try {
+    const vectorPath = join(getPackageRoot(), 'vector-index.json');
+    const vectorRaw = await readFile(vectorPath, 'utf-8');
+    const vectorRecords = JSON.parse(vectorRaw);
+    toolPreFilter.loadVectorIndex(vectorRecords);
+    fullCatalogFilter.loadVectorIndex(vectorRecords);
+  } catch { /* no vector index — BM25 only */ }
+
   // Main query tool — the single entry point for the LLM
   server.tool(
     'legion_query',
     {
-      query: z.string().describe('Natural language query — Legion routes to the right adapters'),
-      adapters: z.array(z.string()).optional().describe('Optional: specific adapter IDs to target'),
+      query: z.string().describe('Natural language query. Searches your configured adapters by default. Use discover:true to search the full catalog of 3,887 adapters.'),
+      detail: z.enum(['full', 'summary']).optional().describe('full (default): top 20 with tool lists. summary: one-line adapter summaries — use this when the first call missed.'),
+      discover: z.boolean().optional().describe('Set to true to search ALL available adapters, not just your configured ones. Use this to find new adapters to connect.'),
+      adapters: z.array(z.string()).optional().describe('Optional: specific adapter IDs to target directly'),
     },
     async (args) => {
       const query = args.query;
-      const targetAdapters = args.adapters;
+      const detail = args.detail || 'full';
+      const discover = args.discover || false;
+      void args.adapters; // reserved for future per-adapter targeting
 
-      // Load credentials from ~/.epic-ai/.env
-      const creds = loadCredentials();
+      // Choose index: configured adapters by default, full catalog in discover mode
+      const activeFilter = discover ? fullCatalogFilter : toolPreFilter;
 
-      // Determine which adapters to use
-      let candidates: AdapterEntry[];
-      if (targetAdapters && targetAdapters.length > 0) {
-        candidates = allAdapters.filter(a => targetAdapters.includes(a.id));
-      } else if (config?.selectedAdapters && config.selectedAdapters.length > 0) {
-        candidates = allAdapters.filter(a => config.selectedAdapters.includes(a.id));
-      } else {
-        candidates = allAdapters;
+      // Ring 2: Summary mode — return next 200 BM25-ranked adapters as one-line summaries
+      if (detail === 'summary') {
+        const selected200 = await activeFilter.select(query, { maxTools: 220, maxPerServer: 10 });
+        const servers200 = [...new Set(selected200.map(t => t.server))];
+        // Skip the first 20 (already shown in Ring 1), take the next 200
+        const ring2Servers = servers200.slice(20);
+        const summaries = ring2Servers.map(serverId => {
+          const a = allAdapters.find(x => x.id === serverId);
+          if (!a) return null;
+          return {
+            id: a.id,
+            name: a.name,
+            category: a.category || 'other',
+            description: (a.description || '').slice(0, 80),
+            configured: configuredAdapterIds.has(a.id),
+          };
+        }).filter(Boolean);
+
+        return {
+          content: [{
+            type: 'text' as const,
+            text: JSON.stringify({
+              status: 'summary',
+              query,
+              mode: discover ? 'discover' : 'configured',
+              totalShown: summaries.length,
+              adapters: summaries,
+              message: discover
+                ? `Showing ${summaries.length} adapters from the full catalog. Use legion_call to add and connect one.`
+                : `Showing ${summaries.length} additional configured adapters ranked by relevance.`,
+            }),
+          }],
+        };
       }
 
-      // BM25-style keyword matching to narrow candidates
-      const queryTokens = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
-      const scored = candidates.map(adapter => {
-        const text = `${adapter.id} ${adapter.name} ${adapter.description || ''} ${adapter.category || ''} ${(adapter.rest?.toolNames || []).join(' ')}`.toLowerCase();
-        let score = 0;
-        for (const token of queryTokens) {
-          if (text.includes(token)) score++;
-        }
-        return { adapter, score };
-      }).filter(s => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+      // Ring 1: Full mode — BM25 + query expansion, top 20 detailed
+      const selected = await activeFilter.select(query, { maxTools: 20, maxPerServer: 5 });
+      const selectedServers = [...new Set(selected.map(t => t.server))];
 
-      if (scored.length === 0) {
+      // Build category hints from all adapters
+      const catCounts = new Map<string, number>();
+      for (const a of allAdapters) {
+        const cat = a.category || 'other';
+        catCounts.set(cat, (catCounts.get(cat) || 0) + 1);
+      }
+      const topCategories = [...catCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([cat, count]) => ({ category: cat, adapterCount: count }));
+
+      if (selectedServers.length === 0) {
+        // No match in configured adapters — suggest discover mode
+        const hint = discover
+          ? 'No adapters matched in the full catalog. Try a different query or use legion_list to browse.'
+          : `None of your ${configuredAdapters.length} configured adapters matched. Try legion_query with discover:true to search all ${allAdapters.length} available adapters.`;
         return {
           content: [{
             type: 'text' as const,
             text: JSON.stringify({
               status: 'no_match',
               message: `No adapters matched query: "${query}"`,
-              hint: 'Try being more specific, or specify adapter IDs directly.',
-              availableCategories: [...new Set(allAdapters.map(a => a.category).filter(Boolean))],
-              totalAdapters: allAdapters.length,
+              hint,
+              configuredCount: configuredAdapters.length,
+              totalAvailable: allAdapters.length,
+              categories: topCategories,
             }),
           }],
         };
       }
 
-      // Build response with matched adapter info and available tools
-      const matches = scored.map(s => ({
-        id: s.adapter.id,
-        name: s.adapter.name,
-        type: s.adapter.type,
-        category: s.adapter.category,
-        score: s.score,
-        tools: s.adapter.rest?.toolNames || [],
-        toolCount: s.adapter.rest?.toolCount || 0,
-        configured: !!(creds[s.adapter.rest?.envKey || ''] || state.adapters[s.adapter.id]),
-        transport: s.adapter.mcp?.transport || (s.adapter.rest ? 'rest' : 'unknown'),
-      }));
+      // Build response with matched adapter info
+      const matches = selectedServers.map(serverId => {
+        const adapter = allAdapters.find(a => a.id === serverId);
+        if (!adapter) return null;
+        return {
+          id: adapter.id,
+          name: adapter.name,
+          type: adapter.type,
+          category: adapter.category,
+          tools: adapter.rest?.toolNames || (adapter.mcp as Record<string, unknown>)?.toolNames as string[] | undefined || [],
+          toolCount: adapter.rest?.toolCount || 0,
+          configured: configuredAdapterIds.has(adapter.id),
+          transport: adapter.mcp?.transport || (adapter.rest ? 'rest' : 'unknown'),
+        };
+      }).filter(Boolean);
 
       return {
         content: [{
@@ -564,9 +568,16 @@ async function startMcpServer(): Promise<void> {
           text: JSON.stringify({
             status: 'matched',
             query,
+            mode: discover ? 'discover' : 'configured',
             matchedAdapters: matches,
             totalMatched: matches.length,
-            message: `Found ${matches.length} relevant adapters. Use legion_call to execute a specific tool.`,
+            configuredCount: configuredAdapters.length,
+            categories: topCategories,
+            message: discover
+              ? `Found ${matches.length} adapters in the full catalog. Adapters marked configured:true are ready to use.`
+              : matches.length < 3
+                ? `Only ${matches.length} of your ${configuredAdapters.length} configured adapters matched. Try legion_query with discover:true to search all ${allAdapters.length} available adapters.`
+                : `Found ${matches.length} matching adapters from your ${configuredAdapters.length} configured adapters.`,
           }),
         }],
       };
@@ -701,8 +712,8 @@ async function startMcpServer(): Promise<void> {
   server.tool(
     'legion_list',
     {
-      category: z.string().optional().describe('Filter by category'),
-      search: z.string().optional().describe('Search by keyword'),
+      category: z.string().optional().describe('Filter by category name (e.g., "hr", "cybersecurity", "healthcare", "hospitality", "construction", "manufacturing", "finance", "devops", "observability", "communication", "crm", "ai"). Use this when legion_query returns low-confidence results to browse all adapters in a domain.'),
+      search: z.string().optional().describe('Search by keyword across adapter names and descriptions'),
     },
     async (args) => {
       let results = allAdapters;
@@ -899,44 +910,269 @@ async function cmdHealth(): Promise<void> {
   saveState(state);
 }
 
-async function cmdList(searchTerm?: string): Promise<void> {
+
+// ─── Curated adapter IDs (mirrored here for list/search — keep in sync with wizard) ──
+
+const CURATED_IDS = [
+  'com-claude-mcp-pubmed-pubmed',
+  'govbase-mcp',
+  'searchcode',
+  'robtex',
+];
+
+// ─── legion list ────────────────────────────────────────────
+
+async function cmdList(): Promise<void> {
   const pc = (await import('picocolors')).default;
   const all = await loadAllAdapters();
+  const state = loadState();
 
-  let filtered = all;
-  if (searchTerm) {
-    const term = searchTerm.toLowerCase();
-    filtered = all.filter(a =>
-      a.id.includes(term) || a.name.toLowerCase().includes(term) ||
-      (a.description || '').toLowerCase().includes(term) ||
-      (a.category || '').includes(term)
-    );
-  }
+  // Curated tier
+  const curatedRows = CURATED_IDS.map(id => all.find(a => a.id === id)).filter(Boolean) as AdapterEntry[];
 
-  // Group by category
-  const categories = new Map<string, AdapterEntry[]>();
-  for (const a of filtered) {
-    const cat = a.category || 'other';
-    if (!categories.has(cat)) categories.set(cat, []);
-    categories.get(cat)!.push(a);
-  }
+  // Custom tier — in state but not curated
+  const customIds = Object.keys(state.adapters).filter(id => !CURATED_IDS.includes(id));
+  const customRows = customIds.map(id => all.find(a => a.id === id) || { id, name: id, type: 'unknown' } as AdapterEntry);
 
   console.log('');
-  console.log(`  Epic AI® Legion — ${filtered.length} adapters${searchTerm ? ` matching "${searchTerm}"` : ''}`);
+
+  // Curated
+  console.log(`  ${pc.bold('Curated')}  ${pc.dim(`(${curatedRows.length})`)}  ${pc.dim('— open data, no credentials required')}`);
+  console.log('');
+  for (const a of curatedRows) {
+    const toolCount = a.rest?.toolCount || (a.mcp as Record<string, unknown>)?.toolCount as number | undefined || 0;
+    const typeLabel = a.type === 'mcp' ? pc.dim('MCP') : a.type === 'both' ? pc.dim('REST+MCP') : pc.dim('REST');
+    console.log(`    ${pc.cyan(a.id.padEnd(35))} ${typeLabel}  ${String(toolCount).padStart(3)} tools   ${pc.dim((a.description || '').slice(0, 50))}`);
+  }
   console.log('');
 
-  for (const [cat, adapters] of Array.from(categories.entries()).sort((a, b) => b[1].length - a[1].length)) {
-    console.log(`  ${pc.cyan(cat)} (${adapters.length})`);
-    for (const a of adapters.slice(0, 10)) {
-      const tools = a.rest?.toolCount ? `${a.rest.toolCount} tools` : '';
-      const type = a.type === 'mcp' ? pc.dim('MCP') : a.type === 'both' ? pc.dim('REST+MCP') : pc.dim('REST');
-      console.log(`    ${a.id.padEnd(35)} ${type}  ${tools}`);
+  // Custom
+  console.log(`  ${pc.bold('Custom')}   ${pc.dim(`(${customRows.length})`)}  ${pc.dim('— your APIs and credentials')}`);
+  console.log('');
+  if (customRows.length === 0) {
+    console.log(`    ${pc.dim('None yet — run:')} ${pc.cyan('legion configure')}`);
+  } else {
+    for (const a of customRows) {
+      const toolCount = a.rest?.toolCount || 0;
+      const typeLabel = a.type === 'mcp' ? pc.dim('MCP') : a.type === 'both' ? pc.dim('REST+MCP') : pc.dim('REST');
+      console.log(`    ${pc.cyan(a.id.padEnd(35))} ${typeLabel}  ${String(toolCount).padStart(3)} tools   ${pc.dim((a.description || '').slice(0, 50))}`);
     }
-    if (adapters.length > 10) {
-      console.log(`    ${pc.dim(`... and ${adapters.length - 10} more`)}`);
+  }
+  console.log('');
+}
+
+// ─── legion search ──────────────────────────────────────────
+
+async function cmdSearch(term?: string): Promise<void> {
+  const pc = (await import('picocolors')).default;
+  const all = await loadAllAdapters();
+  const state = loadState();
+
+  if (!term) {
+    // No term — show curated tier + hint
+    const curatedRows = CURATED_IDS.map(id => all.find(a => a.id === id)).filter(Boolean) as AdapterEntry[];
+    console.log('');
+    console.log(`  ${pc.bold('Curated adapters')}  ${pc.dim('— vetted, open data, no credentials required')}`);
+    console.log('');
+    for (const a of curatedRows) {
+      const toolCount = a.rest?.toolCount || (a.mcp as Record<string, unknown>)?.toolCount as number | undefined || 0;
+      console.log(`    ${pc.cyan(a.id.padEnd(35))} ${String(toolCount).padStart(3)} tools   ${pc.dim((a.description || '').slice(0, 60))}`);
     }
     console.log('');
+    console.log(`  ${pc.dim(`Search all ${all.length} available adapters:`)}  ${pc.cyan('legion search <term>')}`);
+    console.log('');
+    return;
   }
+
+  const t = term.toLowerCase();
+  const results = all.filter(a =>
+    a.id.includes(t) ||
+    a.name.toLowerCase().includes(t) ||
+    (a.description || '').toLowerCase().includes(t) ||
+    (a.category || '').includes(t)
+  );
+
+  if (results.length === 0) {
+    console.log(`\n  No adapters matched "${term}". Try a broader term.\n`);
+    return;
+  }
+
+  // Sort: curated first, then custom (in state), then rest
+  const customInState = new Set(Object.keys(state.adapters));
+  const sorted = [
+    ...results.filter(a => CURATED_IDS.includes(a.id)),
+    ...results.filter(a => !CURATED_IDS.includes(a.id) && customInState.has(a.id)),
+    ...results.filter(a => !CURATED_IDS.includes(a.id) && !customInState.has(a.id)),
+  ];
+
+  const shown = sorted.slice(0, 20);
+  console.log('');
+  console.log(`  ${pc.bold(`${results.length} adapters`)} matching "${term}"${results.length > 20 ? pc.dim(' (showing top 20)') : ''}`);
+  console.log('');
+
+  for (const a of shown) {
+    const toolCount = a.rest?.toolCount || (a.mcp as Record<string, unknown>)?.toolCount as number | undefined || 0;
+    const tag = CURATED_IDS.includes(a.id)
+      ? pc.green('curated')
+      : customInState.has(a.id)
+        ? pc.cyan('configured')
+        : pc.dim('available');
+    console.log(`    ${pc.cyan(a.id.padEnd(35))} ${String(toolCount).padStart(3)} tools  [${tag}]`);
+    if (a.description) console.log(`    ${pc.dim((' ').repeat(35))} ${pc.dim(a.description.slice(0, 70))}`);
+    console.log('');
+  }
+
+  const unconfigured = shown.filter(a => !CURATED_IDS.includes(a.id) && !customInState.has(a.id));
+  if (unconfigured.length > 0) {
+    console.log(`  ${pc.dim('Add one:')}  ${pc.cyan(`legion add ${unconfigured[0].id}`)}`);
+    console.log('');
+  }
+}
+
+// ─── legion configure ───────────────────────────────────────
+
+async function cmdConfigure(): Promise<void> {
+  const p = await import('@clack/prompts');
+  const pc = (await import('picocolors')).default;
+
+  console.log('');
+  p.intro(pc.bgCyan(pc.black(' Legion Configure — Connect Your APIs ')));
+
+  const all = await loadAllAdapters();
+
+  // Step 1: Where to look for credentials
+  const scanTargets = await p.multiselect({
+    message: 'Where should Legion look for existing credentials?',
+    options: [
+      { value: 'epic-ai', label: '~/.epic-ai/.env', hint: 'Legion\'s credential store' },
+      { value: 'home', label: '~/.env', hint: 'home directory env file' },
+      { value: 'cwd', label: '.env in current directory', hint: `${process.cwd()}/.env` },
+    ],
+    initialValues: ['epic-ai'],
+    required: true,
+  });
+  if (p.isCancel(scanTargets)) { p.cancel('Cancelled.'); process.exit(0); }
+
+  // Step 2: Scan and match
+  const s = p.spinner();
+  s.start('Scanning for credentials');
+
+  const foundCreds: Record<string, string> = {};
+
+  if ((scanTargets as string[]).includes('epic-ai')) {
+    Object.assign(foundCreds, loadCredentials());
+  }
+  if ((scanTargets as string[]).includes('home')) {
+    const p2 = join(homedir(), '.env');
+    if (existsSync(p2)) {
+      const lines = readFileSync(p2, 'utf-8').split('\n');
+      for (const line of lines) {
+        const eq = line.indexOf('=');
+        if (eq > 0) foundCreds[line.slice(0, eq)] = line.slice(eq + 1);
+      }
+    }
+  }
+  if ((scanTargets as string[]).includes('cwd')) {
+    const p3 = join(process.cwd(), '.env');
+    if (existsSync(p3)) {
+      const lines = readFileSync(p3, 'utf-8').split('\n');
+      for (const line of lines) {
+        const eq = line.indexOf('=');
+        if (eq > 0) foundCreds[line.slice(0, eq)] = line.slice(eq + 1);
+      }
+    }
+  }
+
+  s.stop('Scan complete');
+
+  // Match credentials to adapters
+  const matched: Array<{ adapter: AdapterEntry; key: string }> = [];
+  for (const adapter of all) {
+    if (CURATED_IDS.includes(adapter.id)) continue; // skip curated — already configured
+    const envKey = adapter.rest?.envKey;
+    if (envKey && foundCreds[envKey]) {
+      matched.push({ adapter, key: envKey });
+    } else if (adapter.mcp?.envKeys) {
+      for (const k of adapter.mcp.envKeys) {
+        if (foundCreds[k]) { matched.push({ adapter, key: k }); break; }
+      }
+    }
+  }
+
+  if (matched.length === 0) {
+    p.log.info('No matching credentials found in scanned locations.');
+  } else {
+    p.note(
+      matched.map(m => `  ${pc.green(m.key.padEnd(30))} → ${pc.cyan(m.adapter.name)}`).join('\n'),
+      `Found ${matched.length} credential${matched.length !== 1 ? 's' : ''}`
+    );
+
+    // Step 3: Confirm which to wire
+    const toWire = await p.multiselect({
+      message: 'Wire these adapters?',
+      options: matched.map(m => ({
+        value: m.adapter.id,
+        label: m.adapter.name,
+        hint: `${m.key} → ${m.adapter.description?.slice(0, 50) || m.adapter.id}`,
+      })),
+      initialValues: matched.map(m => m.adapter.id),
+      required: false,
+    });
+    if (p.isCancel(toWire)) { p.cancel('Cancelled.'); process.exit(0); }
+
+    // Step 4: Write to state and config
+    const state = loadState();
+    const config = loadConfig() || { selectedAdapters: [], secretsProvider: 'manual', aiClient: 'unknown' };
+
+    for (const id of (toWire as string[])) {
+      const m = matched.find(x => x.adapter.id === id)!;
+      // Copy credential to ~/.epic-ai/.env if it came from elsewhere
+      writeCredential(m.key, foundCreds[m.key]);
+      state.adapters[id] = { type: m.adapter.type || 'unknown', status: 'configured', toolCount: m.adapter.rest?.toolCount || 0, lastVerified: null };
+      if (!config.selectedAdapters.includes(id)) config.selectedAdapters.push(id);
+    }
+    saveState(state);
+    saveConfig(config);
+
+    if ((toWire as string[]).length > 0) {
+      p.log.success(`${(toWire as string[]).length} adapter${(toWire as string[]).length !== 1 ? 's' : ''} configured.`);
+    }
+  }
+
+  // Step 5: Add more manually?
+  const addMore = await p.confirm({ message: 'Add adapters manually?', initialValue: false });
+  if (!p.isCancel(addMore) && addMore) {
+    const name = await p.text({ message: 'Adapter ID (run "legion search <term>" to find one):' });
+    if (!p.isCancel(name) && name) {
+      await cmdAdd(name);
+    }
+  }
+
+  p.outro(`${pc.green('Done.')} Run ${pc.cyan('legion list')} to see your configured adapters.`);
+}
+
+// ─── legion help ────────────────────────────────────────────
+
+async function cmdHelp(): Promise<void> {
+  const pc = (await import('picocolors')).default;
+  console.log('');
+  console.log(`  ${pc.bold('Epic AI® Legion')} — Intelligent Virtual Assistant (IVA)`);
+  console.log('');
+  console.log(`  ${pc.bold('Commands:')}`);
+  console.log('');
+  console.log(`    ${pc.cyan('legion')}                       run the setup wizard`);
+  console.log(`    ${pc.cyan('legion query "<question>"')}    route a question to your adapters via your AI client`);
+  console.log(`    ${pc.cyan('legion list')}                  show Curated + Custom adapters`);
+  console.log(`    ${pc.cyan('legion search [term]')}         search all available adapters`);
+  console.log(`    ${pc.cyan('legion add <id>')}              add an adapter and enter credentials`);
+  console.log(`    ${pc.cyan('legion remove <id>')}           remove an adapter`);
+  console.log(`    ${pc.cyan('legion configure')}             connect your APIs and credentials`);
+  console.log(`    ${pc.cyan('legion health')}                check adapter status`);
+  console.log(`    ${pc.cyan('legion serve')}                 start as MCP server (used by AI clients)`);
+  console.log(`    ${pc.cyan('legion help')}                  show this help`);
+  console.log('');
+  console.log(`  ${pc.dim('Docs:')}  https://legion.epic-ai.io`);
+  console.log('');
 }
 
 // ─── Setup Wizard ───────────────────────────────────────────
@@ -1090,360 +1326,127 @@ async function runSetupWizard(): Promise<void> {
     configuredClients.push('local');
   }
 
-  // Step 3: Secrets provider
-  const secretsChoice = await p.select({
-    message: 'Where are your API and MCP credentials stored?',
-    options: [
-      { value: 'vault', label: 'HashiCorp Vault' },
-      { value: 'aws-sm', label: 'AWS Secrets Manager' },
-      { value: 'azure-kv', label: 'Azure Key Vault' },
-      { value: '1password', label: '1Password CLI' },
-      { value: 'doppler', label: 'Doppler' },
-      { value: 'env', label: 'Environment variables', hint: 'already exported in shell' },
-      { value: 'manual', label: 'I\'ll enter them manually' },
-    ],
-  });
-  if (p.isCancel(secretsChoice)) { p.cancel('Setup cancelled.'); process.exit(0); }
-
-  let vaultAddr = '';
-  let vaultToken = '';
-  let vaultConnected = false;
-
-  if (secretsChoice === 'vault') {
-    const envAddr = process.env.VAULT_ADDR;
-    const envToken = process.env.VAULT_TOKEN;
-
-    if (envAddr && envToken) {
-      p.log.success(`Detected VAULT_ADDR=${envAddr}`);
-      vaultAddr = envAddr;
-      vaultToken = envToken;
-    } else {
-      const addr = await p.text({
-        message: 'Vault address',
-        placeholder: 'https://vault.example.com:8200',
-        validate: (v) => { if (!v) return 'Required'; if (!v.startsWith('http')) return 'Must start with http:// or https://'; },
-      });
-      if (p.isCancel(addr)) { p.cancel('Setup cancelled.'); process.exit(0); }
-      const token = await p.password({ message: 'Vault token', validate: (v) => { if (!v) return 'Required'; } });
-      if (p.isCancel(token)) { p.cancel('Setup cancelled.'); process.exit(0); }
-      vaultAddr = addr;
-      vaultToken = token;
-    }
-
-    s.start('Connecting to Vault');
-    try {
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 5000);
-      const resp = await fetch(`${vaultAddr}/v1/sys/health`, { headers: { 'X-Vault-Token': vaultToken }, signal: controller.signal });
-      clearTimeout(t);
-      if (resp.ok) {
-        vaultConnected = true;
-        s.stop(`Connected to Vault at ${vaultAddr}`);
-        writeCredential('VAULT_ADDR', vaultAddr);
-        writeCredential('VAULT_TOKEN', vaultToken);
-      } else {
-        s.stop(`Vault returned ${resp.status} — check your token`);
-      }
-    } catch {
-      s.stop(`Cannot reach Vault at ${vaultAddr}`);
-    }
-  }
-
-  if (secretsChoice === '1password') {
-    try {
-      execSync('op --version', { stdio: 'pipe' });
-      p.log.success('1Password CLI detected');
-    } catch {
-      p.log.warning('1Password CLI not found — install from https://1password.com/downloads/command-line');
-    }
-  }
-
-  if (secretsChoice === 'doppler') {
-    try {
-      execSync('doppler --version', { stdio: 'pipe' });
-      p.log.success('Doppler CLI detected');
-    } catch {
-      p.log.warning('Doppler CLI not found — install from https://docs.doppler.com/docs/install-cli');
-    }
-  }
-
-  // Step 4: Adapter selection — tree structure (group → category → adapters)
-
-  // Build category map
-  const categories = new Map<string, AdapterEntry[]>();
-  for (const adapter of allAdapters) {
-    const cat = adapter.category || 'other';
-    if (!categories.has(cat)) categories.set(cat, []);
-    categories.get(cat)!.push(adapter);
-  }
-
-  // Top-level groups that map to subcategories
-  const GROUPS: Record<string, { label: string; cats: string[] }> = {
-    'security': {
-      label: 'Security & Identity',
-      cats: ['cybersecurity', 'identity', 'compliance'],
+  // Step 3: Auto-configure all curated (vetted zero-credential) adapters
+  // IMPORTANT: Only add adapters to CURATED after manual vetting — confirm they
+  // return real data, contain no adult/inappropriate content, and are stable.
+  const CURATED = [
+    {
+      id: 'com-claude-mcp-pubmed-pubmed',
+      name: 'PubMed',
+      desc: 'Search 36 million biomedical research papers',
+      tools: 7,
+      demoQuery: 'Recent clinical trials on GLP-1 drugs for obesity',
+      exampleQuery: 'legion query "recent clinical trials on GLP-1 drugs for obesity"',
     },
-    'devops': {
-      label: 'DevOps & Infrastructure',
-      cats: ['devops', 'cloud', 'observability', 'engineering'],
+    {
+      id: 'govbase-mcp',
+      name: 'Govbase',
+      desc: 'Government data — legislators, bills, committees',
+      tools: 10,
+      demoQuery: 'Who chairs the Senate Armed Services Committee?',
+      exampleQuery: 'legion query "who chairs the Senate Armed Services Committee?"',
     },
-    'business': {
-      label: 'Business & Finance',
-      cats: ['finance', 'crm', 'commerce', 'marketing', 'customer-support', 'hr', 'productivity', 'erp'],
+    {
+      id: 'searchcode',
+      name: 'Searchcode',
+      desc: 'Search 75 billion lines of open source code',
+      tools: 6,
+      demoQuery: 'Open source implementations of rate limiting in Go',
+      exampleQuery: 'legion query "open source implementations of rate limiting in Go"',
     },
-    'comms': {
-      label: 'Communication & Collaboration',
-      cats: ['communication', 'collaboration'],
+    {
+      id: 'robtex',
+      name: 'Robtex',
+      desc: 'Network intelligence — DNS, IP, ASN lookups',
+      tools: 45,
+      demoQuery: 'DNS records and ASN for cloudflare.com',
+      exampleQuery: 'legion query "DNS records and ASN for cloudflare.com"',
     },
-    'data-ai': {
-      label: 'Data & AI',
-      cats: ['data', 'ai', 'science'],
-    },
-    'industry': {
-      label: 'Industry',
-      cats: ['healthcare', 'hospitality', 'construction', 'manufacturing', 'real-estate', 'travel', 'education', 'insurance', 'legal', 'energy', 'automotive', 'telecom', 'logistics', 'government', 'iot'],
-    },
-    'media': {
-      label: 'Media & Social',
-      cats: ['media', 'social', 'design'],
-    },
-    'other': {
-      label: 'Other',
-      cats: ['misc', 'other'],
-    },
-  };
+  ];
 
-  // Count adapters per group
-  function countGroup(cats: string[]): number {
-    let total = 0;
-    for (const cat of cats) total += (categories.get(cat) || []).length;
-    return total;
-  }
+  const s2 = p.spinner();
+  s2.start('Connecting curated data sources');
 
-  // Collect any categories not in a group
-  const allGroupedCats = new Set(Object.values(GROUPS).flatMap(g => g.cats));
-  const ungrouped = Array.from(categories.keys()).filter(c => !allGroupedCats.has(c));
-  if (ungrouped.length > 0) {
-    GROUPS['other'].cats.push(...ungrouped);
-  }
-
-  const groupOptions = Object.entries(GROUPS)
-    .filter(([_, g]) => countGroup(g.cats) > 0)
-    .map(([key, g]) => ({
-      value: key,
-      label: `${g.label} (${countGroup(g.cats)})`,
-    }));
-
-  const selectedGroups = await p.multiselect({
-    message: 'What do you work with? (Space to select, Enter to confirm)',
-    options: groupOptions,
-    required: false,
-  });
-  if (p.isCancel(selectedGroups)) { p.cancel('Setup cancelled.'); process.exit(0); }
-
-  const selectedAdapterIds: string[] = [];
-
-  for (const groupKey of selectedGroups) {
-    const group = GROUPS[groupKey];
-    if (!group) continue;
-
-    // Show subcategories within this group
-    const subCatOptions = group.cats
-      .filter(cat => (categories.get(cat) || []).length > 0)
-      .map(cat => ({
-        value: cat,
-        label: `${formatCategory(cat)} (${(categories.get(cat) || []).length})`,
-      }));
-
-    if (subCatOptions.length === 0) continue;
-
-    const selectedSubCats = await p.multiselect({
-      message: `${group.label} — select categories (Space to select, Enter to confirm)`,
-      options: subCatOptions,
-      required: false,
-    });
-    if (p.isCancel(selectedSubCats)) continue;
-
-    if (selectedSubCats.length > 0) {
-      // Show adapters from selected subcategories
-      const available: { value: string; label: string; hint?: string }[] = [];
-      for (const cat of selectedSubCats) {
-        for (const a of categories.get(cat) || []) {
-          available.push({ value: a.id, label: a.name || a.id, hint: a.description?.slice(0, 60) });
-        }
-      }
-
-      if (available.length > 0) {
-        const selected = await p.multiselect({
-          message: `Select adapters (${available.length} available)`,
-          options: available.slice(0, 50),
-          required: false,
-        });
-
-        if (!p.isCancel(selected)) {
-          selectedAdapterIds.push(...selected);
-        }
-      }
-    }
-  }
-
-  // Step 5: Credentials
-  if (selectedAdapterIds.length > 0) {
-    if (secretsChoice === 'vault' && vaultConnected) {
-      s.start('Pulling credentials from Vault');
-      let pulled = 0;
-      for (const adapterId of selectedAdapterIds) {
-        try {
-          const controller = new AbortController();
-          const t = setTimeout(() => controller.abort(), 3000);
-          const resp = await fetch(`${vaultAddr}/v1/secret/data/${adapterId}`, {
-            headers: { 'X-Vault-Token': vaultToken },
-            signal: controller.signal,
-          });
-          clearTimeout(t);
-          if (resp.ok) {
-            const data = await resp.json() as { data?: { data?: Record<string, string> } };
-            const secrets = data?.data?.data;
-            if (secrets) {
-              for (const [k, v] of Object.entries(secrets)) {
-                writeCredential(k, v);
-              }
-              pulled++;
-            }
-          }
-        } catch { /* skip */ }
-      }
-      s.stop(`Pulled credentials for ${pulled} of ${selectedAdapterIds.length} adapters`);
-    } else if (secretsChoice === '1password') {
-      s.start('Pulling credentials from 1Password');
-      let pulled = 0;
-      for (const adapterId of selectedAdapterIds) {
-        try {
-          const result = execSync(`op item get "${adapterId}" --format json 2>/dev/null`, { encoding: 'utf-8', timeout: 5000 });
-          const item = JSON.parse(result);
-          const fields = item.fields || [];
-          for (const field of fields) {
-            if (field.value && field.label) {
-              const envKey = `${adapterId.toUpperCase().replace(/-/g, '_')}_${field.label.toUpperCase().replace(/\s+/g, '_')}`;
-              writeCredential(envKey, field.value);
-            }
-          }
-          pulled++;
-        } catch { /* skip */ }
-      }
-      s.stop(`Pulled credentials for ${pulled} of ${selectedAdapterIds.length} adapters`);
-    } else if (secretsChoice === 'doppler') {
-      s.start('Pulling credentials from Doppler');
-      try {
-        const result = execSync('doppler secrets download --no-file --format json 2>/dev/null', { encoding: 'utf-8', timeout: 10000 });
-        const secrets = JSON.parse(result);
-        for (const [k, v] of Object.entries(secrets)) {
-          if (typeof v === 'string') writeCredential(k, v);
-        }
-        s.stop('Credentials pulled from Doppler');
-      } catch {
-        s.stop('Doppler pull failed — configure with: doppler setup');
-      }
-    } else if (secretsChoice === 'manual') {
-      for (const adapterId of selectedAdapterIds) {
-        const adapter = allAdapters.find(a => a.id === adapterId);
-        if (!adapter) continue;
-
-        const envKey = adapter.rest?.envKey || `${adapterId.toUpperCase().replace(/-/g, '_')}_API_KEY`;
-        const key = await p.password({ message: `${envKey} for ${adapter.name || adapterId}` });
-        if (!p.isCancel(key) && key) {
-          writeCredential(envKey, key);
-        }
-      }
-    } else if (secretsChoice === 'env') {
-      p.log.info('Using credentials from environment variables');
-    }
-
-    // Step 6: Install stdio dependencies
-    for (const adapterId of selectedAdapterIds) {
-      const adapter = allAdapters.find(a => a.id === adapterId);
-      if (!adapter?.mcp?.packageName || adapter.mcp.transport !== 'stdio') continue;
-
-      s.start(`Installing ${adapter.name || adapterId}`);
-      try {
-        execSync(`npm install -g --ignore-scripts ${adapter.mcp.packageName}`, { stdio: 'pipe', timeout: 60000 });
-        // Verify artifact integrity
-        try {
-          const { ArtifactVerifier } = await import('../trust/ArtifactVerifier.js');
-          const verifier = new ArtifactVerifier({ verifyDigests: true });
-          const pkgPath = execSync(`npm root -g`, { encoding: 'utf-8', timeout: 5000 }).trim();
-          const mainFile = join(pkgPath, adapter.mcp.packageName, 'package.json');
-          const result = await verifier.verify(adapter.mcp.packageName, mainFile);
-          if (!result.valid) {
-            s.stop(`${pc.red('✗')} ${adapter.name || adapterId} — integrity check failed`);
-          } else {
-            s.stop(`${pc.green('✓')} ${adapter.name || adapterId} installed — verified`);
-          }
-        } catch {
-          s.stop(`${pc.green('✓')} ${adapter.name || adapterId} installed`);
-        }
-      } catch {
-        s.stop(`${pc.yellow('!')} ${adapter.name || adapterId} — run manually: npm install -g ${adapter.mcp.packageName}`);
-      }
-    }
-
-    // Step 7: Verify
-    s.start('Verifying connections');
-    const creds = loadCredentials();
-    let verified = 0;
-    const results: string[] = [];
-
-    for (const adapterId of selectedAdapterIds) {
-      const adapter = allAdapters.find(a => a.id === adapterId);
-      if (!adapter) continue;
-
-      const hasKey = adapter.rest?.envKey ? !!creds[adapter.rest.envKey] : false;
-      if (hasKey) {
-        verified++;
-        results.push(`${pc.green('✓')} ${adapter.name || adapterId}  ${adapter.rest?.toolCount || 0} tools`);
-      } else {
-        results.push(`${pc.yellow('○')} ${adapter.name || adapterId}  credentials needed`);
-      }
-    }
-    s.stop('Verification complete');
-
-    if (results.length > 0) {
-      p.note(results.join('\n'), `${verified} of ${selectedAdapterIds.length} adapters ready`);
-    }
-  }
-
-  // Step 8: Save state and config
   const state = loadState();
-  for (const id of selectedAdapterIds) {
-    const adapter = allAdapters.find(a => a.id === id);
-    state.adapters[id] = {
-      type: adapter?.type || 'unknown',
+  const curatedAdapterEntries = CURATED.map(c => allAdapters.find(a => a.id === c.id)).filter(Boolean) as AdapterEntry[];
+  for (const c of CURATED) {
+    const adapter = allAdapters.find(a => a.id === c.id);
+    state.adapters[c.id] = {
+      type: adapter?.type || 'mcp',
       status: 'configured',
-      toolCount: adapter?.rest?.toolCount || 0,
+      toolCount: c.tools,
       lastVerified: null,
     };
   }
   saveState(state);
   saveConfig({
-    selectedAdapters: selectedAdapterIds,
-    secretsProvider: secretsChoice as string,
+    selectedAdapters: CURATED.map(c => c.id),
+    secretsProvider: 'manual',
     aiClient: configuredClients.join(','),
     localBackend: system.localBackend || undefined,
   });
 
-  // Outro
+  s2.stop('Curated data sources connected');
+
   p.note(
-    [
-      `Add adapters:     ${pc.cyan('npx @epicai/legion add <name>')}`,
-      `Remove adapters:  ${pc.cyan('npx @epicai/legion remove <name>')}`,
-      `Health check:     ${pc.cyan('npx @epicai/legion health')}`,
-      `Update adapters:  ${pc.cyan('npx @epicai/legion update')}`,
-      `List adapters:    ${pc.cyan('npx @epicai/legion list')}`,
-    ].join('\n'),
-    'Manage your adapters'
+    CURATED.map(c => `${pc.green('✓')} ${c.name.padEnd(14)} ${String(c.tools).padStart(2)} tools   ${pc.dim(c.desc)}`).join('\n'),
+    `Curated (${CURATED.length}) — no credentials required`
   );
 
-  p.outro(`${pc.green('Legion is ready.')} Your credentials never leave this machine.`);
+  // Step 4: Routing demo — prove intelligence in-process, no network calls
+  const { ToolPreFilter } = await import('../federation/ToolPreFilter.js');
+
+  function buildDemoTools(adapters: AdapterEntry[]) {
+    const tools: Array<{ name: string; description: string; parameters: Record<string, unknown>; server: string; tier: 'orchestrated' | 'direct' }> = [];
+    for (const adapter of adapters) {
+      const toolNames = adapter.rest?.toolNames || (adapter.mcp as Record<string, unknown>)?.toolNames as string[] | undefined || [];
+      if (toolNames.length === 0) {
+        tools.push({ name: `${adapter.id}:default`, description: `${adapter.name} — ${adapter.description || adapter.id}`, parameters: { type: 'object', properties: {} }, server: adapter.id, tier: 'orchestrated' });
+      } else {
+        for (const t of toolNames) {
+          tools.push({ name: `${adapter.id}:${t}`, description: `${adapter.name} — ${t.replace(/_/g, ' ')}`, parameters: { type: 'object', properties: {} }, server: adapter.id, tier: 'orchestrated' });
+        }
+      }
+    }
+    return tools;
+  }
+
+  const demoFilter = new ToolPreFilter();
+  demoFilter.index(buildDemoTools(curatedAdapterEntries));
+
+  const routingLines: string[] = [];
+  for (const c of CURATED) {
+    const matches = await demoFilter.select(c.demoQuery, { maxTools: 3, maxPerServer: 2 });
+    const topId = matches[0]?.server;
+    const routed = topId === c.id;
+    const arrow = routed ? pc.green('→') : pc.yellow('→');
+    const adapterLabel = routed ? pc.green(c.name) : pc.yellow(topId || '?');
+    routingLines.push(`  ${pc.dim(`"${c.demoQuery.slice(0, 48)}${c.demoQuery.length > 48 ? '…' : ''}"`)}`);
+    routingLines.push(`  ${arrow} ${adapterLabel}`);
+    routingLines.push('');
+  }
+
+  p.note(routingLines.join('\n').trimEnd(), 'Routing intelligence');
+
+  // Step 5: Outro — hand off to shell
+  p.note(
+    [
+      pc.bold('Try these yourself:'),
+      '',
+      ...CURATED.map(c => `  ${pc.cyan(c.exampleQuery)}`),
+    ].join('\n'),
+    'Test it'
+  );
+
+  p.note(
+    [
+      `  ${pc.cyan('legion configure')}   connect your APIs and credentials`,
+      `  ${pc.cyan('legion help')}        see all commands`,
+    ].join('\n'),
+    'When you\'re ready to connect your own APIs'
+  );
+
+  p.outro(`${pc.green('Legion is ready.')} Your data never leaves this machine.`);
 }
 
 // ─── Main router ────────────────────────────────────────────
@@ -1459,18 +1462,35 @@ async function main(): Promise<void> {
 
   switch (command) {
     case 'add':
-      if (!args[1]) { console.error('Usage: npx @epicai/legion add <adapter-name>'); process.exit(1); }
+      if (!args[1]) { console.error('Usage: legion add <adapter-id>  (run "legion search <term>" to find one)'); process.exit(1); }
       await cmdAdd(args[1]);
       break;
     case 'remove':
-      if (!args[1]) { console.error('Usage: npx @epicai/legion remove <adapter-name>'); process.exit(1); }
+      if (!args[1]) { console.error('Usage: legion remove <adapter-id>'); process.exit(1); }
       await cmdRemove(args[1]);
       break;
     case 'health':
       await cmdHealth();
       break;
     case 'list':
-      await cmdList(args[1]);
+      await cmdList();
+      break;
+    case 'search':
+      await cmdSearch(args[1]);
+      break;
+    case 'configure':
+      await cmdConfigure();
+      break;
+    case 'help':
+    case '--help':
+    case '-h':
+      await cmdHelp();
+      break;
+    case 'query':
+      console.log('\n  legion query routes through your AI client (Claude Code, Cursor, etc.)');
+      console.log('  Start Legion as an MCP server: legion serve');
+      console.log('  Then ask your AI client: "use legion_query to find..."');
+      console.log('\n  Run: legion help\n');
       break;
     case 'serve':
       await startMcpServer();

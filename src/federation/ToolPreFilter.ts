@@ -4,9 +4,10 @@
  *
  * Three-tier routing:
  *   Tier 1: Keyword matching (DomainClassifier) — handled externally
- *   Tier 2: Hybrid retrieval (BM25 + SPLADE sparse + dense semantic) via RRF
+ *   Tier 2: Hybrid retrieval (BM25 + miniCOIL sparse + dense semantic) via RRF
  *           Uses precomputed vectors from vector-index.json (ships in npm package).
  *           Falls back to BM25-only when vector index is not loaded.
+ *           Enterprise: plug in Qdrant for full vector search.
  *   Tier 3: Model-assisted classification — handled by the orchestrator
  *
  * Built on the Epic AI Intelligence Platform
@@ -16,6 +17,7 @@
 import type { Tool } from '../types/index.js';
 import type { ScoredResult } from '../types/index.js';
 import { RankFusion } from '../retrieval/RankFusion.js';
+import { expandQuery } from './QueryExpander.js';
 
 // BM25 tuning parameters
 const K1 = 1.2;   // term frequency saturation
@@ -61,8 +63,7 @@ export interface PreFilterOptions {
 interface VectorRecord {
   id: string;                          // adapter_id
   dense: number[];                     // OpenAI 1536d
-  splade: { indices: number[]; values: number[] };
-  bm25: { indices: number[]; values: number[] };
+  minicoil: { indices: number[]; values: number[] };
   payload: Record<string, unknown>;
 }
 
@@ -96,10 +97,9 @@ function sparseDot(
   return score;
 }
 
-/** Generate SPLADE-style sparse vector from query text using n-gram hashing
- *  (approximation — real SPLADE uses a transformer, but this matches the
- *   hash function used in embed-tools.py for term expansion) */
-function querySPLADESparse(text: string): { indices: number[]; values: number[] } {
+/** Generate miniCOIL-style sparse vector from query text using n-gram hashing
+ *  (lightweight approximation matching the hash function used in embed-tools.py) */
+function queryMiniCOILSparse(text: string): { indices: number[]; values: number[] } {
   const tokens = tokenize(text);
   const map = new Map<number, number>();
   for (const w of tokens) {
@@ -128,82 +128,9 @@ export class ToolPreFilter {
   private vectorIndex: VectorRecord[] = [];
   private vectorIdMap: Map<string, VectorRecord> = new Map();
 
-  // SPLADE model (lazy-loaded from @xenova/transformers)
-  private spladeModel: { tokenizer: unknown; model: unknown } | null = null;
-  private spladeLoading: Promise<void> | null = null;
-
-  /**
-   * Lazy-load the SPLADE model via @xenova/transformers.
-   * Downloads the ONNX model on first use (~120MB, cached after).
-   */
-  private async ensureSPLADE(): Promise<boolean> {
-    if (this.spladeModel) return true;
-    if (this.spladeLoading) { await this.spladeLoading; return this.spladeModel !== null; }
-
-    this.spladeLoading = (async () => {
-      try {
-        const { AutoTokenizer, AutoModelForMaskedLM } = await import('@xenova/transformers');
-        const modelId = 'Xenova/bert-base-uncased'; // same model used for document SPLADE embeddings
-        const tokenizer = await AutoTokenizer.from_pretrained(modelId);
-        const model = await AutoModelForMaskedLM.from_pretrained(modelId);
-        this.spladeModel = { tokenizer, model };
-      } catch {
-        this.spladeModel = null;
-      }
-    })();
-
-    await this.spladeLoading;
-    return this.spladeModel !== null;
-  }
-
-  /**
-   * Generate SPLADE-style sparse vector using the MLM model.
-   * Each token position produces logits over the vocabulary; ReLU + log
-   * max-pooling creates the sparse representation with term expansion.
-   */
-  private async embedSPLADE(text: string): Promise<{ indices: number[]; values: number[] }> {
-    if (!this.spladeModel) return { indices: [], values: [] };
-
-    const { tokenizer, model } = this.spladeModel as {
-      tokenizer: (text: string, options?: Record<string, unknown>) => Promise<Record<string, { data: BigInt64Array; dims: number[] }>>;
-      model: (input: Record<string, unknown>) => Promise<{ logits: { data: Float32Array; dims: number[] } }>;
-    };
-
-    // Tokenize — returns { input_ids, attention_mask, token_type_ids }
-    const encoded = await tokenizer(text.slice(0, 512));
-
-    // Forward pass through MLM — pass all encoded tensors
-    const output = await model(encoded);
-    const logits = output.logits;
-    const vocabSize = logits.dims[logits.dims.length - 1];
-    const seqLen = logits.dims[logits.dims.length - 2];
-
-    // SPLADE: ReLU + log(1+x) then max-pool across sequence
-    const maxLogits = new Float32Array(vocabSize);
-    for (let pos = 0; pos < seqLen; pos++) {
-      for (let v = 0; v < vocabSize; v++) {
-        const val = logits.data[pos * vocabSize + v];
-        const activated = Math.log(1 + Math.max(0, val)); // ReLU + log(1+x)
-        if (activated > maxLogits[v]) maxLogits[v] = activated;
-      }
-    }
-
-    // Extract non-zero entries as sparse vector
-    const indices: number[] = [];
-    const values: number[] = [];
-    for (let v = 0; v < vocabSize; v++) {
-      if (maxLogits[v] > 0.5) { // threshold matching document embedding
-        indices.push(v);
-        values.push(maxLogits[v]);
-      }
-    }
-
-    return { indices, values };
-  }
-
   /**
    * Load precomputed vectors from vector-index.json.
-   * Enables hybrid retrieval (BM25 + SPLADE + dense) without any external database.
+   * Enables hybrid retrieval (BM25 + miniCOIL + dense) without any external database.
    */
   loadVectorIndex(records: VectorRecord[]): void {
     this.vectorIndex = records;
@@ -306,7 +233,7 @@ export class ToolPreFilter {
   /** Sparse dot product search against the static vector index */
   private searchSparse(
     queryIndices: number[], queryValues: number[],
-    field: 'splade' | 'bm25', maxResults: number
+    field: 'minicoil', maxResults: number
   ): ScoredResult[] {
     const scored: { id: string; score: number }[] = [];
 
@@ -330,7 +257,7 @@ export class ToolPreFilter {
    * Select the top-K tools most relevant to the user query.
    *
    * When vector index is loaded:
-   *   Runs BM25 + SPLADE sparse + dense semantic in parallel, fuses via RRF.
+   *   Runs BM25 + miniCOIL sparse + dense semantic in parallel, fuses via RRF.
    *
    * When no vector index:
    *   Falls back to BM25-only ranking.
@@ -343,7 +270,9 @@ export class ToolPreFilter {
       return this.docs.map(d => d.tool);
     }
 
-    const queryTerms = tokenize(query);
+    // Expand query with domain-specific synonyms before tokenizing
+    const expandedQuery = expandQuery(query);
+    const queryTerms = tokenize(expandedQuery);
     if (queryTerms.length === 0) {
       return this.docs.slice(0, maxTools).map(d => d.tool);
     }
@@ -354,7 +283,7 @@ export class ToolPreFilter {
     let rankedIds: string[];
 
     if (this.vectorIndex.length > 0) {
-      // Hybrid path: BM25 tool-level + SPLADE adapter-level + dense adapter-level
+      // Hybrid path: BM25 tool-level + miniCOIL adapter-level + dense adapter-level
       const topN = maxTools * 3;
 
       // BM25 results (tool-level → collapse to adapter/server ID)
@@ -372,28 +301,19 @@ export class ToolPreFilter {
       }
       const bm25Deduped = [...bm25ByServer.values()];
 
-      // SPLADE sparse search (adapter-level)
-      // Try real SPLADE model first, fall back to n-gram hash approximation
-      let qSplade: { indices: number[]; values: number[] };
-      const hasSPLADE = await this.ensureSPLADE();
-      if (hasSPLADE) {
-        qSplade = await this.embedSPLADE(query);
-      } else {
-        qSplade = querySPLADESparse(query);
-      }
-      const spladeResults = this.searchSparse(qSplade.indices, qSplade.values, 'splade', topN);
+      // miniCOIL sparse search (adapter-level, n-gram hash approximation)
+      // Full miniCOIL model available server-side via Qdrant in enterprise deployments
+      const qMiniCOIL = queryMiniCOILSparse(expandedQuery);
+      const minicoilResults = this.searchSparse(qMiniCOIL.indices, qMiniCOIL.values, 'minicoil', topN);
 
       // Dense semantic search (adapter-level)
-      // For dense, we need the query embedding. If no OpenAI key at runtime,
-      // we skip dense and use BM25 + SPLADE only (still better than BM25 alone).
-      let denseResults: ScoredResult[] = [];
-      // Dense search requires a query embedding — not available without OpenAI at runtime.
-      // The SPLADE sparse + BM25 combination provides strong hybrid retrieval without it.
+      // Requires query embedding (OpenAI at runtime). Without it, BM25 + miniCOIL still provides strong hybrid retrieval.
+      const denseResults: ScoredResult[] = [];
 
       // Fuse via RRF
       const fused = RankFusion.rrf([
         { type: 'bm25', results: bm25Deduped },
-        { type: 'sparse', results: spladeResults },
+        { type: 'sparse', results: minicoilResults },
         ...(denseResults.length > 0 ? [{ type: 'dense' as const, results: denseResults }] : []),
       ]);
 

@@ -1,7 +1,7 @@
 # Epic AI® Legion — Integration Test Protocol
 
 **Package:** `@epicai/legion`
-**Version:** 0.5.x
+**Version:** 1.0.0
 
 ---
 

@@ -9,6 +9,7 @@ on:
 jobs:
   lint-commits:
     runs-on: ubuntu-latest
+    if: github.repository == 'protectnil/epic-ai-legion'
     steps:
       - uses: actions/checkout@v4
         with:
