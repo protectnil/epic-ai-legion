@@ -1,6 +1,6 @@
 {
   "name": "@epicai/legion",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Epic AI® Legion — 35,835 tools. One self-hosted MCP server. Intelligent Virtual Assistant (IVA) integration layer for AI agents.",
   "type": "module",
   "main": "./dist/index.js",
@@ -43,6 +43,7 @@
   "files": [
     "dist",
     "adapter-catalog.json",
+    "mcp-registry.json",
     "LICENSE",
     "NOTICE",
     "README.md",
