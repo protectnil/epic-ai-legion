@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 1.0.6 — 2026-04-08
+
+### Fixed
+- **adapter-catalog.json** and **mcp-registry.json** restored to full 4,135 integrations. A build script was regenerating the catalog from a partial source, dropping 2,952 MCP server entries. The postbuild catalog generator has been removed to prevent recurrence.
+
+---
+
 ## 1.1.1 — 2026-04-04
 
 ### Fixed

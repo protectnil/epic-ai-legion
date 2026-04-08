@@ -1,6 +1,6 @@
 {
   "name": "@epicai/legion",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Epic AI® Legion — 35,835 tools. One self-hosted MCP server. Intelligent Virtual Assistant (IVA) integration layer for AI agents.",
   "type": "module",
   "main": "./dist/index.js",
@@ -125,8 +125,7 @@
     "release:minor": "npm run build && npm version minor && npm publish --access public",
     "release:major": "npm run build && npm version major && npm publish --access public",
     "build": "tsc",
-    "postbuild": "npx tsx ../epic-ai/src/fabrique/generate-adapter-catalog.ts",
-    "pretest": "tsc",
+        "pretest": "tsc",
     "test": "vitest run",
     "test:integration": "vitest run --config tests/integration/vitest.config.ts",
     "test:harness": "npx tsx tests/harness-check.ts",
