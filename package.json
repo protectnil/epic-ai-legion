@@ -1,7 +1,7 @@
 {
   "name": "@epicai/legion",
   "version": "1.0.9",
-  "description": "Epic AI® Legion — 35,835 tools. One self-hosted MCP server. Intelligent Virtual Assistant (IVA) integration layer for AI agents.",
+  "description": "Epic AI\u00ae Legion \u2014 35,835 tools. One self-hosted MCP server. Intelligent Virtual Assistant (IVA) integration layer for AI agents.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -129,7 +129,7 @@
     "release:minor": "npm run build && npm version minor && npm publish --access public",
     "release:major": "npm run build && npm version major && npm publish --access public",
     "build": "tsc",
-        "pretest": "tsc",
+    "pretest": "tsc",
     "test": "vitest run",
     "test:integration": "vitest run --config tests/integration/vitest.config.ts",
     "test:harness": "npx tsx tests/harness-check.ts",
@@ -139,5 +139,8 @@
     "lint": "tsc --noEmit",
     "eval": "node dist/eval/routing-eval.js",
     "eval:tier3": "node dist/eval/tier3-eval.js"
+  },
+  "bugs": {
+    "url": "https://github.com/protectnil/epic-ai-legion/security/advisories/new"
   }
 }

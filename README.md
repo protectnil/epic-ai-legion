@@ -316,6 +316,10 @@ See [docs/TEST-PROTOCOL.md](docs/TEST-PROTOCOL.md) for setup and the full [harne
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, PR process, and code style guidelines.
 
+## Security
+
+Read [SECURITY.md](SECURITY.md) for the full vulnerability disclosure policy, reporting path, and security posture.
+
 **Reporting security vulnerabilities:** Do not open public issues. Email [security@epic-ai.io](mailto:security@epic-ai.io).
 
 ---
