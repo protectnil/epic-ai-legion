@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 1.0.12 — 2026-04-11
+
+### Documentation
+- **DEVELOPER_GUIDE.md** — new "Adapter Catalog Provenance" section explaining that the shipped catalog is generated upstream and refreshed on release cadence, that runtime integrity is verified via `artifactDigest` + Sigstore, and that signed-catalog refresh will enable revocation-without-republish in a future release.
+- **ADAPTER-DEVELOPMENT-PROTOCOL.md** — appended note clarifying that the protocol applies identically to hand-written and upstream-materialized adapters, and that adapter additions to `src/mcp-servers/` are not accepted via pull request.
+
+### Behavior
+- No runtime behavior changes. Docs-only release.
+
+---
+
 ## 1.0.6 — 2026-04-08
 
 ### Fixed

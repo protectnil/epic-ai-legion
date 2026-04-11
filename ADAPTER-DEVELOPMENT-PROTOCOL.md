@@ -614,20 +614,19 @@ If the vendor provides a free sandbox or test account, write integration tests i
 
 ### For community contributors
 
-1. Open a GitHub issue proposing the adapter. Tag: `adapter-request`.
-2. Get approval from a maintainer (confirms no duplicate, vendor is valid).
-3. Fork the repo. Create branch: `adapter/{vendor-name}`.
-4. Follow steps 1-7 above.
-5. Submit PR. CI runs lint, typecheck, and tests.
-6. Code review for: auth correctness, error handling, API path accuracy, tool description quality.
-7. Maintainer merges. Catalog auto-regenerated on next build.
+1. Open a GitHub issue proposing the integration. Tag: `adapter-request`.
+2. Include the vendor name, API documentation URL, MCP server URL if one exists, and a sentence describing the use case.
+3. A maintainer will route the request to the upstream adapter factory (protectNIL's internal infrastructure).
+4. If accepted, the adapter will ship in a future `@epicai/legion` npm release. No code is authored in this repository on your behalf, and no fork or pull request is required.
+5. You will be credited in the adapter's file header and the CHANGELOG entry for the release that ships it.
+
+Pull requests that add files under `src/mcp-servers/` or directly modify `adapter-catalog.json` / `mcp-registry.json` will be redirected to the issue tracker and closed. This is a change from earlier versions of Legion; see `DEVELOPER_GUIDE.md` §"Adapter Catalog Provenance" for context.
 
 ### For vendor contributors
 
-Same as community, but:
-- Use your official API documentation (not reverse-engineered).
-- Attest API path accuracy in the PR description.
-- Your adapter is labeled `author: 'vendor'` in the catalog — higher trust tier.
+Same as community contributors: open an adapter-request issue. Include your official API documentation URL and an explicit note that you are acting on behalf of the vendor. Vendor-authored requests get expedited routing upstream and, when shipped, are labeled `author: 'vendor'` in the catalog (higher trust tier).
+
+If you want to establish a stronger cryptographic binding between your vendor identity and your catalog entry, contact `trust@epicai.io` to discuss the vendor identity proof protocol.
 
 ---
 
@@ -671,6 +670,14 @@ Every adapter PR is reviewed against this checklist:
 | Return raw HTML or XML in tool results | Parse to JSON, stringify |
 | Ignore pagination | Support `cursor`/`offset`/`page` parameters |
 | Ship without tests | Minimum 4 tests per adapter (see Testing section) |
+
+---
+
+## Note on Adapter Authorship
+
+Adapters that ship in `@epicai/legion` are produced through two paths: hand-written by Legion maintainers, and upstream-materialized from vendor metadata by protectNIL's internal adapter factory. Both paths produce code that must pass every requirement in this protocol — the 16-point quality gate, the four required tests, the ToolResult shape, the `fetch`-only policy, and the callTool-never-throws rule apply identically to both. This protocol is the contract for every adapter in the catalog, regardless of how it was authored.
+
+The shift to a mix of authorship paths does not change the contribution posture of this repository: Legion accepts bug fixes, framework improvements, and documentation changes through the normal CONTRIBUTING.md process. Adapter additions to `src/mcp-servers/` are not accepted via pull request; they are produced upstream and shipped with npm releases. If you want to propose an integration Legion does not yet ship, open an issue with the `adapter-request` label and a maintainer will respond.
 
 ---
 

@@ -1132,6 +1132,28 @@ await federation.connect('splunk', {
 
 ---
 
+## Adapter Catalog Provenance
+
+The `adapter-catalog.json` and `mcp-registry.json` files shipped in this package, along with most of the adapter source files under `src/mcp-servers/`, are generated and maintained by an upstream factory (protectNIL's internal adapter infrastructure). They are not hand-edited in this repository. The published catalog is the authoritative catalog; pull requests that directly modify `adapter-catalog.json`, `mcp-registry.json`, or files under `src/mcp-servers/` will be redirected to the issue tracker and closed.
+
+**Current behavior:**
+
+- The adapter set is refreshed on an npm release cadence. Between releases, the set is stable — the same `npm install @epicai/legion@1.0.12` produces the same adapter files, the same catalog, the same registry.
+- `AdapterCatalog` optionally verifies an Ed25519 signature on the catalog when loaded from a remote registry URL with `verifySignature: true` and a `publicKeyPem` configured (see `src/federation/AdapterCatalog.ts`). By default the catalog ships bundled with the npm package and no signature check runs on the bundled copy.
+- `AdapterCatalogEntry.revoked` is partially enforced. `AdapterCatalog` maintains a `revocationSet` built from every entry's `revoked` flag at load time and filters revoked entries from catalog lookup queries (`src/federation/AdapterCatalog.ts`). However, `RegistryLoader` and `FederationManager` do not currently check the revocation state when loading or invoking adapters by direct reference, so a consumer that resolves an adapter by name without going through the catalog's lookup path can still invoke a revoked adapter. Full end-to-end revocation enforcement is planned; see below.
+
+**Planned behavior** (target design, not yet enforced):
+
+The target trust model, described in protectNIL's internal architecture document, is that every catalog entry carries a SHA-256 `artifactDigest` and a Sigstore signing bundle reference, and Legion's `ArtifactVerifier` (`src/trust/ArtifactVerifier.ts`) recomputes the digest and verifies the signature before the FederationManager instantiates the adapter. Revocation is enforced at runtime via a signed catalog refresh that Legion polls on startup and periodically, allowing compromised adapters to be pulled without waiting for an npm publish cycle.
+
+Upcoming releases will move toward this model in clearly-noted minor version bumps. Until those land, the runtime is described by the "Current behavior" list above, not by the target design.
+
+**Contributions:**
+
+Adapter code additions under `src/mcp-servers/` are handled through the upstream factory, not through pull requests to this repository. Legion continues to accept, via the normal CONTRIBUTING.md process: bug fixes to the SDK framework, improvements to the federation/orchestrator/audit/autonomy layers, documentation changes, test improvements, inference gateway changes, and framework-layer refactors. If you want an integration Legion does not yet ship, open an issue with the `adapter-request` label; a maintainer will route the request upstream.
+
+---
+
 ## Writing Custom Adapters
 
 ### Custom MCP Server

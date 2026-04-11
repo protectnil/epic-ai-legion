@@ -1,6 +1,6 @@
 {
   "name": "@epicai/legion",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Epic AI\u00ae Legion \u2014 35,835 tools. One self-hosted MCP server. Intelligent Virtual Assistant (IVA) integration layer for AI agents.",
   "type": "module",
   "main": "./dist/index.js",
