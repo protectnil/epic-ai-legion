@@ -19,6 +19,28 @@ import { ConnectionPool } from './ConnectionPool.js';
 import { ToolRegistry } from './ToolRegistry.js';
 import { Correlator } from './Correlator.js';
 import type { MCPAdapter } from './adapters/base.js';
+import type { AdapterCatalog } from './AdapterCatalog.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('federation.manager');
+
+/**
+ * Optional extensions to FederationManager construction. The catalog
+ * enables runtime revocation enforcement: when set, the manager refuses
+ * to connect to or call tools on adapters whose catalog entries are
+ * marked `revoked: true`. If `catalog` is omitted, revocation checks
+ * are skipped and behavior matches pre-1.2.0 Legion releases.
+ */
+export interface FederationManagerOptions {
+  /**
+   * AdapterCatalog (already loaded) used to look up revocation state
+   * at connect time and per-tool-call. Pass the same catalog instance
+   * that AdapterCatalog.load() populated; revocations introduced via
+   * refreshRevocations() after construction are honored on subsequent
+   * calls because the isRevoked check reads live catalog state.
+   */
+  catalog?: AdapterCatalog;
+}
 
 export class FederationManager {
   private readonly pool: ConnectionPool;
@@ -26,15 +48,44 @@ export class FederationManager {
   private readonly correlator: Correlator;
   private readonly config: FederationConfig;
   private readonly adapterMap = new Map<string, MCPAdapter>();
+  private readonly catalog: AdapterCatalog | undefined;
 
-  constructor(config: FederationConfig) {
+  constructor(config: FederationConfig, options: FederationManagerOptions = {}) {
     this.config = config;
+    this.catalog = options.catalog;
     this.pool = new ConnectionPool(
       config.retryPolicy,
       config.healthCheckIntervalMs,
     );
     this.registry = new ToolRegistry();
     this.correlator = new Correlator();
+  }
+
+  /**
+   * Build a structured ToolResult representing a revoked-adapter refusal.
+   * Shared helper so the exact shape stays consistent for every rejection
+   * path.
+   */
+  private buildRevokedToolResult(
+    tool: Tool,
+    details: { revokedAt?: string; reason?: string } | undefined,
+    startedAt: number,
+  ): ToolResult {
+    const reason = details?.reason ?? 'no reason recorded';
+    const message = `Tool "${tool.name}" blocked: adapter "${tool.server}" is revoked in the catalog (${reason}).`;
+    log.warn('federation_manager.blocked_revoked_call', {
+      adapterId: tool.server,
+      toolName: tool.name,
+      reason: details?.reason,
+      revokedAt: details?.revokedAt,
+    });
+    return {
+      content: [{ type: 'text', text: message }],
+      isError: true,
+      server: tool.server,
+      tool: tool.name,
+      durationMs: Date.now() - startedAt,
+    } as ToolResult;
   }
 
   /**
@@ -46,6 +97,21 @@ export class FederationManager {
     config: ServerConnection,
     adapterOrFactory?: MCPAdapter | ((config: ServerConnection) => MCPAdapter),
   ): Promise<this> {
+    // Revocation gate: if a catalog was provided and the adapter is
+    // marked revoked, refuse to connect at all. This prevents the
+    // adapter from ever entering the adapterMap or the tool registry,
+    // which is the strongest runtime containment the federation layer
+    // can offer against a compromised or contradicted catalog entry.
+    if (this.catalog?.isRevoked(name)) {
+      const details = this.catalog.getRevocationDetails(name);
+      log.warn('federation_manager.skipped_revoked_connect', {
+        adapterId: name,
+        reason: details?.reason,
+        revokedAt: details?.revokedAt,
+      });
+      return this;
+    }
+
     const serverConfig = { ...config, name };
     const adapter = await this.pool.connect(serverConfig, adapterOrFactory);
 
@@ -120,9 +186,40 @@ export class FederationManager {
    * Validates required fields from the tool's parameters schema before dispatch.
    */
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+    const startedAt = Date.now();
     const tool = this.registry.get(name);
     if (!tool) {
       throw new Error(`Tool "${name}" not found in any connected server`);
+    }
+
+    // Revocation gate (defense in depth — connect() already skips revoked
+    // adapters, but the catalog can be updated between connect time and
+    // call time via a catalog refresh, so every call re-checks live
+    // catalog state before dispatch).
+    //
+    // SCOPE LIMITATION (TOCTOU): This check runs BEFORE the dispatch.
+    // Between the moment `this.catalog.isRevoked(tool.server)` returns
+    // false and the moment the awaited `adapter.callTool(...)` below
+    // completes, the catalog can be mutated by an async refresh. A
+    // tool call that was already in flight at the moment of revocation
+    // will complete normally — the vendor has already received the
+    // request; the federation layer cannot retroactively cancel it.
+    //
+    // This is the intentional 1.1.0 boundary. The revocation gate in
+    // 1.2.0 prevents NEW dispatch to revoked adapters; it does not
+    // cancel in-flight invocations. Cooperative per-call cancellation
+    // is planned for 1.2.0 as part of the runtime adapter unload work
+    // (L3 in the upstream Fabrique integration roadmap). Until then,
+    // users concerned about the in-flight window should (a) keep
+    // revocation refresh intervals short and (b) ensure tool calls
+    // have tight client-side timeouts so an in-flight call on a
+    // just-revoked adapter does not linger past the refresh cadence.
+    if (this.catalog?.isRevoked(tool.server)) {
+      return this.buildRevokedToolResult(
+        tool,
+        this.catalog.getRevocationDetails(tool.server),
+        startedAt,
+      );
     }
 
     // Basic JSON Schema required-field type checking

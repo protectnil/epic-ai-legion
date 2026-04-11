@@ -20,6 +20,21 @@ export type AdapterCategory =
   | 'identity' | 'compliance' | 'finance' | 'social' | 'misc';
 
 export interface AdapterCatalogEntry {
+  /**
+   * Short kebab-case slug used as the federation server name and as
+   * the `entry.id` in mcp-registry.json. When both `id` and `name` are
+   * present the catalog indexes by both so revocation lookups work
+   * whether the caller has the slug (federation/runtime side) or the
+   * package name (classifier/retrieval side). Optional because older
+   * catalog bundles did not include it; production bundles generated
+   * from the Fabrique catalog always do.
+   */
+  id?: string;
+  /**
+   * Canonical name, typically the npm package identifier
+   * (e.g. `@stripe/mcp-server`). Primary key for `byName` lookups
+   * and the historical revocation index.
+   */
   name: string;
   displayName: string;
   version: string;
@@ -144,6 +159,18 @@ export class AdapterCatalog {
   // Indexing
   // ---------------------------------------------------------------------------
 
+  /**
+   * Replace the full catalog atomically. Rebuilds every index
+   * (category, keyword, name, revocation) from the new entries list.
+   * Public so consumers that build the catalog programmatically — or
+   * refresh it from a signed source after construction — can reuse the
+   * same indexing code path as `load()`. Tests also use this to avoid
+   * coupling to the bundle-file resolution path.
+   */
+  setEntries(entries: AdapterCatalogEntry[]): void {
+    this.buildIndex(entries);
+  }
+
   private buildIndex(entries: AdapterCatalogEntry[]): void {
     // Clear all indexes — atomic replace
     this.entries_ = entries;
@@ -153,8 +180,14 @@ export class AdapterCatalog {
     this.revocationSet.clear();
 
     for (const entry of entries) {
-      // Name index
+      // Name index — keyed by the canonical `name` (typically the npm
+      // package identifier) AND, when present, by the short `id` slug
+      // so federation-layer lookups (which only know the slug) find
+      // the same entry as the classifier/retrieval layers.
       this.nameIndex.set(entry.name, entry);
+      if (entry.id && entry.id !== entry.name) {
+        this.nameIndex.set(entry.id, entry);
+      }
 
       // Category index
       if (!this.categoryIndex.has(entry.category)) {
@@ -180,9 +213,17 @@ export class AdapterCatalog {
         this.keywordIndex.get(lower)!.add(entry.name);
       }
 
-      // Revocation tracking
+      // Revocation tracking — index BOTH the `name` (package) and the
+      // `id` (slug) in the same set so `isRevoked()` matches regardless
+      // of which identifier the caller has. Federation-layer callers
+      // pass the slug (`entry.id` via ServerConnection.name); classifier
+      // callers pass the package name. Both must resolve to the same
+      // revocation state.
       if (entry.revoked) {
         this.revocationSet.add(entry.name);
+        if (entry.id) {
+          this.revocationSet.add(entry.id);
+        }
       }
     }
   }
@@ -225,8 +266,37 @@ export class AdapterCatalog {
     return this.nameIndex.get(name);
   }
 
-  isRevoked(name: string): boolean {
-    return this.revocationSet.has(name);
+  /**
+   * Check whether a catalog entry is revoked. Accepts either the
+   * kebab-case `id` slug (federation-layer identifier, matching
+   * `ServerConnection.name`) or the `name` package identifier
+   * (classifier-layer identifier, matching `byName` lookups).
+   * `buildIndex` populates `revocationSet` with both keys for every
+   * revoked entry, so either form resolves correctly.
+   */
+  isRevoked(nameOrId: string): boolean {
+    return this.revocationSet.has(nameOrId);
+  }
+
+  /**
+   * Return the full revocation detail for a catalog entry, or undefined
+   * if the entry is not revoked. Accepts either the `id` slug
+   * (federation-layer identifier) or the `name` package identifier
+   * (classifier-layer identifier) because `buildIndex()` registers
+   * both in `nameIndex` and `revocationSet`. The `reason` and
+   * `revokedAt` fields come straight from the catalog entry's
+   * `revokedReason` and `revokedAt` columns so consumers
+   * (FederationManager, loggers, operator tooling) can surface a
+   * specific rejection message.
+   */
+  getRevocationDetails(nameOrId: string): { revoked: true; revokedAt?: string; reason?: string } | undefined {
+    if (!this.revocationSet.has(nameOrId)) return undefined;
+    const entry = this.nameIndex.get(nameOrId);
+    return {
+      revoked: true,
+      revokedAt: entry?.revokedAt,
+      reason: entry?.revokedReason,
+    };
   }
 
   get size(): number {

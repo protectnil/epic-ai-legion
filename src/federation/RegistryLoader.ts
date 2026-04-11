@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ServerConnection, AuthConfig } from '../types/index.js';
+import type { AdapterCatalog } from './AdapterCatalog.js';
 
 // ─── Registry Entry (matches generate-registry.ts output) ────────────────────
 
@@ -87,6 +88,18 @@ export interface RegistryLoaderOptions {
    * Default: true (only connect adapters the customer has credentials for).
    */
   skipMissingCredentials?: boolean;
+
+  /**
+   * Optional AdapterCatalog (already loaded) used to filter revoked
+   * adapters out of the ServerConnection list before the FederationManager
+   * ever sees them. When set, `load()` skips any registry entry whose
+   * `id` matches a revoked catalog entry and records the skip in
+   * `RegistryLoadResult.skipped` with reason "revoked in catalog".
+   *
+   * Omit (undefined) to keep pre-1.1.0 behavior where revocation is not
+   * enforced at load time.
+   */
+  catalog?: AdapterCatalog;
 }
 
 // ─── Loader Result ───────────────────────────────────────────────────────────
@@ -112,7 +125,9 @@ export interface RegistryLoadResult {
 // ─── Loader ──────────────────────────────────────────────────────────────────
 
 export class RegistryLoader {
-  private readonly options: Required<RegistryLoaderOptions>;
+  private readonly options: Omit<Required<RegistryLoaderOptions>, 'catalog'> & {
+    catalog: AdapterCatalog | undefined;
+  };
   private registry: RegistryEntry[] = [];
 
   constructor(options: RegistryLoaderOptions = {}) {
@@ -124,6 +139,7 @@ export class RegistryLoader {
       exclude: options.exclude || [],
       resolveCredential: options.resolveCredential || ((key: string) => process.env[key]),
       skipMissingCredentials: options.skipMissingCredentials ?? true,
+      catalog: options.catalog,
     };
   }
 
@@ -146,6 +162,21 @@ export class RegistryLoader {
       if (this.options.include.length > 0 && !this.options.include.includes(entry.id)) continue;
       if (this.options.exclude.includes(entry.id)) continue;
       if (this.options.categories.length > 0 && !this.options.categories.includes(entry.category)) continue;
+
+      // Revocation gate — when a catalog is provided, revoked entries
+      // are excluded from the connection list before ConnectionPool
+      // ever sees them. This is the first of two defense layers in
+      // Legion's 1.1.0 runtime revocation story; the second layer is
+      // FederationManager.callTool() which re-checks on every call.
+      if (this.options.catalog?.isRevoked(entry.id)) {
+        const details = this.options.catalog.getRevocationDetails(entry.id);
+        const reasonSuffix = details?.reason ? `: ${details.reason}` : '';
+        result.skipped.push({
+          id: entry.id,
+          reason: `revoked in catalog${reasonSuffix}`,
+        });
+        continue;
+      }
 
       // Determine which connection type to use
       const connectionType = this.resolveConnectionType(entry);
