@@ -1,5 +1,21 @@
 # Epic AI® Legion
 
+> ## ⭐ 1.3.0 — Signed Catalog Enforcement (Breaking Change)
+>
+> **Legion now cryptographically verifies the adapter catalog on every load and every refresh. Verification is ON BY DEFAULT.**
+>
+> **What this protects you from.** Before 1.3.0, the adapter catalog that tells Legion *which integrations exist and what tools they expose* was loaded without any signature check. A tampered `adapter-catalog.json` on disk — whether from a compromised dependency, a malicious patch, or a supply-chain attack against the npm package itself — would have been accepted and used. Tool-routing decisions would have been made against whatever the tampered catalog said. **As of 1.3.0, the catalog must carry a valid Ed25519 signature from a key Legion recognizes, or it refuses to load.** This closes one of the last remaining paths by which a compromised upstream artifact could silently redirect Legion's tool selection.
+>
+> **You get this for free if you're using the default bundled catalog.** The `@epicai/legion` npm package now ships `adapter-catalog.json.sig` alongside `adapter-catalog.json`. A bundled public key at `src/keys/legion-catalog-public.ts` verifies the shipped signature on every startup. You do not need to generate keys, run scripts, or change any configuration — just upgrade.
+>
+> **If you're running against a custom catalog or a custom registry**, you must sign your catalog (see `scripts/sign-catalog.mjs`) or explicitly opt out via `verifySignature: false` in `CatalogSourceConfig`. Opting out emits a loud startup warning on every boot — by design. You should not opt out for production workloads; it defeats the purpose of the change. If your custom catalog is internal and you're confident about the threat model, signing it takes two minutes with the script.
+>
+> **Migration in 30 seconds.** Upgrade to `@epicai/legion@1.3.0`. If your build breaks, read the error message — it will tell you exactly which of the three cases you hit (missing bundled `.sig`, missing registry `catalog-signature` header, or failed signature verification), and the fix for each. Full details in `DEVELOPER_GUIDE.md` → "Adapter Catalog Provenance" and in the 1.3.0 section of `CHANGELOG.md`.
+>
+> **This is best-of-breed practice.** Terraform Registry, Sigstore/Cosign, npm provenance attestations, Debian `apt`, Docker Content Trust, and Go modules all use signed catalogs or signed manifests as their default trust mechanism. Legion 1.3.0 brings Legion into line with that industry standard. Earlier versions of Legion documented the trust model but did not enforce it; 1.3.0 makes the documentation match the runtime.
+
+---
+
 *35,835 tools. One self-hosted MCP server. Your context window only loads what the query needs.*
 
 **Context window cost: 469 tokens.** Legion exposes 3 tools to your AI client. The routing happens server-side — your context window never sees the full catalog.

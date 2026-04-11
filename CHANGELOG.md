@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 1.3.0 — 2026-04-11
+
+> ## ⭐ **BREAKING CHANGE: Signed Catalog Enforcement**
+>
+> **Legion now verifies the Ed25519 signature of the adapter catalog on every load and every refresh, and this verification is ON BY DEFAULT.**
+>
+> **Why this protects you.** Before 1.3.0, the adapter catalog (`adapter-catalog.json`) was loaded without any cryptographic check. A tampered catalog — whether from a compromised dependency, a malicious patch, a supply-chain attack against the published npm package, or an attacker who gained write access to a remote registry endpoint — would have been accepted and used for tool routing. An attacker who could modify catalog entries could silently redirect Legion's tool selection to compromised adapters, or surface malicious adapters under well-known vendor names. As of 1.3.0, the catalog must carry a valid Ed25519 signature from a key Legion recognizes, or it refuses to load. This closes one of the last remaining paths by which a compromised upstream artifact could alter Legion's runtime behavior silently.
+>
+> **What you need to do.**
+> - **Default bundled catalog users (most installs):** nothing. The `@epicai/legion` npm package now ships `adapter-catalog.json.sig` alongside `adapter-catalog.json`, and the bundled public key at `src/keys/legion-catalog-public.ts` verifies the signature on every startup. Just upgrade.
+> - **Custom catalog users:** sign your catalog with the bundled `scripts/sign-catalog.mjs` and pass your public key via `CatalogSourceConfig.publicKeyPem`. See `DEVELOPER_GUIDE.md` → "Adapter Catalog Provenance" for the exact commands.
+> - **Remote registry users:** configure your registry to serve the base64 Ed25519 signature of the response body in the `catalog-signature` HTTP header. The refresh loop verifies the header on every fetch.
+> - **Cannot sign right now:** set `verifySignature: false` in `CatalogSourceConfig` to opt out. This emits a loud startup warning on every boot — by design. You should not opt out for production workloads; the warning is there to remind you on every restart that you have disabled a security control.
+>
+> **Industry context.** Signed catalogs are the best-of-breed pattern for registry distribution. Terraform Registry requires GPG-signed providers. Sigstore/Cosign signs Docker images and npm packages via transparency logs. Debian `apt` has had signed package indexes since 2005. Go modules verify checksums via a public Merkle tree. Legion 1.3.0 brings Legion into line with that industry standard. Earlier versions of Legion documented the trust model but did not enforce it; 1.3.0 makes the documentation match the runtime.
+
+### Added
+
+- **`src/keys/legion-catalog-public.ts`** — bundled default Ed25519 public key (SPKI PEM) that verifies the shipped catalog signature when no custom `publicKeyPem` is supplied. Also exports `LEGION_CATALOG_PUBLIC_KEY_ID` for logging which key was in use on each verification.
+- **`adapter-catalog.json.sig`** — detached signature file shipping in every `@epicai/legion` tarball. Signed over the raw UTF-8 bytes of `adapter-catalog.json`.
+- **`scripts/sign-catalog.mjs`** — bundled command-line signer. Usage: `node scripts/sign-catalog.mjs --key <pem> --catalog <path>`. Uses `crypto.sign(null, data, privateKey)` — the correct Node.js idiom for raw Ed25519 — and refuses to sign with any key type other than Ed25519. Prints an SPKI fingerprint so operators can verify which key was used without grepping secrets.
+- **`startRefresh()` / `stopRefresh()`** wired into `AdapterCatalog` — the `refreshTimer` field existed as dead code in prior versions, and is now implemented. Polls `config.registryUrl` on `config.refreshIntervalMs` (default 1 hour), re-verifies the signature on every poll, updates entries atomically via `buildIndex()` on success, preserves existing entries on failure. In-flight guard prevents overlapping polls. Start/stop are both idempotent. `unref()`'d so the timer does not keep the Node event loop alive.
+
+### Changed — BREAKING
+
+- **`CatalogSourceConfig.verifySignature` default flipped from `false` to `true`.** Consumers running against a custom catalog or registry without a valid signature must either sign the catalog (see above) or explicitly set `verifySignature: false` to opt out. Opting out emits a loud startup warning via the logger on every construction.
+- **`AdapterCatalog.loadFromBundle()` now reads the raw catalog bytes via `readFileSync`** instead of via dynamic JSON import. The signature is verified against the exact on-disk bytes, so any pretty-printer, linter, or minifier that reformats the catalog JSON between signing and loading will break verification. The signer and verifier must agree on the exact bytes.
+- **`AdapterCatalog.loadFromRegistry()` now uses `crypto.verify(null, ...)`** instead of `createVerify('ed25519')`. The direct form is the correct Node.js idiom for raw Ed25519 signatures and matches `sign-catalog.mjs`. The `createVerify` path was non-idiomatic and has been the source of interop bugs.
+
+### Notes
+
+- **Development key.** This release ships with a DEVELOPMENT Ed25519 key pair. The public key is committed at `src/keys/legion-catalog-public.ts`; the private key lives at `/opt/epic-ai/secrets/legion-catalog-dev.private.pem` on the development release host. **Agent Native's next Legion release (built on macOS) should rotate to the production key:** (1) generate or use an existing production Ed25519 key, (2) replace the PEM in `src/keys/legion-catalog-public.ts`, (3) re-sign the bundled catalog via `scripts/sign-catalog.mjs`, (4) publish. The mechanism is in place and tested; only the key material needs to swap out. See `RELEASE-NOTES-FOR-NEXT-BUILD.md` for the full handoff note.
+- **Refresh loop opt-in.** The refresh loop only runs when `EPIC_AI_SIGNED_CATALOG_URL` is set (via `CatalogSourceConfig.registryUrl`) AND `startRefresh()` is called explicitly. Consumers that use the default bundled catalog get verification on every startup but no background polling — the catalog is static until the next `npm upgrade`. Consumers that point Legion at a remote registry get continuous verification on every refresh tick.
+- **TOCTOU / race condition note.** A catalog refresh that happens mid-tool-call does not cancel in-flight invocations. L1's revocation TOCTOU boundary (documented in 1.2.0) still applies — the revocation gate prevents NEW dispatch but cannot retroactively cancel an already-awaiting call. L3 (runtime adapter unload, shipping in 1.4.0) closes that window.
+
+### Test Coverage
+
+- `tests/federation-catalog-signature.test.ts` — 13 new cases covering the bundled happy path, the "missing .sig" failure, the explicit opt-out, the startup warning, the registry signed-path, the tampered-body rejection, the missing-header rejection, the explicit registry opt-out, and the refresh loop (polls on interval, preserves entries on failure, idempotent start/stop, no-op when source !== 'registry').
+- Full Legion test suite: 872 files, 5922 tests, all passing (5909 from 1.2.0 + 13 new in 1.3.0).
+
+### Migration Reference
+
+Three failure modes you might hit after upgrading, and the fix for each:
+
+| Error | Cause | Fix |
+|---|---|---|
+| `adapter-catalog.json.sig not found alongside adapter-catalog.json` | Bundled .sig file is missing | Reinstall `@epicai/legion` — the tarball ships with a signed .sig |
+| `adapter-catalog.json signature verification failed` | Catalog bytes do not match the signature | Either the catalog was tampered with, or your linter/formatter re-pretty-printed it. Do not proceed without investigating. If you edited the catalog on purpose, re-sign via `scripts/sign-catalog.mjs`. |
+| `Registry at {url} did not return a "catalog-signature" header` | Remote registry doesn't serve signatures | Configure your registry to serve base64 Ed25519 signatures in the `catalog-signature` header, or set `verifySignature: false` to opt out. |
+
+---
+
 ## 1.2.0 — 2026-04-11
 
 > Version note: versions 1.1.0 and 1.1.1 were published to npm on

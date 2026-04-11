@@ -1136,17 +1136,48 @@ await federation.connect('splunk', {
 
 The `adapter-catalog.json` and `mcp-registry.json` files shipped in this package, along with most of the adapter source files under `src/mcp-servers/`, are generated and maintained by an upstream factory (protectNIL's internal adapter infrastructure). They are not hand-edited in this repository. The published catalog is the authoritative catalog; pull requests that directly modify `adapter-catalog.json`, `mcp-registry.json`, or files under `src/mcp-servers/` will be redirected to the issue tracker and closed.
 
-**Current behavior:**
+**Current behavior (1.3.0+):**
 
-- The adapter set is refreshed on an npm release cadence. Between releases, the set is stable — the same `npm install @epicai/legion@1.0.12` produces the same adapter files, the same catalog, the same registry.
-- `AdapterCatalog` optionally verifies an Ed25519 signature on the catalog when loaded from a remote registry URL with `verifySignature: true` and a `publicKeyPem` configured (see `src/federation/AdapterCatalog.ts`). By default the catalog ships bundled with the npm package and no signature check runs on the bundled copy.
-- `AdapterCatalogEntry.revoked` is partially enforced. `AdapterCatalog` maintains a `revocationSet` built from every entry's `revoked` flag at load time and filters revoked entries from catalog lookup queries (`src/federation/AdapterCatalog.ts`). However, `RegistryLoader` and `FederationManager` do not currently check the revocation state when loading or invoking adapters by direct reference, so a consumer that resolves an adapter by name without going through the catalog's lookup path can still invoke a revoked adapter. Full end-to-end revocation enforcement is planned; see below.
+- The adapter set is refreshed on an npm release cadence. Between releases, the set is stable — the same `npm install @epicai/legion@1.3.0` produces the same adapter files, the same catalog, the same registry, and the same detached signature.
+- **`AdapterCatalog` verifies an Ed25519 signature on the catalog by default on both the bundled and remote load paths.** The verification is ON by default as of 1.3.0; consumers can opt out via `verifySignature: false` in `CatalogSourceConfig`, which emits a loud startup warning on every boot. See `src/federation/AdapterCatalog.ts`.
+- The bundled catalog ships with a detached `adapter-catalog.json.sig` file alongside `adapter-catalog.json`. A default Ed25519 public key lives at `src/keys/legion-catalog-public.ts` and is used automatically when no custom `publicKeyPem` is supplied. Consumers running against a custom catalog pass their own key via `CatalogSourceConfig.publicKeyPem`.
+- Remote registry loads verify the `catalog-signature` HTTP header on every fetch. The registry must return the base64 Ed25519 signature of the response body in that header.
+- `AdapterCatalog.startRefresh()` polls a signed registry on a configurable interval (default 1 hour). Failed refreshes preserve the existing catalog state — a network or verification failure never leaves the catalog empty or partially populated. In-flight guard prevents overlapping polls.
+- `AdapterCatalogEntry.revoked` is enforced at runtime via the federation layer as of 1.2.0 when a catalog is wired into `RegistryLoader` / `FederationManager`. See the 1.2.0 CHANGELOG entry for the opt-in pattern.
 
-**Planned behavior** (target design, not yet enforced):
+**Signing a custom catalog.**
 
-The target trust model, described in protectNIL's internal architecture document, is that every catalog entry carries a SHA-256 `artifactDigest` and a Sigstore signing bundle reference, and Legion's `ArtifactVerifier` (`src/trust/ArtifactVerifier.ts`) recomputes the digest and verifies the signature before the FederationManager instantiates the adapter. Revocation is enforced at runtime via a signed catalog refresh that Legion polls on startup and periodically, allowing compromised adapters to be pulled without waiting for an npm publish cycle.
+If you run Legion against your own catalog file or your own registry endpoint, you must sign the catalog before Legion will load it (or explicitly opt out of verification with `verifySignature: false`, which is not recommended for production).
 
-Upcoming releases will move toward this model in clearly-noted minor version bumps. Until those land, the runtime is described by the "Current behavior" list above, not by the target design.
+Sign a custom catalog with the bundled script:
+
+```bash
+# Generate an Ed25519 key pair (one-time setup)
+openssl genpkey -algorithm Ed25519 -out my-catalog.private.pem
+openssl pkey -in my-catalog.private.pem -pubout -out my-catalog.public.pem
+
+# Sign your catalog — writes my-catalog.json.sig
+node node_modules/@epicai/legion/scripts/sign-catalog.mjs \
+  --key my-catalog.private.pem \
+  --catalog my-catalog.json
+
+# Pass the public key to AdapterCatalog in your Legion config
+const publicKeyPem = readFileSync('my-catalog.public.pem', 'utf-8');
+const catalog = new AdapterCatalog({
+  source: 'bundle',
+  publicKeyPem,
+});
+```
+
+The private key must never be committed to source control. The public key is safe to commit and ship.
+
+**Verification failure.**
+
+When the signature check fails, `AdapterCatalog.load()` throws with a specific error describing which of the three failure modes occurred:
+
+- `adapter-catalog.json.sig not found` — the detached signature file is missing. Either reinstall `@epicai/legion` cleanly (which ships a signed `.sig`), re-sign your custom catalog, or opt out of verification.
+- `adapter-catalog.json signature verification failed` — the bytes of the catalog do not match the signature. This indicates either catalog tampering or a key mismatch. Do not proceed without investigating.
+- `Registry at {url} did not return a "catalog-signature" header` — the remote registry responded without the required header. Configure your registry to serve signed responses or opt out.
 
 **Contributions:**
 
