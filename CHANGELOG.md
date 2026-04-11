@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 1.4.0 — 2026-04-11
+
+### Added — Runtime Adapter Unload (closes the L1 TOCTOU boundary)
+
+- **`FederationManager.unloadAdapter(name, reason, options?)`** — new public method that removes a single adapter from the running federation without restarting the process. Sequence: mark adapter as `unloading` in the pool → wait for in-flight tool calls to drain (bounded by `maxQuiescenceMs`, default 30 s) → close the transport via `ConnectionPool.disconnect()` → remove from `ToolRegistry` and `adapterMap`. Returns `{ success, reason, quiescent, inFlightAtClose, durationMs }`. Unknown adapter names are a no-op, not an error.
+- **`FederationManager.serverNames()`** — stable snapshot of currently-connected adapter names. Used by `KillListWatcher` to diff the kill list against live state, and by any operator tool that wants to enumerate adapters without reaching into the pool.
+- **`ConnectionPool` runtime state machine** — new public methods `stateOf(name)`, `markUnloading(name)`, `waitForQuiescence(name, maxMs)`, `beginCall(name)`, `endCall(name)`, `inFlightCount(name)`. The pool now tracks per-adapter connection state (`'connected' | 'unloading' | 'disconnected'`) and an in-flight call counter per adapter. `beginCall` atomically checks the state and increments the counter; it returns `false` if the adapter is in the `unloading` state so the caller can refuse the dispatch cleanly. `waitForQuiescence` polls the counter at 50 ms intervals until it reaches 0 or the deadline fires.
+- **`KillListWatcher`** — new `src/federation/KillListWatcher.ts`. Polls a signed kill-list URL on a configurable interval (default 5 minutes), Ed25519-verifies the response bytes against the `kill-list-signature` header, diffs the list against `FederationManager.serverNames()`, and calls `unloadAdapter()` for every currently-connected entry in the list. Memoizes already-acted entries by kill-list version so the same list polled twice is a no-op on the second poll. Opt-in — only runs when `url` is configured.
+- **Kill-list signing model** — reuses the same Ed25519 public key bundled for the catalog (`LEGION_CATALOG_PUBLIC_KEY_PEM` from `src/keys/legion-catalog-public.ts`) by default. Consumers with a separate kill-list signing key pass `publicKeyPem` in `KillListWatcherOptions`. Consumers who opt out via `verifySignature: false` see a startup warning.
+
+### Changed
+
+- **`FederationManager.callTool()`** now brackets every `adapter.callTool(...)` dispatch in `ConnectionPool.beginCall(name)` / `endCall(name)`. If `beginCall` returns `false` (adapter is `unloading`), the call returns an error `ToolResult` (same shape as the L1 revocation refusal, with "unloading" in the message) and the underlying adapter is never invoked. This closes the TOCTOU window that the 1.2.0 CHANGELOG explicitly documented as a scope limitation: the revocation gate in L1 prevents NEW dispatches but can't cancel an in-flight call. `unloadAdapter()` in L3 closes that window by waiting for in-flight drain before tearing down.
+- **`ConnectionPool.disconnect(name)`** now clears the adapter's state tracking and in-flight counter in addition to closing the transport.
+
+### Notes
+
+- **Additive, not breaking.** Consumers that never call `unloadAdapter()` or instantiate `KillListWatcher` see no behavior change. The new bracket around `callTool` is transparent for the happy path — it's a synchronous in-memory state check + counter increment per call.
+- **Quiescence timeout semantics.** When `waitForQuiescence` exceeds its deadline, `unloadAdapter` proceeds with the transport close anyway. In-flight calls that were still pending at that moment observe an abort when their own transport shuts down — the federation layer does not attempt to cancel them cooperatively (MCP has no native cancel). The log line `federation_manager.unload.quiescence_timeout` records the in-flight count at close so operators can see the tail.
+- **Kill-list lifecycle is opt-in.** The watcher must be constructed and `start()`-ed explicitly. There is no default polling unless a consumer wires it up. This keeps 1.4.0 additive — the feature exists, the mechanism is in place, and consumers adopt it when they're ready. Fabrique's public transparency surface at `submit.epicai.co/killlist` (shipping in F19) is the intended default URL for protectNIL customers.
+
+### Test Coverage
+
+- `tests/federation-unload.test.ts` — 12 new cases covering the happy path (unknown adapter, idle adapter), four race conditions (call arriving during unload, in-flight call before unload, multiple concurrent calls, quiescence deadline exceeded), the pool bracket helpers, and the full `KillListWatcher` pipeline (signed poll + unload, signature mismatch refused, missing header refused, memoization across same-version polls, no-op when url absent).
+- Full Legion suite: 874 files, 5935 tests (5922 from 1.3.0 + 13 new in 1.4.0), all passing.
+
+### Migration Reference
+
+1.4.0 is additive. Existing consumers need no changes.
+
+To enable runtime kill-list enforcement against a Fabrique-hosted kill list:
+
+```typescript
+import { KillListWatcher } from '@epicai/legion';
+
+const watcher = new KillListWatcher({
+  federation: agent.federation, // from EpicAI.create()
+  url: process.env.EPIC_AI_KILL_LIST_URL, // e.g. https://submit.epicai.co/killlist
+  intervalMs: 5 * 60 * 1000,
+  maxQuiescenceMs: 30_000,
+});
+watcher.start();
+
+// On shutdown:
+watcher.stop();
+```
+
+To manually unload an adapter (for custom admin tooling):
+
+```typescript
+await agent.federation.unloadAdapter('stripe', 'vendor_identity_proof_expired', {
+  maxQuiescenceMs: 10_000,
+});
+```
+
+---
+
 ## 1.3.0 — 2026-04-11
 
 > ## ⭐ **BREAKING CHANGE: Signed Catalog Enforcement**

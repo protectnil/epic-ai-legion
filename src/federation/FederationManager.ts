@@ -244,9 +244,182 @@ export class FederationManager {
       throw new Error(`Server "${tool.server}" for tool "${name}" is not connected`);
     }
 
-    // Use the original tool name (without server prefix) for the MCP call
-    const originalName = name.includes(':') ? name.split(':').slice(1).join(':') : name;
-    return adapter.callTool(originalName, args);
+    // L3 (1.4.0) runtime unload gate. beginCall() atomically checks
+    // that the adapter is in the `connected` state and increments the
+    // in-flight counter. If the adapter has been marked `unloading`
+    // between tool resolution and dispatch, beginCall returns false
+    // and we return an error ToolResult instead of dispatching.
+    //
+    // This gate closes the TOCTOU window that L1 documented as a
+    // scope limitation. Combined with `unloadAdapter()` below, a
+    // revocation can now both (a) prevent new dispatches AND (b)
+    // wait for in-flight calls to drain before closing the transport.
+    if (!this.pool.beginCall(tool.server)) {
+      return this.buildUnloadingToolResult(tool, startedAt);
+    }
+
+    try {
+      // Use the original tool name (without server prefix) for the MCP call
+      const originalName = name.includes(':') ? name.split(':').slice(1).join(':') : name;
+      return await adapter.callTool(originalName, args);
+    } finally {
+      this.pool.endCall(tool.server);
+    }
+  }
+
+  /**
+   * Runtime adapter unload — L3 (1.4.0).
+   *
+   * Removes a single adapter from the federation without restarting
+   * the process. The sequence is:
+   *
+   *   1. Mark the adapter as `unloading` in the pool. New dispatches
+   *      via `callTool()` will now return an error ToolResult instead
+   *      of routing to the adapter.
+   *   2. Wait for in-flight calls to drain, bounded by
+   *      `maxQuiescenceMs` (default 30s). Calls that started before
+   *      step 1 run to completion — the federation layer does not
+   *      cancel them.
+   *   3. Close the transport via `ConnectionPool.disconnect()`,
+   *      remove from `ToolRegistry`, remove from `adapterMap`.
+   *
+   * Returns a result object describing the outcome so the caller
+   * (kill-list watcher, manual API, or a tool-layer admin call) can
+   * log it.
+   *
+   * Unknown adapter names are a no-op — returns
+   * `{ success: false, reason: 'unknown' }` without throwing.
+   */
+  async unloadAdapter(
+    name: string,
+    reason: string,
+    options: { maxQuiescenceMs?: number } = {},
+  ): Promise<{
+    success: boolean;
+    reason: string;
+    quiescent: boolean;
+    inFlightAtClose: number;
+    durationMs: number;
+    /**
+     * When success is false AND the adapter was known, this carries
+     * the underlying error message so operator tooling can surface
+     * the reason (usually a transport close failure on the MCP
+     * adapter's side). Undefined on success or when the adapter
+     * was unknown.
+     */
+    error?: string;
+  }> {
+    const startedAt = Date.now();
+    const maxQuiescenceMs = options.maxQuiescenceMs ?? 30_000;
+
+    if (!this.adapterMap.has(name)) {
+      return {
+        success: false,
+        reason: 'unknown',
+        quiescent: true,
+        inFlightAtClose: 0,
+        durationMs: Date.now() - startedAt,
+      };
+    }
+
+    log.info('federation_manager.unload.begin', { adapterId: name, reason });
+
+    // Step 1: flip state so new dispatches are refused
+    this.pool.markUnloading(name);
+
+    // Step 2: wait for in-flight calls to drain
+    const quiescent = await this.pool.waitForQuiescence(name, maxQuiescenceMs);
+    const inFlightAtClose = this.pool.inFlightCount(name);
+
+    if (!quiescent) {
+      log.warn('federation_manager.unload.quiescence_timeout', {
+        adapterId: name,
+        maxQuiescenceMs,
+        inFlightAtClose,
+        note:
+          'proceeding with transport close; in-flight calls will observe abort when their own adapter transport shuts down',
+      });
+    }
+
+    // Step 3: tear down the registry + pool entries for this adapter.
+    //
+    // Order matters. We disconnect the transport FIRST so that any
+    // failure surfaces as a caller-visible error on this function's
+    // return value — if disconnect throws, the pool is left with the
+    // adapter still in its map in the `unloading` state, which is
+    // the recoverable failure state. Only after a clean disconnect
+    // do we unregister from the registry and adapterMap. If we
+    // unregistered first and disconnect then threw, we'd have a
+    // tool-registry-clean-but-pool-stale inconsistency that no
+    // caller could observe.
+    let disconnectError: string | undefined;
+    try {
+      await this.pool.disconnect(name);
+    } catch (err) {
+      disconnectError = err instanceof Error ? err.message : String(err);
+      log.error('federation_manager.unload.disconnect_failed', {
+        adapterId: name,
+        error: disconnectError,
+        note: 'adapter remains in pool in unloading state; retry unload after investigating',
+      });
+    }
+
+    if (disconnectError) {
+      // Failed unload — do NOT remove from the registry or adapterMap.
+      // The adapter is in a limbo state where new dispatches are
+      // refused (pool.markUnloading is set) but the transport is
+      // still present. A subsequent unloadAdapter call can retry.
+      const durationMs = Date.now() - startedAt;
+      return {
+        success: false,
+        reason,
+        quiescent,
+        inFlightAtClose,
+        durationMs,
+        error: disconnectError,
+      };
+    }
+
+    // Clean disconnect — remove registry + map entries
+    this.registry.unregisterServer(name);
+    this.adapterMap.delete(name);
+
+    const durationMs = Date.now() - startedAt;
+    log.info('federation_manager.unload.complete', {
+      adapterId: name,
+      reason,
+      quiescent,
+      inFlightAtClose,
+      durationMs,
+    });
+
+    return {
+      success: true,
+      reason,
+      quiescent,
+      inFlightAtClose,
+      durationMs,
+    };
+  }
+
+  /**
+   * Build an error ToolResult for a call that arrived during an
+   * active unload. Same shape as the revocation refusal — callers
+   * handling errors should not need to distinguish the two cases.
+   */
+  private buildUnloadingToolResult(tool: Tool, startedAt: number): ToolResult {
+    const message = `Tool "${tool.name}" blocked: adapter "${tool.server}" is currently unloading from the federation. Retry after the unload completes, or resolve the underlying revocation.`;
+    log.warn('federation_manager.blocked_unloading_call', {
+      adapterId: tool.server,
+      toolName: tool.name,
+    });
+    return {
+      content: [{ type: 'text', text: message }],
+      isError: true,
+      server: tool.server,
+      tool: tool.name,
+      durationMs: Date.now() - startedAt,
+    } as ToolResult;
   }
 
   /**
@@ -289,6 +462,16 @@ export class FederationManager {
    */
   get serverCount(): number {
     return this.pool.size;
+  }
+
+  /**
+   * List the names of all currently-connected adapters. Used by
+   * KillListWatcher (L3, 1.4.0) to diff against an incoming kill
+   * list. Stable snapshot — mutations to the pool after this call
+   * do not affect the returned array.
+   */
+  serverNames(): string[] {
+    return this.pool.serverNames();
   }
 
   /**
