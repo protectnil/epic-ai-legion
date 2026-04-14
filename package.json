@@ -127,7 +127,7 @@
     "redis": "^5.12.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "8.58.2",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.4"
   },
   "scripts": {
     "release:patch": "npm run build && npm version patch && npm publish --access public",
