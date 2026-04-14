@@ -59,7 +59,7 @@ export interface PreFilterOptions {
 
 // ─── Static Vector Index (from vector-index.json) ───────────
 
-interface VectorRecord {
+export interface VectorRecord {
   id: string;                          // adapter_id
   dense: number[];                     // OpenAI 1536d
   minicoil: { indices: number[]; values: number[] };

@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 2.0.0 — 2026-04-14
+
+### Breaking Changes
+
+- **Package version 2.0.0.** Consumers pinned to `^1.x` must update.
+- **`zod` peer dependency bumped** `^3.23.0` → `^3.25.76`. If your project resolves an older zod via deduplication, update it.
+- **`ServerConnection.env`** field added to the `ServerConnection` interface. Existing consumers are unaffected (additive), but downstream TypeScript code that spreads `ServerConnection` into a known shape may need a type refresh.
+
+### Added
+
+#### Multi-Transport Server
+
+- **Streamable-HTTP transport** (`--http [port]`, env `LEGION_HTTP_PORT`, default 3550) — serves the full MCP tool surface over `POST /mcp` with per-session `Mcp-Session-Id` tracking via `StreamableHTTPServerTransport`. Static bearer token auth via `LEGION_HTTP_TOKEN`.
+- **REST transport** (`--rest [port]`, env `LEGION_REST_PORT`, default 3551) — raw JSON API over plain `node:http` with five routes: `POST /v1/tools/query`, `POST /v1/tools/call`, `POST /v1/tools/list`, `GET /v1/health`, `GET /v1/catalog/stats`. Static bearer token auth via `LEGION_REST_TOKEN`. Tool-layer errors return HTTP 200 with an `error` field; input validation errors return HTTP 400.
+- **`--stdio` flag** — existing stdio transport is now explicit. Stdio remains the default when neither `--http` nor `--rest` is specified. All three transports can run simultaneously.
+- **`src/server/TransportHandle`** — `{ port: number; close(): Promise<void> }` interface returned by both HTTP and REST bind functions. Enables clean shutdown and port-0 testing.
+- **`src/server/LegionState`** — shared runtime state module. `loadLegionState()` reads the catalog, credentials, adapter-state, and config once at startup and returns a fully indexed `LegionState` object shared across all transports. Exposes `buildToolsForRouting()` for external consumers (Chariot / Praetor).
+- **`src/server/toolHandlers`** — shared handler logic (`handleQuery`, `handleCall`, `handleList`) used by both the MCP and REST paths. All MCP client calls are wrapped in `try/finally { await client.close() }`.
+- **`src/server/registerLegionTools`** — pure function that registers `legion_query`, `legion_call`, `legion_list` on any `McpServer` instance. Enables Chariot and Praetor to mount Legion tools on their own server.
+- **`src/server/index`** — barrel re-export for all server-module types and functions (`./server` package export).
+- **Tenant-aware adapter hook** — `LegionState.getConfiguredAdapters(tenantId: string)` returns the configured adapter set for a given tenant. In Legion OSS the `tenantId` is ignored (`LEGION_TENANT_ID` env, default `'local'`). Chariot injects its own implementation at startup (Shape A tenancy).
+
+#### Praetor Severity Normalization
+
+- **`AdapterEntry.severityMap`** — new optional field `Record<string, 'info' | 'low' | 'medium' | 'high' | 'critical'>` on every catalog entry. Maps each adapter's native severity vocabulary to Praetor's normalized five-level space `{info, low, medium, high, critical}`. Missing key defaults to `'info'` at coercion time. 35 security / observability / ITSM adapters ship with pre-populated maps in this release: CrowdStrike, CrowdStrike Identity, Splunk, Elastic Security, IBM QRadar, LogRhythm, Exabeam, Securonix, Darktrace, Wiz, Lacework, Fortinet FortiGate, Vectra AI, Microsoft Defender for Endpoint, Carbon Black, SentinelOne, Snyk, Tenable, Qualys, Rapid7, Veracode, Datadog Observability, Datadog Security, Dynatrace, PagerDuty, Opsgenie, Sentry, AWS CloudWatch, Grafana, Mimecast, Proofpoint, Jira, Jira Service Management, ServiceNow ITSM, ServiceNow GRC. Downstream consumers (Praetor `See / Follow / Monitor / Escalate` engagement levels) coerce tool results through a one-line normalization using this field.
+
+#### Dependency & Type Fixes (Codex gate findings)
+
+- **`ServerConnection.env`** (`src/types/index.ts`) — `env?: Record<string, string>` added. Removes the `as any` cast in `RegistryLoader.ts` line 264.
+- **`VectorRecord`** exported from `src/federation/ToolPreFilter` — enables `LegionState` and `setup.ts` to import the type cleanly.
+- **`AdaptivePool` non-null assertions** — three `Map.get()!` sites annotated with inline `@typescript-eslint/no-non-null-assertion` suppressions and TODO comments.
+- **`SecretsProvider` force-unwrap guards** — `hashicorp-vault` and `azure-key-vault` cases now validate required config fields before constructing the provider; throws with a descriptive message on missing `address` / `vaultName`.
+
+#### Tests
+
+- **`tests/transport-http.test.ts`** — smoke test: binds HTTP transport on port 0, connects `StreamableHTTPClientTransport`, calls `legion_list`, verifies JSON shape, closes cleanly.
+- **`tests/transport-rest.test.ts`** — smoke test: binds REST transport on port 0, hits all five endpoints, verifies JSON shapes, verifies 400 on missing `query` field, closes cleanly.
+
+#### Operations
+
+- **`scripts/preflight.sh`** — 10-step pre-release gate (semver check, lock-version match, `npm ci --dry-run`, tsc, build, tsc post-build, eslint, vitest, `npm pack --dry-run`, `npm publish --dry-run`). `LEGION_PREFLIGHT_SKIP_TESTS=1` escape hatch. Mirrors `/opt/epic-ai-chariot/scripts/preflight.sh`.
+- **`scripts/patch-severity-maps.mjs`** — one-shot catalog patching script used to populate the 35 initial `severityMap` entries. Retained for reference and future catalog updates.
+
+### Changed
+
+- **`src/bin/setup.ts`** refactored: `startMcpServer()` is now a thin orchestrator that delegates to the transport modules. `cmdQuery()` uses `adapterById` Map for O(1) lookup. Help text updated for `--http`, `--rest`, `--stdio` flags. Version string updated to `'2.0'`.
+- **`adapter-catalog.json`** re-signed after `severityMap` additions. New `.sig` on disk.
+
+---
+
 ## 1.4.0 — 2026-04-11
 
 ### Added — Runtime Adapter Unload (closes the L1 TOCTOU boundary)

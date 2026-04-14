@@ -1,6 +1,6 @@
 {
   "name": "@epicai/legion",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Epic AI® Legion — 35,835 tools. One self-hosted MCP server. Intelligent Virtual Assistant (IVA) integration layer for AI agents.",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,6 +29,10 @@
     "./gateway": {
       "import": "./dist/gateway/index.js",
       "types": "./dist/gateway/index.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server/index.js",
+      "types": "./dist/server/index.d.ts"
     },
     "./adapter-catalog": {
       "import": "./adapter-catalog.json",
@@ -95,7 +99,7 @@
     "@clack/prompts": "^1.2.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "picocolors": "^1.1.1",
-    "zod": "^3.23.0"
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
     "@qdrant/js-client-rest": ">=1.8.0",

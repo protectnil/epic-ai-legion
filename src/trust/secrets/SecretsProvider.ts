@@ -20,16 +20,22 @@ export async function createSecretsProvider(config: SecretsConfig): Promise<Secr
       return new EnvSecretsProvider();
     }
     case 'hashicorp-vault': {
+      if (!config.address) {
+        throw new Error('SecretsProvider: hashicorp-vault requires config.address');
+      }
       const { VaultProvider } = await import('./VaultProvider.js');
-      return new VaultProvider(config.address!, config.token, config.roleId, config.secretId);
+      return new VaultProvider(config.address, config.token, config.roleId, config.secretId);
     }
     case 'aws-secrets-manager': {
       const { AWSSecretsManager } = await import('./AWSSecretsManager.js');
       return new AWSSecretsManager(config.region);
     }
     case 'azure-key-vault': {
+      if (!config.vaultName) {
+        throw new Error('SecretsProvider: azure-key-vault requires config.vaultName');
+      }
       const { AzureKeyVault } = await import('./AzureKeyVault.js');
-      return new AzureKeyVault(config.vaultName!);
+      return new AzureKeyVault(config.vaultName);
     }
     default:
       throw new Error(`Unknown secrets provider: ${config.provider}`);

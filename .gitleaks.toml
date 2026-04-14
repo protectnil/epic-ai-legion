@@ -1,0 +1,26 @@
+title = "Epic AI Legion Gitleaks Config"
+
+[[rules]]
+id = "proprietary-secrets-path"
+description = "Proprietary secrets directory path"
+regex = '''/opt/epic-ai/secrets/'''
+
+[[rules]]
+id = "private-key"
+description = "Private key block"
+regex = '''-----BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY'''
+
+[[rules]]
+id = "grafana-tenant-id"
+description = "Grafana tenant ID 1221670"
+regex = '''1221670'''
+
+[[rules]]
+id = "grafana-loki-url"
+description = "Production Loki URL"
+regex = '''logs-prod-021\.grafana\.net'''
+
+[[rules]]
+id = "harness-test-token"
+description = "Hardcoded test harness token"
+regex = '''harness-token-1337'''

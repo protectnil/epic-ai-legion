@@ -258,10 +258,8 @@ export class RegistryLoader {
         args: mcp.args,
       };
 
-      // Store env vars in the connection for MCPClientAdapter to use
-      // The ServerConnection type doesn't have env, but MCPClientAdapter's
-      // StdioClientTransport accepts it. We extend via type assertion.
-      (connection as any).env = env;
+      // Store env vars in the connection for MCPClientAdapter to use.
+      connection.env = env;
 
       return { connection, connectionType: 'mcp', entry };
     }

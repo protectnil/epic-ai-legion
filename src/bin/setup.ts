@@ -26,6 +26,11 @@ import { execSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import type { VectorRecord } from '../federation/ToolPreFilter.js';
+
+const _require = createRequire(import.meta.url);
+const PKG_VERSION: string = (_require('../../../package.json') as { version: string }).version;
 
 const EPIC_AI_DIR = join(homedir(), '.epic-ai');
 const ENV_FILE = join(EPIC_AI_DIR, '.env');
@@ -56,7 +61,11 @@ interface AdapterEntry {
     args?: string[];
     url?: string;
     envKeys?: string[];
+    toolNames?: string[];
   };
+  /** Maps the adapter's native severity strings to Praetor's normalized vocabulary.
+   *  Missing key defaults to 'info'. */
+  severityMap?: Record<string, 'info' | 'low' | 'medium' | 'high' | 'critical'>;
 }
 
 interface AdapterState {
@@ -381,351 +390,130 @@ async function detectSystem(): Promise<SystemInfo> {
   return info;
 }
 
-// ─── MCP Server Mode (--serve) ──────────────────────────────
+// ─── Shared: build enriched tool descriptions for BM25 routing ──────────
+// Defined before startMcpServer — also used by cmdQuery (anti-pattern 3.6 fix)
 
-async function startMcpServer(): Promise<void> {
-  const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
-  const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
-  const { z } = await import('zod');
+function buildToolsForRouting(adapters: AdapterEntry[]): Array<{
+  name: string; description: string; parameters: Record<string, unknown>; server: string; tier: 'orchestrated' | 'direct';
+}> {
+  const tools: Array<{ name: string; description: string; parameters: Record<string, unknown>; server: string; tier: 'orchestrated' | 'direct' }> = [];
+  for (const adapter of adapters) {
+    // Anti-pattern 3.7 fix: access toolNames directly via typed field (no double cast)
+    const toolNames = adapter.rest?.toolNames ?? adapter.mcp?.toolNames ?? [];
+    const adapterDesc = adapter.description ?? adapter.id;
+    if (toolNames.length === 0) {
+      tools.push({ name: `${adapter.id}:default`, description: `${adapter.name} — ${adapterDesc}`, parameters: { type: 'object', properties: {} }, server: adapter.id, tier: 'orchestrated' });
+    } else {
+      for (const t of toolNames) {
+        tools.push({ name: `${adapter.id}:${t}`, description: `${adapter.name} — ${t.replace(/_/g, ' ')} — ${adapterDesc}`, parameters: { type: 'object', properties: {} }, server: adapter.id, tier: 'orchestrated' });
+      }
+    }
+  }
+  return tools;
+}
 
-  const allAdapters = await loadAllAdapters();
-  void loadConfig(); // used in subcommands
-  const state = loadState();
+// Anti-pattern 3.2 fix: extracted helper used by both startMcpServer and cmdQuery
 
-  const server = new McpServer({
-    name: 'epic-ai-legion',
-    version: '1.0.0',
-  });
-
-  // Build the real routing engine — same ToolPreFilter used in the eval
-  const { ToolPreFilter } = await import('../federation/ToolPreFilter.js');
-
-  // Determine which adapters the user has configured (credentials or explicit selection)
-  const creds = loadCredentials();
-  const config = loadConfig();
-  const configuredAdapterIds = new Set<string>();
+function getConfiguredAdapterIds(
+  allAdapters: AdapterEntry[],
+  creds: Record<string, string>,
+  config: { selectedAdapters?: string[] } | null,
+  state: AdapterState,
+): Set<string> {
+  const ids = new Set<string>();
   for (const adapter of allAdapters) {
     const hasCredential = adapter.rest?.envKey ? !!creds[adapter.rest.envKey] : false;
     const hasMcpKeys = adapter.mcp?.envKeys?.some(k => !!creds[k]) ?? false;
     const isSelected = config?.selectedAdapters?.includes(adapter.id) ?? false;
     const isInState = !!state.adapters[adapter.id];
     if (hasCredential || hasMcpKeys || isSelected || isInState) {
-      configuredAdapterIds.add(adapter.id);
+      ids.add(adapter.id);
     }
   }
+  return ids;
+}
 
-  // Use shared buildToolsForRouting (enriched descriptions for BM25)
+// ─── Port parsing helper ─────────────────────────────────────
 
-  // Two indexes: configured adapters (default search) and full catalog (discover mode)
-  const configuredAdapters = allAdapters.filter(a => configuredAdapterIds.has(a.id));
-  const toolPreFilter = new ToolPreFilter();
-  const fullCatalogFilter = new ToolPreFilter();
+function parseTransportPort(argv: string[], flag: string, envVar: string | undefined, defaultPort: number): number {
+  const idx = argv.indexOf(flag);
+  if (idx !== -1) {
+    const next = argv[idx + 1];
+    if (next !== undefined && !next.startsWith('-')) {
+      const parsed = parseInt(next, 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+  }
+  if (envVar !== undefined && envVar !== '') {
+    const parsed = parseInt(envVar, 10);
+    if (!isNaN(parsed)) return parsed;
+  }
+  return defaultPort;
+}
 
-  toolPreFilter.index(buildToolsForRouting(configuredAdapters));
-  fullCatalogFilter.index(buildToolsForRouting(allAdapters));
+// ─── MCP Server Mode (--serve) ──────────────────────────────
 
-  // Load vector index if available
+async function startMcpServer(): Promise<void> {
+  const { loadLegionState } = await import('../server/LegionState.js');
+  const { registerLegionTools } = await import('../server/registerLegionTools.js');
+  const { bindStdio } = await import('../server/transports/stdio.js');
+  const { bindHttp } = await import('../server/transports/http.js');
+  const { bindRest } = await import('../server/transports/rest.js');
+  const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+
+  // Parse transport flags
+  const argv = process.argv.slice(2);
+  const useHttp  = argv.includes('--http');
+  const useRest  = argv.includes('--rest');
+  const useStdio = argv.includes('--stdio') || (!useHttp && !useRest);
+
+  const httpPort = parseTransportPort(argv, '--http', process.env.LEGION_HTTP_PORT, 3550);
+  const restPort = parseTransportPort(argv, '--rest', process.env.LEGION_REST_PORT, 3551);
+
+  // Load shared state (catalog, credentials, BM25 indexes)
+  const state = await loadLegionState();
+  const getTenantId = (): string => process.env.LEGION_TENANT_ID ?? 'local';
+
+  // Transport lifecycle handles (HTTP and REST only — stdio tears down on process exit)
+  const handles: Array<{ port: number; close(): Promise<void> }> = [];
+
   try {
-    const vectorPath = join(getPackageRoot(), 'vector-index.json');
-    const vectorRaw = await readFile(vectorPath, 'utf-8');
-    const vectorRecords = JSON.parse(vectorRaw);
-    toolPreFilter.loadVectorIndex(vectorRecords);
-    fullCatalogFilter.loadVectorIndex(vectorRecords);
-  } catch { /* no vector index — BM25 only */ }
-
-  // Main query tool — the single entry point for the LLM
-  server.tool(
-    'legion_query',
-    {
-      query: z.string().describe('Natural language query. Searches your configured adapters by default. Use discover:true to search the full catalog of 3,887 adapters.'),
-      detail: z.enum(['full', 'summary']).optional().describe('full (default): top 20 with tool lists. summary: one-line adapter summaries — use this when the first call missed.'),
-      discover: z.boolean().optional().describe('Set to true to search ALL available adapters, not just your configured ones. Use this to find new adapters to connect.'),
-    },
-    async (args) => {
-      const query = args.query;
-      const detail = args.detail || 'full';
-      const discover = args.discover || false;
-      // Choose index: configured adapters by default, full catalog in discover mode
-      const activeFilter = discover ? fullCatalogFilter : toolPreFilter;
-
-      // Ring 2: Summary mode — return next 200 BM25-ranked adapters as one-line summaries
-      if (detail === 'summary') {
-        const selected200 = await activeFilter.select(query, { maxTools: 220, maxPerServer: 10 });
-        const servers200 = [...new Set(selected200.map(t => t.server))];
-        // Skip the first 20 (already shown in Ring 1), take the next 200
-        const ring2Servers = servers200.slice(20);
-        const summaries = ring2Servers.map(serverId => {
-          const a = allAdapters.find(x => x.id === serverId);
-          if (!a) return null;
-          return {
-            id: a.id,
-            name: a.name,
-            category: a.category || 'other',
-            description: (a.description || '').slice(0, 80),
-            configured: configuredAdapterIds.has(a.id),
-          };
-        }).filter(Boolean);
-
-        return {
-          content: [{
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'summary',
-              query,
-              mode: discover ? 'discover' : 'configured',
-              totalShown: summaries.length,
-              adapters: summaries,
-              message: discover
-                ? `Showing ${summaries.length} adapters from the full catalog. Use legion_call to add and connect one.`
-                : `Showing ${summaries.length} additional configured adapters ranked by relevance.`,
-            }),
-          }],
-        };
-      }
-
-      // Ring 1: Full mode — BM25 + query expansion, top 20 detailed
-      const selected = await activeFilter.select(query, { maxTools: 20, maxPerServer: 5 });
-      const selectedServers = [...new Set(selected.map(t => t.server))];
-
-      // Build category hints from all adapters
-      const catCounts = new Map<string, number>();
-      for (const a of allAdapters) {
-        const cat = a.category || 'other';
-        catCounts.set(cat, (catCounts.get(cat) || 0) + 1);
-      }
-      const topCategories = [...catCounts.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([cat, count]) => ({ category: cat, adapterCount: count }));
-
-      if (selectedServers.length === 0) {
-        // No match in configured adapters — suggest discover mode
-        const hint = discover
-          ? 'No adapters matched in the full catalog. Try a different query or use legion_list to browse.'
-          : `None of your ${configuredAdapters.length} configured adapters matched. Try legion_query with discover:true to search all ${allAdapters.length} available adapters.`;
-        return {
-          content: [{
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'no_match',
-              message: `No adapters matched query: "${query}"`,
-              hint,
-              configuredCount: configuredAdapters.length,
-              totalAvailable: allAdapters.length,
-              categories: topCategories,
-            }),
-          }],
-        };
-      }
-
-      // Build response with matched adapter info
-      const matches = selectedServers.map(serverId => {
-        const adapter = allAdapters.find(a => a.id === serverId);
-        if (!adapter) return null;
-        return {
-          id: adapter.id,
-          name: adapter.name,
-          type: adapter.type,
-          category: adapter.category,
-          tools: adapter.rest?.toolNames || (adapter.mcp as Record<string, unknown>)?.toolNames as string[] | undefined || [],
-          toolCount: adapter.rest?.toolCount || 0,
-          configured: configuredAdapterIds.has(adapter.id),
-          transport: adapter.mcp?.transport || (adapter.rest ? 'rest' : 'unknown'),
-        };
-      }).filter(Boolean);
-
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'matched',
-            query,
-            mode: discover ? 'discover' : 'configured',
-            matchedAdapters: matches,
-            totalMatched: matches.length,
-            configuredCount: configuredAdapters.length,
-            categories: topCategories,
-            message: discover
-              ? `Found ${matches.length} adapters in the full catalog. Adapters marked configured:true are ready to use.`
-              : matches.length < 3
-                ? `Only ${matches.length} of your ${configuredAdapters.length} configured adapters matched. Try legion_query with discover:true to search all ${allAdapters.length} available adapters.`
-                : `Found ${matches.length} matching adapters from your ${configuredAdapters.length} configured adapters.`,
-          }),
-        }],
-      };
+    if (useHttp) {
+      const srv = new McpServer({ name: 'epic-ai-legion', version: PKG_VERSION });
+      registerLegionTools(srv, state, getTenantId);
+      const h = await bindHttp(srv, httpPort);
+      handles.push(h);
+      process.stderr.write(`Legion HTTP MCP listening on port ${h.port}\n`);
     }
-  );
 
-  // Tool execution
-  server.tool(
-    'legion_call',
-    {
-      adapter: z.string().describe('Adapter ID (e.g., "github", "crowdstrike", "salesforce")'),
-      tool: z.string().describe('Tool name to call on the adapter'),
-      args: z.record(z.unknown()).optional().describe('Arguments to pass to the tool'),
-    },
-    async (toolArgs) => {
-      const adapterId = toolArgs.adapter;
-      const toolName = toolArgs.tool;
-      const callArgs = toolArgs.args || {};
-
-      const adapter = allAdapters.find(a => a.id === adapterId);
-      if (!adapter) {
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify({ error: `Adapter "${adapterId}" not found` }) }],
-          isError: true,
-        };
-      }
-
-      // REST adapter execution
-      if (adapter.rest?.module && adapter.rest?.className) {
-        try {
-          const creds = loadCredentials();
-          const modulePath = join(getPackageRoot(), adapter.rest.module);
-          const mod = await import(modulePath);
-          const AdapterClass = mod[adapter.rest.className] || mod.default;
-
-          // Build config from credentials
-          const adapterConfig: Record<string, string> = {};
-          if (adapter.rest.envKey && creds[adapter.rest.envKey]) {
-            adapterConfig.apiKey = creds[adapter.rest.envKey];
-          }
-          if (adapter.rest.baseUrl) {
-            adapterConfig.baseUrl = adapter.rest.baseUrl;
-          }
-
-          const instance = new AdapterClass(adapterConfig);
-          const result = await instance.callTool(toolName, callArgs);
-
-          return {
-            content: [{ type: 'text' as const, text: typeof result.content === 'string' ? result.content : JSON.stringify(result.content) }],
-            isError: result.isError || false,
-          };
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ error: msg, adapter: adapterId, tool: toolName }) }],
-            isError: true,
-          };
-        }
-      }
-
-      // MCP stdio adapter — spawn and call
-      if (adapter.mcp?.transport === 'stdio' && adapter.mcp?.command) {
-        try {
-          const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
-          const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
-
-          const transport = new StdioClientTransport({
-            command: adapter.mcp.command,
-            args: adapter.mcp.args || [],
-          });
-          const client = new Client({ name: 'legion', version: '1.0' }, { capabilities: {} });
-          await client.connect(transport);
-          const result = await client.callTool({ name: toolName, arguments: callArgs as Record<string, string> });
-          await client.close();
-
-          const text = (result.content as Array<{ type: string; text?: string }>)
-            .filter(c => c.type === 'text')
-            .map(c => c.text || '')
-            .join('\n');
-
-          return {
-            content: [{ type: 'text' as const, text }],
-            isError: result.isError || false,
-          };
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ error: msg, adapter: adapterId, tool: toolName }) }],
-            isError: true,
-          };
-        }
-      }
-
-      // MCP HTTP adapter
-      if (adapter.mcp?.transport === 'streamable-http' && adapter.mcp?.url) {
-        try {
-          const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
-          const { StreamableHTTPClientTransport } = await import('@modelcontextprotocol/sdk/client/streamableHttp.js');
-
-          const transport = new StreamableHTTPClientTransport(new URL(adapter.mcp.url));
-          const client = new Client({ name: 'legion', version: '1.0' }, { capabilities: {} });
-          await client.connect(transport);
-          const result = await client.callTool({ name: toolName, arguments: callArgs as Record<string, string> });
-          await client.close();
-
-          const text = (result.content as Array<{ type: string; text?: string }>)
-            .filter(c => c.type === 'text')
-            .map(c => c.text || '')
-            .join('\n');
-
-          return {
-            content: [{ type: 'text' as const, text }],
-            isError: result.isError || false,
-          };
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ error: msg, adapter: adapterId, tool: toolName }) }],
-            isError: true,
-          };
-        }
-      }
-
-      return {
-        content: [{ type: 'text' as const, text: JSON.stringify({ error: `No executable transport for adapter "${adapterId}"` }) }],
-        isError: true,
-      };
+    if (useRest) {
+      const h = await bindRest(state, restPort, getTenantId);
+      handles.push(h);
+      process.stderr.write(`Legion REST API listening on port ${h.port}\n`);
     }
-  );
 
-  // List available adapters
-  server.tool(
-    'legion_list',
-    {
-      category: z.string().optional().describe('Filter by category name (e.g., "hr", "cybersecurity", "healthcare", "hospitality", "construction", "manufacturing", "finance", "devops", "observability", "communication", "crm", "ai"). Use this when legion_query returns low-confidence results to browse all adapters in a domain.'),
-      search: z.string().optional().describe('Search by keyword across adapter names and descriptions'),
-    },
-    async (args) => {
-      let results = allAdapters;
-
-      if (args.category) {
-        results = results.filter(a => a.category === args.category);
-      }
-      if (args.search) {
-        const term = args.search.toLowerCase();
-        results = results.filter(a =>
-          a.id.includes(term) || a.name.toLowerCase().includes(term) ||
-          (a.description || '').toLowerCase().includes(term)
-        );
-      }
-
-      const categories = [...new Set(allAdapters.map(a => a.category).filter(Boolean))];
-
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify({
-            total: results.length,
-            categories,
-            adapters: results.slice(0, 50).map(a => ({
-              id: a.id,
-              name: a.name,
-              category: a.category,
-              type: a.type,
-              toolCount: a.rest?.toolCount || 0,
-            })),
-            truncated: results.length > 50,
-          }),
-        }],
-      };
+    if (useStdio) {
+      const srv = new McpServer({ name: 'epic-ai-legion', version: PKG_VERSION });
+      registerLegionTools(srv, state, getTenantId);
+      await bindStdio(srv);
     }
-  );
+  } catch (err) {
+    // Startup failure: close already-bound transports in reverse order, then rethrow
+    for (const h of [...handles].reverse()) await h.close().catch(() => {});
+    throw err;
+  }
 
-  // Connect via stdio
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  if (handles.length > 0) {
+    // HTTP/REST mode: keep alive until signal
+    const shutdown = async (): Promise<void> => {
+      for (const h of [...handles].reverse()) await h.close();
+      process.exit(0);
+    };
+    process.on('SIGTERM', () => { void shutdown(); });
+    process.on('SIGINT',  () => { void shutdown(); });
+    await new Promise<never>(() => { /* keep alive */ });
+  }
+  // stdio-only: return here; the event loop stays alive via the transport connection
 }
 
 // ─── Subcommands ────────────────────────────────────────────
@@ -880,25 +668,6 @@ async function cmdHealth(): Promise<void> {
   saveState(state);
 }
 
-
-// ─── Shared: build enriched tool descriptions for BM25 routing ──────────
-
-function buildToolsForRouting(adapters: AdapterEntry[]) {
-  const tools: Array<{ name: string; description: string; parameters: Record<string, unknown>; server: string; tier: 'orchestrated' | 'direct' }> = [];
-  for (const adapter of adapters) {
-    const toolNames = adapter.rest?.toolNames || (adapter.mcp as Record<string, unknown>)?.toolNames as string[] | undefined || [];
-    const adapterDesc = adapter.description || adapter.id;
-    if (toolNames.length === 0) {
-      tools.push({ name: `${adapter.id}:default`, description: `${adapter.name} — ${adapterDesc}`, parameters: { type: 'object', properties: {} }, server: adapter.id, tier: 'orchestrated' });
-    } else {
-      for (const t of toolNames) {
-        // Include adapter description so BM25 can match natural language queries against domain terms
-        tools.push({ name: `${adapter.id}:${t}`, description: `${adapter.name} — ${t.replace(/_/g, ' ')} — ${adapterDesc}`, parameters: { type: 'object', properties: {} }, server: adapter.id, tier: 'orchestrated' });
-      }
-    }
-  }
-  return tools;
-}
 
 // ─── Curated adapter IDs (mirrored here for list/search — keep in sync with wizard) ──
 
@@ -1151,17 +920,10 @@ async function cmdQuery(query: string): Promise<void> {
   const creds = loadCredentials();
   const config = loadConfig();
 
-  // Determine configured adapters (same logic as MCP server mode)
-  const configuredIds = new Set<string>();
-  for (const adapter of all) {
-    const hasCredential = adapter.rest?.envKey ? !!creds[adapter.rest.envKey] : false;
-    const hasMcpKeys = adapter.mcp?.envKeys?.some(k => !!creds[k]) ?? false;
-    const isSelected = config?.selectedAdapters?.includes(adapter.id) ?? false;
-    const isInState = !!state.adapters[adapter.id];
-    if (hasCredential || hasMcpKeys || isSelected || isInState) {
-      configuredIds.add(adapter.id);
-    }
-  }
+  // Anti-pattern 3.2 fix: use shared helper instead of duplicated loop
+  const configuredIds = getConfiguredAdapterIds(all, creds, config, state);
+  // Anti-pattern 3.4 fix: O(1) map for adapter lookup
+  const adapterById = new Map(all.map(a => [a.id, a]));
 
   const configured = all.filter(a => configuredIds.has(a.id));
   if (configured.length === 0) {
@@ -1178,7 +940,8 @@ async function cmdQuery(query: string): Promise<void> {
   try {
     const vectorPath = join(getPackageRoot(), 'vector-index.json');
     const vectorRaw = await readFile(vectorPath, 'utf-8');
-    const vectorRecords = JSON.parse(vectorRaw);
+    // VectorRecord[] cast: JSON from disk is validated by loadVectorIndex at runtime
+    const vectorRecords = JSON.parse(vectorRaw) as VectorRecord[];
     filter.loadVectorIndex(vectorRecords);
   } catch { /* no vector index — BM25 only */ }
 
@@ -1191,9 +954,10 @@ async function cmdQuery(query: string): Promise<void> {
   }
 
   const topServer = matches[0].server;
-  const topToolFull = matches[0].name; // "adapterId:toolName"
+  const topToolFull = matches[0].name;
   const topToolName = topToolFull.includes(':') ? topToolFull.split(':').slice(1).join(':') : topToolFull;
-  const adapter = all.find(a => a.id === topServer);
+  // Anti-pattern 3.4 fix: O(1) lookup
+  const adapter = adapterById.get(topServer);
 
   if (!adapter) {
     console.log(`\n  Matched adapter "${topServer}" but it's not in the catalog.\n`);
@@ -1203,7 +967,6 @@ async function cmdQuery(query: string): Promise<void> {
   const s = p.spinner();
   s.start(`Routing to ${adapter.name} → ${topToolName}`);
 
-  // Call the adapter
   try {
     let resultText = '';
 
@@ -1211,27 +974,27 @@ async function cmdQuery(query: string): Promise<void> {
       const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
       const { StreamableHTTPClientTransport } = await import('@modelcontextprotocol/sdk/client/streamableHttp.js');
       const transport = new StreamableHTTPClientTransport(new URL(adapter.mcp.url));
-      const client = new Client({ name: 'legion', version: '1.0' }, { capabilities: {} });
+      const client = new Client({ name: 'legion', version: '2.0' }, { capabilities: {} });
       await client.connect(transport);
-      const result = await client.callTool({ name: topToolName === 'default' ? (adapter.rest?.toolNames?.[0] || topToolName) : topToolName, arguments: { query } });
+      const result = await client.callTool({ name: topToolName === 'default' ? (adapter.rest?.toolNames?.[0] ?? topToolName) : topToolName, arguments: { query } });
       await client.close();
-      resultText = (result.content as Array<{ type: string; text?: string }>).filter(c => c.type === 'text').map(c => c.text || '').join('\n');
+      resultText = (result.content as Array<{ type: string; text?: string }>).filter(c => c.type === 'text').map(c => c.text ?? '').join('\n');
     } else if (adapter.mcp?.transport === 'stdio' && adapter.mcp?.command) {
       const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
       const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
-      const transport = new StdioClientTransport({ command: adapter.mcp.command, args: adapter.mcp.args || [] });
-      const client = new Client({ name: 'legion', version: '1.0' }, { capabilities: {} });
+      const transport = new StdioClientTransport({ command: adapter.mcp.command, args: adapter.mcp.args ?? [] });
+      const client = new Client({ name: 'legion', version: '2.0' }, { capabilities: {} });
       await client.connect(transport);
       const result = await client.callTool({ name: topToolName, arguments: { query } });
       await client.close();
-      resultText = (result.content as Array<{ type: string; text?: string }>).filter(c => c.type === 'text').map(c => c.text || '').join('\n');
+      resultText = (result.content as Array<{ type: string; text?: string }>).filter(c => c.type === 'text').map(c => c.text ?? '').join('\n');
     } else if (adapter.rest?.module && adapter.rest?.className) {
       const modulePath = join(getPackageRoot(), adapter.rest.module);
-      const mod = await import(modulePath);
-      const AdapterClass = mod[adapter.rest.className] || mod.default;
+      const mod = await import(modulePath) as Record<string, unknown>;
+      const AdapterClass = (mod[adapter.rest.className] ?? mod['default']) as new (cfg: Record<string, string>) => { callTool(n: string, a: Record<string, unknown>): Promise<{ content: unknown }> };
       const adapterConfig: Record<string, string> = {};
-      if (adapter.rest.envKey && creds[adapter.rest.envKey]) adapterConfig.apiKey = creds[adapter.rest.envKey];
-      if (adapter.rest.baseUrl) adapterConfig.baseUrl = adapter.rest.baseUrl;
+      if (adapter.rest.envKey && creds[adapter.rest.envKey]) adapterConfig['apiKey'] = creds[adapter.rest.envKey];
+      if (adapter.rest.baseUrl) adapterConfig['baseUrl'] = adapter.rest.baseUrl;
       const instance = new AdapterClass(adapterConfig);
       const result = await instance.callTool(topToolName, { query });
       resultText = typeof result.content === 'string' ? result.content : JSON.stringify(result.content);
@@ -1242,7 +1005,6 @@ async function cmdQuery(query: string): Promise<void> {
 
     s.stop(`${pc.green('✓')} ${adapter.name} → ${topToolName}`);
 
-    // Print result (truncate if huge)
     const lines = resultText.split('\n');
     if (lines.length > 30) {
       console.log('\n' + lines.slice(0, 30).join('\n'));
@@ -1274,7 +1036,9 @@ async function cmdHelp(): Promise<void> {
   console.log(`    ${pc.cyan('legion remove <id>')}           remove an adapter`);
   console.log(`    ${pc.cyan('legion configure')}             connect your APIs and credentials`);
   console.log(`    ${pc.cyan('legion health')}                check adapter status`);
-  console.log(`    ${pc.cyan('legion serve')}                 start as MCP server (used by AI clients)`);
+  console.log(`    ${pc.cyan('legion serve')}                 start MCP server over stdio (default)`);
+  console.log(`    ${pc.cyan('legion serve --http [port]')}   start Streamable-HTTP MCP (default 3550)`);
+  console.log(`    ${pc.cyan('legion serve --rest [port]')}   start REST JSON API (default 3551)`);
   console.log(`    ${pc.cyan('legion help')}                  show this help`);
   console.log('');
   console.log(`  ${pc.white('Docs:')}  https://legion.epic-ai.io`);
