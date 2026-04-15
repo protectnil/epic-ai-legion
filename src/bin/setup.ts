@@ -62,6 +62,7 @@ interface AdapterEntry {
     url?: string;
     envKeys?: string[];
     toolNames?: string[];
+    toolCount?: number;
   };
   /** Maps the adapter's native severity strings to Praetor's normalized vocabulary.
    *  Missing key defaults to 'info'. */
@@ -698,7 +699,7 @@ async function cmdList(): Promise<void> {
   console.log(`  ${pc.bold('Curated')}  ${pc.white(`(${curatedRows.length})`)}  ${pc.white('— open data, no credentials required')}`);
   console.log('');
   for (const a of curatedRows) {
-    const toolCount = a.rest?.toolCount || (a.mcp as Record<string, unknown>)?.toolCount as number | undefined || 0;
+    const toolCount = a.rest?.toolCount ?? a.mcp?.toolCount ?? 0;
     const typeLabel = a.type === 'mcp' ? pc.white('MCP') : a.type === 'both' ? pc.white('REST+MCP') : pc.white('REST');
     console.log(`    ${pc.cyan(a.id.padEnd(35))} ${typeLabel}  ${String(toolCount).padStart(3)} tools   ${pc.white((a.description || '').slice(0, 50))}`);
   }
@@ -733,7 +734,7 @@ async function cmdSearch(term?: string): Promise<void> {
     console.log(`  ${pc.bold('Curated adapters')}  ${pc.white('— vetted, open data, no credentials required')}`);
     console.log('');
     for (const a of curatedRows) {
-      const toolCount = a.rest?.toolCount || (a.mcp as Record<string, unknown>)?.toolCount as number | undefined || 0;
+      const toolCount = a.rest?.toolCount ?? a.mcp?.toolCount ?? 0;
       console.log(`    ${pc.cyan(a.id.padEnd(35))} ${String(toolCount).padStart(3)} tools   ${pc.white((a.description || '').slice(0, 60))}`);
     }
     console.log('');
@@ -769,7 +770,7 @@ async function cmdSearch(term?: string): Promise<void> {
   console.log('');
 
   for (const a of shown) {
-    const toolCount = a.rest?.toolCount || (a.mcp as Record<string, unknown>)?.toolCount as number | undefined || 0;
+    const toolCount = a.rest?.toolCount ?? a.mcp?.toolCount ?? 0;
     const tag = CURATED_IDS.includes(a.id)
       ? pc.green('curated')
       : customInState.has(a.id)
@@ -883,7 +884,8 @@ async function cmdConfigure(): Promise<void> {
     const config = loadConfig() || { selectedAdapters: [], secretsProvider: 'manual', aiClient: 'unknown' };
 
     for (const id of (toWire as string[])) {
-      const m = matched.find(x => x.adapter.id === id)!;
+      const m = matched.find(x => x.adapter.id === id);
+      if (!m) continue;
       // Copy credential to ~/.epic-ai/.env if it came from elsewhere
       writeCredential(m.key, foundCreds[m.key]);
       state.adapters[id] = { type: m.adapter.type || 'unknown', status: 'configured', toolCount: m.adapter.rest?.toolCount || 0, lastVerified: null };
@@ -976,18 +978,24 @@ async function cmdQuery(query: string): Promise<void> {
       const transport = new StreamableHTTPClientTransport(new URL(adapter.mcp.url));
       const client = new Client({ name: 'legion', version: '2.0' }, { capabilities: {} });
       await client.connect(transport);
-      const result = await client.callTool({ name: topToolName === 'default' ? (adapter.rest?.toolNames?.[0] ?? topToolName) : topToolName, arguments: { query } });
-      await client.close();
-      resultText = (result.content as Array<{ type: string; text?: string }>).filter(c => c.type === 'text').map(c => c.text ?? '').join('\n');
+      try {
+        const result = await client.callTool({ name: topToolName === 'default' ? (adapter.rest?.toolNames?.[0] ?? topToolName) : topToolName, arguments: { query } });
+        resultText = (result.content as Array<{ type: string; text?: string }>).filter(c => c.type === 'text').map(c => c.text ?? '').join('\n');
+      } finally {
+        await client.close();
+      }
     } else if (adapter.mcp?.transport === 'stdio' && adapter.mcp?.command) {
       const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
       const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
       const transport = new StdioClientTransport({ command: adapter.mcp.command, args: adapter.mcp.args ?? [] });
       const client = new Client({ name: 'legion', version: '2.0' }, { capabilities: {} });
       await client.connect(transport);
-      const result = await client.callTool({ name: topToolName, arguments: { query } });
-      await client.close();
-      resultText = (result.content as Array<{ type: string; text?: string }>).filter(c => c.type === 'text').map(c => c.text ?? '').join('\n');
+      try {
+        const result = await client.callTool({ name: topToolName, arguments: { query } });
+        resultText = (result.content as Array<{ type: string; text?: string }>).filter(c => c.type === 'text').map(c => c.text ?? '').join('\n');
+      } finally {
+        await client.close();
+      }
     } else if (adapter.rest?.module && adapter.rest?.className) {
       const modulePath = join(getPackageRoot(), adapter.rest.module);
       const mod = await import(modulePath) as Record<string, unknown>;

@@ -218,9 +218,8 @@ export class AdaptivePool {
     const target = this.findEvictionTarget();
     if (!target) return false;
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    // TODO: replace ! with Map-narrowing pattern (requires AdaptivePool refactor)
-    const entry = this.connections.get(target)!;
+    const entry = this.connections.get(target);
+    if (!entry) return false;
     log.debug('evicting connection', { key: target, tenant: entry.tenantId, adapter: entry.adapterName });
 
     // Fire-and-forget disconnect
@@ -240,9 +239,8 @@ export class AdaptivePool {
     const target = this.findEvictionTargetForTenant(tenantId);
     if (!target) return false;
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    // TODO: replace ! with Map-narrowing pattern (requires AdaptivePool refactor)
-    const entry = this.connections.get(target)!;
+    const entry = this.connections.get(target);
+    if (!entry) return false;
     entry.adapter.disconnect().catch(() => {});
     this.connections.delete(target);
     const count = (this.tenantCounts.get(tenantId) ?? 1) - 1;
@@ -313,9 +311,8 @@ export class AdaptivePool {
       }
 
       for (const key of toRemove) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        // TODO: replace ! with Map-narrowing pattern (requires AdaptivePool refactor)
-        const entry = this.connections.get(key)!;
+        const entry = this.connections.get(key);
+        if (!entry) continue;
         log.debug('idle cleanup', { key, tenant: entry.tenantId, adapter: entry.adapterName });
         entry.adapter.disconnect().catch(() => {});
         this.connections.delete(key);

@@ -29,7 +29,7 @@ export class AuditTrail {
   private readonly integrity: 'sha256-chain' | 'none';
   private sequenceNumber = 0;
   private lastHash = '';
-  private recordQueue: Promise<ActionRecord> = Promise.resolve(null as unknown as ActionRecord);
+  private recordQueue: Promise<unknown> = Promise.resolve();
 
   constructor(config: AuditConfig) {
     this.integrity = config.integrity;
@@ -68,8 +68,9 @@ export class AuditTrail {
   record(
     partial: Omit<ActionRecord, 'id' | 'sequenceNumber' | 'previousHash' | 'hash'>,
   ): Promise<ActionRecord> {
-    this.recordQueue = this.recordQueue.then(() => this._doRecord(partial));
-    return this.recordQueue;
+    const next = this.recordQueue.then(() => this._doRecord(partial));
+    this.recordQueue = next;
+    return next;
   }
 
   private async _doRecord(

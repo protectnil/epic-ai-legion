@@ -8,22 +8,10 @@
 
 import { createLogger } from '../logger.js';
 import type { BackendHealth, CircuitBreakerState } from './types.js';
+import type { createClient as redisCreateClient } from 'redis';
 
 type ControlPlaneStatus = 'connected' | 'degraded';
-
-interface RedisClient {
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string, options?: { EX?: number; PX?: number; NX?: boolean }): Promise<string | null>;
-  hGet(key: string, field: string): Promise<string | null>;
-  hSet(key: string, field: string, value: string): Promise<number>;
-  hGetAll(key: string): Promise<Record<string, string>>;
-  hDel(key: string, field: string): Promise<number>;
-  incr(key: string): Promise<number>;
-  decr(key: string): Promise<number>;
-  expire(key: string, seconds: number): Promise<boolean>;
-  quit(): Promise<string>;
-  on(event: string, listener: (...args: unknown[]) => void): void;
-}
+type RedisClient = ReturnType<typeof redisCreateClient>;
 
 const log = createLogger('gateway.control-plane');
 
@@ -53,7 +41,7 @@ export class ControlPlane {
 
     try {
       const redisModule = await import('redis');
-      const client = redisModule.createClient({ url: this.redisUrl }) as unknown as RedisClient;
+      const client = redisModule.createClient({ url: this.redisUrl });
 
       client.on('error', (err: unknown) => {
         log.warn('Redis error — falling back to in-process', { error: String(err) });
@@ -65,7 +53,7 @@ export class ControlPlane {
         this._status = 'connected';
       });
 
-      await (client as unknown as { connect(): Promise<void> }).connect();
+      await client.connect();
       this.redis = client;
       this._status = 'connected';
     } catch (err) {

@@ -75,7 +75,7 @@ export class JSONLAdapter implements AuditStoreAdapter {
         } catch {
           return;
         }
-        parsed.timestamp = new Date(parsed.timestamp as unknown as string);
+        parsed.timestamp = new Date(String(parsed.timestamp));
 
         if (since && parsed.timestamp < since) return;
         if (until && parsed.timestamp > until) return;

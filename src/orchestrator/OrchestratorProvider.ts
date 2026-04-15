@@ -283,7 +283,7 @@ function createVLLMLLM(config: OrchestratorConfig): LLMFunction {
       const durationMs = Date.now() - start;
       const choice = data.choices?.[0];
 
-      log.debug('raw response', { data: data as unknown as Record<string, unknown> });
+      log.debug('raw response', { data });
 
       let toolCalls = (choice?.message?.tool_calls ?? []).map((tc: OpenAIToolCall) => {
         let parsedArgs: Record<string, unknown> = {};

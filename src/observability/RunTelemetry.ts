@@ -6,7 +6,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { StreamEvent } from '../types/index.js';
+import type { StreamEvent, RunTiming } from '../types/index.js';
 import type { LogEntry, LogLevel } from './EventEmitter.js';
 
 export interface RunTelemetryStep {
@@ -199,7 +199,7 @@ export class RunTelemetryCollector {
     // Extract timing breakdown from done event if present
     const doneStep = snapshot.recentSteps.find(s => s.type === 'done');
     const timing = doneStep?.data && typeof doneStep.data === 'object' && 'timing' in doneStep.data
-      ? (doneStep.data as unknown as { timing: Record<string, number> }).timing
+      ? (doneStep.data as { timing: RunTiming }).timing
       : null;
     const timingLine = timing
       ? `Timing: retrieval=${timing.retrievalMs}ms orchestrator=${timing.orchestratorMs}ms federation=${timing.federationMs}ms autonomy=${timing.autonomyMs}ms generator=${timing.generatorMs}ms memory=${timing.memoryMs}ms total=${timing.totalMs}ms`
