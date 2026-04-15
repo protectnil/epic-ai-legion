@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## 2.0.2 — 2026-04-15
+
+### Fixed
+
+- `src/bin/setup.ts`: `createRequire('../../../package.json')` resolved three
+  levels above `dist/bin/`, landing at `/opt/` instead of the package root.
+  Changed to `../../package.json` (two levels up from `dist/bin/` reaches the
+  package root at `/opt/epic-ai-legion/`). This caused `legion serve` to crash
+  immediately with `Cannot find module '../../../package.json'` on every
+  invocation, making it unusable as an MCP stdio server. The crash-loop under
+  pm2 (46 restarts) contributed to an OOM event on the host.
+
+---
+
 ## 2.0.0 — 2026-04-14
 
 ### Breaking Changes

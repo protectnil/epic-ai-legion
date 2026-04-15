@@ -30,7 +30,7 @@ import { createRequire } from 'node:module';
 import type { VectorRecord } from '../federation/ToolPreFilter.js';
 
 const _require = createRequire(import.meta.url);
-const PKG_VERSION: string = (_require('../../../package.json') as { version: string }).version;
+const PKG_VERSION: string = (_require('../../package.json') as { version: string }).version;
 
 const EPIC_AI_DIR = join(homedir(), '.epic-ai');
 const ENV_FILE = join(EPIC_AI_DIR, '.env');
