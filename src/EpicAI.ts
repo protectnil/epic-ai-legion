@@ -67,7 +67,10 @@ const OrchestratorConfigSchema = z.object({
   timeoutMs: z.number().positive().optional(),
   maxIterations: z.number().int().positive().optional(),
   logLevel: z.enum(['debug', 'info', 'warn', 'error', 'off']).optional(),
-  llm: z.function().optional(),
+  llm: z.custom<LLMFunction>(
+    (val): val is LLMFunction => typeof val === 'function',
+    'Expected a function',
+  ).optional(),
 });
 
 const GeneratorConfigSchema = z.object({
@@ -77,7 +80,10 @@ const GeneratorConfigSchema = z.object({
   baseUrl: z.string().url().optional(),
   timeoutMs: z.number().positive().optional(),
   maxTokens: z.number().int().positive().optional(),
-  llm: z.function().optional(),
+  llm: z.custom<LLMFunction>(
+    (val): val is LLMFunction => typeof val === 'function',
+    'Expected a function',
+  ).optional(),
 });
 
 const FederationConfigSchema = z.object({
@@ -107,7 +113,10 @@ const AutonomyConfigSchema = z.object({
   tiers: AutonomyRulesSchema,
   policies: z.array(z.object({
     name: z.string(),
-    condition: z.function(),
+    condition: z.custom<AutonomyPolicy['condition']>(
+      (val): val is AutonomyPolicy['condition'] => typeof val === 'function',
+      'Expected a function',
+    ),
     override: z.enum(['auto', 'escalate', 'approve']),
     priority: z.number().optional(),
   })).optional(),
@@ -119,7 +128,7 @@ const PersonaConfigSchema = z.object({
   tone: z.string().min(1),
   domain: z.string().min(1),
   systemPrompt: z.string().min(1),
-  vocabulary: z.record(z.string()).optional(),
+  vocabulary: z.record(z.string(), z.string()).optional(),
   constraints: z.array(z.string()).optional(),
   adapterPath: z.string().optional(),
 });

@@ -46,7 +46,7 @@ export function registerLegionTools(
     {
       adapter: z.string().describe('Adapter ID (e.g., "github", "crowdstrike", "salesforce")'),
       tool: z.string().describe('Tool name to call on the adapter'),
-      args: z.record(z.unknown()).optional().describe('Arguments to pass to the tool'),
+      args: z.record(z.string(), z.unknown()).optional().describe('Arguments to pass to the tool'),
     },
     async (toolArgs) => {
       void getTenantId();

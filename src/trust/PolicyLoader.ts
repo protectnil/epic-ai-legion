@@ -24,7 +24,7 @@ const PolicyRuleSchema = z.object({
   effect: z.enum(['allow', 'deny']),
   principal: z.object({
     roles: z.array(z.string()).optional(),
-    attributes: z.record(z.string()).optional(),
+    attributes: z.record(z.string(), z.string()).optional(),
   }),
   resource: z.object({
     toolCategories: z.array(z.string()).optional(),
